@@ -32,8 +32,10 @@ public:
 	void subdivide();
 	void one();
 
-	void spread(OpSet<Probe *> &chunk);
+	void spread(OpSet<Probe *> &chunk, bool force = false);
+	void shoot(OpSet<Probe *> &chunk);
 	void prune(OpSet<Probe *> &chunk);
+	static bool finish_ends(OpSet<Probe *> &chunk);
 private:
 	Clique *_clique{};
 

@@ -20,6 +20,7 @@
 #include <vagabond/gui/elements/list/LineGroup.h>
 #include <vagabond/gui/elements/list/ItemLine.h>
 #include <vagabond/gui/elements/ScrollBox.h>
+#include <vagabond/gui/elements/Window.h>
 #include <vagabond/gui/MatrixPlot.h>
 #include <vagabond/core/protonic/Clique.h>
 #include <vagabond/core/protonic/ProbeResult.h>
@@ -61,8 +62,6 @@ void CommunicationAnalysis::prepareGroups()
 				_chosen += name;
 				_lg->display(item)->setColour(0.4, 0.0, 0.4);
 			}
-			
-			checkChosen();
 		};
 
 		item->setDisplayName(name);
@@ -74,7 +73,6 @@ void CommunicationAnalysis::prepareGroups()
 	LineGroup *lg = new LineGroup(&_parent, this);
 	lg->setLeft(0.1, 0.2);
 	_lg = lg;
-	std::cout << "Name count: " << _parent.itemCount() << std::endl;
 
 	ScrollBox *sb = new ScrollBox();
 	sb->setContent(lg);
@@ -83,16 +81,9 @@ void CommunicationAnalysis::prepareGroups()
 
 }
 
-void CommunicationAnalysis::checkChosen()
+float CommunicationAnalysis::compare(const std::string &first,
+                                     const std::string &second)
 {
-	if (_chosen.size() != 2)
-	{
-		return;
-	}
-
-	std::string first = *_chosen.begin();
-	std::string second = *(++_chosen.begin());
-	
 	auto check_pair = [this](const ProbeTypePair &ptp, const std::string &check,
 	                         OpSet<ProbeTypePair> &which)
 	{
@@ -113,8 +104,6 @@ void CommunicationAnalysis::checkChosen()
 	};
 	
 	OpSet<ProbeTypePair> lefts{}, rights{};
-	std::cout << "Lefts: " << lefts.size() << std::endl;
-	std::cout << "Rights: " << rights.size() << std::endl;
 
 	for (auto it = _lookup.begin(); it != _lookup.end(); it++)
 	{
@@ -144,17 +133,6 @@ void CommunicationAnalysis::checkChosen()
 			MatrixXf tmp = _wU(Eigen::all, seqN(ins, dim));
 			mat(Eigen::all, seqN(inc, dim)) = tmp;
 
-			MatrixXf cut = tmp;
-
-			PCA::Matrix mat = PCA::Matrix(cut.transpose());
-
-			MatrixPlot *mp = new MatrixPlot(mat);
-			mp->setCentre(0.75 + drop, 0.5);
-			mp->resize(2.0);
-			drop += 0.02;
-			addTempObject(mp);
-//			std::cout << ptp.first->desc() << " " << ins << std::endl;
-
 			inc += dim;
 		};
 	};
@@ -162,13 +140,9 @@ void CommunicationAnalysis::checkChosen()
 	std::for_each(lefts.begin(), lefts.end(), add_to_size(ln));
 	std::for_each(rights.begin(), rights.end(), add_to_size(rn));
 	
-	std::cout << "Left num: " << ln << std::endl;
-	std::cout << "Right num: " << rn << std::endl;
-	std::cout << "Over one: " << _overOne << std::endl;
-	
 	if (ln == 0 || rn == 0)
 	{
-		return;
+		return 0;
 	}
 
 	_lMat = MatrixXf(_overOne, ln);
@@ -227,11 +201,6 @@ void CommunicationAnalysis::checkChosen()
 	
 	float r = sum;
 
-	PCA::Matrix mat = PCA::Matrix(cMat);
-	MatrixPlot *mp = new MatrixPlot(mat);
-	mp->setCentre(0.5, 0.5);
-	addTempObject(mp);
-	
 	auto to_vector = [](MatrixXf &mat, int r)
 	{
 		std::vector<double> ret(mat.cols());
@@ -256,28 +225,20 @@ void CommunicationAnalysis::checkChosen()
 	};
 	cc.addWeights(get_weight);
 	
+	float result = 0;
 	try
 	{
 		cc.run();
-		float r = fabs(cc.correlation());
-		setInformation("Comparing " + first + " to " + second + ", correl: " +
-		               std::to_string(r));
-		std::cout << "Correlation: " << r << std::endl;
-
-		MatrixPlot *uMP = new MatrixPlot(cc.u());
-		uMP->setCentre(0.86, 0.5);
-		uMP->resize(2.0);
-		addTempObject(uMP);
-
-		MatrixPlot *vMP = new MatrixPlot(cc.v());
-		vMP->setCentre(0.88, 0.5);
-		vMP->resize(2.0);
-		addTempObject(vMP);
+		result = fabs(cc.correlation());
+//		setInformation("Comparing " + first + " to " + second + ", correl: " +
+//		               std::to_string(r));
+//		std::cout << "Correlation: " << r << std::endl;
 	}
 	catch (int e)
 	{
-		setInformation("Failed correlation");
+//		setInformation("Failed correlation");
 	}
+	return result;
 }
 
 void CommunicationAnalysis::svd()
@@ -322,6 +283,69 @@ void CommunicationAnalysis::setup()
 	addTitle("Communication Analysis");
 	
 	svd();
-	prepareGroups();
+//	prepareGroups();
 
+	OpSet<std::string> names = _clique->allCommsNames();
+
+	Eigen::MatrixXf mat(names.size(), names.size());
+	mat.setZero();
+
+	int m = 0;
+	for (const std::string &first : names)
+	{
+		int n = 0;
+		for (const std::string &second : names)
+		{
+			float r = compare(first, second);
+			mat(m, n) = r;
+			n++;
+		}
+		m++;
+	}
+	
+	Box *box = new Box();
+
+	PCA::Matrix oldmat(mat);
+	MatrixPlot *mp = new MatrixPlot(oldmat);
+	mp->setCentre(0.0, 0.0);
+	box->addObject(mp);
+	
+	float width = mp->maximalWidth() / 2.f;
+	float height = mp->maximalHeight() / 2.f;
+	float xstep = width / (float)names.size();
+	float ystep = -height / (float)names.size();
+	float x = -width / 2 + xstep / 2;
+	float y = +height / 2 + ystep / 2;
+	
+	Renderable::Alignment row_align = Renderable::Alignment::Right;
+	Renderable::Alignment col_align = Renderable::Alignment
+	(Renderable::Alignment::Left | Renderable::Alignment::Bottom);
+
+	for (const std::string &first : names)
+	{
+		{
+			Text *t = new Text(first);
+			t->resize(0.4);
+			t->setArbitrary(-width / 2, y, row_align);
+			box->addObject(t);
+			y += ystep;
+		}
+
+		{
+			Text *t = new Text(first);
+			t->resize(0.4);
+			t->setArbitrary(x, -height / 2, col_align);
+			glm::mat4x4 base = glm::mat3x3(1.f);
+			base[1] /= Window::aspect();
+			glm::mat3x3 rot;
+			rot = glm::mat3x3(glm::rotate(base, (float)deg2rad(-45),
+			                              glm::vec3(0., 0., -1.)));
+			t->rotateRoundCentre(rot);
+			box->addObject(t);
+			x += xstep;
+		}
+	}
+
+	box->setCentre(0.5, 0.5);
+	addObject(box);
 }

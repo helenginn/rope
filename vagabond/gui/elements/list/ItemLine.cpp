@@ -246,6 +246,8 @@ Renderable *ItemLine::displayRenderable(ButtonResponder *parent) const
 
 	text->resize(0.5);
 	text->setName("content: " + _item->displayName());
+	glm::vec3 c = _item->textColour();
+	text->setColour(c.x, c.y, c.z);
 
 	return text;
 }

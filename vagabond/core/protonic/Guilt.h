@@ -22,58 +22,19 @@
 #include <vagabond/utils/OpSet.h>
 #include <functional>
 
+typedef long int GuiltVersion;
+
 class Guilt
 {
 public:
-	void addGuilt(void *guilt)
+	static GuiltVersion issueNext()
 	{
-		if (_all.count(guilt))
-		{
-			return;
-		}
-
-		if (_current == nullptr)
-		{
-			_current = guilt;
-			_top = guilt;
-		}
-		else
-		{
-			_guiltTree[_current] = guilt;
-			_backwards[guilt] = _current;
-			_current = guilt;
-		}
-		
-		_all += guilt;
+		return ++(_guilt._worst);
 	}
-	
-	OpSet<void *> rollBackBefore(void *guilt)
+
+	static GuiltVersion popLast()
 	{
-		OpSet<void *> acquired;
-		
-		std::function<void(OpSet<void *>)> get_next;
-		get_next = [&acquired, &get_next, this]
-		(const OpSet<void *> &next)
-		{
-			for (void *guilt : next)
-			{
-				acquired += guilt;
-				get_next(_guiltTree[guilt]);
-			}
-		};
-		
-		OpSet<void *> start = _guiltTree[guilt];
-		get_next(start);
-		acquired += guilt;
-		_current = _backwards[guilt];
-		if (_current == _top)
-		{
-			std::cout << "Clearing the guilt tree!" << std::endl;
-			_guiltTree.clear();
-			_backwards.clear();
-			_all = {_current};
-		}
-		return acquired;
+		return --(_guilt._worst);
 	}
 	
 	static Guilt &guilt()
@@ -81,9 +42,8 @@ public:
 		return _guilt;
 	}
 private:
-	void *_current{};
-	void *_top{};
 	OpSet<void *> _all;
+	GuiltVersion _worst{};
 	std::map<void *, OpSet<void *>> _guiltTree;
 	std::map<void *, void *> _backwards;
 

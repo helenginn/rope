@@ -39,7 +39,7 @@ void SearchAll::run()
 			continue;
 		}
 
-		ExhaustiveSearch search(clique.probes(), _clique->probes(), _network);
+		ExhaustiveSearch search(clique.probes(), _clique->probes());
 		search.search();
 		clickTicker();
 		clique.setResults(search.results());

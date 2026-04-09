@@ -160,8 +160,7 @@ void ProbeAtom::interacted(int idx, bool hover, bool left)
 	{
 		offerHydrogenMenu();
 	}
-	else
-	if (!left && !hover && _probe->is_atom())
+	else if (!left && !hover && _probe->is_atom())
 	{
 		offerHeavyAtomMenu();
 	}
@@ -199,14 +198,14 @@ void ProbeAtom::selected(int idx, bool inverse)
 void ProbeAtom::declareAtomExistence(Existence::Values value)
 {
 	std::string name = "Declare atom";
-	Decree *d = _view->network().newDecree(name);
+	GuiltVersion gv = Guilt::issueNext();
 	std::string present = (value == Existence::Present ? "present" : "absent");
 	std::string message = "Declare atom " + present;
 
-	auto make_declaration = [d, value, message, this]
+	auto make_declaration = [gv, value, message, this]
 	{
 		AtomProbe *aProbe = static_cast<AtomProbe *>(_probe);
-		bool okay = aProbe->existence().assign_value(value, d, d);
+		bool okay = aProbe->existence().assign_value_and_check(value, gv);
 		std::cout << "OK: " << okay << std::endl;
 		if (!okay)
 		{
@@ -215,12 +214,12 @@ void ProbeAtom::declareAtomExistence(Existence::Values value)
 		}
 	};
 
-	auto rescind_declaration = [d, this]
+	auto rescind_declaration = [gv, this]
 	{
 		AtomProbe *aProbe = static_cast<AtomProbe *>(_probe);
 
-		aProbe->existence().forget(d);
-		aProbe->existence().check_all(d);
+		aProbe->existence().forget(gv);
+		aProbe->existence().check_all(gv);
 	};
 	
 	_view->network().undoStack().addJobAndExecute(make_declaration,
@@ -231,14 +230,14 @@ void ProbeAtom::declareAtomExistence(Existence::Values value)
 void ProbeAtom::declareHydrogen(Existence::Values value)
 {
 	std::string name = "Declare hydrogen";
-	Decree *d = _view->network().newDecree(name);
+	GuiltVersion gv = Guilt::issueNext();
 	std::string present = (value == Existence::Present ? "present" : "absent");
 	std::string message = "Declare hydrogen " + present;
 
-	auto make_declaration = [d, value, this]
+	auto make_declaration = [gv, value, this]
 	{
 		HydrogenProbe *hProbe = static_cast<HydrogenProbe *>(_probe);
-		bool okay = hProbe->_obj.assign_value(value, d, d);
+		bool okay = hProbe->_obj.assign_value_and_check(value, gv);
 		std::cout << "OK: " << okay << std::endl;
 		if (!okay)
 		{
@@ -247,12 +246,12 @@ void ProbeAtom::declareHydrogen(Existence::Values value)
 		}
 	};
 
-	auto rescind_declaration = [d, this]
+	auto rescind_declaration = [gv, this]
 	{
 		HydrogenProbe *hProbe = static_cast<HydrogenProbe *>(_probe);
 
-		hProbe->_obj.forget(d);
-		hProbe->_obj.check_all(d);
+		hProbe->_obj.forget(gv);
+		hProbe->_obj.check_all(gv);
 	};
 	
 	_view->network().undoStack().addJobAndExecute(make_declaration,

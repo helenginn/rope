@@ -31,11 +31,11 @@ struct CountAdder
 		prep_constraints_and_forgets(this, {&left, &right, &sum});
 	}
 	
-	void forget(OpSet<void *> &blame)
+	void forget(const GuiltVersion &gv)
 	{
-		_left.forget(blame);
-		_sum.forget(blame);
-		_right.forget(blame);
+		_left.forget(gv);
+		_sum.forget(gv);
+		_right.forget(gv);
 	}
 	
 	std::string desc()
@@ -65,9 +65,9 @@ struct CountAdder
 		return options;
 	}
 	
-	bool check(void *previous)
+	bool check(const GuiltVersion &gv, CheckList &list)
 	{
-		auto assign = make_assign_and_say(this, previous);
+		auto assign = make_assign_and_say(this, gv, list);
 		/* however, partial assignments of all values will lead to some
 		 * values being permitted and others not, so we can generate a list
 		 * of permitted values for each pair, and constrain the latter. */
@@ -83,7 +83,7 @@ struct CountAdder
 			                                        { return a + b; });
 
 			Count::Values sum_count = values_as_count(options);
-			assign(_sum, sum_count);
+			assign(_sum, sum_count, "imposition on sum");
 		}
 
 		/* impose options on left */
@@ -96,7 +96,7 @@ struct CountAdder
 			                                        { return a - b; });
 
 			Count::Values left_count = values_as_count(options);
-			assign(_left, left_count);
+			assign(_left, left_count, "imposition on left");
 		}
 
 		/* impose options on right */
@@ -109,8 +109,17 @@ struct CountAdder
 			                                        { return a - b; });
 
 			Count::Values right_count = values_as_count(options);
-			assign(_right, right_count);
+			assign(_right, right_count, "imposition on right");
 		}
+		
+		auto print = [](const std::vector<int> &options)
+		{
+			for (const int &i : options)
+			{
+				std::cout << i << " ";
+			}
+			std::cout << std::endl;
+		};
 
 		return assign.okay();
 	}

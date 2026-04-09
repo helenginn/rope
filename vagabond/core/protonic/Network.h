@@ -30,7 +30,6 @@
 
 class HideComplete;
 class Probe;
-class Decree;
 class Model;
 
 namespace hnet
@@ -124,7 +123,6 @@ public:
 		return _cliques;
 	}
 	
-	Decree *newDecree(const std::string &str);
 	void updateModelCliques();
 private:
 	void establishAtom(::Atom *atom);
@@ -167,8 +165,8 @@ private:
 	AtomGroup *_original = nullptr;
 	AtomGroup *_originalAndMates = nullptr;
 	AtomGroup *_extraHydrogens = nullptr;
+	std::vector<hnet::Coordinated *> _hCoords;
 	
-	std::vector<Decree *> _decrees;
 	UndoStack _undoStack{};
 };
 

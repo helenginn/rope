@@ -48,9 +48,9 @@ struct Constant
 		prep_constraints_and_forgets(this, {&connector});
 	}
 	
-	void forget(OpSet<void *> &blame)
+	void forget(const GuiltVersion &gv)
 	{
-		_connector.forget(blame);
+		_connector.forget(gv);
 	}
 	
 	std::string desc()
@@ -58,9 +58,9 @@ struct Constant
 		return "Constant for connector " + _connector.desc();
 	}
 	
-	bool check(void *previous)
+	bool check(const GuiltVersion &gv, CheckList &list)
 	{
-		auto assign = make_assign_and_say(this, previous);
+		auto assign = make_assign_and_say(this, gv, list);
 		assign(_connector, _constant);
 		return assign.okay();
 	}
@@ -82,20 +82,20 @@ struct AnyConstraint
 	enum Type
 	{
 		Count, Atom, Bond, HBond, StrongAdd, CountAdd, WeakAdd, BondedAdd, 
-		LonePairAdd, NotBrokenAdd, EiOrBond, Equal, Stricter,
+		LonePairAdd, NotBrokenAdd, EiOrBond, Equal, StricterCount,
 		Existence, MutualExist, SubExist, OnlyOneOf, IfCountThen, 
-		BreakingMatrix, BreakIfUnsampled,
+		BreakingMatrix, StrictBond, StricterExistence,
 	};
 	
-	AnyConstraint(IfCountThenImpose *const &constraint)
+	AnyConstraint(hnet::Stricter<Existence::Values> *const &constraint)
 	{
-		_type = IfCountThen;
+		_type = StricterExistence;
 		_ptr = constraint;
 	}
 	
-	AnyConstraint(StricterBond *const &constraint)
+	AnyConstraint(StrictCount *const &constraint)
 	{
-		_type = Stricter;
+		_type = StricterCount;
 		_ptr = constraint;
 	}
 	
@@ -195,9 +195,9 @@ struct AnyConstraint
 		_ptr = constraint;
 	}
 	
-	AnyConstraint(BreakIfUnsampledBond *const &constraint)
+	AnyConstraint(StricterBond *const &constraint)
 	{
-		_type = BreakIfUnsampled;
+		_type = StrictBond;
 		_ptr = constraint;
 	}
 	
@@ -259,17 +259,17 @@ struct AnyConstraint
 			case OnlyOneOf:
 			delete static_cast<OnlyOne *>(_ptr); break;
 
-			case Stricter:
-			delete static_cast<StricterBond *>(_ptr); break;
-
-			case IfCountThen:
-			delete static_cast<IfCountThenImpose *>(_ptr); break;
-			
 			case BreakingMatrix:
 			delete static_cast<BreakMatrix *>(_ptr); break;
 			
-			case BreakIfUnsampled:
-			delete static_cast<BreakIfUnsampledBond *>(_ptr); break;
+			case StrictBond:
+			delete static_cast<StricterBond *>(_ptr); break;
+			
+			case StricterExistence:
+			delete static_cast<hnet::Stricter<Existence::Values> *>(_ptr); break;
+
+			case StricterCount:
+			delete static_cast<StrictCount *>(_ptr); break;
 
 			default: break;
 		}

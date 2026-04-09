@@ -17,7 +17,6 @@
 // Please email: vagabond @ hginn.co.uk for more details.
 
 #include "Model.h"
-#include "Decree.h"
 #include "Network.h"
 #include "SymMates.h"
 #include "AtomGroup.h"
@@ -355,7 +354,7 @@ void Network::setupInactiveAtom(AtomConf atom)
 
 		float diff = abs(atom.occupancy() - connected.occupancy());
 		
-		if (diff < 0.005)
+		if (diff < 0.05)
 		{
 			add_constraint(new MutualExistence(left, covalent));
 			add_constraint(new MutualExistence(covalent, left));
@@ -727,16 +726,34 @@ BondProbe &Network::add_probe(BondProbe *const &probe)
 	return *probe;
 }
 
-Decree *Network::newDecree(const std::string &str)
-{
-	Decree *decree = new Decree(str);
-	_decrees.push_back(decree);
-	return decree;
-}
-
 void Network::addNewHydrogen(hnet::AtomConf hydrogen, hnet::Coordinated *coord)
 {
+	float max = 1.5;
+	float maxmax = max * max;
+	glm::vec3 pos = coord->probe()->atom()->initialPosition();
+	for (Coordinated *const &second : _hCoords)
+	{
+		Probe *other = second->probe();
+		glm::vec3 v = other->atom()->initialPosition();
+		for (int i = 0; i < 3; i++)
+		{
+			if (fabs(pos[i] - v[i]) > 1.5)
+			{
+				break;
+			}
+		}
+		
+		if (glm::dot(pos - v, pos - v) > maxmax)
+		{
+			break;
+		}
+
+		add_constraint(new OnlyOne({coord->existence(), 
+		                           second->existence()}));
+	}
+
 	*_extraHydrogens += hydrogen.ptr;
+	_hCoords.push_back(coord);
 	_atomMap[hydrogen] = coord;
 }
 

@@ -19,6 +19,8 @@
 #include "Subdivide.h"
 #include "Probe.h"
 #include "Clique.h"
+#include <algorithm>
+#include <random>
 
 Subdivide::Subdivide(Clique *clique, int min, int max) : _clique(clique)
 {
@@ -30,12 +32,91 @@ Subdivide::Subdivide(Clique *clique, int min, int max) : _clique(clique)
 	}
 }
 
-void Subdivide::spread(OpSet<Probe *> &chunk)
+bool Subdivide::finish_ends(OpSet<Probe *> &chunk)
 {
-	OpSet<Probe *> last = chunk;
+	std::cout << "checking " << chunk.size();
+	for (Probe *const &probe : chunk)
+	{
+		if (!probe->is_atom()) // hydrogen or bond
+		{
+			for (Probe *const &other : probe->others())
+			{
+				if (other->is_definitely_not_present())
+				{
+					continue;
+				}
+
+				if (chunk.count(other) == 0)
+				{
+					chunk += other;
+					return true;
+				}
+			}
+		}
+	}
+	
+	return false;
+}
+
+void Subdivide::shoot(OpSet<Probe *> &chunk)
+{
+	Probe *last = *chunk.begin();
+	std::vector<Probe *> list = std::vector<Probe *>(chunk.begin(),
+	                                                 chunk.end());
+	int restart = 0;
+
 	while (chunk.size() < _min)
 	{
 		if (chunk.size() >= _max)
+		{
+			break;
+		}
+
+		bool found = false;
+		std::vector<Probe *> copy 
+		= {last->others().begin(), last->others().end()};
+		std::random_device rd;
+		std::mt19937 g(rd());
+		std::shuffle(copy.begin(), copy.end(), g);
+
+		for (Probe *const &other : copy)
+		{
+			if (other->is_definitely_not_present())
+			{
+				continue;
+			}
+
+			if (chunk.count(other) == 0)
+			{
+				list.push_back(other);
+				chunk += other;
+				last = other;
+				found = true;
+				restart = 0;
+				break;
+			}
+		}
+		
+		if (!found)
+		{
+			last = list[list.size() - restart - 1];
+			restart++;
+			if (restart > list.size() - 1)
+			{
+				break;
+			}
+		}
+	}
+	
+	chunk = OpSet<Probe *>(list);
+}
+
+void Subdivide::spread(OpSet<Probe *> &chunk, bool force)
+{
+	OpSet<Probe *> last = chunk;
+	while (chunk.size() < _min || force)
+	{
+		if (chunk.size() >= _max && !force)
 		{
 			break;
 		}
@@ -94,10 +175,16 @@ void Subdivide::subdivide()
 	
 	for (Probe *probe : to_chunk)
 	{
-		OpSet<Probe *> chunk = {probe};
-		spread(chunk);
-		prune(chunk);
-		chunks += chunk;
+		for (int i = 0; i < 3; i++)
+		{
+			OpSet<Probe *> chunk = {probe};
+			shoot(chunk);
+			while (finish_ends(chunk)) {}
+
+			prune(chunk);
+			chunks += chunk;
+		}
+
 	}
 	
 	for (const OpSet<Probe *> &chunk : chunks)

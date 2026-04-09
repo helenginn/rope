@@ -30,6 +30,11 @@ Clique::Clique()
 	setSelectable(true);
 }
 
+void Clique::add_probes(const OpSet<Probe *> &probes)
+{
+	_probes += probes;
+}
+
 int Clique::num_waters() const
 {
 	int waters = 0;
@@ -116,7 +121,7 @@ void Clique::housekeeping(Network &network)
 
 void Clique::addProbeDesc(const std::string &str)
 {
-	_descs.push_back(str);
+	_descs += str;
 }
 
 OpSet<Probe *> Clique::nonWaterProbes()
@@ -147,7 +152,46 @@ OpSet<Probe *> Clique::nonWaterProbes()
 	return nonwater;
 }
 
+glm::vec3 Clique::centroid()
+{
+	glm::vec3 sum{};
+	float count = 0;
+	for (Probe *pr : _probes)
+	{
+		if (pr->is_atom())
+		{
+			Atom *atom = pr->atom();
+			sum += atom->initialPosition();
+			count++;
+		}
+	}
+	
+	return sum / count;
+}
+
 void Clique::setResults(const std::vector<ProbeResult> &results)
 {
 	_results = results;
+}
+
+void Clique::add_clique(const Clique &clique)
+{
+	add_probes(clique.probes());
+	
+	for (auto &pair : clique._communication)
+	{
+		_communication[pair.first] += pair.second;
+	}
+
+	for (const std::string &desc : clique._descs)
+	{
+		addProbeDesc(desc);
+	}
+
+	for (auto &pair : clique._descToCommune)
+	{
+		_descToCommune[pair.first] = pair.second;
+	}
+	
+
 }

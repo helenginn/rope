@@ -39,11 +39,11 @@ struct OnlyOne
 		prep_constraints_and_forgets(this, list);
 	}
 	
-	void forget(OpSet<void *> &blame)
+	void forget(const GuiltVersion &gv)
 	{
 		for (ExistenceConnector *&existence : _exclusives)
 		{
-			existence->forget(blame);
+			existence->forget(gv);
 		}
 	}
 	
@@ -72,9 +72,9 @@ struct OnlyOne
 
 	}
 
-	bool check(void *previous)
+	bool check(const GuiltVersion &gv, CheckList &list)
 	{
-		auto assign = make_assign_and_say(this, previous);
+		auto assign = make_assign_and_say(this, gv, list);
 
 		int number_excluding_absences = _exclusives.size();
 		bool declare_absent = false;

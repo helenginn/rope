@@ -42,16 +42,16 @@ struct SubExistence
 
 	}
 	
-	void forget(OpSet<void *> &blame)
+	void forget(const GuiltVersion &gv)
 	{
-		_left.forget(blame);
-		_sub.forget(blame);
-		_right.forget(blame);
+		_left.forget(gv);
+		_sub.forget(gv);
+		_right.forget(gv);
 	}
 
-	bool check(void *previous)
+	bool check(const GuiltVersion &gv, CheckList &list)
 	{
-		auto assign = make_assign_and_say(this, previous);
+		auto assign = make_assign_and_say(this, gv, list);
 
 		if ((_left.value() == Existence::Present && 
 		    _right.value() == Existence::Present) || (_strong &&

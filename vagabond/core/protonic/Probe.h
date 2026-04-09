@@ -139,7 +139,7 @@ public:
 
 	float alpha()
 	{
-		return _hide + transparency();
+		return std::max(-1.f, _hide + transparency());
 	}
 
 	void setMult(const float &m)

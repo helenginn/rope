@@ -26,38 +26,49 @@ namespace hnet
 {
 /* simple constant class to impose a stricter belief when satisfying a
  * Condition */
-template <class ImposeType, class CondType>
+template <class ImposeType>
 class Stricter
 {
 public:
-	typedef std::function<bool(const CondType &)> Condition;
+	typedef std::function<bool()> Condition;
 
-	Stricter(Connector<CondType> &obj, const Condition &cond, 
-             Connector<ImposeType> &affected, ImposeType impose) :
-	_condition(cond), _impose(impose), _conditionObj(obj), _imposeObj(affected)
+	Stricter(const std::vector<ConnectBase *> &objs, 
+	         const Condition &cond, Connector<ImposeType> &affected, 
+         ImposeType impose) :
+	_condition(cond), _impose(impose), _conditionObjs(objs), 
+	_imposeObj(affected)
 	{
-		std::vector<ConnectBase *> list = {&affected, &obj};
+		std::vector<ConnectBase *> list = objs;
+		list.push_back({&affected});
 		prep_constraints_and_forgets(this, list);
 	}
 	
 	std::string desc()
 	{
 		std::ostringstream ss;
-		ss << "Stricter requirement on " << _conditionObj << " may impose "
-		<< _impose << " on " << _imposeObj;
+		ss << "Stricter requirement on ";
+		for (auto obj : _conditionObjs)
+		{
+			ss << obj << ", ";
+		}
+		
+		ss << " may impose " << _impose << " on " << _imposeObj;
 		return ss.str();
 	}
 	
-	void forget(OpSet<void *> &blame)
+	void forget(const GuiltVersion &gv)
 	{
-		_conditionObj.forget(blame);
-		_imposeObj.forget(blame);
+		for (auto obj : _conditionObjs)
+		{
+			obj->forget(gv);
+		}
+		_imposeObj.forget(gv);
 	}
 	
-	bool check(void *previous)
+	bool check(const GuiltVersion &gv, CheckList &list)
 	{
-		auto assign = make_assign_and_say(this, previous);
-		if (_condition(_conditionObj.value()))
+		auto assign = make_assign_and_say(this, gv, list);
+		if (_condition())
 		{
 //			std::cout << "Imposing " << _impose << " on " << _imposeObj << std::endl;
 			assign(_imposeObj, _impose);
@@ -68,20 +79,23 @@ public:
 	
 	Condition _condition;
 	ImposeType _impose;
-	Connector<CondType> &_conditionObj;
+	std::vector<ConnectBase *> _conditionObjs;
 	Connector<ImposeType> &_imposeObj;
 };
 
-class StricterBond : public Stricter<Bond::Values, Bond::Values>
+/*
+class StricterBond : public Stricter<Bond::Values>
 {
 public:
 	StricterBond(Connector<Bond::Values> &bond, const Condition &cond, 
                  Bond::Values impose) :
-	Stricter<Bond::Values, Bond::Values>(bond, cond, bond, impose) {};
+	Stricter<Bond::Values>({&bond}, cond, bond, impose) {};
 };
+*/
 
-typedef Stricter<Count::Values, Count::Values> IfCountThenImpose;
-typedef Stricter<Bond::Values, Existence::Values> BreakIfUnsampledBond;
+typedef Stricter<Bond::Values> StricterBond;
+typedef Stricter<Existence::Values> StrictExistence;
+typedef Stricter<Count::Values> StrictCount;
 };
 
 

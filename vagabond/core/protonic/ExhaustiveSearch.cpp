@@ -23,9 +23,8 @@
 #include <algorithm>
 
 ExhaustiveSearch::ExhaustiveSearch(const OpSet<Probe *> &interesting,
-                                   const OpSet<Probe *> &wider,
-                                   Network &network)
-: _all(interesting), _wider(wider), _network(network)
+                                   const OpSet<Probe *> &wider)
+: _all(interesting), _wider(wider)
 {
 
 }
@@ -42,7 +41,7 @@ void ExhaustiveSearch::setup()
 		options = probe->_obj.values();
 		IteratedProbe *ip = 
 		new IterateDecree<hnet::BondConnector, hnet::Bond::Values>
-		(_network, probe, probe->_obj, probe->_exist, options, "obj");
+		(probe, probe->_obj, probe->_exist, options, "obj");
 		return ip;
 	};
 
@@ -54,7 +53,7 @@ void ExhaustiveSearch::setup()
 		std::vector<hnet::Existence::Values> options = probe->_exist.values();
 		IteratedProbe *ip = 
 		new IterateDecree<hnet::ExistenceConnector, hnet::Existence::Values>
-		(_network, probe, probe->_exist, probe->_exist, options, "exist");
+		(probe, probe->_exist, probe->_exist, options, "exist");
 		return ip;
 	};
 	

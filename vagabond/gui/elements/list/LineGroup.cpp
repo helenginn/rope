@@ -20,6 +20,7 @@
 #include "ItemLine.h"
 #include "../Slider.h"
 #include <vagabond/core/Item.h>
+#include "../ScrollBox.h"
 #include "../Button.h"
 #include "../Menu.h"
 #include <iostream>
@@ -113,6 +114,10 @@ void LineGroup::updateGroups()
 	reorganiseGroups();
 
 	_topLevel->reorganiseHeights();
+	if (_scroll)
+	{
+		_scroll->addSliderIfNeeded();
+	}
 	_update = false;
 }
 

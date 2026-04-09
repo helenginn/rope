@@ -28,6 +28,7 @@ class Item;
 class Menu;
 class Scene;
 class ItemLine;
+class ScrollBox;
 
 class LineGroup : public ButtonResponder, public Button
 {
@@ -61,6 +62,11 @@ public:
 	void makeMenu();
 
 	void reorganiseHeights();
+	
+	void setScrollBox(ScrollBox *scroll)
+	{
+		_scroll = scroll;
+	}
 protected:
 	std::map<Item *, ItemLine *> _itemMap;
 private:
@@ -79,6 +85,7 @@ private:
 	
 	LineGroup *_topLevel = nullptr;
 	LineGroup *_parent = nullptr;
+	ScrollBox *_scroll = nullptr;
 	Scene *_scene = nullptr;
 
 	std::vector<LineGroup *> _groups;

@@ -23,6 +23,7 @@
 #include <vagabond/core/Item.h>
 
 class Network;
+class LineGroup;
 class ProtonNetworkView;
 
 class CliqueView : public Image
@@ -42,6 +43,9 @@ public:
 	{
 		if (_kill) _kill();
 	}
+	
+	void highlightCliquesWith(const OpSet<Probe *> &probes);
+	void insertClique(Clique *clique);
 private:
 	void setupCloseButton();
 
@@ -54,6 +58,11 @@ private:
 	Item _wet{};
 	Item _dry{};
 	Item _certain{};
+	LineGroup *_lg{};
+	
+	std::vector<Clique *> _cliques;
+
+	Clique *_combine = nullptr;
 };
 
 #endif

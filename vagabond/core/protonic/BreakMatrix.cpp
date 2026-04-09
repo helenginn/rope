@@ -24,9 +24,11 @@ using namespace hnet;
 
 BreakMatrix::BreakMatrix(Coordinated *coord, const ConnectMap &bonds,
                          const OpSet<AcceptableGroup> &groups,
-                         CountConnector &unbroken_count)
+                         CountConnector &unbroken_count,
+                         CountConnector &twirling_bonds)
 : _coord(coord), _ac(coord->atomConf()), _bonds(bonds), 
-_unbrokenCount(unbroken_count), _myExist(*coord->existence())
+_unbrokenCount(unbroken_count), _myExist(*coord->existence()),
+_twirling(twirling_bonds)
 {
 	setup(groups);
 }
@@ -96,7 +98,7 @@ void BreakMatrix::accounting()
 	}
 
 	_matrix = Eigen::MatrixXi(n, n);
-	_matrix.setZero();
+	_matrix.setIdentity();
 }
 
 void BreakMatrix::checks_forgets()
@@ -124,19 +126,19 @@ void BreakMatrix::setup(const OpSet<AcceptableGroup> &groups)
 		insertGroupIntoMatrix(group);
 	}
 
-	//std::cout << "Coordination's break matrix: " << std::endl;
-	//std::cout << _matrix << std::endl;
+	std::cout << "Coordination's (" << _ac.desc() << ") break matrix: " << std::endl;
+	std::cout << _matrix << std::endl;
 	
 	checks_forgets();
 }
 
-void BreakMatrix::forget(OpSet<void *> &blame)
+void BreakMatrix::forget(const GuiltVersion &gv)
 {
 	for (const BreakEntry &entry : _entries)
 	{
-		entry.bond->forget(blame);
-		entry.exist->forget(blame);
-		entry.partner->forget(blame);
+		entry.bond->forget(gv);
+		entry.exist->forget(gv);
+		entry.partner->forget(gv);
 	}
 }
 
@@ -195,7 +197,9 @@ bool BreakMatrix::break_others(hnet::make_assign_and_say<BreakMatrix> &assign,
 		}
 
 		BondConnector *other = _entries[i].bond;
-		if (assertAbsence(assign, other))
+		std::ostringstream ss; ss << *definite;
+		if (assertAbsence(assign, other, "breaking antagonists of " 
+		+ ss.str()))
 		{
 			return true;
 		}
@@ -265,6 +269,7 @@ bool BreakMatrix::evaluate(hnet::make_assign_and_say<BreakMatrix> &assign)
 	int lower_limit = options[0];
 
 	Eigen::MatrixXi tmp = partialMatrix(in_game);
+	/*
 	std::cout << _myExist << " working on matrix: " << std::endl;
 	for (int i = 0; i < in_game.size(); i++)
 	{
@@ -272,11 +277,20 @@ bool BreakMatrix::evaluate(hnet::make_assign_and_say<BreakMatrix> &assign)
 	}
 
 	std::cout << "Lower limit: " << lower_limit << std::endl;
+	*/
 
 	int max_sum = 0;
+	int min_sum = INT_MAX;
 	for (int i = 0; i < in_game.size(); i++)
 	{
 		max_sum = std::max(max_sum, tmp(i, Eigen::all).sum());
+		min_sum = std::min(min_sum, tmp(i, Eigen::all).sum());
+	}
+	if ((lower_limit > 1 || min_sum > 1) &&
+	    _twirling.value() != Count::Zero)
+	{
+		return assign(_twirling, Count::Zero, "lower limit of explicit bonds "\
+		              "is >2, twirling is not required");
 	}
 	
 	/* break rows where the configurations available cannot reach 
@@ -353,7 +367,7 @@ bool BreakMatrix::evaluate(hnet::make_assign_and_say<BreakMatrix> &assign)
 			Eigen::VectorXi compare = tmp.row(j);
 			compare -= ref;
 			float result = 0;
-			for (const float &f : compare)
+			for (float f : compare)
 			{
 				result += f * f;
 			}
@@ -412,6 +426,7 @@ bool BreakMatrix::assertAbsence(make_assign_and_say<BreakMatrix> &assign,
 			return true;
 		}
 	}
+	/*
 	else if (hExist->value() == Existence::Present)
 	{
 		// we're not allowed to break the existence of the bond so it must
@@ -422,7 +437,8 @@ bool BreakMatrix::assertAbsence(make_assign_and_say<BreakMatrix> &assign,
 			return true;
 		}
 	}
-	else
+	*/
+	else if (hExist->value() & Existence::Absent)
 	{
 		bool changed = false;
 		changed |= assign(*_entries[idx].exist, Existence::Absent, reason + 
@@ -471,14 +487,14 @@ bool BreakMatrix::assertExistence(make_assign_and_say<BreakMatrix> &assign,
 	return false;
 }
 
-bool BreakMatrix::check(void *previous)
+bool BreakMatrix::check(const GuiltVersion &gv, CheckList &list)
 {
 	bool changed = false;
 
 //	std::cout << std::endl;
 //	std::cout << "Checking break matrix for " << _ac.desc() << std::endl;
 
-	auto assign = make_assign_and_say(this, previous);
+	auto assign = make_assign_and_say(this, gv, list);
 
 	// don't check anything if we are non-existent
 	if (_myExist.value() == Existence::Absent)

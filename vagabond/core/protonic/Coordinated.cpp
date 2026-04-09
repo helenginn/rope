@@ -1068,7 +1068,7 @@ void Coordinated::mutualExclusions(AtomGroup *toClashCheck)
 
 	for (const PairSet &bad_pair : unwanted)
 	{
-		mutually_exclude(this, bad_pair);
+//		mutually_exclude(this, bad_pair);
 	}
 
 	for (const ABPair &nopair : unpaired)
@@ -1082,7 +1082,7 @@ void Coordinated::mutualExclusions(AtomGroup *toClashCheck)
 	applyRestrictionsToUnbrokenBonds(coord_state_to_unbroken_bonds);
 	
 	add_constraint(new BreakMatrix(this, _bond2Exist, totalGroups, 
-	                               *_expl_bonds));
+	                               *_expl_bonds, *_twirling));
 }
 
 void Coordinated::applyRestrictionsToUnbrokenBonds
@@ -1205,10 +1205,66 @@ void Coordinated::attachToNeighbours(AtomGroup *searchGroup)
 		add_constraint(new SubExistence(le, hExist, re, true));
 		add_constraint(new MutualExistence(other->existence(), re, false));
 		
-		auto is_absent = [](const Existence::Values &exist)
+		auto unpaired_right = [&le, &re]()
 		{
-			return (exist == Existence::Absent);
+			return (re.value() == Existence::Absent && 
+			        le.value() == Existence::Present);
 		};
+
+		auto unpaired_left = [&le, &re]()
+		{
+			return (le.value() == Existence::Absent && 
+			        re.value() == Existence::Present);
+		};
+		
+		add_constraint(new StricterBond({&le, &re}, unpaired_left, right,
+		                                        Bond::NotWeak));
+		add_constraint(new StricterBond({&re, &le}, unpaired_right, left,
+		                                        Bond::NotWeak));
+
+		auto non_existent_bonds = [&le, &re, &left, &right]()
+		{
+			if (le.value() == Existence::Absent && 
+			    !(right.value() & Bond::Bonded))
+			{
+				return true;
+			}
+
+			if (re.value() == Existence::Absent && 
+			    !(left.value() & Bond::Bonded))
+			{
+				return true;
+			}
+
+			return false;
+		};
+		
+		add_constraint(new Stricter<Existence::Values>
+		               ({&left, &re, &le, &right}, non_existent_bonds, 
+		               hExist, Existence::Absent));
+		
+		auto could_be_bonded = [&le, &re, &h]
+		(BondConnector &other)
+		{
+			return [&le, &re, &other, &h]()
+			{
+				if (le.value() & Existence::Absent || 
+				    re.value() & Existence::Absent ||
+				    h.value() & Existence::Absent)
+				{
+					return false;
+				}
+
+				return other.value() == Bond::Bonded;
+			};
+		};
+
+		add_constraint(new StricterBond({&re, &le, &right, &h}, 
+		                                        could_be_bonded(right), left,
+		                                        Bond::NotBroken));
+		add_constraint(new StricterBond({&re, &le, &right, &h}, 
+		                                        could_be_bonded(left), right,
+		                                        Bond::NotBroken));
 
 		ABPair left_pair = {candidate, &left};
 		addBond(left_pair);
@@ -1356,7 +1412,11 @@ void Coordinated::prepareCoordinated(const Count::Values &n_charge,
 {
 	std::cout << "Preparing coordinated for " << _atomConf << std::endl;
 	CountConnector &expl_strong = add_zero_or_positive_connector();
+	CountConnector &twirling_strong = add_zero_or_positive_connector();
+	CountConnector &all_strong = add_zero_or_positive_connector();
 	expl_strong.setDesc("Donor bonds of " + _atomConf.desc());
+	twirling_strong.setDesc("Twirling bonds of " + _atomConf.desc());
+	all_strong.setDesc("All bonds of " + _atomConf.desc());
 	CountConnector &expl_weak = add_zero_or_positive_connector();
 	CountConnector &expl_absent = add_zero_or_positive_connector();
 	CountConnector &expl_vacancies = add_zero_or_positive_connector();
@@ -1377,18 +1437,33 @@ void Coordinated::prepareCoordinated(const Count::Values &n_charge,
 	add_constraint(new CountConstant(charge, n_charge));
 	add_constraint(new CountConstant(coord_num, n_coord_num));
 	add_constraint(new CountConstant(valency, remaining_valency));
+
+	/* all strong bonds are explicit + freely rotating bonds */
+	add_constraint(new CountAdder(expl_strong, twirling_strong, all_strong));
 	
 	/* present bonds are the sum of weak and strong */
 	add_constraint(new CountAdder(expl_strong, expl_weak, expl_present));
 
-	/* vacancies are the sum of weak bonds and absent bonds */
+	/* vacancies are the sum of weak bonds and absent (lone pair) bonds */
 	add_constraint(new CountAdder(expl_absent, expl_weak, expl_vacancies));
 
 	/* coordination number is accounted for by all strong and all lone pairs */
 	add_constraint(new CountAdder(expl_strong, expl_vacancies, expl_bonds));
 
 	/* total strong bonds is determined by remaining valency and charge */
-	add_constraint(new CountAdder(valency, charge, expl_strong));
+	add_constraint(new CountAdder(valency, charge, all_strong));
+	
+	auto absent_and_weak_def_over_zero = [&expl_absent, &expl_weak]()
+	{
+		return ((expl_absent.value() & Count::MoreThanZero &&
+		         !(expl_absent.value() & Count::Zero)) ||
+		        (expl_weak.value() & Count::MoreThanZero &&
+		         !(expl_weak.value() & Count::Zero)));
+	};
+
+	add_constraint(new StrictCount({&expl_absent, &expl_weak},
+	                               absent_and_weak_def_over_zero,
+	                               twirling_strong, Count::Zero));
 
 	_charge = &charge;
 	_donors = &valency;
@@ -1404,35 +1479,42 @@ void Coordinated::prepareCoordinated(const Count::Values &n_charge,
 	_absent->setDesc("Lone pair bonds of " + _atomConf.desc());
 	_expl_bonds = &expl_bonds;
 	_expl_bonds->setDesc("Unbroken bonds of " + _atomConf.desc());
+	_twirling = &twirling_strong;
 
 	// we ensure that if a bond can be present and cannot be broken in any way,
 	// it must be present
 	// however we have a problem: if only one coordination state is remaining
 	// then the bonds don't know that they cannot be broken. This is solved
 	// by a counter while figuring out the mutual exclusions
-	auto can_be_present_and_cannot_be_broken = [](const Bond::Values &value) 
-	{
-		bool can_be_present = false;
-		bool can_be_broken = true;
-		if ((value & Bond::NotBroken) && !(value & Bond::Broken))
-		{
-			can_be_broken = false;
-		}
-
-		if ((value & Bond::Bonded))
-		{
-			can_be_present = true;
-		}
-		
-		return (can_be_present && !can_be_broken);
-	};
-
+	/*
 	for (const ABPair &bond : _bonds)
 	{
-		add_constraint(new StricterBond(*bond.second, 
-		                                can_be_present_and_cannot_be_broken,
-		                                Bond::Bonded));
+		auto can_be_present_and_cannot_be_broken = [](const Bond::Values &value) 
+		{
+			const Bond::Values *ptr = &value;
+			return [ptr]()
+			{
+				bool can_be_present = false;
+				bool can_be_broken = true;
+				if ((*ptr & Bond::NotBroken) && !(*ptr & Bond::Broken))
+				{
+					can_be_broken = false;
+				}
+
+				if ((*ptr & Bond::Bonded))
+				{
+					can_be_present = true;
+				}
+
+				return (can_be_present && !can_be_broken);
+			};
+		};
+
+		add_constraint
+		(new StricterBond(*bond.second,
+		can_be_present_and_cannot_be_broken(bond.second->value()), Bond::Bonded));
 	}
+	*/
 	
 	CountProbe &probe = _network.add_probe(new CountProbe(*_charge, atom()));
 //	_charge->set_update([&probe, this]()

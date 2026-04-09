@@ -40,7 +40,8 @@ public:
 	virtual void setup();
 private:
 	void prepareGroups();
-	void checkChosen();
+	float compare(const std::string &first, const std::string &second);
+
 	void svd();
 
 	Clique *_clique{};

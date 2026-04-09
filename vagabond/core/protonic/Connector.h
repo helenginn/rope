@@ -30,7 +30,7 @@ namespace hnet
 struct ConnectBase
 {
 public:
-	virtual bool forget(void *blame) = 0;
+	virtual bool forget(const GuiltVersion &gv) = 0;
 	virtual ~ConnectBase() {}
 
 	/* list of attached constraint-checking functions */
@@ -50,15 +50,38 @@ public:
 		_forgets.push_back(forget);
 	}
 	
-	void pop_last_check(void *blame)
+	void pop_last_check(const GuiltVersion &gv)
 	{
-		OpSet<void *> guilts = Guilt::guilt().rollBackBefore(blame);
-		forget(blame);
+		GuiltVersion last = Guilt::popLast();
+		forget(last);
 
 		_checks.pop_back();
 		_forgets.pop_back();
 	}
+
+	bool check_list(const GuiltVersion &gv, CheckList &list)
+	{
+		/* if we reassign a new value, we recalculate checks */
+		while (list.size())
+		{
+			void *ptr = list.back();
+			list.pop_back();
+			Checker *cptr = static_cast<Checker *>(ptr);
+			Checker &checker = *cptr;
+
+			bool okay = checker(gv, list);
+			
+			if (!okay || contradictory())
+			{
+				return false;
+			}
+		}
+		
+		return true;
+	}
 	
+	virtual bool contradictory() = 0;
+
 	inline static std::ostringstream _out{};
 	inline static bool _silent{false};
 
@@ -111,22 +134,32 @@ struct Connector : public ConnectBase
 		return _desc;
 	}
 
+	virtual bool contradictory()
+	{
+		return is_contradictory(value());
+	}
+
 	/* returns true if changed */
 	bool assign_value_without_checking(const Value &value, void *informant,
-	                                   void *blame)
+	                                   const GuiltVersion &gv)
 	{
-		if (_conditions.from_informant_and_blame(informant, blame) == value)
+		if (_conditions.from_informant_and_blame(informant, gv) == value)
 		{
 			// if there's no change in value then we end the propagation
 			return false;
 		}
 		
 		Value before = _conditions.belief();
-		_conditions.apply_condition(informant, blame, value);
+		_conditions.apply_condition(informant, gv, value);
 		Value after = _conditions.belief();
 
 		bool changed = (before != after);
-		if (changed && _desc.length())
+		if (changed && _update)
+		{
+			_update();
+		}
+
+		if (changed && _desc.length() && !ConnectBase::_silent)
 		{
 			ConnectBase::out() << "CONNECTOR: \"" << *this << "\" was " 
 			<< before << ", before applying condition " << value << 
@@ -136,18 +169,27 @@ struct Connector : public ConnectBase
 		return changed;
 	}
 
-	bool forget(void *blame)
+	bool assign_value_and_check(const Value &val, const GuiltVersion &gv)
 	{
-		OpSet<void *> guilts = Guilt::guilt().rollBackBefore(blame);
-		return forget(guilts);
+		bool changed = assign_value_without_checking(val, this, gv);
+		if (!changed) return true;
+		if (is_contradictory(value())) return false;
+
+		CheckList list;
+		add_to_check_list(list);
+		return check_list(gv, list);
+	}
+	
+	void check_all(const GuiltVersion &gv)
+	{
+		CheckList list;
+		add_to_check_list(list);
+		check_list(gv, list);
 	}
 
-	bool forget(OpSet<void *> &guilts)
+	bool forget(const GuiltVersion &gv)
 	{
-		Value before = _conditions.belief();
-		int grand_total = _conditions.size();
-
-		int total = _conditions.remove_conditions_with_blame(guilts);
+		int total = _conditions.remove_conditions_with_blame(gv);
 
 		if (total == 0)
 		{
@@ -159,41 +201,22 @@ struct Connector : public ConnectBase
 			_update();
 		}
 
-		if (false)
+		/* if we found anything to forget, we must invoke forget cascade */
+		for (Forget &next_forget : _forgets)
 		{
-			std::cout << "ABSOLVE: " << desc() << " forgetting: " << guilts.size() << 
-			" (" << grand_total << " - " << total << " = " << _conditions.size() << " conditions)" << std::endl;
-			std::cout << "\t" << desc() << " was " << before << " now " << _conditions.belief() << std::endl;
-		}
-
-		/* if we reassign a new value, we must invoke forget cascade */
-		for (Forget &forget_cascade : _forgets)
-		{
-			forget_cascade(guilts);
+			next_forget(gv);
 		}
 		
 		return true;
 	}
-		
-	bool check_all(void *blame)
+
+	void add_to_check_list(CheckList &list)
 	{
 		/* if we reassign a new value, we recalculate checks */
 		for (Checker &checker : _checks)
 		{
-			if (!checker(blame))
-			{
-				std::cout << "That was a bad check, abort" << std::endl;
-				return false;
-			}
+			list.push_back(&checker);
 		}
-
-		if (is_contradictory(value()))
-		{
-			return false;
-		}
-		
-		
-		return true;
 	}
 	
 	bool is_certain()
@@ -203,24 +226,21 @@ struct Connector : public ConnectBase
 		return certain(belief);
 	}
 	
-	bool assign_value(const Value &value, void *informant, void *blame)
+	bool assign_value(const Value &value, void *informant,
+	                  const GuiltVersion &gv, CheckList &list)
 	{
-		if (assign_value_without_checking(value, informant, blame))
+		if (assign_value_without_checking(value, informant, gv))
 		{
-			if (_update)
-			{
-				_update();
-			}
-
 			// handles next assignment
-			bool result = check_all(blame);
+			add_to_check_list(list);
 			
-			if (!result && !ConnectBase::_silent)
+			bool okay = !is_contradictory(value);
+			if (!okay && !ConnectBase::_silent)
 			{
 				std::cout << ConnectBase::my_out().str();
 			}
-
-			return result;
+			
+			return okay;
 		}
 
 		return true;
@@ -335,28 +355,31 @@ template <typename Type> struct Connector;
 template <class Me>
 struct make_assign_and_say
 {
-	make_assign_and_say(Me *me, void *previous)
-	: _me(me), _prev(previous) {}
+	make_assign_and_say(Me *me, const GuiltVersion &gv, CheckList &list)
+	: _me(me), _gv(gv), _list(list) {}
 
 	template <typename Type>
 	bool operator()(Connector<Type> &which, const Type &what,
 	                const std::string &reason = "")
 	{
-		ConnectBase::my_out() = {};
+		if (!ConnectBase::_silent)
+		{
+			ConnectBase::my_out().str("");
+		}
 		Type before = which.value();
-		_okay &= which.assign_value(what, _me, _prev);
+		_okay &= which.assign_value(what, _me, _gv, _list);
 		Type after = which.value();
 
-		if (before != after)
+		if (before != after && !ConnectBase::_silent)
 		{
 			ConnectBase::out() << "... from CONSTRAINT: \"" << _me->desc() << 
 			"\" forcing assignment of " << what << " on " << 
 			which << " resulting in " << after;
 			if (reason.size())
 			{
-				std::cout << ", due to reason: " << reason;
+				ConnectBase::out() << ", due to reason: " << reason;
 			}
-			std::cout << std::endl;
+			ConnectBase::out() << std::endl;
 			return true;
 		}
 
@@ -369,45 +392,64 @@ struct make_assign_and_say
 	}
 
 	Me *_me{};
-	void *_prev{};
+	GuiltVersion _gv;
 	bool _okay{true};
+	CheckList &_list;
 };
 
 template <typename ConstraintType>
 void prep_constraints_and_forgets(ConstraintType *constraint,
                                   const std::vector<ConnectBase *> &connections)
 {
-	auto self_check = [constraint](void *prev)
+	auto make_self_check = [constraint](ConnectBase *me)
 	{
-		return constraint->check(prev);
+		return [me, constraint](const GuiltVersion &gv, CheckList &list)
+		{
+			bool okay = constraint->check(gv, list);
+			okay |= me->contradictory();
+			return okay;
+		};
 	};
 
-	auto forget_me = [constraint](OpSet<void *> &blame)
+	auto forget_me = [constraint](const GuiltVersion &gv)
 	{
-		return constraint->forget(blame);
+		return constraint->forget(gv);
 	};
 
 	for (ConnectBase *connector : connections)
 	{
 		if (connector)
 		{
-			connector->add_constraint_check(self_check);
+			connector->add_constraint_check(make_self_check(connector));
 			connector->add_forget(forget_me);
 		}
 	}
 
-	if (!constraint->check(constraint))
+	for (ConnectBase *connector : connections)
 	{
-		for (ConnectBase *connector : connections)
+		if (!connector)
 		{
-			if (connector)
-			{
-				connector->pop_last_check(constraint);
-			}
+			continue;
 		}
 
-		throw std::runtime_error("New constraint immediately "\
-		                         "failed validation check");
+		CheckList list; 
+		Checker job = make_self_check(connector);
+		list.push_back(&job);
+
+		GuiltVersion test = Guilt::issueNext();
+		if (!connector->check_list(test, list))
+		{
+			for (ConnectBase *connector : connections)
+			{
+				if (connector)
+				{
+					connector->pop_last_check(test);
+				}
+			}
+
+			throw std::runtime_error("New constraint immediately "\
+			                         "failed validation check");
+		}
 	}
 }
 

@@ -70,10 +70,12 @@ public:
 	virtual void mouseReleaseEvent(double x, double y, SDL_MouseButtonEvent button);
 
 	virtual void sendSelection(float t, float l, float b, float r, bool inverse);
-	void expandSelectionToNeighbours();
+	void expandSelectionToNeighbours(int max_jumps = INT_MAX);
 	void completeResidues(bool stop_at_alpha = false);
 	void selectProbes(const OpSet<Probe *> &probes);
 	void arrangeFigure();
+
+	void highlightCliques();
 
 	void setActive(Clique *clique)
 	{
@@ -85,6 +87,7 @@ private:
 	virtual void sendObject(std::string tag, void *object);
 	virtual void interactedWithNothing(bool left, bool hover);
 	void findAtomProbes();
+	void makeNewClique();
 	void linkSymmetricAtomProbes(const hnet::AtomConf &ac);
 
 	

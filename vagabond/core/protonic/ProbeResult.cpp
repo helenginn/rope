@@ -76,8 +76,6 @@ ProbeCorrelation correlate(const std::vector<ProbeResult> &source,
 	
 	corr.mat = MatrixXf(rows, cols);
 	corr.mat.setZero();
-	corr.weights = MatrixXf(rows, cols);
-	corr.weights.setZero();
 	
 	// func: based on a value coming out of the probe result, we convert it 
 	// to an index.
@@ -156,9 +154,21 @@ ProbeCorrelation correlate(const std::vector<ProbeResult> &source,
 	for (int j = 0; j < corr.mat.rows(); j++)
 	{
 		float row_total = corr.mat.row(j).sum();
-		corr.mat.row(j) /= row_total;
+		int row_count = corr.mat.row(j).size();
+		
+		if (row_total > 1e-6)
+		{
+			corr.mat.row(j) /= row_total;
+			
+			for (int i = 0; i < row_count; i++)
+			{
+				corr.mat.row(j)(i) -= 1.f / (float)row_count;
+			}
+		}
+
 	}
 
+	/*
 	for (int i = 0; i < corr.mat.cols(); i++)
 	{
 		float adjust = rSum[i] / total_probs;
@@ -171,12 +181,8 @@ ProbeCorrelation correlate(const std::vector<ProbeResult> &source,
 			}
 		}
 	}
+	*/
 
-	if (!norm)
-	{
-//		corr.mat *= (float)source.size();
-	}
-	
 	return corr;
 }
 

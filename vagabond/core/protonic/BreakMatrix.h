@@ -31,7 +31,8 @@ class BreakMatrix
 public:
 	BreakMatrix(hnet::Coordinated *coord, const ConnectMap &bonds,
 	            const OpSet<hnet::AcceptableGroup> &groups,
-	            hnet::CountConnector &unbroken_count);
+	            hnet::CountConnector &unbroken_count,
+	            hnet::CountConnector &twirling_bonds);
 	
 	std::string desc()
 	{
@@ -41,9 +42,9 @@ public:
 	void setup(const OpSet<hnet::AcceptableGroup> &groups);
 	void insertGroupIntoMatrix(const hnet::AcceptableGroup &group);
 
-	void forget(OpSet<void *> &blame);
+	void forget(const GuiltVersion &gv);
 
-	bool check(void *previous);
+	bool check(const GuiltVersion &gv, hnet::CheckList &list);
 private:
 	void accounting();
 	bool evaluate(hnet::make_assign_and_say<BreakMatrix> &assign); 
@@ -62,6 +63,7 @@ private:
 	ConnectMap _bonds;
 	hnet::CountConnector &_unbrokenCount;
 	hnet::ExistenceConnector &_myExist;
+	hnet::CountConnector &_twirling;
 	std::map<hnet::BondConnector *, int> _indexing{};
 	Eigen::MatrixXi _matrix{};
 	

@@ -34,10 +34,10 @@ struct Limit
 		prep_constraints_and_forgets(this, {&_affected, &_informant});
 	}
 	
-	void forget(OpSet<void *> &blame)
+	void forget(const GuiltVersion &gv)
 	{
-		_affected.forget(blame);
-		_informant.forget(blame);
+		_affected.forget(gv);
+		_informant.forget(gv);
 	}
 	
 	void min_max_values(int &min, int &max)
@@ -53,9 +53,9 @@ struct Limit
 		}
 	}
 	
-	bool check(void *previous)
+	bool check(const GuiltVersion &gv, CheckList &list)
 	{
-		auto assign = make_assign_and_say(this, previous);
+		auto assign = make_assign_and_say(this, gv, list);
 		int min, max;
 		min_max_values(min, max);
 

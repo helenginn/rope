@@ -27,7 +27,7 @@
 template <class Value>
 struct Conditions
 {
-	typedef std::map<std::pair<void *, void *>, Value> ConditionMap;
+	typedef std::map<std::pair<void *, GuiltVersion>, Value> ConditionMap;
 	ConditionMap _conditions;
 	std::mutex _m;
 	
@@ -80,52 +80,41 @@ struct Conditions
 		}
 	}
 
-	Value from_informant(void *informant) const
+	Value from_informant_and_blame(void *informant, 
+	                               const GuiltVersion &gv) const
 	{
-		auto condition_from_informant = 
-		[informant](const typename ConditionMap::const_iterator &cond)
-		{
-			return (cond->first.first == informant);
-		};
-		
-		return belief_when(condition_from_informant);
-	}
-
-	Value from_informant_and_blame(void *informant, void *blame) const
-	{
-		auto from_combo = [informant, blame]
+		auto from_combo = [informant, gv]
 		(const typename ConditionMap::const_iterator &cond)
 		{
 			return (cond->first.first == informant && 
-			        cond->first.second == blame);
+			        cond->first.second == gv);
 		};
 		
 		return belief_when(from_combo);
 	}
 
-	const Value &condition(void *informant, void *blame) const
+	const Value &condition(void *informant, const GuiltVersion &gv) const
 	{
-		return _conditions.at(std::make_pair(informant, blame));
+		return _conditions.at(std::make_pair(informant, gv));
 	}
 
-	int remove_conditions_with_blame(const OpSet<void *> &guilts)
+	int remove_conditions_with_blame(const GuiltVersion &last)
 	{
 		int count = 0;
 		std::unique_lock<std::mutex> lk(_m);
-		ConditionMap tmp;
-		for (auto it = _conditions.begin(); it != _conditions.end(); it++)
+		for (auto it = _conditions.begin(); it != _conditions.end();)
 		{
-			if (guilts.count(it->first.second))
+			if (it->first.second >= last)
 			{
+				it = _conditions.erase(it);
 				count++;
 			}
 			else
 			{
-				tmp[it->first] = it->second;
+				it++;
 			}
 		}
 		
-		_conditions = tmp;
 		return count;
 	}
 	
@@ -145,12 +134,11 @@ struct Conditions
 
 	}
 
-	void apply_condition(void *informant, void *blame, const Value &value)
+	void apply_condition(void *informant, const GuiltVersion &gv, 
+	                     const Value &value)
 	{
-		Guilt::guilt().addGuilt(blame);
-
 		std::unique_lock<std::mutex> lk(_m);
-		_conditions[std::make_pair(informant, blame)] = value;
+		_conditions[std::make_pair(informant, gv)] = value;
 	}
 	
 };

@@ -33,11 +33,11 @@ struct HydrogenBond
 		prep_constraints_and_forgets(this, {&left, &centre, &right});
 	}
 	
-	void forget(OpSet<void *> &blame)
+	void forget(const GuiltVersion &gv)
 	{
-		_left.forget(blame);
-		_centre.forget(blame);
-		_right.forget(blame);
+		_left.forget(gv);
+		_centre.forget(gv);
+		_right.forget(gv);
 	}
 	
 	bool bond_weak_or_broken(const Bond::Values &val)
@@ -76,9 +76,9 @@ struct HydrogenBond
 		}
 	}
 	
-	bool impose(void *previous)
+	bool check(const GuiltVersion &gv, CheckList &list)
 	{
-		auto assign = make_assign_and_say(this, previous);
+		auto assign = make_assign_and_say(this, gv, list);
 
 		// if H is missing, it can only be a lone pair OR broken bond
 		if (_centre.value() == Existence::Absent)
@@ -100,6 +100,14 @@ struct HydrogenBond
 			{
 				assign(_left, Bond::Strong, "a hydrogen with a non-donor on "\
 				       "one side must be a donor on the other");
+			}
+
+			if (bond_definitely_not_bonded(_right.value()) &&
+			    bond_definitely_present(_left.value()))
+			{
+				assign(_left, Bond::NotWeak,
+				       "if H-bond is not complete on "\
+				       "both sides, remaining side cannot be acceptor/broken");
 			}
 		}
 		
@@ -124,13 +132,6 @@ struct HydrogenBond
 		}
 
 		return assign.okay();
-	}
-	
-	bool check(void *previous)
-	{
-		bool result = impose(previous);
-
-		return result;
 	}
 	
 	BondConnector &_left;

@@ -23,6 +23,7 @@
 #include <vagabond/core/protonic/ExhaustiveSearch.h>
 #include <vagabond/core/protonic/CliqueFinder.h>
 #include <vagabond/core/protonic/Probe.h>
+#include <vagabond/core/protonic/Subdivide.h>
 #include <vagabond/core/PositionShifter.h>
 #include <vagabond/core/AtomGroup.h>
 #include <vagabond/core/Environment.h>
@@ -145,10 +146,17 @@ void ProtonNetworkView::interactedWithNothing(bool left, bool hover)
 		Menu *menu = new Menu(this);
 		menu->addOption("expand to clique", 
 		                [this]() { expandSelectionToNeighbours(); });
+		menu->addOption("expand by five jumps", 
+		                [this]() { expandSelectionToNeighbours(5); });
 		menu->addOption("complete residues", 
 		                [this]() { completeResidues(false); });
 		menu->addOption("complete to C-alpha", 
 		                [this]() { completeResidues(true); });
+		if (_cv)
+		{
+			menu->addOption("make new clique", 
+			                [this]() { makeNewClique(); });
+		}
 		
 		OpSet<Probe *> selected = selected_probes(_textProbes);
 		selected += selected_probes(_bondProbes);
@@ -357,6 +365,7 @@ void ProtonNetworkView::makeMainMenu()
 			};
 
 			_cv->setKillAndClean(kill);
+			highlightCliques();
 			addObject(_cv);
 		}
 	};
@@ -366,8 +375,7 @@ void ProtonNetworkView::makeMainMenu()
 		return [this, interesting]()
 		{
 			_shifter->pause();
-			ExhaustiveSearch *es = new ExhaustiveSearch(interesting, 
-			                                            interesting, _network);
+			ExhaustiveSearch *es = new ExhaustiveSearch(interesting, interesting);
 			new DoJob([this, es]()
 			{
 				es->search();
@@ -534,6 +542,32 @@ void ProtonNetworkView::selectProbes(const OpSet<Probe *> &probes)
 	}
 }
 
+void ProtonNetworkView::makeNewClique()
+{
+	if (_cv)
+	{
+//		completeResidues(true);
+		OpSet<Probe *> probes = selected_probes(_textProbes);
+		probes += selected_probes(_bondProbes);
+		
+		while (Subdivide::finish_ends(probes)) {};
+
+		Clique *clique = _network.newClique(probes);
+		clique->setDisplayName("Custom clique");
+		_cv->insertClique(clique);
+	}
+
+}
+	
+void ProtonNetworkView::highlightCliques()
+{
+	if (_cv)
+	{
+		OpSet<Probe *> probes = selected_probes(_textProbes);
+		_cv->highlightCliquesWith(probes);
+	}
+}
+
 void ProtonNetworkView::completeResidues(bool stop_at_alpha)
 {
 	OpSet<Probe *> done = selected_probes(_textProbes);
@@ -589,22 +623,26 @@ void ProtonNetworkView::completeResidues(bool stop_at_alpha)
 	OpSet<Probe *> ps = 
 	CliqueFinder::completeOnCondition(done, initial_assessment, check_probe);
 	selectProbes(ps);
+	highlightCliques();
 }
 
 
-void ProtonNetworkView::expandSelectionToNeighbours()
+void ProtonNetworkView::expandSelectionToNeighbours(int max_jumps)
 {
 	// get the initial selected probes into a set.
 	OpSet<Probe *> done = selected_probes(_textProbes);
 
-	OpSet<Probe *> ps = CliqueFinder::expandSelectionToNeighbours(done);
+	OpSet<Probe *> ps = CliqueFinder::expandSelectionToNeighbours(done, {}, 
+	                                                              max_jumps);
 	selectProbes(ps);
+	highlightCliques();
 }
 
 void ProtonNetworkView::sendSelection(float t, float l, float b, float r,
                                       bool inverse)
 {
 	IndexResponseView::sendSelection(t, l, b, r, inverse);
+	highlightCliques();
 }
 
 void ProtonNetworkView::setManualAdjust(Probe *probe)

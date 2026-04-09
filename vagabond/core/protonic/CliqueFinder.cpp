@@ -22,7 +22,8 @@
 OpSet<Probe *> CliqueFinder::
 completeOnCondition(const OpSet<Probe *> &start,
                     std::function<void(Probe *probe)> initial_assessment,
-                    std::function<bool(Probe *probe, Probe *prev)> check_probe)
+                    std::function<bool(Probe *probe, Probe *prev)> check_probe,
+                    int max_jumps)
 {
 	OpSet<Probe *> done = start;
 
@@ -36,6 +37,7 @@ completeOnCondition(const OpSet<Probe *> &start,
 
 	// go through selected probes and add neighbours if they are in the set.
 	// continue until neighbours are exhausted
+	int n = 0;
 	OpSet<Probe *> fresh = done;
 	do
 	{
@@ -59,8 +61,9 @@ completeOnCondition(const OpSet<Probe *> &start,
 				fresh.insert(other);
 			}
 		}
+		n++;
 	}
-	while (fresh.size() > 0);
+	while (fresh.size() > 0 && n < max_jumps);
 	
 	return done;
 }
@@ -74,11 +77,13 @@ OpSet<Probe *> remove_absents(const OpSet<Probe *> &done)
 }
 
 OpSet<Probe *> 
-CliqueFinder::expandSelectionToNeighbours(const OpSet<Probe *> &done)
+CliqueFinder::expandSelectionToNeighbours(const OpSet<Probe *> &done,
+                                          const OpSet<Probe *> &all,
+int max_jumps)
 {
 	auto initial_assessment = [](Probe *){};
 
-	auto check_probe = []
+	auto check_probe = [&all]
 	(Probe *other, Probe *prev) -> bool
 	{
 		if (other->is_covalent())
@@ -95,7 +100,8 @@ CliqueFinder::expandSelectionToNeighbours(const OpSet<Probe *> &done)
 	};
 	
 	OpSet<Probe *> ps = 
-	CliqueFinder::completeOnCondition(done, initial_assessment, check_probe);
+	CliqueFinder::completeOnCondition(done, initial_assessment,
+	                                  check_probe, max_jumps);
 	
 	return ps;
 }
@@ -104,7 +110,7 @@ OpSet<Probe *> CliqueFinder::findOneClique(const OpSet<Probe *> &all)
 {
 	for (Probe *const &trial : all)
 	{
-		OpSet<Probe *> clique = expandSelectionToNeighbours({trial});
+		OpSet<Probe *> clique = expandSelectionToNeighbours({trial}, all);
 		return clique;
 	}
 

@@ -41,15 +41,15 @@ struct EitherOrBond
 		return ss.str();
 	}
 	
-	void forget(OpSet<void *> &blame)
+	void forget(const GuiltVersion &gv)
 	{
-		_left.forget(blame);
-		_right.forget(blame);
+		_left.forget(gv);
+		_right.forget(gv);
 	}
 
-	bool check(void *previous)
+	bool check(const GuiltVersion &gv, CheckList &list)
 	{
-		auto assign = make_assign_and_say(this, previous);
+		auto assign = make_assign_and_say(this, gv, list);
 
 		if ((_left.value() & Bond::NotBroken) && 
 		    !(_left.value() & Bond::Broken))

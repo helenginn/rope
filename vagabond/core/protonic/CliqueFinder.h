@@ -30,10 +30,12 @@ public:
 	completeOnCondition(const OpSet<Probe *> &start,
 	                    std::function<void(Probe *probe)> initial_assessment,
 	                    std::function<bool(Probe *probe, Probe *prev)> 
-	                    check_probe);
+	                    check_probe, int max_jumps = INT_MAX);
 
 	static 
-	OpSet<Probe *> expandSelectionToNeighbours(const OpSet<Probe *> &done);
+	OpSet<Probe *> expandSelectionToNeighbours(const OpSet<Probe *> &done,
+	                                           const OpSet<Probe *> &all = {},
+	                                           int max_jumps = INT_MAX);
 	
 	typedef std::function<void(const OpSet<Probe *> &)> HandleClique;
 	

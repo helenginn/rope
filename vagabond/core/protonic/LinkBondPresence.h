@@ -40,15 +40,15 @@ public:
 		return ss.str();
 	}
 
-	void forget(OpSet<void *> &blame)
+	void forget(const GuiltVersion &gv)
 	{
-		_exist.forget(blame);
-		_bond.forget(blame);
+		_exist.forget(gv);
+		_bond.forget(gv);
 	}
 
-	bool check(void *previous)
+	bool check(const GuiltVersion &gv, CheckList &list)
 	{
-		auto assign = make_assign_and_say(this, previous);
+		auto assign = make_assign_and_say(this, gv, list);
 
 		if (_exist.value() == Existence::Present)
 		{

@@ -60,6 +60,23 @@ void CommunicationChoice::refresh()
 		};
 	};
 	
+	auto assign_individuals = [this, to_descs]()
+	{
+		auto make_new = [this](std::string new_name)
+		{
+			_clique->addCommunicationPoints(new_name, {new_name});
+			_selected = {};
+		};
+
+		OpSet<std::string> descs = to_descs();
+		for (const std::string &desc : descs)
+		{
+			make_new(desc);
+		}
+		
+		refresh();
+	};
+	
 	auto assign = [this, assign_to, to_descs]()
 	{
 		AskMultipleChoice *amc = new AskMultipleChoice(this, "Assign to group", 
@@ -102,6 +119,12 @@ void CommunicationChoice::refresh()
 		TextButton *tb = new TextButton("assign to group", this);
 		tb->setCentre(0.3, 0.2);
 		tb->setReturnJob(assign);
+		tb->resize(0.6);
+		addTempObject(tb);
+		
+		tb = new TextButton("assign as individuals", this);
+		tb->setCentre(0.5, 0.2);
+		tb->setReturnJob(assign_individuals);
 		tb->resize(0.6);
 		addTempObject(tb);
 		

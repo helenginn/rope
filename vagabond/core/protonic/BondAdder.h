@@ -153,16 +153,16 @@ struct BondAdder
 
 	}
 	
-	void forget(OpSet<void *> &blame)
+	void forget(const GuiltVersion &gv)
 	{
-		_sum.forget(blame);
+		_sum.forget(gv);
 
 		for (auto it = _bonds.begin(); it != _bonds.end(); it++)
 		{
-			it->first->forget(blame);
+			it->first->forget(gv);
 			if (it->second)
 			{
-				it->second->forget(blame);
+				it->second->forget(gv);
 			}
 		}
 	}
@@ -209,9 +209,9 @@ struct BondAdder
 		}
 	}
 	
-	bool check(void *previous)
+	bool check(const GuiltVersion &gv, CheckList &list)
 	{
-		auto assign = make_assign_and_say(this, previous);
+		auto assign = make_assign_and_say(this, gv, list);
 		
 		if (_coordExist && !(_coordExist->value() & Existence::Present))
 		{
@@ -245,6 +245,7 @@ struct BondAdder
 			possibilities.insert(i);
 		}
 
+		/*
 		auto print = [](const OpSet<int> &options)
 		{
 			for (const int &o : options)
@@ -253,7 +254,7 @@ struct BondAdder
 			}
 			std::cout << std::endl;
 		};
-
+		*/
 
 		Count::Values count = values_as_count(possibilities);
 		assign(_sum, count);

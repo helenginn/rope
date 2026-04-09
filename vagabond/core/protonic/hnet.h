@@ -23,7 +23,9 @@
 #include <iostream>
 #include <variant>
 #include <vector>
+#include <list>
 #include <functional>
+#include "Guilt.h"
 #include "Atom.h"
 
 /** serious missing features:
@@ -60,6 +62,7 @@ namespace Bond
 		Bonded         =  (1 << 1 | 1 << 2),
 		NotBonded      =  (1 << 0 | 1 << 3),
 		Broken          =  (1 << 3),
+		NotWeakOrBroken =  (1 << 0 | 1 << 2),
 		NotBroken       =  (1 << 0 | 1 << 1 | 1 << 2),
 		Unassigned      =  (1 << 0 | 1 << 1 | 1 << 2 | 1 << 3),
 	};
@@ -339,8 +342,9 @@ inline bool is_contradictory(const Count::Values &val)
 /* function signatures */
 
 typedef std::function<void()> UpdateProbe;
-typedef std::function<bool(void *previous)> Checker;
-typedef std::function<void(OpSet<void *> &previous)> Forget;
+typedef std::list<void *> CheckList;
+typedef std::function<bool(const GuiltVersion &, CheckList &)> Checker;
+typedef std::function<void(const GuiltVersion &)> Forget;
 
 /* write descriptions of states to stream */
 

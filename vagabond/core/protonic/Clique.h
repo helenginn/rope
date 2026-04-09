@@ -55,6 +55,8 @@ public:
 		return _probes == other._probes;
 	}
 	
+	glm::vec3 centroid();
+	
 	void housekeeping(Network &network);
 
 	std::string name();
@@ -75,6 +77,9 @@ public:
 
 	friend void to_json(json &j, const Clique &value);
 	friend void from_json(const json &j, Clique &value);
+	
+	void add_probes(const OpSet<Probe *> &probes);
+	void add_clique(const Clique &clique);
 	
 	const OpSet<Probe *> &probes() const
 	{
@@ -214,7 +219,7 @@ private:
 	std::string _name{};
 	std::map<std::string, OpSet<std::string>> _communication;
 	std::map<std::string, std::string> _descToCommune;
-	std::vector<std::string> _descs;
+	OpSet<std::string> _descs;
 	std::vector<ProbeResult> _results;
 	std::list<Clique> _subdivs;
 };

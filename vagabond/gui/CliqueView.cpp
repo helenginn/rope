@@ -29,22 +29,10 @@
 #include <vagabond/utils/DoJob.h>
 #include "CliqueView.h"
 
-CliqueView::CliqueView(ProtonNetworkView *scene, Network &network, 
-                       const OpSet<Probe *> &probes) 
-: Image("assets/images/box.png"), _network(network), _scene(scene)
+void CliqueView::insertClique(Clique *clique)
 {
-	clearVertices();
-	addQuad();
-	float width = 0.3;
-	rotateByMatrix({width, 0, 0, 0.0, 0.8, 0.0, 0.0, 0.0, 1.f});
-	setCentre(1 - (width / 2) - 0.05, 0.55);
-	setupConstants();
-	
-	_parent.setDisplayName("All cliques");
-	_ambiguous.setDisplayName("Ambiguous assignment");
-	_certain.setDisplayName("Fully resolved");
-	_wet.setDisplayName("Wet");
-	_dry.setDisplayName("Dry");
+	ProtonNetworkView *scene = _scene;
+	LineGroup *lg = _lg;
 
 	auto reinsert = [this](Clique *clique)
 	{
@@ -83,20 +71,8 @@ CliqueView::CliqueView(ProtonNetworkView *scene, Network &network,
 		}
 		parent.addItem(clique);
 		reinsert(clique);
+		_cliques.push_back(clique);
 	};
-
-	_parent.addItem(&_ambiguous);
-	_ambiguous.addItem(&_wet);
-	_ambiguous.addItem(&_dry);
-	_parent.addItem(&_certain);
-
-	LineGroup *lg = new LineGroup(&_parent, _scene);
-	lg->setLeft(0.65, 0.23);
-
-	ScrollBox *sb = new ScrollBox();
-	sb->setContent(lg);
-	sb->setBounds(glm::vec4(0.23, 0.65, 0.9, 0.9));
-	addObject(sb);
 	
 	auto add_clique = [this, insert_clique](Clique *clique)
 	{
@@ -123,9 +99,35 @@ CliqueView::CliqueView(ProtonNetworkView *scene, Network &network,
 	{
 		return [this, reinsert, clique, scene](bool left)
 		{
-			if (left)
+			if (_combine == clique)
 			{
+				_combine = nullptr;
+				return;
+			}
+			if (left && !_combine)
+			{
+				scene->deselect();
 				scene->selectProbes(clique->probes());
+				scene->shiftToCentre(clique->centroid(), 0);
+				return;
+			}
+			else if (left && _combine)
+			{
+				Clique *combined = _network.newClique({});
+				combined->add_clique(*_combine);
+				combined->add_clique(*clique);
+				std::string new_name = _combine->displayName();
+				new_name += " + " + clique->displayName();
+				insertClique(combined);
+				combined->setDisplayName(new_name);
+				
+				auto it = std::find(_cliques.begin(), _cliques.end(), clique);
+				if (it != _cliques.end())
+				{
+					_cliques.erase(it);
+				}
+
+				_combine = nullptr;
 				return;
 			}
 
@@ -156,8 +158,18 @@ CliqueView::CliqueView(ProtonNetworkView *scene, Network &network,
 			};
 			
 			Menu *menu = new Menu(scene);
-			menu->addOption("rename", change_name);
-			menu->addOption("analyse", analyse_bonds);
+			if (!_combine)
+			{
+				menu->addOption("rename", change_name);
+				menu->addOption("analyse", analyse_bonds);
+				menu->addOption("combine with...", [this, clique]() 
+				                { _combine = clique; });
+			}
+			else
+			{
+				menu->addOption("cancel combine", [this]() 
+				                { _combine = nullptr; });
+			}
 
 			float x = 0.5; float y = 0.5;
 			if (_gl)
@@ -170,11 +182,54 @@ CliqueView::CliqueView(ProtonNetworkView *scene, Network &network,
 		};
 	};
 
-	auto handle_clique = [this, click, add_clique]
+	add_clique(clique)();
+	clique->setSelectJob(click(clique));
+}
+
+CliqueView::CliqueView(ProtonNetworkView *scene, Network &network, 
+                       const OpSet<Probe *> &probes) 
+: Image("assets/images/box.png"), _network(network), _scene(scene)
+{
+	clearVertices();
+	addQuad();
+	float width = 0.3;
+	rotateByMatrix({width, 0, 0, 0.0, 0.8, 0.0, 0.0, 0.0, 1.f});
+	setCentre(1 - (width / 2) - 0.05, 0.55);
+	setupConstants();
+
+	_parent.addItem(&_ambiguous);
+	_ambiguous.addItem(&_wet);
+	_ambiguous.addItem(&_dry);
+	_parent.addItem(&_certain);
+
+	LineGroup *lg = new LineGroup(&_parent, _scene);
+	lg->setLeft(0.65, 0.23);
+	_lg = lg;
+
+	ScrollBox *sb = new ScrollBox();
+	sb->setContent(lg);
+	lg->setScrollBox(sb);
+	sb->setBounds(glm::vec4(0.23, 0.65, 0.9, 0.9));
+	addObject(sb);
+	
+	_parent.setDisplayName("All cliques");
+	_ambiguous.setDisplayName("Ambiguous assignment");
+	_certain.setDisplayName("Fully resolved");
+	_wet.setDisplayName("Wet");
+	_dry.setDisplayName("Dry");
+
+	auto add_clique = [this](Clique *clique)
+	{
+		return [this, clique]()
+		{
+			insertClique(clique);
+		};
+	};
+
+	auto handle_clique = [this, add_clique]
 	(const OpSet<Probe *> &probes)
 	{
 		Clique *clique = _network.newClique(probes);
-		clique->setSelectJob(click(clique));
 		addMainThreadJob(add_clique(clique));
 	};
 
@@ -194,7 +249,6 @@ CliqueView::CliqueView(ProtonNetworkView *scene, Network &network,
 	{
 		for (Clique &clique : _network.cliques())
 		{
-			clique.setSelectJob(click(&clique));
 			add_clique(&clique)();
 		}
 
@@ -235,3 +289,22 @@ void CliqueView::setupConstants()
 {
 	setupCloseButton();
 }
+
+void CliqueView::highlightCliquesWith(const OpSet<Probe *> &probes)
+{
+	for (Clique *clique : _cliques)
+	{
+		if (clique->probes().common_to_both(probes).size())
+		{
+			clique->setTextColour({0.4, 0.0, 0.4});
+		}
+		else
+		{
+			clique->setTextColour({0.0, 0.0, 0.0});
+		}
+	}
+
+	_lg->refreshGroups();
+}
+
+void setActive(Clique *clique);

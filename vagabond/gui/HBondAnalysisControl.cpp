@@ -115,7 +115,7 @@ void HBondAnalysisControl::setup()
 	auto ask_to_subdivide = [this, ask_to_brute_force, subdivide_with_values]()
 	{
 		AskYesNo *ayn = new AskYesNo(this, "Subdivide network using defaults?");
-		ayn->addJob("yes", subdivide_with_values(18, 25));
+		ayn->addJob("yes", subdivide_with_values(10, 28));
 		ayn->addJob("no", ask_to_brute_force);
 		setModal(ayn);
 	};

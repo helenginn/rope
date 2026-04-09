@@ -33,10 +33,10 @@ struct MutualExistence
 		prep_constraints_and_forgets(this, {&left, &right});
 	}
 	
-	void forget(OpSet<void *> &blame)
+	void forget(const GuiltVersion &gv)
 	{
-		_left.forget(blame);
-		_right.forget(blame);
+		_left.forget(gv);
+		_right.forget(gv);
 	}
 	
 	std::string desc()
@@ -46,9 +46,9 @@ struct MutualExistence
 		return ss.str();
 	}
 
-	bool check(void *previous)
+	bool check(const GuiltVersion &gv, CheckList &list)
 	{
-		auto assign = make_assign_and_say(this, previous);
+		auto assign = make_assign_and_say(this, gv, list);
 
 		if (_left.value() == Existence::Present && _strong)
 		{

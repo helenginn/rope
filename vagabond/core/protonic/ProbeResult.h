@@ -72,7 +72,6 @@ struct ProbeCorrelation
 	hnet::Types lType{};
 	hnet::Types rType{};
 	MatrixXf mat{};
-	MatrixXf weights{};
 };
 
 int dim_for_type(const hnet::Types &type);

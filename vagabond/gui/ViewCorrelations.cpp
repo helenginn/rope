@@ -173,16 +173,16 @@ void ViewCorrelations::viewAll()
 				{
 					for (int i = 0; i < cc.rows(); i++)
 					{
-						cc(i, j) = fabs(cc(i, j));
-						csq(i, j) = csq(i, j) * csq(i, j);
+						cc(i, j) = cc(i, j);
+						csq(i, j) = 1;
 					}
 				}
 				
-				_overall(seqN(x, m), seqN(y, n)) += csq;
-				_written(seqN(x, m), seqN(y, n)) += cc;
+				_overall(seqN(x, m), seqN(y, n)) += cc;
+				_written(seqN(x, m), seqN(y, n)) += csq;
 
-				_overall(seqN(y, n), seqN(x, m)) += csq.transpose();
-				_written(seqN(y, n), seqN(x, m)) += cc.transpose();
+//				_overall(seqN(y, n), seqN(x, m)) += csq.transpose();
+//				_written(seqN(y, n), seqN(x, m)) += cc.transpose();
 			}
 		}
 	};
@@ -199,6 +199,10 @@ void ViewCorrelations::viewAll()
 			if (_written(i, j) > 1e-6)
 			{
 				_overall(i, j) /= _written(i, j);
+			}
+			else
+			{
+//				_overall(i, j) = NAN;
 			}
 		}
 	}
@@ -328,7 +332,7 @@ void ViewCorrelations::viewAll()
 
 	file.close();
 	
-	new DoJob(fill_gaps);
+//	new DoJob(fill_gaps);
 
 }
 

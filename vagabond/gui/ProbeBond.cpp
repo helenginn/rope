@@ -151,6 +151,7 @@ void ProbeBond::fullUpdate()
 {
 	updateProbe();
 	updatePosition();
+	
 }
 
 ProbeBond::ProbeBond(ProtonNetworkView *view, BondProbe *probe)
@@ -177,14 +178,14 @@ ProbeBond::ProbeBond(ProtonNetworkView *view, BondProbe *probe)
 void ProbeBond::declareBond(Bond::Values value)
 {
 	std::string name = "Declare bond";
-	Decree *d = _view->network().newDecree(name);
+	GuiltVersion gv = Guilt::issueNext();
 
 //	_probe->_obj.assign_value(value, d, d);
 	std::ostringstream ss;
 
-	auto make_declaration = [d, value, this]
+	auto make_declaration = [gv, value, this]
 	{
-		bool okay = _probe->_obj.assign_value(value, d, d);
+		bool okay = _probe->_obj.assign_value_and_check(value, gv);
 		std::cout << "Declared " << _probe->desc() << ", ";
 		std::cout << "OK: " << (okay ? "YES" : "NO") << std::endl;
 		if (!okay)
@@ -194,10 +195,10 @@ void ProbeBond::declareBond(Bond::Values value)
 		}
 	};
 
-	auto rescind_declaration = [d, this]
+	auto rescind_declaration = [gv, this]
 	{
-		_probe->_obj.forget(d);
-		_probe->_obj.check_all(d);
+		_probe->_obj.forget(gv);
+		_probe->_obj.check_all(gv);
 	};
 
 	ss << name << " " << value << std::endl;

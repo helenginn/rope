@@ -25,10 +25,10 @@
 #include <mutex>
 #include <condition_variable>
 #include "Probe.h"
-#include "Network.h"
+//#include "Network.h"
+#include "Guilt.h"
 #include "ProbeResult.h"
 
-class Decree;
 class Network;
 
 class IteratedProbe
@@ -52,11 +52,11 @@ template <class Connector, class HValue>
 class IterateDecree : public IteratedProbe
 {
 public:
-	IterateDecree(Network &network, Probe *probe, 
+	IterateDecree(Probe *probe, 
 	              Connector &connector, hnet::ExistenceConnector &exist,
 	              const std::vector<HValue> &values,
 	              const std::string &add)
-	: _probe(probe), _connector(connector), _exist(exist), _values(values), _network(network), _add(add)
+	: _probe(probe), _connector(connector), _exist(exist), _values(values), _add(add)
 	{
 		std::ostringstream msg;
 		msg << "DECLARE " << probe->desc() << " (" << add << ")";
@@ -81,11 +81,10 @@ public:
 	
 	void forget_last_decree(std::condition_variable &cv, std::mutex &m)
 	{
-		if (_lastDecree)
+		if (_lastDecree >= 0)
 		{
-//			std::cout << "FORGET " << _connector.desc() << std::endl;
 			_connector.forget(_lastDecree);
-			_lastDecree = nullptr;
+			_lastDecree = -1;
 		}
 	}
 	
@@ -121,7 +120,7 @@ public:
 			}
 		}
 
-		_lastDecree = _network.newDecree(_msg);
+		_lastDecree = Guilt::issueNext();
 		
 //		std::cout << _msg << " (" << _num + 1 << " / " << _values.size() << 
 //		")" << std::endl;
@@ -132,7 +131,7 @@ public:
 //			cv.wait(lk);
 		}
 		hnet::ConnectBase::out() << "Declaring: " << desc() << std::endl;
-		bool okay = _connector.assign_value(value, _lastDecree, _lastDecree);
+		bool okay = _connector.assign_value_and_check(value, _lastDecree);
 //		std::cout << "... result: " << (okay ? "good" : "bad, must forget") 
 //		<< std::endl;
 		if (!okay)
@@ -162,7 +161,6 @@ public:
 	virtual void reset(std::condition_variable &cv, std::mutex &m)
 	{
 		forget_last_decree(cv, m);
-		_lastDecree = nullptr;
 		_num = -1;
 	}
 	
@@ -181,8 +179,7 @@ private:
 	hnet::ExistenceConnector &_exist;
 	std::vector<HValue> _values{};
 	std::string _msg;
-	Decree *_lastDecree{};
-	Network &_network;
+	GuiltVersion _lastDecree{-1};
 	std::string _add;
 	int _num{-1};
 };
@@ -191,7 +188,7 @@ class ExhaustiveSearch
 {
 public:
 	ExhaustiveSearch(const OpSet<Probe *> &interesting, 
-	                 const OpSet<Probe *> &wider, Network &network);
+	                 const OpSet<Probe *> &wider);
 
 	void search();
 	
@@ -227,7 +224,6 @@ private:
 	OpSet<Probe *> _wider;
 	int _certain{0};
 	int _counter{0};
-	Network &_network;
 	std::mutex _m;
 	std::condition_variable _cv;
 };
