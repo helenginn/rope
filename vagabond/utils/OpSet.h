@@ -72,7 +72,7 @@ public:
 	
 	// intersect
 	template <class Container>
-	OpSet<Type> common_to_both(const Container &other)
+	OpSet<Type> common_to_both(const Container &other) const
 	{
 		OpSet<Type> ret;
 
