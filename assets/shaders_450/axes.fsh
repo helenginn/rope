@@ -36,7 +36,8 @@ void main()
 	}
 
 	result.xyz += vColor.xyz;
-	result.a *= (1. + vColor.a);
+	result.a *= (1 + vColor.a);
+	if (result.a < 0.f) result.a = 0.f;
 	ValIndex = uint(vExtra.w);
 	FragColor = result;
 	BrightColor = vec4(0.0);
