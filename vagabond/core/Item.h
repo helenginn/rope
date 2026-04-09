@@ -25,6 +25,7 @@
 #include <vector>
 #include <set>
 #include <vagabond/core/Responder.h>
+#include <vagabond/utils/glm_import.h>
 #include <functional>
 #include <mutex>
 
@@ -94,6 +95,16 @@ public:
 	Item *parent() const
 	{
 		return _parent;
+	}
+	
+	void setTextColour(glm::vec3 colour)
+	{
+		_textColour = colour;
+	}
+	
+	glm::vec3 textColour()
+	{
+		return _textColour;
 	}
 	
 	void childChanged();
@@ -304,6 +315,7 @@ private:
 	Item *_parent = nullptr;
 	std::vector<Item *> _items;
 	std::function<void(bool left)> _job{};
+	glm::vec3 _textColour = {};
 
 };
 
