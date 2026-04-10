@@ -274,7 +274,6 @@ void Canonical::run()
 	{
 		for (int j = 0; j < _uDisplay.cols && _getWeight; j++)
 		{
-			std::cout << "weight " << j << " -> " << _getWeight(j) << std::endl;
 			_uDisplay[i][j] *= _getWeight(j);
 			_vDisplay[i][j] *= _getWeight(j);
 		}
@@ -474,7 +473,6 @@ double Canonical::correlation()
 		
 		if (_getWeight)
 		{
-			std::cout << i << " -> " << _getWeight(i) << std::endl;
 			x *= _getWeight(i);
 			y *= _getWeight(i);
 		}

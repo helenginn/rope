@@ -24,20 +24,13 @@
 namespace hnet
 {
 /* logic for determining hydrogen bonding patterns between two heavier atoms */
-struct HydrogenBond
+struct HydrogenBond : public ConstraintBase
 {
 	HydrogenBond(BondConnector &left, ExistenceConnector &centre, 
 	             BondConnector &right) 
 	: _left(left), _centre(centre), _right(right)
 	{
 		prep_constraints_and_forgets(this, {&left, &centre, &right});
-	}
-	
-	void forget(const GuiltVersion &gv)
-	{
-		_left.forget(gv);
-		_centre.forget(gv);
-		_right.forget(gv);
 	}
 	
 	bool bond_weak_or_broken(const Bond::Values &val)

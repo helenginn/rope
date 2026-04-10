@@ -19,23 +19,18 @@
 #ifndef __vagabond__CountAdder__
 #define __vagabond__CountAdder__
 
+#include "ConstraintBase.h"
+
 namespace hnet
 {
 /* simple adder in int form */
-struct CountAdder
+struct CountAdder : public ConstraintBase
 {
 	CountAdder(CountConnector &left, CountConnector &right, 
 	           CountConnector &sum)
 	: _left(left), _right(right), _sum(sum)
 	{
 		prep_constraints_and_forgets(this, {&left, &right, &sum});
-	}
-	
-	void forget(const GuiltVersion &gv)
-	{
-		_left.forget(gv);
-		_sum.forget(gv);
-		_right.forget(gv);
 	}
 	
 	std::string desc()
@@ -75,6 +70,7 @@ struct CountAdder
 		/* first we return to the comfortable world of integers... */
 		std::vector<int> left_options = possible_values(_left.value());
 		std::vector<int> right_options = possible_values(_right.value());
+		std::vector<int> sum_options = possible_values(_sum.value());
 
 		/* impose options on sum */
 		{

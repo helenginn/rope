@@ -16,45 +16,23 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __vagabond__EqualBonds__
-#define __vagabond__EqualBonds__
-
-#include "hnet.h"
-#include "ConstraintBase.h"
+#ifndef __vagabond__ConstraintBase__
+#define __vagabond__ConstraintBase__
 
 namespace hnet
 {
-struct EqualBonds : public ConstraintBase
+struct ConstraintBase
 {
-	EqualBonds(BondConnector &left, BondConnector &right)
-	: _left(left), _right(right)
+public:
+	std::vector<ConnectBase *> to_forgets;
+
+	void forget(const GuiltVersion &gv, CheckList &list)
 	{
-		prep_constraints_and_forgets(this, {&left, &right});
+		for (ConnectBase *cb : to_forgets)
+		{
+			cb->forget(gv, list);
+		}
 	}
-
-	std::string desc()
-	{
-		return "Bonds \"" + _left.desc() + "\", \"" + _right.desc() 
-		+ "\" should be equal";
-	}
-
-	bool check(const GuiltVersion &gv, CheckList &list)
-	{
-		auto assign = make_assign_and_say(this, gv, list);
-
-		Bond::Values forLeft = _left.value();
-		Bond::Values forRight = _right.value();
-
-		Bond::Values both = Bond::Values(forLeft & forRight);
-
-		assign(_left, both);
-		assign(_right, both);
-
-		return assign.okay();
-	}
-
-	BondConnector &_left;
-	BondConnector &_right;
 };
 };
 

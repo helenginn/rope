@@ -17,7 +17,7 @@
 // Please email: vagabond @ hginn.co.uk for more details.
 
 #include "BreakMatrix.h"
-#include "Constraint.h"
+#include "ConstraintBase.h"
 #include "Coordinated.h"
 
 using namespace hnet;
@@ -117,6 +117,15 @@ void BreakMatrix::checks_forgets()
 	prep_constraints_and_forgets(this, connectors);
 }
 
+std::string wrap(const std::string &reason)
+{
+	if (ConnectBase::_silent) 
+	{
+		return {};
+	}
+	else return reason;
+}
+
 void BreakMatrix::setup(const OpSet<AcceptableGroup> &groups)
 {
 	accounting();
@@ -130,16 +139,6 @@ void BreakMatrix::setup(const OpSet<AcceptableGroup> &groups)
 	std::cout << _matrix << std::endl;
 	
 	checks_forgets();
-}
-
-void BreakMatrix::forget(const GuiltVersion &gv)
-{
-	for (const BreakEntry &entry : _entries)
-	{
-		entry.bond->forget(gv);
-		entry.exist->forget(gv);
-		entry.partner->forget(gv);
-	}
 }
 
 Eigen::MatrixXi BreakMatrix::partialMatrix(const std::vector<BondConnector *> 
@@ -197,9 +196,14 @@ bool BreakMatrix::break_others(hnet::make_assign_and_say<BreakMatrix> &assign,
 		}
 
 		BondConnector *other = _entries[i].bond;
-		std::ostringstream ss; ss << *definite;
-		if (assertAbsence(assign, other, "breaking antagonists of " 
-		+ ss.str()))
+		std::string str = {};
+		if (!ConnectBase::_silent)
+		{
+			std::ostringstream ss; 
+			ss << "breaking antagonists of " << *definite;
+			str = ss.str();
+		}
+		if (assertAbsence(assign, other, str))
 		{
 			return true;
 		}
@@ -289,8 +293,9 @@ bool BreakMatrix::evaluate(hnet::make_assign_and_say<BreakMatrix> &assign)
 	if ((lower_limit > 1 || min_sum > 1) &&
 	    _twirling.value() != Count::Zero)
 	{
-		return assign(_twirling, Count::Zero, "lower limit of explicit bonds "\
-		              "is >2, twirling is not required");
+		return assign(_twirling, Count::Zero, 
+		              wrap("lower limit of explicit bonds "\
+		              "is >2, twirling is not required"));
 	}
 	
 	/* break rows where the configurations available cannot reach 
@@ -302,8 +307,9 @@ bool BreakMatrix::evaluate(hnet::make_assign_and_say<BreakMatrix> &assign)
 		    max_sum >= lower_limit)
 		{
 			//std::cout << "Breaking row " << i << "!" << std::endl;
-			if (assertAbsence(assign, in_game[i], "this configuration has too "\
-			                  "few partners to complete the coordination"))
+			if (assertAbsence(assign, in_game[i], 
+			                  wrap("this configuration has too "\
+			                  "few partners to complete the coordination")))
 			{
 				return true;
 			}
@@ -375,9 +381,10 @@ bool BreakMatrix::evaluate(hnet::make_assign_and_say<BreakMatrix> &assign)
 			if (result < 1e-6)
 			{
 				continue;
-				if (assertAbsence(assign, in_game[i], "there was an equivalent "\
+				if (assertAbsence(assign, in_game[i], 
+				                  wrap("there was an equivalent "\
 				                  "hydrogen-bonding pattern with an existent"\
-				                  " partner"))
+				                  " partner")))
 				{
 					return true;
 				}
@@ -400,9 +407,10 @@ bool BreakMatrix::evaluate(hnet::make_assign_and_say<BreakMatrix> &assign)
 			int idx = _indexing[in_game[i]];
 			if (_entries[idx].fake)
 			{
-				if (assertAbsence(assign, in_game[i], "the entirety of the "\
+				if (assertAbsence(assign, in_game[i], 
+				                  wrap("the entirety of the "\
 				"remaining non-fake coordination perfectly matches, so fake Hs"\
-				"are now to be broken"))
+				"are now to be broken")))
 				{
 					return true;
 				}
@@ -420,29 +428,15 @@ bool BreakMatrix::assertAbsence(make_assign_and_say<BreakMatrix> &assign,
 	ExistenceConnector *hExist = _entries[idx].hSample;
 	if (!hExist)
 	{
-		if (assign(*chosen, Bond::Broken, reason + 
-		           " and H-existence didn't exist"))
+		if (assign(*chosen, Bond::Broken, wrap(reason)))
 		{
 			return true;
 		}
 	}
-	/*
-	else if (hExist->value() == Existence::Present)
-	{
-		// we're not allowed to break the existence of the bond so it must
-		// be broken the old-fashioned way.
-		if (assign(*chosen, Bond::Broken, reason + 
-		           " and H-existence was already forced to be present"))
-		{
-			return true;
-		}
-	}
-	*/
 	else if (hExist->value() & Existence::Absent)
 	{
 		bool changed = false;
-		changed |= assign(*_entries[idx].exist, Existence::Absent, reason + 
-		           " and existence could be modulated");
+		changed |= assign(*_entries[idx].exist, Existence::Absent, wrap(reason));
 
 		if (changed)
 		{

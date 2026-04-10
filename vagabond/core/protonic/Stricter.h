@@ -21,13 +21,14 @@
 
 #include "hnet.h"
 #include "Connector.h"
+#include "ConstraintBase.h"
 
 namespace hnet
 {
 /* simple constant class to impose a stricter belief when satisfying a
  * Condition */
 template <class ImposeType>
-class Stricter
+class Stricter : public ConstraintBase
 {
 public:
 	typedef std::function<bool()> Condition;
@@ -54,15 +55,6 @@ public:
 		
 		ss << " may impose " << _impose << " on " << _imposeObj;
 		return ss.str();
-	}
-	
-	void forget(const GuiltVersion &gv)
-	{
-		for (auto obj : _conditionObjs)
-		{
-			obj->forget(gv);
-		}
-		_imposeObj.forget(gv);
 	}
 	
 	bool check(const GuiltVersion &gv, CheckList &list)

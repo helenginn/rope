@@ -21,11 +21,12 @@
 
 #include "hnet.h"
 #include "Connector.h"
+#include "ConstraintBase.h"
 
 namespace hnet
 {
 /* logic for determining hydrogen bonding patterns between two heavier atoms */
-struct OnlyOne
+struct OnlyOne : public ConstraintBase
 {
 	OnlyOne(std::vector<ExistenceConnector *> exclusives, 
 	        bool must_be_one = true)
@@ -37,14 +38,6 @@ struct OnlyOne
 			list.push_back(conn);
 		}
 		prep_constraints_and_forgets(this, list);
-	}
-	
-	void forget(const GuiltVersion &gv)
-	{
-		for (ExistenceConnector *&existence : _exclusives)
-		{
-			existence->forget(gv);
-		}
 	}
 	
 	std::string desc()

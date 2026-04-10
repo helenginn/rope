@@ -83,7 +83,7 @@ public:
 	{
 		if (_lastDecree >= 0)
 		{
-			_connector.forget(_lastDecree);
+			_connector.forget_all(_lastDecree);
 			_lastDecree = -1;
 		}
 	}

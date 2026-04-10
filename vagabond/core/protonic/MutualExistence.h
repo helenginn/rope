@@ -20,23 +20,18 @@
 #define __vagabond__MutualExistence__
 
 #include "hnet.h"
+#include "ConstraintBase.h"
 
 namespace hnet
 {
 /* logic for determining hydrogen bonding patterns between two heavier atoms */
-struct MutualExistence
+struct MutualExistence : public ConstraintBase
 {
 	MutualExistence(ExistenceConnector &left, ExistenceConnector &right,
 	                bool strong = true, std::string desc = "")
 	: _left(left), _right(right), _desc(desc), _strong(strong)
 	{
 		prep_constraints_and_forgets(this, {&left, &right});
-	}
-	
-	void forget(const GuiltVersion &gv)
-	{
-		_left.forget(gv);
-		_right.forget(gv);
 	}
 	
 	std::string desc()

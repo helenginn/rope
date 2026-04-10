@@ -197,7 +197,7 @@ void ProbeBond::declareBond(Bond::Values value)
 
 	auto rescind_declaration = [gv, this]
 	{
-		_probe->_obj.forget(gv);
+		_probe->_obj.forget_all(gv);
 		_probe->_obj.check_all(gv);
 	};
 

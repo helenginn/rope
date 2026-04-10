@@ -20,11 +20,12 @@
 #define __vagabond__EitherOrBond__
 
 #include "hnet.h"
+#include "ConstraintBase.h"
 
 namespace hnet
 {
 /* logic for determining hydrogen bonding patterns between two heavier atoms */
-struct EitherOrBond
+struct EitherOrBond : public ConstraintBase
 {
 	EitherOrBond(BondConnector &left, BondConnector &right, bool break_only)
 	: _left(left), _right(right)
@@ -41,12 +42,6 @@ struct EitherOrBond
 		return ss.str();
 	}
 	
-	void forget(const GuiltVersion &gv)
-	{
-		_left.forget(gv);
-		_right.forget(gv);
-	}
-
 	bool check(const GuiltVersion &gv, CheckList &list)
 	{
 		auto assign = make_assign_and_say(this, gv, list);

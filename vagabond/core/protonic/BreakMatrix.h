@@ -20,66 +20,68 @@
 #define __vagabond__BreakMatrix__
 
 #include "alignment.h"
+#include "ConstraintBase.h"
 #include "Connector.h"
 #include <vagabond/utils/Eigen/Dense>
 
-namespace hnet { class Coordinated; };
+namespace hnet
+{
+class Coordinated;
+typedef std::map<BondConnector *, ExistenceConnector *> ConnectMap;
 
-typedef std::map<hnet::BondConnector *, hnet::ExistenceConnector *> ConnectMap;
-class BreakMatrix
+class BreakMatrix : public ConstraintBase
 {
 public:
-	BreakMatrix(hnet::Coordinated *coord, const ConnectMap &bonds,
-	            const OpSet<hnet::AcceptableGroup> &groups,
-	            hnet::CountConnector &unbroken_count,
-	            hnet::CountConnector &twirling_bonds);
+	BreakMatrix(Coordinated *coord, const ConnectMap &bonds,
+	            const OpSet<AcceptableGroup> &groups,
+	            CountConnector &unbroken_count,
+	            CountConnector &twirling_bonds);
 	
 	std::string desc()
 	{
 		return "Break matrix for " + _ac.desc();
 	}
 
-	void setup(const OpSet<hnet::AcceptableGroup> &groups);
-	void insertGroupIntoMatrix(const hnet::AcceptableGroup &group);
+	void setup(const OpSet<AcceptableGroup> &groups);
+	void insertGroupIntoMatrix(const AcceptableGroup &group);
 
-	void forget(const GuiltVersion &gv);
-
-	bool check(const GuiltVersion &gv, hnet::CheckList &list);
+	bool check(const GuiltVersion &gv, CheckList &list);
 private:
 	void accounting();
-	bool evaluate(hnet::make_assign_and_say<BreakMatrix> &assign); 
+	bool evaluate(make_assign_and_say<BreakMatrix> &assign); 
 	void checks_forgets();
-	bool assertExistence(hnet::make_assign_and_say<BreakMatrix> &assign, 
-	                    hnet::BondConnector *chosen);
-	bool assertAbsence(hnet::make_assign_and_say<BreakMatrix> &assign, 
-	                   hnet::BondConnector *chosen, std::string reason = {});
-	Eigen::MatrixXi partialMatrix(const std::vector<hnet::BondConnector *> 
+	bool assertExistence(make_assign_and_say<BreakMatrix> &assign, 
+	                    BondConnector *chosen);
+	bool assertAbsence(make_assign_and_say<BreakMatrix> &assign, 
+	                   BondConnector *chosen, std::string reason = {});
+	Eigen::MatrixXi partialMatrix(const std::vector<BondConnector *> 
 	                              &partial);
-	bool break_others(hnet::make_assign_and_say<BreakMatrix> &assign, 
-	                  hnet::BondConnector *definite);
+	bool break_others(make_assign_and_say<BreakMatrix> &assign, 
+	                  BondConnector *definite);
 
-	const hnet::Coordinated *_coord{};
-	const hnet::AtomConf &_ac;
+	const Coordinated *_coord{};
+	const AtomConf &_ac;
 	ConnectMap _bonds;
-	hnet::CountConnector &_unbrokenCount;
-	hnet::ExistenceConnector &_myExist;
-	hnet::CountConnector &_twirling;
-	std::map<hnet::BondConnector *, int> _indexing{};
+	CountConnector &_unbrokenCount;
+	ExistenceConnector &_myExist;
+	CountConnector &_twirling;
+	std::map<BondConnector *, int> _indexing{};
 	Eigen::MatrixXi _matrix{};
 	
 	struct BreakEntry
 	{
-		hnet::BondConnector *bond{};
-		hnet::ExistenceConnector *exist{};
-		hnet::ExistenceConnector *partner{};
-		hnet::ExistenceConnector *hSample{};
+		BondConnector *bond{};
+		ExistenceConnector *exist{};
+		ExistenceConnector *partner{};
+		ExistenceConnector *hSample{};
 		bool fake;
 		int index{};
 		
-		hnet::Existence::Values existence();
+		Existence::Values existence();
 	};
 	
 	std::vector<BreakEntry> _entries;
+};
 };
 
 #endif

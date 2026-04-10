@@ -22,6 +22,7 @@
 
 #include <variant>
 #include <functional>
+#include "ConstraintBase.h"
 #include "Limit.h"
 #include "OnlyOne.h"
 #include "Stricter.h"
@@ -34,23 +35,17 @@
 #include "SubExistence.h"
 #include "BreakMatrix.h"
 #include "MutualExistence.h"
-//#include "LinkBondPresence.h"
 
+/* simple constant class to impose a value (AND) on a connector */
 namespace hnet
 {
-/* simple constant class to impose a value (AND) on a connector */
 template <class Connector, class Value>
-struct Constant
+struct Constant : public ConstraintBase
 {
 	Constant(Connector &connector, const Value &constant) :
 	_connector(connector), _constant(constant)
 	{
 		prep_constraints_and_forgets(this, {&connector});
-	}
-	
-	void forget(const GuiltVersion &gv)
-	{
-		_connector.forget(gv);
 	}
 	
 	std::string desc()

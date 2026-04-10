@@ -30,7 +30,7 @@ namespace hnet
 struct ConnectBase
 {
 public:
-	virtual bool forget(const GuiltVersion &gv) = 0;
+	virtual bool forget(const GuiltVersion &gv, CheckList &list) = 0;
 	virtual ~ConnectBase() {}
 
 	/* list of attached constraint-checking functions */
@@ -50,10 +50,9 @@ public:
 		_forgets.push_back(forget);
 	}
 	
-	void pop_last_check(const GuiltVersion &gv)
+	void pop_last_check(const GuiltVersion &gv, CheckList &list)
 	{
-		GuiltVersion last = Guilt::popLast();
-		forget(last);
+		do_forgets(gv, list);
 
 		_checks.pop_back();
 		_forgets.pop_back();
@@ -79,6 +78,30 @@ public:
 		
 		return true;
 	}
+
+	void add_to_forget_list(const GuiltVersion &gv, CheckList &list)
+	{
+		for (Forget &next_forget : _forgets)
+		{
+			list.push_back(&next_forget);
+		}
+	}
+
+	bool do_forgets(const GuiltVersion &gv, CheckList &list)
+	{
+		while (list.size())
+		{
+			void *ptr = list.front();
+			list.pop_front();
+			Checker *fptr = static_cast<Checker *>(ptr);
+			Checker &forgetter = *fptr;
+
+			forgetter(gv, list);
+		}
+		
+		return true;
+	}
+
 	
 	virtual bool contradictory() = 0;
 
@@ -179,6 +202,13 @@ struct Connector : public ConnectBase
 		add_to_check_list(list);
 		return check_list(gv, list);
 	}
+
+	void forget_all(const GuiltVersion &gv)
+	{
+		CheckList list;
+		add_to_forget_list(gv, list);
+		do_forgets(gv, list);
+	}
 	
 	void check_all(const GuiltVersion &gv)
 	{
@@ -186,8 +216,8 @@ struct Connector : public ConnectBase
 		add_to_check_list(list);
 		check_list(gv, list);
 	}
-
-	bool forget(const GuiltVersion &gv)
+	
+	bool forget(const GuiltVersion &gv, CheckList &list)
 	{
 		int total = _conditions.remove_conditions_with_blame(gv);
 
@@ -200,15 +230,12 @@ struct Connector : public ConnectBase
 		{
 			_update();
 		}
-
-		/* if we found anything to forget, we must invoke forget cascade */
-		for (Forget &next_forget : _forgets)
-		{
-			next_forget(gv);
-		}
+		
+		add_to_forget_list(gv, list);
 		
 		return true;
 	}
+
 
 	void add_to_check_list(CheckList &list)
 	{
@@ -411,9 +438,12 @@ void prep_constraints_and_forgets(ConstraintType *constraint,
 		};
 	};
 
-	auto forget_me = [constraint](const GuiltVersion &gv)
+	auto forget_connector = [constraint]()
 	{
-		return constraint->forget(gv);
+		return [constraint](const GuiltVersion &gv, CheckList &list)
+		{
+			constraint->forget(gv, list);
+		};
 	};
 
 	for (ConnectBase *connector : connections)
@@ -421,7 +451,8 @@ void prep_constraints_and_forgets(ConstraintType *constraint,
 		if (connector)
 		{
 			connector->add_constraint_check(make_self_check(connector));
-			connector->add_forget(forget_me);
+			connector->add_forget(forget_connector());
+			constraint->to_forgets.push_back(connector);
 		}
 	}
 
@@ -443,7 +474,7 @@ void prep_constraints_and_forgets(ConstraintType *constraint,
 			{
 				if (connector)
 				{
-					connector->pop_last_check(test);
+					connector->pop_last_check(test, list);
 				}
 			}
 

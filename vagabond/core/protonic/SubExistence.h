@@ -20,11 +20,12 @@
 #define __vagabond__SubExistence__
 
 #include "hnet.h"
+#include "ConstraintBase.h"
 
 namespace hnet
 {
 /* logic for determining hydrogen bonding patterns between two heavier atoms */
-struct SubExistence
+struct SubExistence : public ConstraintBase
 {
 	SubExistence(ExistenceConnector &left, ExistenceConnector &sub,
 	             ExistenceConnector &right, bool strong = false)
@@ -42,13 +43,6 @@ struct SubExistence
 
 	}
 	
-	void forget(const GuiltVersion &gv)
-	{
-		_left.forget(gv);
-		_sub.forget(gv);
-		_right.forget(gv);
-	}
-
 	bool check(const GuiltVersion &gv, CheckList &list)
 	{
 		auto assign = make_assign_and_say(this, gv, list);

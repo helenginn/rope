@@ -344,7 +344,7 @@ inline bool is_contradictory(const Count::Values &val)
 typedef std::function<void()> UpdateProbe;
 typedef std::list<void *> CheckList;
 typedef std::function<bool(const GuiltVersion &, CheckList &)> Checker;
-typedef std::function<void(const GuiltVersion &)> Forget;
+typedef std::function<void(const GuiltVersion &, CheckList &)> Forget;
 
 /* write descriptions of states to stream */
 

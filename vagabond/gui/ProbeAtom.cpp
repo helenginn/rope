@@ -218,7 +218,7 @@ void ProbeAtom::declareAtomExistence(Existence::Values value)
 	{
 		AtomProbe *aProbe = static_cast<AtomProbe *>(_probe);
 
-		aProbe->existence().forget(gv);
+		aProbe->existence().forget_all(gv);
 		aProbe->existence().check_all(gv);
 	};
 	
@@ -250,7 +250,7 @@ void ProbeAtom::declareHydrogen(Existence::Values value)
 	{
 		HydrogenProbe *hProbe = static_cast<HydrogenProbe *>(_probe);
 
-		hProbe->_obj.forget(gv);
+		hProbe->_obj.forget_all(gv);
 		hProbe->_obj.check_all(gv);
 	};
 	

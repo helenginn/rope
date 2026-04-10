@@ -21,7 +21,7 @@
 
 #include <vector>
 #include <sstream>
-#include "Constraint.h"
+#include "ConstraintBase.h"
 
 enum CountType
 {
@@ -50,7 +50,7 @@ namespace hnet
 {
 /* addition of all strong bonds from an atom and output of a total sum */
 template <Bond::Values Request>
-struct BondAdder
+struct BondAdder : public ConstraintBase
 {
 	Existence::Values existence_of(ExistenceConnector *const &exist)
 	{
@@ -153,20 +153,6 @@ struct BondAdder
 
 	}
 	
-	void forget(const GuiltVersion &gv)
-	{
-		_sum.forget(gv);
-
-		for (auto it = _bonds.begin(); it != _bonds.end(); it++)
-		{
-			it->first->forget(gv);
-			if (it->second)
-			{
-				it->second->forget(gv);
-			}
-		}
-	}
-
 	bool value_is_not_purely_requested(const Bond::Values &val)
 	{
 		Bond::Values not_request = (Bond::Values)(Bond::Unassigned & ~Request);
