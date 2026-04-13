@@ -103,6 +103,13 @@ struct HydrogenBond : public ConstraintBase
 				       "both sides, remaining side cannot be acceptor/broken");
 			}
 		}
+
+		// if we only have choice between lone pair and acceptor, it's acceptor
+		if (_left.value() == Bond::LonePairOrWeak)
+		{
+			assign(_left, Bond::Weak, "if we only have choice between lone "\
+			       "pair and acceptor, it's acceptor");
+		}
 		
 		// if we definitely have a donor/acceptor bond then we must have H
 		if (bond_definitely_present(_left.value()))
