@@ -71,9 +71,10 @@ private:
 	struct BreakEntry
 	{
 		BondConnector *bond{};
-		ExistenceConnector *exist{};
-		ExistenceConnector *partner{};
-		ExistenceConnector *hSample{};
+		ExistenceConnector *exist{}; // existence of bond
+		ExistenceConnector *partner{}; // existence of partner
+		ExistenceConnector *hSample{}; // sampling of hBond
+		ExistenceConnector *hStatus{}; // status of hBond
 		bool fake;
 		int index{};
 		

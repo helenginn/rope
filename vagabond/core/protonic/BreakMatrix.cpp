@@ -78,6 +78,7 @@ void BreakMatrix::accounting()
 			if (_coord->bond2HydrogenSample().count(be.bond))
 			{
 				be.hSample = _coord->bond2HydrogenSample().at(be.bond);
+				be.hStatus = _coord->bond2HydrogenStatus().at(be.bond);
 				be.fake = false;
 			}
 			be.index = count;
@@ -246,8 +247,11 @@ bool BreakMatrix::evaluate(hnet::make_assign_and_say<BreakMatrix> &assign)
 
 		if ((obj != Bond::Broken) && (exist & Existence::Present))
 		{
-			//std::cout << "Bond value desc: " << entry.bond->desc() << " ";
-			//std::cout << exist << std::endl;
+			/*
+			std::cout << "I am " << desc() << std::endl;
+			std::cout << "Bond value desc: " << entry.bond->desc() << " ";
+			std::cout << exist << std::endl;
+			*/
 			in_game.push_back(entry.bond);
 			if (!entry.fake)
 			{
@@ -452,10 +456,13 @@ bool BreakMatrix::assertExistence(make_assign_and_say<BreakMatrix> &assign,
 {
 	if (chosen->value() & Bond::Broken)
 	{
+//		std::cout << "might be broken" << std::endl;
 		return false;
 	}
+
 	if (_myExist.value() != Existence::Present)
 	{
+//		std::cout << "doesn't def exist" << std::endl;
 		return false;
 	}
 
@@ -464,20 +471,31 @@ bool BreakMatrix::assertExistence(make_assign_and_say<BreakMatrix> &assign,
 	if (_entries[idx].partner && 
 	    _entries[idx].partner->value() != Existence::Present)
 	{
+//		std::cout << "partner doesn't def exist" << std::endl;
 		return false;
 	}
 
 	if (assign(*_entries[idx].exist, Existence::Present))
 	{
+//		std::cout << "assigned existence" << std::endl;
 		return true;
 	}
 
 	if (_entries[idx].hSample && 
 	    assign(*_entries[idx].hSample, Existence::Present))
 	{
+//		std::cout << "assigned h-sampling" << std::endl;
 		return true;
 	}
 
+	if (_entries[idx].hStatus && 
+	    assign(*_entries[idx].hStatus, Existence::Present))
+	{
+//		std::cout << "assigned h-status" << std::endl;
+		return true;
+	}
+
+//	std::cout << "didn't assign" << std::endl;
 	return false;
 }
 
