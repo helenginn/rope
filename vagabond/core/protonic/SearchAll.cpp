@@ -19,6 +19,7 @@
 #include "SearchAll.h"
 #include "ExhaustiveSearch.h"
 #include "Clique.h"
+#include <time.h>
 
 SearchAll::SearchAll(Clique *parent, Network &network) : 
 _clique(parent), _network(network)
@@ -30,6 +31,9 @@ void SearchAll::run()
 {
 	std::list<Clique> &subs = _clique->subdivisions();
 	_clique->removeChildren();
+	float total = 0;
+	int seconds = 0;
+	time_t start = ::time(nullptr);
 
 	for (Clique &clique : subs)
 	{
@@ -49,6 +53,10 @@ void SearchAll::run()
 		" nodes, " + std::to_string(num_results) + " arrangements)";
 		clique.setName(name);
 		_clique->addItem(&clique);
+		total += search.memory_use();
+		time_t end = ::time(nullptr);
+		time_t diff = end - start;
+		std::cout << "DEBUG: " << diff << " " << total << " MB " << std::endl;
 	}
 	
 	finishTicker();

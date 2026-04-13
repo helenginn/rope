@@ -211,6 +211,11 @@ public:
 		std::cout << "Clicked" << std::endl;
 		_cv.notify_one();
 	}
+
+	float memory_use() // MB
+	{
+		return _total * (float)sizeof(OneProbe) / (float)1000000.f;
+	}
 private:
 	float score_wider_clique();
 
@@ -218,6 +223,7 @@ private:
 	OpSet<Config> _configs;
 	std::map<Config, float> _scores;
 
+	int _total = 0;
 	std::vector<ProbeResult> _results;
 	std::list<IteratedProbe *> _iterations;
 	OpSet<Probe *> _all;

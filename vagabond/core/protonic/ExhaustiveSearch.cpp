@@ -307,16 +307,16 @@ bool ExhaustiveSearch::next()
 
 //		std::cout << sc << " ";
 		_results.push_back(result);
+		return result.results.size();
 	};
 	
 	if (_counter < 0 || (_counter == 0 && (**it).done()))
 	{
-//		std::cout << "Final: " << std::endl;
 		for (const Config &c : _configs)
 		{
-			process_result(c);
+			int extra = process_result(c);
+			_total += extra;
 		}
-//		std::cout << std::endl;
 		return false;
 
 	}
