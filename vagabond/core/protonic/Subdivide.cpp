@@ -175,14 +175,17 @@ void Subdivide::subdivide()
 	
 	for (Probe *probe : to_chunk)
 	{
-		for (int i = 0; i < 3; i++)
+		for (int i = 0; i < 5; i++)
 		{
 			OpSet<Probe *> chunk = {probe};
 			shoot(chunk);
 			while (finish_ends(chunk)) {}
 
 			prune(chunk);
-			chunks += chunk;
+			if (chunk.size() > 0)
+			{
+				chunks += chunk;
+			}
 		}
 
 	}
