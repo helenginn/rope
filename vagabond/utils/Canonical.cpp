@@ -93,12 +93,6 @@ void Canonical::run()
 	populate_cc(mmCC, _m, _mVecs);
 	populate_cc(nnCC, _n, _nVecs);
 	
-	std::cout << "mmCC: " << std::endl;
-	std::cout << mmCC << std::endl;
-
-	std::cout << "nnCC: " << std::endl;
-	std::cout << nnCC << std::endl;
-	
 	Eigen::JacobiSVD<MatrixXf> msvd(mmCC, Eigen::ComputeFullU | 
 	                                Eigen::ComputeFullV);
 	Eigen::JacobiSVD<MatrixXf> nsvd(nnCC, Eigen::ComputeFullU | 
@@ -236,8 +230,6 @@ void Canonical::run()
 		return copy(Eigen::seqN(0, trunc));
 	};
 	
-	std::cout << "ds: " << d << ", " << dm << ", " << dn << std::endl;
-
 	/*
 	Eigen::MatrixXf minvSing = invert(msvd.singularValues(), dm).asDiagonal();
 	Eigen::MatrixXf ninvSing = invert(nsvd.singularValues(), dn).asDiagonal();
@@ -509,10 +501,8 @@ double Canonical::old_correlation()
 		{
 			double x = _u.ptrs[i][j];
 			double y = _v.ptrs[i][j];
-			std::cout << x << ", " << y << std::endl;
 			add_to_CD(&cd, x, y);
 		}
-		std::cout << std::endl;
 
 		if (j == 0) best = evaluate_CD(cd);
 	}
