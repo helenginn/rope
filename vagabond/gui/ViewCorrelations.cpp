@@ -254,6 +254,7 @@ void ViewCorrelations::viewAll()
 		FloydWarshall fw(_overall, combine, true);
 		fw.addDisplayMatrix(_matrix, _mutex, [mp]() { mp->update(); });
 		fw.run();
+		std::cout << "Done filling gaps" << std::endl;
 	};
 	
 	/*
@@ -332,7 +333,7 @@ void ViewCorrelations::viewAll()
 
 	file.close();
 	
-//	new DoJob(fill_gaps);
+	new DoJob(fill_gaps);
 
 }
 
