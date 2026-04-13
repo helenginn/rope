@@ -55,10 +55,15 @@ void FloydWarshall::run() // symmetric matrix
 			}
 		}
 		
-		if (_update)
+		if (_update && k % 10 == 0)
 		{
 			_update();
 		}
+	}
+
+	if (_update)
+	{
+		_update();
 	}
 
 	if (_done)
