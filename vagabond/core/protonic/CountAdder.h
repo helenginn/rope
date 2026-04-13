@@ -70,7 +70,6 @@ struct CountAdder : public ConstraintBase
 		/* first we return to the comfortable world of integers... */
 		std::vector<int> left_options = possible_values(_left.value());
 		std::vector<int> right_options = possible_values(_right.value());
-		std::vector<int> sum_options = possible_values(_sum.value());
 
 		/* impose options on sum */
 		{
@@ -78,8 +77,14 @@ struct CountAdder : public ConstraintBase
 			                                        [](const int &a, const int &b)
 			                                        { return a + b; });
 
-			Count::Values sum_count = values_as_count(options);
-			assign(_sum, sum_count, "imposition on sum");
+			Count::Values sum_should_be = values_as_count(options);
+
+			// limited: options in existing sum which should be ruled out
+			bool limit = (~sum_should_be & _sum.value());
+			if (limit)
+			{
+				assign(_sum, sum_should_be, "imposition on sum");
+			}
 		}
 
 		/* impose options on left */
@@ -91,8 +96,12 @@ struct CountAdder : public ConstraintBase
 			                                        [](const int &a, const int &b)
 			                                        { return a - b; });
 
-			Count::Values left_count = values_as_count(options);
-			assign(_left, left_count, "imposition on left");
+			Count::Values left_should_be = values_as_count(options);
+			bool limit = (~left_should_be & _left.value());
+			if (limit)
+			{
+				assign(_left, left_should_be, "imposition on left");
+			}
 		}
 
 		/* impose options on right */
@@ -104,8 +113,12 @@ struct CountAdder : public ConstraintBase
 			                                        [](const int &a, const int &b)
 			                                        { return a - b; });
 
-			Count::Values right_count = values_as_count(options);
-			assign(_right, right_count, "imposition on right");
+			Count::Values right_should_be = values_as_count(options);
+			bool limit = (~right_should_be & _right.value());
+			if (limit)
+			{
+				assign(_right, right_should_be, "imposition on right");
+			}
 		}
 		
 		auto print = [](const std::vector<int> &options)

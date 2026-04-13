@@ -166,13 +166,21 @@ struct Connector : public ConnectBase
 	bool assign_value_without_checking(const Value &value, void *informant,
 	                                   const GuiltVersion &gv)
 	{
+		/*
 		if (_conditions.from_informant_and_blame(informant, gv) == value)
 		{
 			// if there's no change in value then we end the propagation
 			return false;
 		}
+		*/
 		
 		Value before = _conditions.belief();
+		bool constriction = (before & ~value);
+		if (!constriction)
+		{
+			return false;
+		}
+
 		_conditions.apply_condition(informant, gv, value);
 		Value after = _conditions.belief();
 
