@@ -19,7 +19,6 @@
 #include "ProbeAtom.h"
 #include "ProtonNetworkView.h"
 #include <vagabond/core/protonic/Network.h>
-#include <vagabond/core/protonic/Decree.h>
 #include <vagabond/core/protonic/Probe.h>
 #include <vagabond/gui/elements/Menu.h>
 

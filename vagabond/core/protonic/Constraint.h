@@ -23,7 +23,6 @@
 #include <variant>
 #include <functional>
 #include "ConstraintBase.h"
-#include "Limit.h"
 #include "OnlyOne.h"
 #include "Stricter.h"
 #include "Connector.h"
@@ -31,7 +30,6 @@
 #include "EqualBonds.h"
 #include "CountAdder.h"
 #include "HydrogenBond.h"
-#include "EitherOrBond.h"
 #include "SubExistence.h"
 #include "BreakMatrix.h"
 #include "MutualExistence.h"
@@ -77,8 +75,8 @@ struct AnyConstraint
 	enum Type
 	{
 		Count, Atom, Bond, HBond, StrongAdd, CountAdd, WeakAdd, BondedAdd, 
-		LonePairAdd, NotBrokenAdd, EiOrBond, Equal, StricterCount,
-		Existence, MutualExist, SubExist, OnlyOneOf, IfCountThen, 
+		LonePairAdd, NotBrokenAdd, Equal, StricterCount,
+		Existence, MutualExist, SubExist, OnlyOneOf, 
 		BreakingMatrix, StrictBond, StricterExistence,
 	};
 	
@@ -145,12 +143,6 @@ struct AnyConstraint
 	AnyConstraint(HydrogenBond *const &constraint)
 	{
 		_type = HBond;
-		_ptr = constraint;
-	}
-	
-	AnyConstraint(EitherOrBond *const &constraint)
-	{
-		_type = EiOrBond;
 		_ptr = constraint;
 	}
 	
@@ -247,9 +239,6 @@ struct AnyConstraint
 			
 			case Equal:
 			delete static_cast<EqualBonds *>(_ptr); break;
-			
-			case EiOrBond:
-			delete static_cast<EitherOrBond *>(_ptr); break;
 			
 			case OnlyOneOf:
 			delete static_cast<OnlyOne *>(_ptr); break;

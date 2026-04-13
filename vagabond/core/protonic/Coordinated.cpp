@@ -148,20 +148,6 @@ void Coordinated::probeAtom()
 	}
 }
 
-void Coordinated::eitherOr(const ABPair &first, const ABPair &second,
-                           bool break_only)
-{
-	return;
-	if (!first.second || !second.second || first == second)
-	{
-		return;
-	}
-	
-	std::cout << "Wanting to add either/or constraint between " 
-	<< first << " and " << second << std::endl;
-//	add_constraint(new EitherOrBond(*first.second, *second.second, break_only));
-}
-
 void Coordinated::comparePairs(OpSet<PairSet> &results,
                                   const ABPair &first, const ABPair &second,
                                   glm::vec3 &centre, int coordNum)
@@ -242,25 +228,6 @@ void Coordinated::comparePairs(OpSet<PairSet> &results,
 	if (!check_coord_okay(first, c2l) || !check_coord_okay(second, c2r))
 	{
 		std::cout << "Dropping option due to bad coordination" << std::endl;
-		return;
-	}
-
-	float angle = rad2deg(glm::angle(c2l, c2r));
-
-	bool accept = (angle > target_angle - HYDROGEN_BONDING_TOLERANCE && 
-	               angle < target_angle + HYDROGEN_BONDING_TOLERANCE);
-
-	// we definitely can't accept this pair if it's far outside
-	// this range! <--- this is not true - coordination numbers could alter this
-	if (!accept)
-	{
-		/*
-		std::cout << "Outside tolerance, have to drop the option of ";
-		std::cout << first << " and " << second << " simultaneously"
-		" existing." << std::endl;
-		eitherOr(first, second, true);
-		eitherOr(second, first, true);
-		*/
 		return;
 	}
 
@@ -530,22 +497,6 @@ std::vector<glm::vec3> seed_to_vecs(const PairSet &seed)
 	}
 
 	return results;
-}
-
-auto mutually_exclude(Coordinated *me, const PairSet &unwanted)
-{
-	for (const ABPair &left : unwanted)
-	{
-		for (const ABPair &right : unwanted)
-		{
-			if (left == right)
-			{
-				continue;
-			}
-			me->eitherOr(left, right, false);
-			me->eitherOr(right, left, false);
-		}
-	}
 }
 
 auto prep_find_candidates(const PairSet &candidates, const glm::vec3 &centre)
@@ -1065,19 +1016,6 @@ void Coordinated::mutualExclusions(AtomGroup *toClashCheck)
 	std::cout << "Number of bond pairings to ban: " << 
 	unwanted.size() << std::endl;
 	std::cout << "Number of bonds to ban: " << unpaired.size() << std::endl;
-
-	for (const PairSet &bad_pair : unwanted)
-	{
-//		mutually_exclude(this, bad_pair);
-	}
-
-	for (const ABPair &nopair : unpaired)
-	{
-		if (nopair.second)
-		{
-//			add_constraint(new BondConstant(*nopair.second, Bond::Broken));
-		}
-	}
 
 	applyRestrictionsToUnbrokenBonds(coord_state_to_unbroken_bonds);
 	
