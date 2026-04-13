@@ -166,7 +166,8 @@ void ViewCorrelations::viewAll()
 				ProbeCorrelation c = correlate(results, left, 
 				                                  right, all_ave, false);
 				
-				Eigen::MatrixXf cc = c.mat;
+				float w = results.size();
+				Eigen::MatrixXf cc = c.mat * w;
 				Eigen::MatrixXf csq = c.mat;
 				
 				for (int j = 0; j < cc.cols(); j++)
@@ -174,15 +175,15 @@ void ViewCorrelations::viewAll()
 					for (int i = 0; i < cc.rows(); i++)
 					{
 						cc(i, j) = cc(i, j);
-						csq(i, j) = 1;
+						csq(i, j) = w;
 					}
 				}
 				
 				_overall(seqN(x, m), seqN(y, n)) += cc;
 				_written(seqN(x, m), seqN(y, n)) += csq;
 
-//				_overall(seqN(y, n), seqN(x, m)) += csq.transpose();
-//				_written(seqN(y, n), seqN(x, m)) += cc.transpose();
+				_overall(seqN(y, n), seqN(x, m)) += cc.transpose();
+				_written(seqN(y, n), seqN(x, m)) += csq.transpose();
 			}
 		}
 	};
