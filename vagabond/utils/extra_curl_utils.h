@@ -76,7 +76,21 @@ inline static void *pull_one_url(void *stuff)
 			curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, ts->post.length());
 		}
 
-		curl_easy_perform(curl); /* ignores error */
+	    CURLcode rc = curl_easy_perform(curl);
+	    #ifndef NDEBUG
+	    if (rc != CURLE_OK)
+	    {
+	        // Additional curl error diagnostics
+	        char errbuf[CURL_ERROR_SIZE] = {0};
+	        curl_easy_setopt(curl, CURLOPT_ERRORBUFFER, errbuf);
+	        curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L);
+
+	        fprintf(stderr, "curl rc=%d (%s)\n", (int)rc, curl_easy_strerror(rc));
+	        if (errbuf[0]) fprintf(stderr, "detail: %s\n", errbuf);
+	    }
+	    #endif
+
+
 
 		void *myptr = ts->ptr;
 		if (myptr == nullptr)
