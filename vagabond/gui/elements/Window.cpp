@@ -104,6 +104,20 @@ void Window::instateGlew()
 		std::cout << "Error SDL2_image Initialization" << std::endl;
 		exit(1);
 	}
+
+	const std::string icon_path = dataDirectory() + "assets/images/cartoon.png";
+	SDL_Surface *icon = IMG_Load(icon_path.c_str());
+	if (icon != nullptr)
+	{
+		SDL_SetWindowIcon(_window, icon);
+		SDL_FreeSurface(icon);
+	}
+#ifdef DEBUG
+	else
+	{
+		std::cout << "Warning: could not load icon " << icon_path << std::endl;
+	}
+#endif
 #endif
 }
 
