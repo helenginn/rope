@@ -28,5 +28,6 @@ class Rope(ConanFile):
     def configure(self):
         self.options["fftw"].enable_float = True
         self.options["*"].shared = False
-        self.options["libcurl/*"].with_ssl = "schannel"
+        if self.settings.os == "Windows":
+            self.options["libcurl/*"].with_ssl = "schannel"
 
