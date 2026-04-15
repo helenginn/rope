@@ -637,12 +637,6 @@ Network::Network(AtomGroup *group, const std::string &spg_name,
 		_atomMap[{a, conf}]->mutualExclusions(_originalAndMates);
 	}));
 
-	// make sure bonds in the next crystal contact are the same as this asu
-	donors->do_op(on_each_conf([this](::Atom *a, char conf)
-	{
-		_atomMap[{a, conf}]->findSymmetricallyRelatedBonds();
-	}));
-
 	// add clash logic
 	OpSet<AtomConf> searchGroup = 
 	Coordinated::expandGroupToSet(_originalAndMates);

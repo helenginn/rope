@@ -546,17 +546,6 @@ ABPair Coordinated::makePossibleHydrogen(const glm::vec3 &pos)
 	return {{hAtom, _atomConf.conf}, &new_bond};
 }
 
-void break_all_bonds(Coordinated *me, const PairSet &set)
-{
-	for (const ABPair &pair : set)
-	{
-		if (pair.second)
-		{
-			me->add_constraint(new BondConstant(*pair.second, Bond::Broken));
-		}
-	}
-}
-
 OpSet<AcceptableGroup> Coordinated::developSeed(const PairSet &seed,
                                                 const PairSet &all,
                                                 const glm::vec3 &centre,
@@ -737,49 +726,6 @@ void add_unique_to_set(OpSet<AcceptableGroup> &dest,
 	dest += newest;
 }
 
-void remove_states_with_excess_fakes(OpSet<AcceptableGroup> &set)
-{
-	auto non_fakes = [](const AcceptableGroup &grp)
-	{
-		PairSet ret;
-		for (const ABPair &ps : grp.group)
-		{
-			if (ps.first.ptr->atomName() != "H!")
-			{
-				ret += ps;
-			}
-		}
-		return ret;
-	};
-
-	OpSet<AcceptableGroup> lasting;
-	for (const AcceptableGroup &group : set)
-	{
-		bool ok = true;
-		PairSet left = non_fakes(group);
-		for (const AcceptableGroup &other : set)
-		{
-			if (&group == &other) continue;
-			PairSet right = non_fakes(other);
-			if (right.size() <= left.size())
-			{
-				continue;
-			}
-
-			if (left.common_to_both(right).size() == left.size())
-			{
-				ok = false; break;
-			}
-		}
-		
-		if (ok)
-		{
-			lasting += group;
-		}
-	}
-	set = lasting;
-}
-
 OpSet<AcceptableGroup> 
 Coordinated::expandAllSeeds(OpSet<AtomConf> &clashCheck,
                             const PairSet &uninvolved_group,
@@ -838,9 +784,7 @@ Coordinated::expandAllSeeds(OpSet<AtomConf> &clashCheck,
 
 		if (fake_atom_count == coord_num && acceptables.size() == 1)
 		{
-			// if none of the original seed bonds line up, then the bond must
-			// be broken as the coordination is poor.
-//			break_all_bonds(this, seed);
+			// if none of the original seed bonds line up, then don't bother
 			continue;
 		}
 		
@@ -936,8 +880,6 @@ void Coordinated::mutualExclusions(AtomGroup *toClashCheck)
 			processed_uninvolved_with_coord_num(uninvolved, num);
 		}
 	}
-	
-//	remove_states_with_excess_fakes(totalGroups);
 
 	std::cout << std::endl;
 	std::cout << "Total configurations: " << totalGroups.size() << std::endl;
@@ -1044,29 +986,8 @@ void Coordinated::applyRestrictionsToUnbrokenBonds
 	// we can use the total number of broken bonds to pin down the coordination
 	// state and introduce some Stricter situations
 	
-	auto make_is_equal_to = [](int val)
-	{
-		return [val](const hnet::Count::Values &value)
-		{
-			return (value == values_as_count(std::vector<int>(1, val)));
-		};
-	};
-	
 	std::map<int, std::vector<int>> unbroken_bonds_to_coord_state =
 	invert_one_to_many_mapping(coord_state_to_unbroken_bonds);
-
-	/*
-	for (auto it = unbroken_bonds_to_coord_state.begin();
-	          it != unbroken_bonds_to_coord_state.end(); it++)
-	{
-		int option = it->first;
-		Count::Values coordNumOptions = values_as_count(it->second);
-
-		add_constraint(new IfCountThenImpose(*_expl_bonds,
-		                                     make_is_equal_to(option),
-		                                     *_coord_num, coordNumOptions));
-	}
-	*/
 }
 
 OpSet<AtomConf> Coordinated::expandGroupToSet(AtomGroup *group)
@@ -1155,6 +1076,7 @@ void Coordinated::attachToNeighbours(AtomGroup *searchGroup)
 			        re.value() == Existence::Present);
 		};
 		
+		// Acceptor bonds cannot be paired with non-existent bonds
 		add_constraint(new StricterBond({&le, &re}, unpaired_left, right,
 		                                        Bond::NotWeak));
 		add_constraint(new StricterBond({&re, &le}, unpaired_right, left,
@@ -1177,6 +1099,9 @@ void Coordinated::attachToNeighbours(AtomGroup *searchGroup)
 			return false;
 		};
 		
+		// If one side of a hydrogen bond is not sampled and the other side 
+		// is not a donor/acceptor, then the intervening hydrogen is believed 
+		// to not be sampled.
 		add_constraint(new Stricter<Existence::Values>
 		               ({&left, &re, &le, &right}, non_existent_bonds, 
 		               hExist, Existence::Absent));
@@ -1197,6 +1122,9 @@ void Coordinated::attachToNeighbours(AtomGroup *searchGroup)
 			};
 		};
 
+		// if all parts of hydrogen bond are definitely sampled, and one side
+		// of the hydrogen bond is definitely bonded, the other side cannot
+		// be broken
 		add_constraint(new StricterBond({&re, &le, &right, &h}, 
 		                                        could_be_bonded(right), left,
 		                                        Bond::NotBroken));
@@ -1419,97 +1347,6 @@ void Coordinated::prepareCoordinated(const Count::Values &n_charge,
 	_expl_bonds->setDesc("Unbroken bonds of " + _atomConf.desc());
 	_twirling = &twirling_strong;
 
-	// we ensure that if a bond can be present and cannot be broken in any way,
-	// it must be present
-	// however we have a problem: if only one coordination state is remaining
-	// then the bonds don't know that they cannot be broken. This is solved
-	// by a counter while figuring out the mutual exclusions
-	/*
-	for (const ABPair &bond : _bonds)
-	{
-		auto can_be_present_and_cannot_be_broken = [](const Bond::Values &value) 
-		{
-			const Bond::Values *ptr = &value;
-			return [ptr]()
-			{
-				bool can_be_present = false;
-				bool can_be_broken = true;
-				if ((*ptr & Bond::NotBroken) && !(*ptr & Bond::Broken))
-				{
-					can_be_broken = false;
-				}
-
-				if ((*ptr & Bond::Bonded))
-				{
-					can_be_present = true;
-				}
-
-				return (can_be_present && !can_be_broken);
-			};
-		};
-
-		add_constraint
-		(new StricterBond(*bond.second,
-		can_be_present_and_cannot_be_broken(bond.second->value()), Bond::Bonded));
-	}
-	*/
-	
 	CountProbe &probe = _network.add_probe(new CountProbe(*_charge, atom()));
-//	_charge->set_update([&probe, this]()
-//	{
-//		std::cout << _atomConf << " charge: " << probe.display() << std::endl;
-//	});
-}
-
-ABPair Coordinated::bondedSymmetricAtom(::Atom *asymmetric)
-{
-	for (const ABPair &bond : _bonds)
-	{
-		std::cout << bond << " ";
-		if (bond.first.ptr->symmetryCopyOf() == asymmetric)
-		{
-			std::cout << std::endl;
-			return bond;
-		}
-	}
-	
-	std::cout << std::endl;
-	return ABPair{};
-}
-
-void Coordinated::findSymmetricallyRelatedBonds()
-{
-	// make sure bonds which are related by symmetry are constrained to
-	// be equal
-	for (const ABPair &bond : _bonds)
-	{
-		if (!bond.first.ptr->symmetryCopyOf())
-		{
-			// within asymmetric unit - we can safely ignore
-			continue;
-		}
-
-		// get the asymmetric version of our symmetry mate
-		::Atom *asym_atom = bond.first.ptr->symmetryCopyOf();
-		AtomConf asym_other = {asym_atom, bond.first.conf};
-		
-		Coordinated *other = atomMap()[asym_other];
-		
-		// ask the asymmetric version for the symmetry mate of my own atom
-		const ABPair &corresponding = other->bondedSymmetricAtom(atom());
-		
-		if (corresponding.second)
-		{
-			hnet::BondConnector &left = *bond.second;
-			hnet::BondConnector &right = *corresponding.second;
-
-//			add_constraint(new EqualBonds(left, right));
-		}
-		else
-		{
-			_failedCheck = true;
-		}
-	}
-
 }
 

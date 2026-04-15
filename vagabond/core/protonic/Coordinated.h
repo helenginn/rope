@@ -128,13 +128,7 @@ public:
 	
 	void addBond(const ABPair &bond);
 	
-	// to ensure that bonds between asymmetric atoms to symmetry operated atoms
-	// are forced to have equal connectivity
-	void findSymmetricallyRelatedBonds();
-
 	std::vector<hnet::BondConnector *> bonds_only() const;
-	
-	ABPair bondedSymmetricAtom(::Atom *asymmetric);
 	
 	const bool &failedCheck() const
 	{
