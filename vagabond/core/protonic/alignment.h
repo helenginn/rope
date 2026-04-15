@@ -413,7 +413,7 @@ inline std::vector<glm::vec3> template_for_coordination(int coord)
 	}
 	else if (coord == 2)
 	{
-		// trigonal coordination around centre (origin)
+		// linear coordination around centre (origin)
 		return {{1, 0, 0}, {-1.0, 0, 0}};
 	}
 	
