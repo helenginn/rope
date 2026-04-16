@@ -266,7 +266,7 @@ public:
 	
 	Atom *connectedAtom(int i) const;
 	bool isConnectedToAtom(Atom *a) const;
-	
+	bool hasCommonBondstraintWithAtom(Atom *right) const;
 	const std::string &code() const
 	{
 		return _code;

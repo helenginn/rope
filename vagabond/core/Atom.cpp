@@ -4,6 +4,7 @@
 #include "Atom.h"
 #include "BondLength.h"
 #include "BondAngle.h"
+#include "BondTorsion.h"
 #include "Chirality.h"
 #include "../utils/FileReader.h"
 
@@ -597,4 +598,18 @@ OpSet<std::string> Atom::conformerList()
 	}
 
 	return set;
+}
+
+
+bool Atom::hasCommonBondstraintWithAtom(Atom *right) const
+{
+	bool too_close = false;
+	for (size_t k = 0; k < bondTorsionCount(); k++)
+	{
+		if (bondTorsion(k)->hasAtom(right))
+		{
+			too_close = true;
+		}
+	}
+	return too_close;
 }
