@@ -221,7 +221,7 @@ void FlexibilityController::handleNumSamples(Button* button)
 	TextEntry *te = static_cast<TextEntry *>(button);
 	int numSample = atoi(te->scratch().c_str());
 	FlexSample sampler(_flex, _instance);
-	sampler.saveSampledStructures(numSample, "sample_structure", "structure_deviation.csv");
+	sampler.saveSampledStructures(numSample, "sample_structure", "structure_deviation.csv", _currentWeight);
 	float stepSize = 0.5f; 
     // sampler.saveHierarchySamples(numSample, "hierarchy_sample", stepSize);
 }
@@ -239,17 +239,30 @@ void FlexibilityController::handleDistMatrix()
 void FlexibilityController::handleColumnIdx(Button* button)
 {
 	TextEntry *te = static_cast<TextEntry *>(button);
-	double w = 0.5;
+	// double w = 10;
 	int idx = atof(te->scratch().c_str());
-	if (idx < 0) return; // FIX: if -1 should go to the back and so on, python style 
-	FlexSample sampler(_flex, _instance);
-    sampler.computeOneSample(idx, w);
+	
+	// Python-style negative indexing
+    int totalCols = _flex->getVcolumns();
+    if (idx < 0)
+        idx = totalCols + idx; 
 
+	// bounds check after resolution
+    if (idx < 0 || idx >= totalCols)
+    {
+        std::cerr << "[ERROR] Column index " << idx 
+                  << " out of range [0, " << totalCols - 1 << "]" << std::endl;
+        return;
+    }
+
+	FlexSample sampler(_flex, _instance);
+    sampler.computeOneSample(idx, _currentWeight); // _currentWeight is the slider value
     _view->openAtom2AtomExplorer();
 }
 
 void FlexibilityController::callAddHBonds(const std::vector<HBondManager::HBondPair> &donorAcceptorPairs) 
 {
+	_flex->clearHBonds();
 	for (auto &pair : donorAcceptorPairs) 
 	{
     	_flex->addHBond(pair);
@@ -260,6 +273,7 @@ void FlexibilityController::callAddHBonds(const std::vector<HBondManager::HBondP
 void FlexibilityController::finishedDragging(std::string tag, double x, double y)
 {
 	float num = x / 1.;
+	_currentWeight = num;
 	float test_retrival = _flex->submitJobAndRetrieve(num);
 	_first = false;
 } 

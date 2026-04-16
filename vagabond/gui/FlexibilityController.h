@@ -76,6 +76,7 @@ private:
     bool _selectFlag = false;
     float _minRange  = 0.0f;
     float _maxRange  = 0.0f;
+    float _currentWeight = 0.0f;
 
     std::vector<HBondManager::HBondPair> _hBondPairs;
 
