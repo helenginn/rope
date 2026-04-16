@@ -42,7 +42,9 @@ public:
         Atom* ParentAcceptor;
         float AlphaAngleDist;
         float BetaAngleDist;
-        std::vector<int> TorsionVec;
+        float Dihedral1;     // torsion(C, D, H, A)
+        float Dihedral2;     // torsion(D, H, A, AA)
+        std::vector<std::pair<int,bool>> TorsionVec; // (torsionIdx. isHSide)
     }; 
 
     struct VdWBondEntity
@@ -53,7 +55,7 @@ public:
         int atomIdx2;        // index in blocks
         float startDist;     // initial distance
         float contactDist;   // sum of vdW radii + tolerance
-        std::vector<int> TorsionVec;  // torsions influencing this pair
+        std::vector<std::pair<int,bool>> TorsionVec;  // torsions influencing this pair
     };
 
 
@@ -108,6 +110,7 @@ public:
     std::vector<float> assignWeightsToTorsions(const std::vector<float>& v_i,
                                 const std::vector<int>& torsionVector);
     std::vector<float> extractVColumn(const Eigen::MatrixXf &V, int colIdx) const;
+    std::vector<std::pair<int,bool>> TorsionVec; // (torsionIdx, isHSide)
 
     // === OUTPUT & ANALYSIS ===
     bool checkClashes(const std::vector<Atom*> orderedAtoms, 
@@ -139,9 +142,32 @@ public:
     }
     float calculateAngle(const glm::vec3& vector1, const glm::vec3& vector2);
     float calculateAngleDistance(const glm::vec3 &vector1, const glm::vec3 &vector2, const glm::vec3 &vector3);
-    std::vector<int> lastCommonAncestorIdx(int donorBlock_idx, int donorAcceptor_idx);
+    std::vector<std::pair<int,bool>> lastCommonAncestorIdx(int donorBlock_idx, int donorAcceptor_idx);
     bool isAncestor(int torsionBlockIdx, int atomBlockIdx);
-    int rewindBlock(int &block_idx, std::vector<int> &torsionVector);
+    int rewindBlock(int &block_idx, std::vector<std::pair<int,bool>> &torsionVector, bool isHSide);
+    float alphaGradientHSide(const glm::vec3 &axisA, const glm::vec3 &axisB,
+                          const glm::vec3 &D, const glm::vec3 &H, const glm::vec3 &A, bool isDHBond);
+    float alphaGradientASide(const glm::vec3 &axisA, const glm::vec3 &axisB,
+                          const glm::vec3 &D, const glm::vec3 &H, const glm::vec3 &A);
+    float betaGradientASide(const glm::vec3 &axisA, const glm::vec3 &axisB,
+                                      const glm::vec3 &H, const glm::vec3 &A,
+                                      const glm::vec3 &AA, bool isAABond);
+    float betaGradientHSide(const glm::vec3 &axisA, const glm::vec3 &axisB,
+                                      const glm::vec3 &H, const glm::vec3 &A,
+                                      const glm::vec3 &AA);
+    float dihedral1GradientHSide(const glm::vec3 &axisA, const glm::vec3 &axisB,
+                                           const glm::vec3 &C, const glm::vec3 &D,
+                                           const glm::vec3 &H, const glm::vec3 &A, bool isDHBond);
+    float dihedral1GradientASide(const glm::vec3 &axisA, const glm::vec3 &axisB,
+                                           const glm::vec3 &C, const glm::vec3 &D,
+                                           const glm::vec3 &H, const glm::vec3 &A);
+    float dihedral2GradientHSide(const glm::vec3 &axisA, const glm::vec3 &axisB,
+                                           const glm::vec3 &D, const glm::vec3 &H,
+                                           const glm::vec3 &A, const glm::vec3 &AA);
+    float dihedral2GradientASide(const glm::vec3 &axisA, const glm::vec3 &axisB,
+                                           const glm::vec3 &D, const glm::vec3 &H,
+                                           const glm::vec3 &A, const glm::vec3 &AA, bool isAABond);
+
 
     // === DEBUGGING ===
     void listClashes(const std::string &filename,
@@ -149,7 +175,6 @@ public:
                               const std::vector<Atom*> &orderedAtoms,
                               int i, int j,
                               const std::vector<float> &radii);
-
 
 private:
     bool _gui = false;
