@@ -183,7 +183,7 @@ void Atom2AtomExplorer::update()
 	_plot->setCentre(0.5, 0.5);
 
 	_legend->setCentre(0.0, 0.0);
-	_legend->setLimits(-1.5 / _colourScale, 1.5 / _colourScale);
+	_legend->setLimits(-5 / _colourScale, 5 / _colourScale);
 	_legend->setCentre(0.75, 0.5);
 }
 
@@ -236,8 +236,9 @@ void Atom2AtomExplorer::mousePressEvent(double x, double y,
 
 void Atom2AtomExplorer::finishedDragging(std::string tag, double x, double y)
 {
-	_colourScale = (100 - x) / 10;
+	_colourScale = (100 - x)/10;
 	update();
+
 }
 
 void Atom2AtomExplorer::sampleFromPlot(double x, double y)
