@@ -436,7 +436,6 @@ void ConfSpaceView::buttonPressed(std::string tag, Button *button)
 
 	if (tag == "match_colour")
 	{
-		std::cout << _axes << " " << _colourRule << std::endl;
 		std::string key = _colourRule->header();
 		_axes->backgroundPrioritise(key);
 	}
