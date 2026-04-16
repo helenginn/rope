@@ -75,7 +75,7 @@ private:
 	
 	double _min = -1; 
 	double _max = 1; 
-	double _step = 0.001;
+	double _step = 1e-6;
 	float _maxTorsion = 0;
 	bool _electric = false;
 	bool _first = true;
