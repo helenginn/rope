@@ -148,17 +148,6 @@ void FlexibilityView::openAtom2AtomExplorer()
 
 	}
 
-	std::cout << "[debug_openAtom2AtomExplorer] Greetings from openAtom2AtomExplorer!" << std::endl;
-	std::cout << list.size() << std::endl;
-	std::cout << "[DEBUG disVec] Total atoms: " << disVec.size() << "\n";
-	for (size_t i = 0; i < disVec.size(); ++i)
-	{
-	    const glm::vec3 &d = disVec[i];
-	    std::cout << "Atom " << i << ": (" 
-	              << d.x << ", " 
-	              << d.y << ", " 
-	              << d.z << ")\n";
-	}
 	RAMovement movement = RAMovement::movements_from(list, disVec);
 	Atom2AtomExplorer *a2a = new Atom2AtomExplorer(this, _instance, movement);
 	a2a->show();
