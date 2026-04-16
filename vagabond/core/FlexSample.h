@@ -15,18 +15,19 @@ struct DeviationData {
     int modeIdx;
     float weight;
     int bondIdx;
-    float startDist;
-    float finalDist;
+    std::string constraintType; 
+    float startVal;
+    float finalVal;
     float deviation;
 };
 
 class FlexSample : public StructureModification {
 public: 
 	FlexSample(Flexibility *flex, Instance *instance);
-	void saveSampledStructures(int numSamples, const std::string& baseFileName, const std::string& csvDistFile);
+	void saveSampledStructures(int numSamples, const std::string& baseFileName, const std::string& csvDistFile, float petrubationWeight);
 	std::vector<int> sampleColumnIndices(int N, int sampleCount);
 	std::vector<int> sampleColumnIndicesExp(int N, int sampleCount, double lambda);
-	std::vector<int> getSoftestModeIndices(const Eigen::VectorXf& singularValues);
+	int getMatrixRange();
 	void saveHierarchySamples(int numSamples, const std::string& baseFileName, float stepSize = 1.0f);
 	void computeOneSample(int pickIdx, double weight);
     int pickIndex(const std::vector<int>& cumulativeWeights)
@@ -39,6 +40,11 @@ public:
 	}
 	// NEW: Helper function to write the CSV
     void saveBondDeviations(const std::vector<DeviationData>& data, const std::string& filename);
+    void measureDeviations(int sampleIdx,
+                           int modeIdx,
+                           float weight,
+                           std::vector<DeviationData>& collectedData);
+    bool saveDevOK = true;
 private:
     	Flexibility* _flex;
     	Instance *_instance = nullptr;
