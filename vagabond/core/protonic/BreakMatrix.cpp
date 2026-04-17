@@ -106,13 +106,15 @@ void BreakMatrix::checks_forgets()
 {
 	std::vector<ConnectBase *> connectors;
 	connectors.push_back(&_myExist);
+	connectors.push_back(&_unbrokenCount);
+	connectors.push_back(&_twirling);
 	for (const BreakEntry &entry : _entries)
 	{
 		connectors.push_back(entry.bond);
 		connectors.push_back(entry.exist);
 		connectors.push_back(entry.partner);
 		connectors.push_back(entry.hSample);
-
+		connectors.push_back(entry.hStatus);
 	}
 	
 	prep_constraints_and_forgets(this, connectors);
