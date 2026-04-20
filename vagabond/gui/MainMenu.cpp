@@ -104,11 +104,11 @@ void MainMenu::setup()
 		ImageButton *button = new ImageButton("assets/images/rotamer.png", this);
 		button->resize(0.25);
 		button->setReturnTag("rotamer");
-		button->setCentre(0.5, 0.65);
+		button->setCentre(0.8, 0.65);
 		addObject(button);
 
 		Text *text = new Text("Rotamers");
-		text->setCentre(0.5, 0.80);
+		text->setCentre(0.8, 0.80);
 		addObject(text);
 	}
 

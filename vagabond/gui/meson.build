@@ -237,6 +237,8 @@ guifiles = [
 'WatchRefinement.h',
 '../cmd/CmdWorker.h',
 '../cmd/Dictator.h',
+'RotamerMenu.h',
+'RotamerMenu.cpp',
 ]
 
 gui = static_library('vaggui', guifiles,

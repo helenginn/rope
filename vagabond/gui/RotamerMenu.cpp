@@ -8,18 +8,18 @@
 #include <vagabond/core/EntityManager.h>
 #include <vagabond/core/Environment.h>
 
-RotamerMenu::RotamerMenu(Scene *prev) : ListView(prev) {
+RotamerMenu::RotamerMenu(Scene *prev) : ListView(prev)
+{
 
 }
 
-RotamerMenu::~RotamerMenu() {
-    addTitle("Rotamer Menu");
+RotamerMenu::~RotamerMenu()
+{
 }
 
 void RotamerMenu::setup() {
-    //    addTitle("Rotamer Menu");
-
-    //ListView::setup();
+    addTitle("Rotamer Menu");
+    ListView::setup();
 }
 
 void RotamerMenu::buttonPressed(std::string tag, Button *button)
@@ -35,7 +35,7 @@ Renderable *RotamerMenu::getLine(int i)
     TextButton *tb = nullptr;
     if (i == lineCount() - 1)
     {
-        tb = new TextButton("Add new dataset...", this);
+        tb = new TextButton("List all the rotamers", this);
     }
     return tb;
 }

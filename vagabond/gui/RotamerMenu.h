@@ -17,9 +17,10 @@ public:
 
     virtual size_t lineCount();
     virtual Renderable *getLine(int i);
+
     virtual void buttonPressed(std::string tag, Button *button = nullptr);
-    virtual void respond();
-    virtual void refresh();
+    //virtual void respond();
+    //virtual void refresh();
 private:
 };
 
