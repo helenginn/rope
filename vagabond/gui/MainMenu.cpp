@@ -9,6 +9,7 @@
 #include "ModelMenu.h"
 #include "MainMenu.h"
 #include "FileView.h"
+#include "RotamerMenu.h"
 
 #include <vagabond/gui/elements/TextButton.h>
 #include <vagabond/gui/elements/ImageButton.h>
@@ -95,6 +96,19 @@ void MainMenu::setup()
 
 		Text *text = new Text("Metadata");
 		text->setCentre(0.2, 0.80);
+		addObject(text);
+	}
+
+
+	{
+		ImageButton *button = new ImageButton("assets/images/rotamer.png", this);
+		button->resize(0.25);
+		button->setReturnTag("rotamer");
+		button->setCentre(0.5, 0.65);
+		addObject(button);
+
+		Text *text = new Text("Rotamers");
+		text->setCentre(0.5, 0.80);
 		addObject(text);
 	}
 
@@ -221,6 +235,12 @@ void MainMenu::buttonPressed(std::string tag, Button *button)
 	else if (tag == "sandbox")
 	{
 	}
+	else if (tag == "rotamer")
+	{
+		RotamerMenu *menu = new RotamerMenu(this);
+		menu->show();
+	}
+
 
 	Scene::buttonPressed(tag, button);
 }
