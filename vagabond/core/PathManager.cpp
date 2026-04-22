@@ -219,7 +219,7 @@ void PathManager::makePathBetween(const std::string &start,
 		time_t start = ::time(NULL);
 
 		route->prepareCalculate();
-		std::cout << "Beginning calculation..." << std::endl;
+		std::cout << "Beginning calculation with " << route->randomPerturb() << " degrees starting perturbation..." << std::endl;
 		route->calculate(route);
 		std::cout << "Done." << std::endl;
 		Path path(route);

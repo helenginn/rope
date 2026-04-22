@@ -388,6 +388,7 @@ struct EntropyForMatrix PathEntropy::calculateEntropyMI(int nf, struct FlagParam
 								x[k] = meanDist[k+1];
 								y[k] = entk[k];
 
+                                std::cout << "entk[" << k << "]: " << entk[k] << std::endl;
 								if(k == 0) w[k] = M_PI * M_PI /6;
 								else w[k] = w[k-1] - 1/(double) (k*k);
 							}
