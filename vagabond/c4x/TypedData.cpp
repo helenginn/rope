@@ -240,7 +240,8 @@ void TypedData<Unit, Header>::normalise()
 	
 	float n = vectorCount();
 
-	auto calculate_standard_deviations = [this, n](Header &header, int i)
+	auto calculate_standard_deviations = 
+	[this, n](Header &header, int i)
 	{
 		double x = 0; double xx = 0;
 		auto add_to_standard_deviation = [i, &x, &xx](Entry &entry, int)
@@ -264,7 +265,15 @@ void TypedData<Unit, Header>::normalise()
 		}
 	};
 	
-	do_on_all_headers(calculate_standard_deviations);
+	if (_normalise)
+	{
+		do_on_all_headers(calculate_standard_deviations);
+	}
+	else
+	{
+		_stdevs = std::vector<float>(comparable_length(), 
+				1.f);
+	}
 
 	for (size_t i = 0; i < _comparables.size(); i++)
 	{
