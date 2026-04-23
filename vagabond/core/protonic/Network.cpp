@@ -105,7 +105,7 @@ bool Network::setupSingleAlcohol(AtomConf atom)
 		str = atom.ptr->code() == "TYR" ? "Tyr" : "Thr";
 	}
 
-	_atomMap[atom]->prepareCoordinated(Count::Zero, Count::Four, Count::One);
+	_atomMap[atom]->prepareCoordinated(Count::Zero, Count::Four, Count::Two);
 	return true;
 }
 
@@ -116,7 +116,7 @@ bool Network::setupLysineAmine(AtomConf atom)
 		return false;
 	}
 
-	_atomMap[atom]->prepareCoordinated(Count::One, Count::Four, Count::Two);
+	_atomMap[atom]->prepareCoordinated(Count::One, Count::Four, Count::Three);
 	return true;
 }
 
@@ -132,11 +132,12 @@ bool Network::setupAmineNitrogen(AtomConf atom)
 	if (terminal)
 	{
 		Count::Values n_charge = Count::OneOrZero;
-		_atomMap[atom]->prepareCoordinated(n_charge, Count::Four, Count::Two);
+		_atomMap[atom]->prepareCoordinated(n_charge, Count::Four, Count::Three);
 	}
 	else
 	{
-		_atomMap[atom]->prepareCoordinated(Count::Zero, Count::Three, Count::One);
+		_atomMap[atom]->prepareCoordinated(Count::Zero, Count::Three, 
+		                                   Count::Three);
 	}
 
 	return true;
@@ -177,13 +178,13 @@ bool Network::setupHistidine(AtomConf atom)
 	}
 
 	const Count::Values charge = Count::OneOrZero;
-	const Count::Values donors = Count::OneOrZero;
+	const Count::Values valency = Count::Three;
 
 	const Count::Values charge_sum = Count::OneOrZero;
 	const Count::Values strong_sum = Count::Values(Count::One | Count::Two);
 
-	_atomMap[atom]->prepareCoordinated(charge, Count::Three, donors);
-	_atomMap[partner]->prepareCoordinated(charge, Count::Three, donors);
+	_atomMap[atom]->prepareCoordinated(charge, Count::Three, valency);
+	_atomMap[partner]->prepareCoordinated(charge, Count::Three, valency);
 	
 	shareCharges(atom, partner, charge_sum);
 	shareStrong(atom, partner, strong_sum);
@@ -221,13 +222,12 @@ bool Network::setupCarboxylOxygen(AtomConf atom)
 	}
 
 	Count::Values charge = Count::mOneOrZero;
-	Count::Values donors = Count::OneOrZero;
+	Count::Values valency = Count::Values(Count::One | Count::Two);
 	Count::Values strong_sum = Count::mOneOrZero;
-
 	Count::Values charge_sum = Count::mOneOrZero;
 
-	_atomMap[atom]->prepareCoordinated(charge, Count::Three, donors);
-	_atomMap[partner]->prepareCoordinated(charge, Count::Three, donors);
+	_atomMap[atom]->prepareCoordinated(charge, Count::Three, valency);
+	_atomMap[partner]->prepareCoordinated(charge, Count::Three, valency);
 	
 	shareCharges(atom, partner, charge_sum);
 	shareStrong(atom, partner, strong_sum);
@@ -239,7 +239,7 @@ bool Network::setupCarbonylOxygen(AtomConf atom)
 {
 	bool bad = false;
 	Count::Values coordination = Count::Values(Count::Two | Count::Three);
-	coordination = Count::Three; // fix
+//	coordination = Count::Three; // fix
 
 	if ((atom.ptr->atomName() != "O" && atom.ptr->atomName() != "OXT") ||
 	    atom.ptr->code() == "HOH")
@@ -252,9 +252,7 @@ bool Network::setupCarbonylOxygen(AtomConf atom)
 	    (atom.ptr->atomName() == "OD2" && atom.ptr->code() == "ASN") ||
 	    (atom.ptr->atomName() == "OE1" && atom.ptr->code() == "GLN"))
 	{
-		std::cout << "Allowing " << atom << std::endl;
 		bad = false;
-		coordination = Count::Three;
 	}
 	
 	if (bad)
@@ -262,7 +260,7 @@ bool Network::setupCarbonylOxygen(AtomConf atom)
 		return false;
 	}
 
-	_atomMap[atom]->prepareCoordinated(Count::Zero, coordination, Count::Zero);
+	_atomMap[atom]->prepareCoordinated(Count::Zero, coordination, Count::One);
 	return true;
 }
 
@@ -281,15 +279,15 @@ bool Network::setupArginine(AtomConf atom)
 	    atom.ptr->atomName() == "NE"))
 	{ return false; }
 
-	if (atom.ptr->atomName() == "NH1" || atom.ptr->atomName() == "NH2")
+//	if (atom.ptr->atomName() == "NH1" || atom.ptr->atomName() == "NH2")
 	{
 		_atomMap[atom]->prepareCoordinated(Count::Zero, Count::Three,
-		                                   Count::Two);
+		                                   Count::Three);
 	}
-	else
+//	else
 	{
-		_atomMap[atom]->prepareCoordinated(Count::Zero, Count::Three,
-		                                   Count::One);
+//		_atomMap[atom]->prepareCoordinated(Count::Zero, Count::Three,
+//		                                   Count::Three);
 	}
 
 	return true;
@@ -320,7 +318,7 @@ bool Network::setupTryptophan(AtomConf atom)
 	if (!(atom.ptr->code() == "TRP" && atom.ptr->atomName() == "NE1"))
 	{ return false; }
 
-	_atomMap[atom]->prepareCoordinated(Count::Zero, Count::Three, Count::One);
+	_atomMap[atom]->prepareCoordinated(Count::Zero, Count::Three, Count::Three);
 
 	return true;
 }

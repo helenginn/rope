@@ -209,6 +209,7 @@ private:
 	hnet::CountConnector *_absent{};
 	hnet::CountConnector *_expl_bonds{};
 	hnet::CountConnector *_twirling{};
+	hnet::CountConnector *_uninvolved_count{};
 
 	void clashLogic();
 

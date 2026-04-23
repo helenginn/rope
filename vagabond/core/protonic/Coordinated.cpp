@@ -352,7 +352,7 @@ OpSet<ABPair> Coordinated::uninvolvedCoordinators()
 			atom_to_confs[bond.first.ptr].push_back(bond.first.conf);
 			perm[bond.first.ptr] = 0;
 		}
-		
+
 		do
 		{
 			OpSet<ABPair> group;
@@ -367,6 +367,24 @@ OpSet<ABPair> Coordinated::uninvolvedCoordinators()
 		while (next_permutation(perm, atom_to_confs));
 		
 	}
+	
+	std::cout << "Uninvolved: " << _uninvolved.size() << std::endl;
+	
+	std::set<::Atom *> atoms;
+	for (const OpSet<ABPair> &group : _uninvolved)
+	{
+		for (const ABPair &pair : group)
+		{
+			atoms.insert(pair.first.ptr);
+		}
+	}
+
+	std::vector<int> num = {(int)atoms.size()};
+	Count::Values number = values_as_count(num);
+	std::cout << "Number of covalent bonds for " << 
+	_atomConf << ": " << number << std::endl;
+	std::cout << _uninvolved_count << std::endl;
+	add_constraint(new CountConstant(*_uninvolved_count, number));
 
 	findPlanarAtom();
 	return _uninvolved;
@@ -1040,7 +1058,7 @@ void Coordinated::attachToNeighbours(AtomGroup *searchGroup)
 		rev << candidate << " and " << _atomConf;
 		
 		ExistenceConnector &h = add(new ExistenceConnector());
-		h.setDesc("presence of hydrogen atom in H-bond between " + ss.str());
+		h.setDesc("protonation state of hydrogen atom in H-bond between " + ss.str());
 		ExistenceConnector &hExist = add(new ExistenceConnector());
 		hExist.setDesc("existence of hydrogen atom "
 		               "in H-bond between " + ss.str());
@@ -1282,7 +1300,7 @@ void Coordinated::prepareCoordinated(const Count::Values &n_charge,
 	CountConnector &all_strong = add_zero_or_positive_connector();
 	expl_strong.setDesc("Donor bonds of " + _atomConf.desc());
 	twirling_strong.setDesc("Twirling bonds of " + _atomConf.desc());
-	all_strong.setDesc("All bonds of " + _atomConf.desc());
+	all_strong.setDesc("All donor bonds of " + _atomConf.desc());
 	CountConnector &expl_weak = add_zero_or_positive_connector();
 	CountConnector &expl_absent = add_zero_or_positive_connector();
 	CountConnector &expl_vacancies = add_zero_or_positive_connector();
@@ -1292,17 +1310,28 @@ void Coordinated::prepareCoordinated(const Count::Values &n_charge,
 
 	CountConnector &charge = add(new CountConnector());
 	charge.setDesc("Charge on " + _atomConf.desc());
+
 	CountConnector &coord_num = add(new CountConnector());
-	charge.setDesc("Coordination number for " + _atomConf.desc());
+	coord_num.setDesc("Coordination number for " + _atomConf.desc());
+
+	CountConnector &stated_valency = add(new CountConnector());
+	stated_valency.setDesc("Stated valency of " + _atomConf.desc());
+
+	CountConnector &uninvolved = add(new CountConnector());
+	uninvolved.setDesc("Covalent bonds of " + _atomConf.desc());
+
 	CountConnector &valency = add(new CountConnector());
-	charge.setDesc("Valency of " + _atomConf.desc());
+	valency.setDesc("Valency of " + _atomConf.desc());
 	
 	/* CountAdder format: arg0 + arg1 = arg2 */
 
 	/* ensure all hidden bonds are unable to fall below zero */
 	add_constraint(new CountConstant(charge, n_charge));
 	add_constraint(new CountConstant(coord_num, n_coord_num));
-	add_constraint(new CountConstant(valency, remaining_valency));
+	add_constraint(new CountConstant(stated_valency, remaining_valency));
+
+	/* remaining valency = stated valency - covalent bonds */
+	add_constraint(new CountAdder(uninvolved, valency, stated_valency));
 
 	/* all strong bonds are explicit + freely rotating bonds */
 	add_constraint(new CountAdder(expl_strong, twirling_strong, all_strong));
@@ -1334,6 +1363,7 @@ void Coordinated::prepareCoordinated(const Count::Values &n_charge,
 	_charge = &charge;
 	_donors = &valency;
 	_coord_num = &coord_num;
+	_uninvolved_count = &uninvolved;
 
 	/* counts which need to be hooked up to bond adders later */
 	_strong = &expl_strong;
