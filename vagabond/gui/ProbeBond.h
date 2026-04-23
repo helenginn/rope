@@ -67,6 +67,7 @@ public:
 	virtual void buttonPressed(std::string tag, Button *button = nullptr);
 private:
 	void declareBond(hnet::Bond::Values value);
+	void declareBondExistence(hnet::Existence::Values value);
 
 	BondProbe *_probe = nullptr;
 	ProtonNetworkView *_view = nullptr;

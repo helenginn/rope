@@ -70,15 +70,32 @@ void ProbeBond::fixVertices(const glm::vec3 &start, const glm::vec3 &dir)
 
 void ProbeBond::offerBondMenu()
 {
-	std::vector<Bond::Values> options = _probe->_obj.values();
-
 	Menu *m = new Menu(_view, this);
-	
-	for (const Bond::Values &option : options)
+
 	{
-		std::ostringstream ss;
-		ss << option;
-		m->addOption(ss.str(), "setB_" + ss.str());
+		std::vector<Bond::Values> options = _probe->_obj.values();
+		if (options.size() > 1)
+		{
+			for (const Bond::Values &option : options)
+			{
+				std::ostringstream ss;
+				ss << option;
+				m->addOption(ss.str(), "setB_" + ss.str());
+			}
+		}
+	}
+
+	{
+		std::vector<Existence::Values> options = _probe->_exist.values();
+		if (options.size() > 1)
+		{
+			for (const Existence::Values &option : options)
+			{
+				std::ostringstream ss;
+				ss << option;
+				m->addOption(ss.str(), "setB_" + ss.str());
+			}
+		}
 	}
 
 	_view->setMenu(m);
@@ -175,6 +192,39 @@ ProbeBond::ProbeBond(ProtonNetworkView *view, BondProbe *probe)
 	_probe->existence().set_update([this]() { updateProbe(); });
 }
 
+void ProbeBond::declareBondExistence(Existence::Values value)
+{
+	std::string name = "Declare bond existence";
+	GuiltVersion gv = Guilt::issueNext();
+
+	std::ostringstream ss;
+
+	auto make_declaration = [gv, value, this]
+	{
+		bool okay = _probe->_exist.assign_value_and_check(value, gv);
+		std::cout << "Declared " << _probe->desc() << " existence, ";
+		std::cout << "OK: " << (okay ? "YES" : "NO") << std::endl;
+		if (!okay)
+		{
+			_view->setInformation("Contradiction occurred in logical "\
+			                      "network!!\nCtrl+Z to undo");
+		}
+	};
+
+	auto rescind_declaration = [gv, this]
+	{
+		_probe->_obj.forget_all(gv);
+		_probe->_obj.check_all(gv);
+	};
+
+	ss << name << " " << value << std::endl;
+	std::string message = ss.str();
+	
+	_view->network().undoStack().addJobAndExecute(make_declaration,
+	                                              rescind_declaration,
+	                                              message);
+}
+
 void ProbeBond::declareBond(Bond::Values value)
 {
 	std::string name = "Declare bond";
@@ -226,6 +276,15 @@ void ProbeBond::buttonPressed(std::string tag, Button *button)
 	else if (tag == "setB_Broken")
 	{
 		declareBond(Bond::Broken);
+	}
+	else if (tag == "setB_Absent")
+	{
+		declareBondExistence(Existence::Absent);
+	}
+	else if (tag == "setB_Present")
+	{
+		declareBondExistence(Existence::Present);
+		declareBond(Bond::NotBroken);
 	}
 
 }
