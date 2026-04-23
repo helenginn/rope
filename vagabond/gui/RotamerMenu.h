@@ -8,14 +8,19 @@
 #include <vagabond/gui/elements/ListView.h>
 #include <vagabond/gui/elements/Scene.h>
 
-class RotamerMenu : public Scene
+class RotamerMenu : public ListView
 {
 public:
     RotamerMenu(Scene *prev);
     virtual ~RotamerMenu();
     virtual void setup();
 
+    virtual size_t lineCount();
+    virtual Renderable *getLine(int i);
+
     virtual void buttonPressed(std::string tag, Button *button = nullptr);
+    //virtual void respond();
+    //virtual void refresh();
 private:
 };
 
