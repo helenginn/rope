@@ -8,7 +8,7 @@
 #include <vagabond/core/EntityManager.h>
 
 
-RotamerMenu::RotamerMenu(Scene *prev) : Scene(prev)
+RotamerMenu::RotamerMenu(Scene *prev) : ModelMenu(prev)
 {
 
 }
@@ -19,11 +19,14 @@ RotamerMenu::~RotamerMenu()
 
 void RotamerMenu::setup()
 {
-    addTitle("Rotamer Menu");
+    ModelMenu::setup();
+    addTitle("zboui");
+
+
 }
 
 void RotamerMenu::buttonPressed(std::string tag, Button *button)
 {
-    Scene::buttonPressed(tag, button);
-    showBackButton();
+    ModelMenu::buttonPressed(tag, button);
+    //showBackButton();
 }

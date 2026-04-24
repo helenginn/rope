@@ -14,6 +14,8 @@ message('  PREFIX:', get_option('prefix'))
 message('  NATIVE:', is_native)
 
 # Dependencies
+cc = meson.get_compiler('c')
+libpng = cc.find_library('libpng', dirs : '~/.conan2/p/')
 curl = dependency('libcurl', required: is_native)
 fftw = dependency('fftw3f', required: is_native)
 gemmi = dependency('gemmi', modules: ['gemmi::gemmi_cpp'], required: is_native)
@@ -25,7 +27,7 @@ sdl2 = dependency('SDL2', required: false)
 sdl2image = dependency('SDL2_image', required: false)
 thread_dep = dependency('threads')  # Check: is this required for emscripten?
 zlib = dependency('zlib')
-
+#libpng = dependency('libpng', version : '>=1.6.50')
 # Dependency groups
 header_deps = [glm, json]
 core_deps = [curl, fftw, gemmi, thread_dep, zlib]

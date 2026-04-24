@@ -21,6 +21,8 @@
 #include <vagabond/gui/elements/TextButton.h>
 #include <vagabond/gui/SequenceView.h>
 #include <vagabond/gui/ChooseEntity.h>
+#include <vagabond/gui/elements/Menu.h>
+#include <vagabond/gui/RotamerMenu.h>
 
 #include <vagabond/core/files/File.h>
 #include <vagabond/core/Chain.h>
@@ -32,6 +34,8 @@
 #include <vagabond/core/EntityManager.h>
 
 #include <vagabond/utils/FileReader.h>
+
+#include "RotamerMenu.h"
 
 ChainAssignment::ChainAssignment(Scene *prev, Model &model, const bool &existing) 
 : ListView(prev), _model(model), _existing(existing) 
@@ -94,7 +98,7 @@ Renderable *ChainAssignment::getLine(int i)
 	Sequence *seq = _contents->chain(i)->fullSequence();
 	std::string id = _contents->chain(i)->id();
 	std::string entity = _model.entityForChain(id);
-	
+	std::cout << "model name : " << _model.name() << "\nand id : "<< id << "\nand entity : " << entity << '\n';
 	if (entity.length() == 0)
 	{
 		entity = "(not assigned)";
@@ -103,7 +107,9 @@ Renderable *ChainAssignment::getLine(int i)
 	float diff = -0.2;
 
 	{
-		Text *t = new Text(id);
+		TextButton *t = new TextButton(id, this);
+		t->setReturnTag("chain_"+id);
+		//std::cout << id << " and "<< entity << '\n';
 		t->setRight(0.3 + diff, 0.0);
 		box->addObject(t);
 	}
@@ -150,6 +156,37 @@ void ChainAssignment::buttonPressed(std::string tag, Button *button)
 		ChooseEntity *choose = new ChooseEntity(this, _model, chain);
 		choose->setCaller(this);
 		choose->show();
+	}
+	prefix = "chain_";
+	if (tag.rfind(prefix, 0) != std::string::npos && !button->left())
+	{
+		Menu *m = new Menu(this, this, "rotamer");
+		m->addOption("Setup Rotamers", "menu"+tag);
+		m->addOption("View Rotamers", "view"+tag);
+		m->setup(button);
+		setModal(m);
+
+	}
+	prefix = "rotamer_menu";
+	if (tag.rfind(prefix, 0)!= std::string::npos)
+	{
+		std::cout << "Rotamer Menu\n";
+		std::cout << "model name : " << _model.name(); //<< "\nand id : "<< id << "\nand entity : " << entity << '\n';
+
+		//std::cout << "id: " << tag << "\n";
+		std::string id = tag.substr(prefix.length(), std::string::npos);
+		std::cout << "id: " << id << "\n";
+		Chain *chain = _contents->chain(id);
+
+		//RotamerMenu *m = new RotamerMenu(this, chain);
+	}
+	prefix = "rotamer_view";
+	if (tag.rfind(prefix, 0) != std::string::npos)
+	{
+		std::cout << "Rotamer View\n";
+		std::string id = tag.substr(prefix.length(), std::string::npos);
+		std::cout << "id: " << id << "\n";
+		//RotamerView *view = new RotamerView(this, model, chain);
 	}
 }
 

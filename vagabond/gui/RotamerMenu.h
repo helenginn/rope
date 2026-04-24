@@ -5,10 +5,10 @@
 #ifndef __vagabond__RotamerMenu__
 #define __vagabond__RotamerMenu__
 
-#include <vagabond/gui/elements/ListView.h>
+#include <vagabond/gui/ModelMenu.h>
 #include <vagabond/gui/elements/Scene.h>
 
-class RotamerMenu : public Scene
+class RotamerMenu : public ModelMenu
 {
 public:
     RotamerMenu(Scene *prev);
