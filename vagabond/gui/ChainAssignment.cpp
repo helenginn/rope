@@ -17,6 +17,8 @@
 // Please email: vagabond @ hginn.co.uk for more details.
 
 #include "ChainAssignment.h"
+#include "Display.h"
+#include "DisplayUnit.h"
 
 #include <vagabond/gui/elements/TextButton.h>
 #include <vagabond/gui/SequenceView.h>
@@ -184,9 +186,10 @@ void ChainAssignment::buttonPressed(std::string tag, Button *button)
 	if (tag.rfind(prefix, 0) != std::string::npos)
 	{
 		std::cout << "Rotamer View\n";
-		std::string id = tag.substr(prefix.length(), std::string::npos);
+		std::string id = tag.substr(prefix.length()+6, std::string::npos);
 		std::cout << "id: " << id << "\n";
-		//RotamerView *view = new RotamerView(this, model, chain);
+		Chain *chain = _contents->chain(id);
+		viewModel(_model.name(), chain);
 	}
 }
 
@@ -198,4 +201,23 @@ void ChainAssignment::refreshInfo()
 		EntityManager::manager()->checkModelsForReferences(mm);
 	}
 	refresh();
+}
+
+void ChainAssignment::viewModel(std::string name, Chain *chain)
+{
+	try
+	{
+		ModelManager *mm = ModelManager::manager();
+		Model *mod = mm->model(name);
+
+		Display *d = new Display(this);
+		DisplayUnit *unit = new DisplayUnit(d);
+		unit->setOwnsAtoms();
+		unit->loadModelChain(mod, chain);
+		d->show();
+	}
+	catch (const std::runtime_error &err)
+	{
+		std::cout << err.what() << " - skipping." << std::endl;
+	}
 }

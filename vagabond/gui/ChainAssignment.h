@@ -21,6 +21,8 @@
 
 #include <vagabond/gui/elements/ListView.h>
 
+#include "ModelManager.h"
+
 class Model;
 class AtomContent;
 
@@ -39,7 +41,9 @@ public:
 private:
 	AtomContent *_contents = nullptr;
 	Model &_model;
+	ModelManager *_manager;
 	const bool &_existing;
+	void viewModel(std::string name,Chain *chain);
 };
 
 #endif

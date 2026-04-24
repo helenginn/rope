@@ -200,6 +200,15 @@ void DisplayUnit::loadModel(Model *model)
 	startWatch();
 }
 
+void DisplayUnit::loadModelChain(Model *model, Chain *chain)
+{
+	_model = model;
+	model->polymerFromChain(chain)->load();
+	loadAtoms(model->polymerFromChain(chain)->currentAtoms());
+	displayAtoms(false, false);
+	startWatch();
+}
+
 void DisplayUnit::densityFromMap(ArbitraryMap *map)
 {
 	resetDensityMap();
