@@ -171,6 +171,14 @@ if (Ask-YN "Compile in release mode? (debug otherwise)" "Y") {
     }
 }
 
+if (Ask-YN "Compile with tests enabled?" "Y") {
+  $ENABLE_TESTS = $true
+  $EXTRA_MESON_ARGS += "-Denable_tests=true"
+} else {
+  $ENABLE_TESTS = $false
+  $EXTRA_MESON_ARGS += "-Denable_tests=false"
+}
+
 if (Ask-YN "Set up .clangd file for LSP?" "Y") {
   $USE_CLANGD=$true
 } else {
@@ -187,6 +195,11 @@ if ($Build -ne "") {
 }
 Info "Planning to build in ${BUILDDIR}"
 Info "Using conan for dependency package management"
+if ($ENABLE_TESTS) {
+  Info "Compile mode: tests enabled"
+} else {
+  Info "Compile mode: tests disabled"
+}
 if ($USE_CLANGD) {Info "Set up .clangd for LSP"}
 
 if (Ask-YN "Proceed?" "Y") {

@@ -24,8 +24,9 @@ SRCDIR=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
 SRCBASENAME=$(basename "$SRCDIR")
 SCRPTBASENAME=$(basename "$SCRPTDIR")
 
-EXTRA_MESON_ARGS=""
-EXTRA_MESON_ARGS="${PREFIX_OVERRIDE:+--prefix "$PREFIX_OVERRIDE"} ${DATADIR_OVERRIDE:+--datadir "$DATADIR_OVERRIDE"}"
+EXTRA_MESON_ARGS=()
+[ -n "$PREFIX_OVERRIDE" ] && EXTRA_MESON_ARGS+=("--prefix=$PREFIX_OVERRIDE")
+[ -n "$DATADIR_OVERRIDE" ] && EXTRA_MESON_ARGS+=("--datadir=$DATADIR_OVERRIDE")
 
 # -- COLOURS --
 
@@ -227,6 +228,14 @@ else
   fi
 fi
 
+if ask_yn "Compile with tests enabled?" "Y"; then
+  USE_TESTS=true
+  EXTRA_MESON_ARGS+=("-Denable_tests=true")
+else
+  USE_TESTS=false
+  EXTRA_MESON_ARGS+=("-Denable_tests=false")
+fi
+
 if ask_yn "Set up .clangd file for LSP?" "Y"; then
   USE_CLANGD=true
 else
@@ -247,6 +256,12 @@ if $USE_CONAN; then
   info "Using conan for dependency package management"
 else
   info "Relying on system packages for dependencies"
+fi
+
+if $USE_TESTS; then
+  info "Compile mode: tests enabled"
+else
+  info "Compile mode: tests disabled"
 fi
 
 if $USE_CLANGD; then
@@ -281,9 +296,10 @@ if $USE_CONAN; then
     info "inserting ccache into conan-meson-toolchain..."
     sed -E "s|^c[[:space:]]*=[[:space:]]*['\"](.*)['\"]|c = ['ccache', '\1']|g; s|^cpp[[:space:]]*=[[:space:]]*['\"](.*)['\"]|cpp = ['ccache', '\1']|g" "${BUILDDIR}/conan_meson_native.ini" > "${BUILDDIR}/conan_meson_native.ini.tmp" && mv "${BUILDDIR}/conan_meson_native.ini.tmp" "${BUILDDIR}/conan_meson_native.ini"
   fi
-  meson setup "$BUILDDIR" --native-file="${BUILDDIR}"/conan_meson_native.ini --buildtype="$BUILD_TYPE" $EXTRA_MESON_ARGS --reconfigure --clearcache
+
+  meson setup "$BUILDDIR" --native-file="${BUILDDIR}"/conan_meson_native.ini --buildtype="$BUILD_TYPE" "${EXTRA_MESON_ARGS[@]}" --reconfigure --clearcache
 else
-  meson setup "$BUILDDIR" --buildtype="$BUILD_TYPE" $EXTRA_MESON_ARGS --reconfigure --clearcache
+  meson setup "$BUILDDIR" --buildtype="$BUILD_TYPE" "${EXTRA_MESON_ARGS[@]}" --reconfigure --clearcache
 fi
 meson compile -C "$BUILDDIR"
 
