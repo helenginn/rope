@@ -87,3 +87,4 @@ Metadata *PathGroup::prepareMetadata(bool force)
 
 	return metadata;
 }
+
