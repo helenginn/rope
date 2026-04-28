@@ -168,15 +168,16 @@ void PathManager::purgePath(Path *path)
 {
 	for (auto it = _objects.begin(); it != _objects.end(); it++)
 	{
-		Path *ptr = &*it;
+        Path *ptr = &*it;
+
 		if (ptr == path)
 		{
 			_objects.erase(it);
 			break;
 		}
 	}
-	
-	sendResponse("purged_path", path);
+
+    sendResponse("purged_path", path);
 }
 
 void PathManager::makePathBetween(const std::string &start,

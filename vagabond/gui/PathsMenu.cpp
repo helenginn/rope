@@ -146,6 +146,7 @@ void PathsMenu::setup()
 			else
 			{
 				_selected.clear();
+                tb->toggle("all");
 			}
 			
 			refresh();
@@ -226,7 +227,7 @@ Renderable *PathsMenu::getLine(int i)
 	// add the option box
 	{
 		TickBoxes *tb = new TickBoxes(this, this);
-		auto func = [this, i]()
+		auto func = [this, tb, i]()
 		{
 			std::cout << "Inserting " << i << std::endl;
 			if (_selected.count(i) == 0)
@@ -235,7 +236,9 @@ Renderable *PathsMenu::getLine(int i)
 			}
 			else
 			{
+                std::cout << "Erasing " << i << std::endl;
 				_selected.erase(i);
+                tb->toggle("");
 			}
 		};
 
@@ -349,10 +352,38 @@ void PathsMenu::buttonPressed(std::string tag, Button *button)
 				view->show();
 			};
 			m->addOption("Residue blame", func);
+
+            m->addOption("Delete chosen paths", "delete_path_sets");
 		}
 
 		m->setup(button);
 		setModal(m);
+	}
+
+    if (tag == "yes_del_sets")
+    {	
+		for (const int &idx : _selected)
+		{
+            Path *path = _paths[idx][0];
+
+			std::vector<Path *> selectedPaths = PathManager::manager()->pathsBetweenInstances(path->startInstance(), path->endInstance());
+
+            for(Path *const &path : selectedPaths)
+            {
+                path->signalDeletion();
+                Environment::purgePath(*path);
+            }
+		}
+    
+        refresh();
+	}
+
+    if (tag == "menu_delete_path_sets")
+    {
+		AskYesNo *askyn = new AskYesNo(this, "Are you sure you want to delete\n"\
+		                               " all selected paths?", "del_sets", 
+		                               this);
+		setModal(askyn);
 	}
 	
 	if (tag == "yes_del_all")
@@ -387,10 +418,10 @@ void PathsMenu::buttonPressed(std::string tag, Button *button)
 
 	if (tag == "menu_path_thermodynamics")
 	{ 
-            std::vector<Path *> pathsForCalc;
+        std::vector<Path *> pathsForCalc;
 
 	    for (Path *const &path : _allPaths)
-            {
+        {
 	        pathsForCalc.push_back(path);
 	    }
 
@@ -401,10 +432,10 @@ void PathsMenu::buttonPressed(std::string tag, Button *button)
 
     if (tag == "menu_map_entropy")
     {
-	HeatMapOptions *hmo = new HeatMapOptions(this, _entity);
+	    HeatMapOptions *hmo = new HeatMapOptions(this, _entity);
 
-	hmo->show();
-	return;
+	    hmo->show();
+	    return;
 
         /* std::cout << "path entropy data calculated" << std::endl;
         std::ifstream dataFile(_entity->name() + "_10");
