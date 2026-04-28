@@ -241,7 +241,6 @@ Renderable *PathsMenu::getLine(int i)
 		TickBoxes *tb = new TickBoxes(this, this);
         
         _tbs.push_back(tb);
-
 		auto func = [this, tb, i]()
 		{
 			if (_selected.count(i) == 0)
@@ -250,7 +249,9 @@ Renderable *PathsMenu::getLine(int i)
 			}
 			else
 			{
+                std::cout << "Erasing " << i << std::endl;
 				_selected.erase(i);
+                tb->toggle("");
 			}
 		};
 
@@ -441,7 +442,7 @@ void PathsMenu::buttonPressed(std::string tag, Button *button)
 
 	if (tag == "menu_path_thermodynamics")
 	{ 
-            std::vector<Path *> pathsForCalc;
+        std::vector<Path *> pathsForCalc;
 
 	    for (Path *const &path : _allPaths)
         {
@@ -507,8 +508,8 @@ void PathsMenu::buttonPressed(std::string tag, Button *button)
     {
 	HeatMapOptions *hmo = new HeatMapOptions(this, _entity);
 
-	hmo->show();
-	return;
+	    hmo->show();
+	    return;
 
         /* std::cout << "path entropy data calculated" << std::endl;
         std::ifstream dataFile(_entity->name() + "_10");
