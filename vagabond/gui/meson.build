@@ -239,6 +239,8 @@ guifiles = [
 '../cmd/Dictator.h',
 'RotamerMenu.h',
 'RotamerMenu.cpp',
+'RotamerView.h',
+'RotamerView.cpp',
 ]
 
 gui = static_library('vaggui', guifiles,
