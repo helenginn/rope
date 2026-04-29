@@ -18,8 +18,6 @@
 
 #ifndef __vagabond__DisplayUnit__
 #define __vagabond__DisplayUnit__
-#include <string>
-#include "Chain.h"
 
 class Display;
 class GuiAtom;
@@ -71,9 +69,6 @@ public:
 	void refreshDensity(AtomMap *map, bool differences);
 
 	void loadModel(Model *model);
-
-	void loadModelChain(Model *model,Chain *chain);
-
 	void loadAtoms(AtomGroup *group, Entity *entity = nullptr);
 	void loadReflections(Diffraction *diff);
 
