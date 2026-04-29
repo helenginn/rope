@@ -5,6 +5,7 @@
 #ifndef __vagabond__RotamerView__
 #define __vagabond__RotamerView__
 #include "Display.h"
+#include <vagabond/core/Chain.h>
 
 class Model;
 
@@ -20,9 +21,8 @@ public:
     void loadModelChain(Model *model, Chain *chain, DisplayUnit *unit);
 
 private:
-    Model *_model ;
-    AtomContent *_group;
-    Chain *_chain;
-    std::string _modelName;
+    Model *_model = nullptr;
+    Chain *_chain = nullptr;
+    std::string _modelName ={} ;
 };
 #endif
