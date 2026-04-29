@@ -4,5 +4,25 @@
 
 #ifndef __vagabond__RotamerView__
 #define __vagabond__RotamerView__
+#include "Display.h"
 
+class Model;
+
+class RotamerView : public Scene                                                    //NOT CRASHING ANYMORE, BUT NEED TO CONVERT TO DISPLAY UNIT
+{
+public:
+    RotamerView(Scene *prev, std::string modelName, Chain *chain);//, AtomContent *content, std::string chainName);
+    virtual ~RotamerView();
+    void setup();
+    //void showChain(Model *model, Chain *chain);
+    //virtual void buttonPressed(std::string tag, Button *button);
+    void viewModel(/*std::string modelName, Chain *chain*/);
+    void loadModelChain(Model *model, Chain *chain, DisplayUnit *unit);
+
+private:
+    Model *_model ;
+    AtomContent *_group;
+    Chain *_chain;
+    std::string _modelName;
+};
 #endif

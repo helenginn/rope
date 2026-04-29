@@ -22,6 +22,7 @@
 #include <vagabond/gui/elements/ListView.h>
 
 #include "ModelManager.h"
+#include "RotamerView.h"
 
 class Model;
 class AtomContent;
@@ -43,7 +44,8 @@ private:
 	Model &_model;
 	ModelManager *_manager;
 	const bool &_existing;
-	void viewModel(std::string name,Chain *chain);
+	DisplayUnit _displayUnit = nullptr;
+	//void viewModel(std::string name,Chain *chain);   //old function I will keep here yet
 };
 
 #endif

@@ -1,19 +1,19 @@
 // vagabond
 // Copyright (C) 2022 Helen Ginn
-// 
+//
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-// 
+//
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-// 
+//
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
-// 
+//
 // Please email: vagabond @ hginn.co.uk for more details.
 
 #include "ChainAssignment.h"
@@ -37,13 +37,13 @@
 
 #include <vagabond/utils/FileReader.h>
 
-#include "RotamerMenu.h"
+#include "RotamerView.h"
 
-ChainAssignment::ChainAssignment(Scene *prev, Model &model, const bool &existing) 
-: ListView(prev), _model(model), _existing(existing) 
+ChainAssignment::ChainAssignment(Scene *prev, Model &model, const bool &existing)
+: ListView(prev), _model(model), _existing(existing)
 {
 	std::string file = _model.filename();
-	
+
 	if (file.length() == 0)
 	{
 		throw std::runtime_error("File not yet specified");
@@ -84,7 +84,7 @@ void ChainAssignment::setup()
 		t->setReturnTag("back");
 		addObject(t);
 	}
-	
+
 	ListView::setup();
 }
 
@@ -105,7 +105,7 @@ Renderable *ChainAssignment::getLine(int i)
 	{
 		entity = "(not assigned)";
 	}
-	
+
 	float diff = -0.2;
 
 	{
@@ -129,20 +129,20 @@ Renderable *ChainAssignment::getLine(int i)
 		t->setLeft(0.7 + diff, 0.0);
 		box->addObject(t);
 	}
-	
+
 	return box;
 }
 
 void ChainAssignment::buttonPressed(std::string tag, Button *button)
 {
 	ListView::buttonPressed(tag, button);
-	
+
 	std::string prefix = "sequence_";
 	if (tag.rfind(prefix, 0) != std::string::npos)
 	{
 		std::string id = tag.substr(prefix.length(), std::string::npos);
 		Chain *chain = _contents->chain(id);
-		
+
 		Sequence *full = chain->fullSequence();
 
 		SequenceView *view = new SequenceView(this, full);
@@ -163,8 +163,38 @@ void ChainAssignment::buttonPressed(std::string tag, Button *button)
 	if (tag.rfind(prefix, 0) != std::string::npos && !button->left())
 	{
 		Menu *m = new Menu(this, this, "rotamer");
-		m->addOption("Setup Rotamers", "menu"+tag);
-		m->addOption("View Rotamers", "view"+tag);
+
+		auto rotamerView = [this, tag]() // submenu to send to a view of the selected chain
+		{
+			Chain *chain = _contents->chain(tag.substr(6, std::string::npos));
+			RotamerView *rv = new RotamerView(this, _model.name(), chain);
+			rv->show();
+			rv->viewModel();
+			std::cout << "Rotamer View\n";
+			/* //std::string id = tag.substr(6, std::string::npos);
+			//std::cout << "id: " << id << "\n";
+			//Chain *chaiz = _contents->chain(id);
+			//std::cout << "zboui "<< chaiz->id() << chaiz->fullSequence() <<'\n';
+			//Polymer *pol = _model.polymerFromChain(chaiz);				//It compiles BUT shows ALL the chain Maybe an issue of line 173
+			std::cout << "Pol\n";										//Will try to find a solution tommorrow
+			Display *d = new Display(this);
+			DisplayUnit *unit = new DisplayUnit(d);
+			std::cout << "display\n";
+			unit->setOwnsAtoms();
+			unit->loadAtoms(_contents->chain(id));
+			unit->displayAtoms(false, false);
+			d->show();
+			std::cout << "loaded\n" << id; //<< pol->entity_id(); */
+
+
+		};
+		auto rotamerSetup = [this, tag]()
+		{
+
+		};
+		m->addOption("Setup Rotamers", rotamerSetup);//replacing tag by function (jobs)
+		m->addOption("View Rotamers", rotamerView);
+		//m->addOption("View Rotamers", "view"+tag);
 		m->setup(button);
 		setModal(m);
 
@@ -182,15 +212,15 @@ void ChainAssignment::buttonPressed(std::string tag, Button *button)
 
 		//RotamerMenu *m = new RotamerMenu(this, chain);
 	}
-	prefix = "rotamer_view";
+	/*prefix = "rotamer_view";
 	if (tag.rfind(prefix, 0) != std::string::npos)
 	{
 		std::cout << "Rotamer View\n";
 		std::string id = tag.substr(prefix.length()+6, std::string::npos);
 		std::cout << "id: " << id << "\n";
 		Chain *chain = _contents->chain(id);
-		viewModel(_model.name(), chain);
-	}
+		viewModel(_model.name(), chain); // provide rotamer view with only the information needed qnd put everything in RotamerView
+	}*/
 }
 
 void ChainAssignment::refreshInfo()
@@ -203,9 +233,9 @@ void ChainAssignment::refreshInfo()
 	refresh();
 }
 
-void ChainAssignment::viewModel(std::string name, Chain *chain)
+/*void ChainAssignment::viewModel(std::string name, Chain *chain)
 {
-	try
+	/*try
 	{
 		ModelManager *mm = ModelManager::manager();
 		Model *mod = mm->model(name);
@@ -220,4 +250,4 @@ void ChainAssignment::viewModel(std::string name, Chain *chain)
 	{
 		std::cout << err.what() << " - skipping." << std::endl;
 	}
-}
+}*/
