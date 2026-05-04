@@ -251,7 +251,6 @@ Renderable *PathsMenu::getLine(int i)
 			{
                 std::cout << "Erasing " << i << std::endl;
 				_selected.erase(i);
-                tb->toggle("");
 			}
 		};
 
