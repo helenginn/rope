@@ -92,6 +92,11 @@ public:
 		return true;
 	}
 	
+	std::string return_model_id()
+	{
+		return _model_id;
+	}
+
 	PolymerEntity *const polymerEntity() const;
 
 	void putTorsionRefsInSequence(Chain *ch);
