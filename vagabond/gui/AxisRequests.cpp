@@ -110,8 +110,9 @@ DoRequest doRequest(PositionData *group)
 			std::string str = axes->titleForAxis();
 			Instance *instance = static_cast<Instance *>(axes->focus());
 			ConfSpaceView *scene = axes->scene();
+			std::string polymerTitle = static_cast<Polymer *>(instance)->return_model_id();
 
-			Atom2AtomExplorer *a2a = new Atom2AtomExplorer(scene, instance, movement);
+			Atom2AtomExplorer *a2a = new Atom2AtomExplorer(scene, instance, movement, polymerTitle);
 			a2a->setFutureTitle(str);
 			a2a->show();
 		}
