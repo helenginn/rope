@@ -24,9 +24,21 @@ with open(args.hbonds, "r", encoding="utf-8") as f:
         line = line.replace('"', '')
         line = re.sub(r'(<>)', r'\1 ', line)
         if "symop" in line:
-            category = re.split(r'\s+', line.strip())
-            if len(category) < 12:
-                print(f"Fail: Not enough columns -> {category}")
+            # Extract key=value parameters first
+            param_matches = dict(re.findall(r'(\w+)=([\d\.\-]+)', line))
+            
+            # Remove key=value parameters from the line before splitting
+            cleaned_line = re.sub(r'\w+=[\d\.\-]+', '', line)
+            
+            # Split the cleaned line
+            category = re.split(r'\s+', cleaned_line.strip())
+            
+            # Remove empty strings from category
+            category = [item for item in category if item]
+            
+            if len(category) < 11:
+                print(f"Fail: Not enough columns after cleaning -> {category}")
+                print(f"Original line: {line.strip()}")
                 continue
         
             h_rang = category[0]
@@ -40,14 +52,11 @@ with open(args.hbonds, "r", encoding="utf-8") as f:
             chain2 = category[9]
             Aresidue_number = category[10]
 
-            # Pull key=value parameters safely from the line
-            param_string = " ".join(category)
-            matches = dict(re.findall(r'(\w+)=([\d\.\-]+)', param_string))
-
+            # Extract parameters from the dictionary
             try:
-                d_HA = matches["d_HA"]
-                d_DA = matches["d_AD"]
-                d_DHA = matches["a_DHA"]
+                d_HA = param_matches["d_HA"]
+                d_DA = param_matches["d_AD"]
+                d_DHA = param_matches["a_DHA"]
             except KeyError as e:
                 print(f"Skipping line due to missing field {e}: {line.strip()}")
                 continue
@@ -132,15 +141,6 @@ df_pymol = pd.DataFrame(hbond_data, columns=[
     "H-bond_ID", "H-chain", "H-resi", "H-resn", "Donor-Atom", "Donor-ID", "H-atomn",
     "Acc-chain", "Acc-resi", "Acc-resn", "Acc-atomn", "Acc-ID",
     "length", "angle_D_H_A"])   
-
-#     hbond_data.append([ChainAB1, Donor_residue_number, Donor_Residue, Donor_Atom, donor_atom_ID, HAtom,
-#                        ChainAB2, Acceptor_residue_number, AcceptorResidue, AcceptorAtom, acceptor_atom_ID,
-#                        round(length, 3), AngleDHA])
-    
-# df_pymol = pd.DataFrame(hbond_data, columns=[
-#     "H-chain", "H-resi", "H-resn", "Donor-Atom", "Donor-ID", "H-atomn",
-#     "Acc-chain", "Acc-resi", "Acc-resn", "Acc-atomn", "Acc-ID",
-#     "length", "angle_D_H_A"]) 
 
 print(df_pymol.head())
 df_pymol.to_csv(args.output_pdb, sep="\t", index=False, encoding='utf-8')
