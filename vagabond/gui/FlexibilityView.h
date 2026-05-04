@@ -23,6 +23,7 @@
 #include <vagabond/gui/Display.h>
 #include <vagabond/gui/HBondMenu.h>
 #include <vagabond/gui/FlexibilityController.h>
+#include <vagabond/gui/elements/TickBoxes.h>
 #include <vagabond/core/Flexibility.h>
 
 #include <memory> 
@@ -61,15 +62,21 @@ public:
 	// void handleHBonds(consfinishet std::vector<HBondManager::HBondPair>& pairs);
 	void showCloud(DisplayUnit *unitCloud, AtomGroup *grp);
 	void openAtom2AtomExplorer();
+	void setupBondTickBoxes();
+	
 
 
 private: 
+	void showHBondSelector();
+	void showVdWSelector();
+
 	bool _selectFlag = false;
 	Instance *_instance = nullptr;
 	FlexibilityController *_controller = nullptr;
 	Slider *_rangeSlider = nullptr;
 	DisplayUnit *_unit = nullptr;
 	AtomMap *_latest = nullptr;
+	TickBoxes *_bondTickBoxes = nullptr;
 	double _minRange = 0; 
 	double _maxRange; 
 	double _numSample = 1;

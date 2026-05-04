@@ -48,6 +48,26 @@ public:
         _flex->submitJobAndRetrieve(weight);
     }
     virtual void finishedDragging(std::string tag, double x, double y);
+    const std::vector<Flexibility::HBondEntity>& handleHBondTicks()
+    {
+        if (!_flex)
+        {
+            static std::vector<Flexibility::HBondEntity> empty;
+            std::cerr << "[ERROR] Flexibility not initialized!\n";
+            return empty;
+        }
+        return _flex->getHBonds();
+    }
+    const std::vector<Flexibility::VdWBondEntity>& handleVdWTicks()
+    {
+        if (!_flex)
+        {
+            static std::vector<Flexibility::VdWBondEntity> empty;
+            std::cerr << "[ERROR] Flexibility not initialized!\n";
+            return empty;
+        }
+        return _flex->getVdWBonds();
+    }
     
 
 protected:

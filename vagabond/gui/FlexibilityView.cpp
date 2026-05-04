@@ -4,6 +4,9 @@
 #include <vagabond/gui/elements/TextButton.h>
 #include <vagabond/gui/HBondMenu.h>
 #include <vagabond/gui/Atom2AtomExplorer.h>
+#include <vagabond/gui/GuiBalls.h>
+#include <vagabond/gui/HBondSelectorView.h>
+#include <vagabond/gui/VdWSelectorView.h>
 
 #include <vagabond/core/Instance.h>
 #include <vagabond/core/AtomGroup.h>
@@ -13,6 +16,8 @@
 #include <vagabond/core/RAMovement.h>
 #include <vagabond/core/Atom3DPosition.h>
 #include <vagabond/utils/Eigen/Dense>
+
+
 
 
 
@@ -89,8 +94,84 @@ void FlexibilityView::setup()
 	// return to main menu of FlexibilityView
 	setupSlider();
 	_controller->callSubmitJobAndRetrieve(0.0);
-	_controller->callSubmitJobAndRetrieve(0.0);
 	makeMenu();
+	setupBondTickBoxes();
+}
+
+
+void FlexibilityView::setupBondTickBoxes()
+{
+
+	TickBoxes *tickboxes = new TickBoxes(this, this);
+
+	auto toggle_hbonds = [this, tickboxes]()
+	{
+		bool ticked = tickboxes->isTicked("H-bonds");
+		if (ticked)
+		{
+			const auto& hbonds = _controller->handleHBondTicks();
+			if (hbonds.size() == 0)
+			{
+				std::cout << "[DEBUG] H-bonds ticked, but hbonds is empty " << std::endl;
+				return;
+			}
+			showHBondSelector();
+
+		}
+		else
+		{
+			std::cout << "[DEBUG] H-bonds unticked - clearing highlights " << std::endl;
+			_unit->balls()->clearAtomHighlights(GuiBalls::HBond);
+			_unit->balls()->clearAtomHighlights(GuiBalls::VdW);
+		}
+	};
+
+	auto toggle_vdw = [this, tickboxes]()
+	{
+		bool ticked = tickboxes->isTicked("VdW bonds");
+		if (ticked)
+		{
+			const auto& vdw = _controller->handleVdWTicks();
+			if (vdw.size() == 0)
+			{
+				std::cout << "[DEBUG] Vdw ticked, but vdw is empty " << std::endl;
+				return;
+			}
+			showVdWSelector();
+		}
+	};
+
+	tickboxes->addOption("H-bonds", toggle_hbonds, false);
+	tickboxes->addOption("VdW bonds", toggle_vdw, false);
+	tickboxes->setVertical(true);
+	tickboxes->setOneOnly(false);
+	tickboxes->arrange(0.8, 0.2, 1.02, 0.52);
+	addObject(tickboxes);
+	_bondTickBoxes = tickboxes; 
+}
+
+void FlexibilityView::showHBondSelector()
+{
+	const auto& hbonds = _controller->handleHBondTicks();
+	if (hbonds.empty())
+	{
+		std::cout << "[DEBUG] No H-bonds to select from" << std::endl;
+		return;
+	}
+	HBondSelectorView *selector = new HBondSelectorView(this, hbonds, _unit->balls());
+	selector->show();
+}
+
+void FlexibilityView::showVdWSelector()
+{
+	const auto& vdw = _controller->handleVdWTicks();
+	if (vdw.empty())
+	{
+		std::cout << "[DEBUG] No VdW to select from" << std::endl;
+		return;
+	}
+	VdWSelectorView *vdWselector = new VdWSelectorView(this, vdw, _unit->balls());
+	vdWselector->show();
 }
 
 
@@ -126,6 +207,8 @@ void FlexibilityView::openAtom2AtomExplorer()
 	AtomGroup *grp = _instance->currentAtoms();
 	// grp.printbyname
 	Sequence *seq = static_cast<Polymer *>(_instance)->sequence();
+	std::string polymer_name = static_cast<Polymer *>(_instance)->return_model_id();
+
 	disVec.reserve(seq->size());
 	const AtomVector &atoms = grp->atomVector();
 	for (Atom *atom : atoms)
@@ -149,7 +232,7 @@ void FlexibilityView::openAtom2AtomExplorer()
 	}
 
 	RAMovement movement = RAMovement::movements_from(list, disVec);
-	Atom2AtomExplorer *a2a = new Atom2AtomExplorer(this, _instance, movement);
+	Atom2AtomExplorer *a2a = new Atom2AtomExplorer(this, _instance, movement, polymer_name);
 	a2a->show();
 }
 

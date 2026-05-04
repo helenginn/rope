@@ -282,6 +282,74 @@ void GuiBalls::setMulti(bool m)
 
 }
 
+void GuiBalls::highlightAtom(Atom* atom, BondType type)
+{
+    if (!_atomIndex.count(atom))
+    {
+        return;
+    }
+    
+    int idx = _atomIndex[atom];
+    glm::vec4 color = (type == HBond) ? 
+    glm::vec4(2.5f, 2.5f, 2.5f, 1.0f) :  // white for H-bonds
+    glm::vec4(2.5f, 1.5f, 0.5f, 1.0f);   // orange for VdW
+
+    std::unique_lock<std::mutex> lock(_vertLock);
+    for (size_t i = idx; i < idx + verticesPerAtom(); i++)
+    {
+        _vertices[i].color[0] = color.x;
+        _vertices[i].color[1] = color.y;
+        _vertices[i].color[2] = color.z;
+        _vertices[i].color[3] = color.w;
+    }
+    lock.unlock();
+
+    if (type == HBond)
+    {
+    	_highlightedHBondAtoms.insert(atom);
+    }
+   	else
+   	{
+   		_highlightedVdWAtoms.insert(atom);
+   	}
+    
+    forceRender(true, false);
+}
+
+void GuiBalls::clearAtomHighlights(BondType type)
+{
+    std::set<Atom*>& atomSet = (type == HBond) ? 
+        _highlightedHBondAtoms : _highlightedVdWAtoms;
+    
+    std::unique_lock<std::mutex> lock(_vertLock);
+    
+    for (Atom* atom : atomSet)
+    {
+        if (!_atomIndex.count(atom))
+        {
+            continue;
+        }
+        
+        int idx = _atomIndex[atom];
+        
+        colourByElement(atom->elementSymbol());
+        glm::vec3 elementColor = _template->vertex(0).color;
+        
+        for (size_t i = idx; i < idx + verticesPerAtom(); i++)
+        {
+            _vertices[i].color[0] = elementColor[0];
+            _vertices[i].color[1] = elementColor[1];
+            _vertices[i].color[2] = elementColor[2];
+            _vertices[i].color[3] = 1.0f;
+        }
+    }
+    
+    lock.unlock();
+    
+    atomSet.clear();
+    forceRender(true, false);
+}
+
 void GuiBalls::finishUpdate()
 {
 	_bonds->forceRender(true, true);
@@ -314,3 +382,5 @@ void GuiBalls::deselect()
 
 	forceRender(true, false);
 }
+
+

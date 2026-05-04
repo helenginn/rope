@@ -32,6 +32,7 @@ class GuiBalls : public GuiRepresentation,
 public HasResponder<Responder<GuiBalls>>
 {
 public:
+	enum BondType { HBond, VdW };
 	GuiBalls(GuiAtom *parent);
 	virtual ~GuiBalls();
 
@@ -73,8 +74,10 @@ public:
 
 	virtual void removeVisuals();
 	virtual void finishUpdate();
-
 	virtual void selected(int idx, bool inverse);
+	void highlightAtom(Atom* atom, BondType type);
+	void clearAtomHighlights(BondType type);
+
 protected:
 	virtual void extraUniforms();
 private:
@@ -101,6 +104,8 @@ private:
 
 	std::map<Atom *, int> _atomIndex;
 	std::map<int, Atom *> _indexAtom;
+	std::set<Atom*> _highlightedHBondAtoms;
+	std::set<Atom*> _highlightedVdWAtoms;
 	std::map<Atom *, glm::vec3> _atomPos;
 	
 	bool _multi = false;
