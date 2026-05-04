@@ -38,7 +38,7 @@ class Atom2AtomExplorer : public Scene, public DragResponder
 {
 public:
 	Atom2AtomExplorer(Scene *scene, Instance *instance,
-	                  const RAMovement &movements);
+	                  const RAMovement &movements, std::string polymerTitle);
 
 	virtual void setup();
 

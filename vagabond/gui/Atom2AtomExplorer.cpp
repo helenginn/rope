@@ -140,9 +140,10 @@ struct prepare_atom_list
 };
 
 Atom2AtomExplorer::Atom2AtomExplorer(Scene *scene, Instance *instance,
-                                     const RAMovement &movements)
+                                     const RAMovement &movements, std::string polymerTitle)
 : Scene(scene), _movement(movements), _cd(false)
 {
+	addTitle(polymerTitle);
 	_instance = instance;
 	_instance->load();
 	_atoms = _instance->currentAtoms();
@@ -219,7 +220,7 @@ void Atom2AtomExplorer::slider()
 	s->setVertical(true);
 	s->setDragResponder(this);
 	s->resize(0.5);
-	s->setup("Colour scale", 0, 100, 1);
+	s->setup("Colour scale", 0, 100, 0.1);
 	s->setStart(0.0, 0.9);
 	s->setCentre(0.9, 0.5);
 	s->setReturnTag("colour");
@@ -236,7 +237,7 @@ void Atom2AtomExplorer::mousePressEvent(double x, double y,
 
 void Atom2AtomExplorer::finishedDragging(std::string tag, double x, double y)
 {
-	_colourScale = (100 - x)/10;
+	_colourScale = (100 - x)/0.2;
 	update();
 
 }
