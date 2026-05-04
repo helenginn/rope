@@ -135,6 +135,11 @@ public:
     { 
         return _hbonds; 
     }
+    const std::vector<VdWBondEntity>& getVdWBonds() const 
+    { 
+        return _VdWBonds; 
+    }
+    
     int accessAtomBlock(Atom* atom);
     float calculateDistance(const glm::vec3& vector1, const glm::vec3& vector2)
     {
