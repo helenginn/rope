@@ -177,7 +177,7 @@ void FlexSample::saveSampledStructures(int numSamples, const std::string& baseFi
         }
 
         std::ostringstream oss; 
-        oss << baseFileName << "_mode_" << pickIdx << ".pdb"; 
+        oss << baseFileName << "_mode_" << pickIdx << "_weight" << petrubationWeight << ".pdb"; 
         
         _instance->currentAtoms()->writeToFile(oss.str()); 
         std::cout << "[FlexSample] Saved " << oss.str() 
