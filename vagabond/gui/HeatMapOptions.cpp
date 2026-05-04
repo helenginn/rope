@@ -10,7 +10,7 @@
 
 #include "VagWindow.h"
 
-HeatMapOptions::HeatMapOptions(Scene *prev, Entity *entity) : Scene(prev), _entity(entity)
+HeatMapOptions::HeatMapOptions(Scene *prev, Entity *entity, const std::vector<PathGroup> &paths) : Scene(prev)
 {
     _entity = entity;
 

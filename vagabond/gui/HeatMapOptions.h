@@ -5,15 +5,14 @@
 #include <vagabond/gui/elements/DragResponder.h>
 #include <vagabond/core/PathEntropy.h>
 
-class Entity;
 class PathEntropy;
-
+class PathGroup;
 class Slider;
 
 class HeatMapOptions : public Scene, public DragResponder
 {
 public:
-    HeatMapOptions(Scene *prev, Entity *entity);
+    HeatMapOptions(Scene *prev, Entity *entity, const std::vector<PathGroup> &paths);
     ~HeatMapOptions();
 
     virtual void setup();
