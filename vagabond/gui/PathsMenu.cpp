@@ -238,7 +238,6 @@ Renderable *PathsMenu::getLine(int i)
 			{
                 std::cout << "Erasing " << i << std::endl;
 				_selected.erase(i);
-                tb->toggle("");
 			}
 		};
 
@@ -430,7 +429,21 @@ void PathsMenu::buttonPressed(std::string tag, Button *button)
 
     if (tag == "menu_map_entropy")
     {
-	    HeatMapOptions *hmo = new HeatMapOptions(this, _entity);
+        std::vector<PathGroup> groups;
+
+        if(_selected.size() > 0)
+        {
+            for (const int &idx : _selected)
+			{
+				groups.push_back(_paths[idx]);
+			}
+        }
+        else
+        {
+            groups = _paths;
+        }
+
+	    HeatMapOptions *hmo = new HeatMapOptions(this, _entity, groups);
 
 	    hmo->show();
 	    return;
