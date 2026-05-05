@@ -45,7 +45,7 @@ void Blame::process()
 			PlausibleRoute *pr = path->toRoute();
 			pr->setup();
 
-			Contacts contacts = {};//pr->contactMap();
+			Contacts contacts = pr->contactMap();
 			{
 				std::unique_lock<std::mutex> lock(mutex());
 				_contacts[path] = contacts;
@@ -104,6 +104,8 @@ float Blame::sum_for_residue(Path *const &path, ScoreBucket residue)
 	{
 		sum += it->second;
 	}
+
+    std::cout << "Path: " << path->desc() << ", sum: " << sum << std::endl;
 
 	return exp(-sum / 4);
 }
