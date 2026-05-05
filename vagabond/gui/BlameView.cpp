@@ -119,6 +119,8 @@ float BlameView::refreshPlot(Path *const &path)
 
 	float value = _blame->sum_for_residue(path, ScoreBucket(_res));
 
+    std::cout << "start: " << path->startInstance() << ", end: " << path->endInstance() << ", " << value << std::endl;
+
 	std::unique_lock<std::mutex> lock(_mutex);
 	_data[idxs.second][idxs.first] = value;
 	return value;
