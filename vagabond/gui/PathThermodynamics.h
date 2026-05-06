@@ -47,6 +47,7 @@ private:
 	static int _numPaths;
 	int _samples = 0;
 
+    void makeGraph(std::vector<double> data);
 	void displayEntropy(std::string str);
 };
 
