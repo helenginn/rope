@@ -18,19 +18,18 @@
 
 #include <string>
 #include "PathThermodynamics.h"
-#include <vagabond/core/PathGroup.h>
 #include <vagabond/core/Path.h>
 #include <vagabond/core/PathManager.h>
-#include <vagabond/core/Entity.h>
 #include <vagabond/core/PathEntropy.h>
 #include <nlohmann/json.hpp>
 #include <vagabond/utils/FileReader.h>
+#include <vagabond/gui/Graph.h>
+#include <vagabond/gui/GraphView.h>
 #include <vagabond/gui/elements/TextEntry.h>
 #include <vagabond/gui/elements/TextButton.h>
 #include <vagabond/gui/elements/TickBoxes.h>
 #include <vagabond/gui/elements/BadChoice.h>
 #include <vagabond/gui/elements/ChooseRange.h>
-#include <vagabond/gui/elements/BadChoice.h>
 #include <vagabond/gui/elements/AskForText.h>
 
 int PathThermodynamics::_numPaths = 0;
@@ -90,7 +89,6 @@ void PathThermodynamics::setup()
 
 void PathThermodynamics::buttonPressed(std::string tag, Button *button)
 {
-
     deleteTemps();
 
     struct FlagParameters flagPar = _pathEntropy->initFlagPar();
@@ -124,11 +122,7 @@ void PathThermodynamics::buttonPressed(std::string tag, Button *button)
 			struct EntropyForMatrix entropy4Mat = _pathEntropy->calculateEntropyIndependent(_numPaths, flagPar, torsRes);
 
             std::vector<double> entropyVec = entropy4Mat.totalEntropy;
-
-            double meanTotalEntropy = (std::accumulate(entropyVec.begin(), entropyVec.end(), 0.0))/entropyVec.size();
-
-			std::string str = "Total: " +  std::to_string(meanTotalEntropy) + " (R units)\n" + "Per residue: " + std::to_string(meanTotalEntropy/torsRes.size()) + " (R units)";
-			displayEntropy(str);
+            makeGraph(entropyVec);
 		};
 
 		cr->setReturn(respondToVal);
@@ -209,6 +203,24 @@ void PathThermodynamics::checkPathNum(int nearestNeighbours)
     {
         throw std::runtime_error("Desired nearest neighbour value exceeds total number of paths.");
     }
+}
+
+
+void PathThermodynamics::makeGraph(std::vector<double> entropyVec)
+{
+    Graph *graph = new Graph();
+
+    for(int i = 0; i < entropyVec.size(); i++)
+    {
+        graph->addPoint(0, i+1/entropyVec.size(), entropyVec[i]);
+    }
+
+    graph->style = Graph::StyleScatter;
+    graph->setAxisLabel('x',"Path Progression");
+    graph->setAxisLabel('y',"Entropy");
+    
+    GraphView *graphView = new GraphView(this, graph);
+    graphView->show();
 }
 
 void PathThermodynamics::refresh()
