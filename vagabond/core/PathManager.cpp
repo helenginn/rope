@@ -376,6 +376,7 @@ void PathManager::makePathBetween(const std::string &start,
 	
 	if (!ok) return;
 	std::cout << "Found " << start << " and " << end << ", running " << cycles << " cycles" << std::endl;
+    std::cout << pathsForEntity(first->entity()).size() << " paths found" << std::endl;
 
 	NewPath np(first, second);
 	PlausibleRoute *route = np();
@@ -747,3 +748,4 @@ void PathManager::pathEntropyHeatMap(const std::vector<std::string> &args)
 
     ModelManager::manager()->finishTicker();
 }
+
