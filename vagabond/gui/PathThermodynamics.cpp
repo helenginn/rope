@@ -117,12 +117,13 @@ void PathThermodynamics::buttonPressed(std::string tag, Button *button)
 		{
 			_numPaths = lrint(min);
 			
-			std::vector<TorsRes4NN*> torsRes = _pathEntropy->getAtomsAndResidues(_numPaths, _paths);
+			std::vector<TorsRes4NN*> torsRes = _pathEntropy->getAtomsAndResidues(_numPaths, _paths, 10);
 
-			struct EntropyForMatrix entropy4Mat = _pathEntropy->calculateEntropyIndependent(_numPaths, flagPar, torsRes);
+			struct EntropyForMatrix entropy4Mat = _pathEntropy->calculateEntropyIndependent(_numPaths, flagPar, torsRes,10);
 
             std::vector<double> entropyVec = entropy4Mat.totalEntropy;
-            makeGraph(entropyVec);
+
+	        makeGraph(entropyVec);
 		};
 
 		cr->setReturn(respondToVal);
@@ -210,14 +211,24 @@ void PathThermodynamics::makeGraph(std::vector<double> entropyVec)
 {
     Graph *graph = new Graph();
 
+    std::cout << "no. of data points: " << entropyVec.size() << std::endl;
+
+    auto [minIt, maxIt] = std::minmax_element(entropyVec.begin(), entropyVec.end());
+
+    double minEnt = *minIt;
+    double maxEnt = *maxIt;
+
     for(int i = 0; i < entropyVec.size(); i++)
     {
-        graph->addPoint(0, i+1/entropyVec.size(), entropyVec[i]);
+        std::cout << "x: " << double (i+1)/(entropyVec.size()+1) << ", y: " << entropyVec[i] << std::endl;
+        graph->addPoint(0, double (i+1)/(entropyVec.size()+1), entropyVec[i]);
     }
 
     graph->style = Graph::StyleScatter;
     graph->setAxisLabel('x',"Path Progression");
-    graph->setAxisLabel('y',"Entropy");
+    graph->setAxisLabel('y',"Entropy (R units)");
+    graph->setRange('x', 0, 1);
+    graph->setRange('y', minEnt-100.0, maxEnt+100.0);
     
     GraphView *graphView = new GraphView(this, graph);
     graphView->show();
