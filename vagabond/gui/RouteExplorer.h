@@ -83,6 +83,7 @@ private:
 	void pickAtom(Atom *const &atom);
 
 	void makeLemons();
+	void exportSuperposed();
 
 	Route *_route = nullptr;
 	PlausibleRoute *_plausibleRoute = nullptr;

@@ -42,6 +42,10 @@
 #include <vagabond/core/Entity.h>
 #include <vagabond/core/paths/Route.h>
 #include <vagabond/core/Path.h>
+#include <vagabond/core/Instance.h>
+#include <vagabond/core/Model.h>
+#include <vagabond/core/Superpose.h>
+#include <map>
 
 int RouteExplorer::_threads = -1;
 
@@ -112,6 +116,11 @@ void RouteExplorer::setupSave()
 	tb->setRight(0.9, 0.1);
 	_saveAndExit = tb;
 	addObject(tb);
+
+	TextButton *tb2 = new TextButton("Export superposed", this);
+	tb2->setReturnJob([this]() { exportSuperposed(); });
+	tb2->setRight(0.9, 0.34);
+	addObject(tb2);
 }
 
 void RouteExplorer::setupClearLemons()
@@ -696,3 +705,91 @@ void RouteExplorer::sendSelection(float t, float l, float b, float r,
 	IndexResponseView::sendSelection(t, l, b, r, inverse);
 }
 
+void RouteExplorer::exportSuperposed()
+{
+	TextEntry *te = new TextEntry("enter number of snapshots", this);
+	te->setReturnJob([this, te]()
+	{
+		std::string scr = te->scratch();
+		int n = atoi(scr.c_str());
+		if (n <= 0) n = 10;
+
+		std::list<Instance *> lefts;
+		std::set<Model *> models;
+
+		for (const auto &pair : _route->pairs())
+		{
+			lefts.push_back(pair.start);
+			models.insert(pair.start->model());
+		}
+
+		_route->submitToShow(0.f);
+		_route->retrieve();
+
+		std::map<Atom *, glm::vec3> firstPos;
+		
+		for (Instance *left : lefts)
+		{
+			for (Atom *a : left->currentAtoms()->atomVector())
+			{
+				firstPos[a] = a->derivedPosition();
+			}
+		}
+
+		std::string name1 = "start";
+		std::string name2 = "end";
+		if (!_route->pairs().empty())
+		{
+			auto pair = _route->pairs().front();
+			if (pair.start && pair.start->model()) name1 = pair.start->model()->name();
+			if (pair.end && pair.end->model()) name2 = pair.end->model()->name();
+		}
+
+		for (int i = 0; i < n; i++)
+		{
+			float frac = i / (float)(n > 1 ? n - 1 : 1);
+			_route->submitToShow(frac);
+			_route->retrieve();
+
+			Superpose sp;
+			for (Instance *left : lefts)
+			{
+				for (Atom *a : left->currentAtoms()->atomVector())
+				{
+					glm::vec3 t = firstPos[a];
+					glm::vec3 d = a->derivedPosition();
+					sp.addPositionPair(t, d);
+				}
+			}
+			
+			sp.superpose();
+			glm::mat4 tr = sp.transformation();
+
+			std::map<Atom *, glm::vec3> originalPos;
+			for (Model *m : models)
+			{
+				for (Atom *a : m->currentAtoms()->atomVector())
+				{
+					glm::vec3 d = a->derivedPosition();
+					originalPos[a] = d;
+					glm::vec3 update = glm::vec3(tr * glm::vec4(d, 1.f));
+					a->setDerivedPosition(update);
+				}
+
+				std::string filename = name1 + "_2_" + name2 + "_slice_" + std::to_string(i) + ".pdb";
+				m->currentAtoms()->writeToFile(filename);
+
+				for (Atom *a : m->currentAtoms()->atomVector())
+				{
+					a->setDerivedPosition(originalPos[a]);
+				}
+			}
+		}
+		
+		removeObject(te);
+	});
+	
+	te->setRight(0.9, 0.5);
+	addObject(te);
+	addMainThreadJob([te]() { te->click(); });
+}
