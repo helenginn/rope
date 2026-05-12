@@ -80,7 +80,8 @@ void FlexSample::saveHierarchySamples(int numSamples, const std::string& baseFil
         }
 
         std::ostringstream oss; 
-        oss << baseFileName << "_" << saved << "_mode_" << pickIdx << ".pdb"; 
+        std::string chain = _flex->getChain();
+        oss << baseFileName << "_" << saved << "_mode_" << pickIdx << "_" << chain << ".pdb"; 
         _instance->currentAtoms()->writeToFile(oss.str()); 
         
         std::cout << "[FlexSample] Saved hierarchy sample: " << oss.str() 
@@ -177,7 +178,8 @@ void FlexSample::saveSampledStructures(int numSamples, const std::string& baseFi
         }
 
         std::ostringstream oss; 
-        oss << baseFileName << "_mode_" << pickIdx << "_weight" << petrubationWeight << ".pdb"; 
+        std::string chain = _flex->getChain();
+        oss << baseFileName << "_mode_" << pickIdx << "_weight" << "_" << chain << "_" << petrubationWeight << ".pdb"; 
         
         _instance->currentAtoms()->writeToFile(oss.str()); 
         std::cout << "[FlexSample] Saved " << oss.str() 
