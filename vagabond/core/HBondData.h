@@ -18,6 +18,14 @@ class HBondData : public Progressor, public Database
 {
 public:
 	HBondData();
+	struct HBondPair 
+	{
+		std::string acceptor;
+		std::string hydrogen;
+		std::string acceptorChain;
+    	std::string hydrogenChain; 
+
+	};
 	bool isMaster();
 	void housekeeping();
 
@@ -79,7 +87,7 @@ public:
 		return nullptr;
 	}
 	bool unload();
-	std::vector<std::pair<std::string, std::string>> generateDonorAcceptorPairs();
+	std::vector<HBondPair>  generateDonorAcceptorPairs();
 	std::string toUpperCase(const std::string& str);
 private: 
 	void extractData(std::ostringstream &csv, KeyValues &kv) const;
