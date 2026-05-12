@@ -85,7 +85,7 @@ std::vector<HBondManager::HBondPair> HBondManager::generateDonorAcceptorPairs(co
         _hbondPairs.clear();
         return {};
     }
-
+    
     HBondData* hbond_data = file->hBondData();
     if (!hbond_data)
     {
@@ -94,21 +94,14 @@ std::vector<HBondManager::HBondPair> HBondManager::generateDonorAcceptorPairs(co
         _hbondPairs.clear();
         return {};
     }
-
-    auto pairs = hbond_data->generateDonorAcceptorPairs();
-    // Convert to std::vector<HBondPair>
-    // std::vector<HBondPair> hbondPairs;
-    _hbondPairs.clear(); // is this nessecary?
-    _hbondPairs.reserve(pairs.size()); // Reserve space for efficiency
-
-    for (const auto& pair : pairs) {
-        _hbondPairs.push_back(HBondPair{pair.first, pair.second});
-    }
-
+    
+    // generateDonorAcceptorPairs() now returns HBondData::HBondPair
+    // which is the same as HBondManager::HBondPair (via typedef)
+    _hbondPairs = hbond_data->generateDonorAcceptorPairs();
+    
     delete file;
     return _hbondPairs;
 }
-
 
 
  
