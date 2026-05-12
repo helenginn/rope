@@ -82,8 +82,8 @@ void HBondMenu::buttonPressed(std::string tag, Button *button)
 
 		if (!filename.empty())
 		{	
-			// std::vector<HBondManager::HBondPair> _hbondPairs = _manager->generateDonorAcceptorPairs(filename);
 			auto hbondPairs = _manager->generateDonorAcceptorPairs(filename);
+
             if (_callback)
 			{
 				_callback(hbondPairs);
