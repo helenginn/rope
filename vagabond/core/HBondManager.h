@@ -24,12 +24,8 @@ public:
 class HBondManager : public Manager<HBondData>, public Progressor, public HasResponder<Responder<HBondManager>>
 {	
 public:
+	using HBondPair = HBondData::HBondPair;
 	HBondManager();
-	struct HBondPair 
-	{
-		std::string acceptor;
-		std::string hydrogen;
-	};
 	void housekeeping();
 	// void findTxtType(File::Type type);
 	HBondManager* manager();
