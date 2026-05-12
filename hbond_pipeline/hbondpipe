@@ -29,11 +29,19 @@ fi
 # Step 2: Add hydrogens
 phenix.reduce "${base}.pdb" > "${base}.h.pdb"
 
-# Step 3: Calculate hydrogen bonds
-phenix.hbond "${base}.h.pdb" > "${base}_hbonds.txt"
+# Step 3: Calculate hydrogen bonds (protein only - strip ligands/waters)
+echo "Stripping HETATM records for H-bond detection..."
+grep -E "^(ATOM|TER|END)" "${base}.h.pdb" > "${base}.h.protein.pdb"
+phenix.hbond "${base}.h.protein.pdb" > "${base}_hbonds.txt"
 
+if grep -q "Fatal problems" "${base}_hbonds.txt"; then
+    echo "[ERROR] phenix.hbond failed - check ${base}_hbonds.txt"
+    exit 1
+fi
 echo "Hydrogen bonds written to ${base}_hbonds.txt"
 
 # Step 4: Prepare Hydrogen bonds for ROPE
 echo "Final step: prepare Hydrogen bonds for ROPE: write in ${base}_hbonds_ROPE.txt"
-python "$SCRIPT_DIR/prepare_hbonds_rope.py" -hb "${base}_hbonds.txt" -p "${base}.h.pdb" -o "${base}_hbonds_ROPE.txt" --openpymol N
+python "$SCRIPT_DIR/prepare_hbonds_rope.py" -hb "${base}_hbonds.txt" \
+    -p "${base}.h.pdb" \
+    -o "${base}_hbonds_ROPE.txt" --openpymol N
