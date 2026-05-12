@@ -42,7 +42,7 @@ float Flexibility::submitJobAndRetrieve(float weight)
     Result *r = _resources.calculator->acquireObject();
     r->transplantPositions(_displayTargets);
 
-    // retrieve(); // Retrieves data, implementationin StructuralModification class
+
     r->destroy(); 
     return weight; 
 }
@@ -119,27 +119,12 @@ void Flexibility::submitJob(float weight)
   _resources.tasks->addTask(first_hook); // Adds task to the task list
 }
 
-void Flexibility::loadHBondsFromManager(HBondManager* hbondManager) 
-{
-    if (hbondManager == nullptr) 
-    {
-        std::cerr << "Error: HBondManager is null." << std::endl;
-        return;
-    }
-    
-    auto& donorAcceptorPairs = hbondManager->getHBondPairs();
-    
-    // Add the HBonds into the Flexibility class
-    // addMultipleHBonds(donorAcceptorPairs);
-    
-    std::cout << "Successfully loaded HBond pairs into Flexibility." << std::endl;
-}
-
 
 bool Flexibility::validateHBondPair(const HBondManager::HBondPair &hbondPair) {
     // Initialize static counters
     static int missingDonorCount = 0;
     static int missingHydrogenCount = 0;
+    static int interChainCount = 0; 
     static int successfulValidations = 0;
 
     // Retrieve the current AtomGroup
@@ -148,6 +133,33 @@ bool Flexibility::validateHBondPair(const HBondManager::HBondPair &hbondPair) {
     if (!atomGroup) {
         std::cerr << "Error: currentAtoms() returned a null pointer." << std::endl;
         return false;
+    }
+
+    if (_targetChain.empty())
+    {
+        Atom* firstAtom = atomGroup->atomVector()[0];
+        _targetChain = firstAtom->chain();
+        std::cout << "Target chain for H-bond filtering: " << _targetChain << std::endl;
+    }
+
+    // Filter: reject inter-chain bonds
+    if (hbondPair.acceptorChain != _targetChain && hbondPair.hydrogen != _targetChain)
+    {
+        ++interChainCount;
+        // only printing frist few.. 
+        if (interChainCount <= 5)
+        {
+            std::cerr << "Skipping inter-chain H-bond: " 
+                      << hbondPair.hydrogen << " (chain " << hbondPair.hydrogenChain 
+                      << ") -> " << hbondPair.acceptor << " (chain " << hbondPair.acceptorChain 
+                      << ")" << std::endl;
+        }
+        else if (interChainCount == 6)
+        {
+            std::cerr << "... (suppressing further inter-chain warnings)" << std::endl;
+        }
+        return false;
+
     }
 
     // Check if donor exists
@@ -172,9 +184,6 @@ bool Flexibility::validateHBondPair(const HBondManager::HBondPair &hbondPair) {
 
     // If both atoms are found
     ++successfulValidations;
-    // std::cout << "Validation successful. Total successful validations: " 
-    //           << successfulValidations << std::endl;
-
     return true;
 }
 
@@ -214,6 +223,7 @@ void Flexibility::addHBond(const HBondManager::HBondPair &hbondPair)
     Atom* acceptorAtom = atomGroup->atomByDesc(hbondPair.acceptor);
     Atom* hydrogenAtom = atomGroup->atomByDesc(hbondPair.hydrogen);
 
+
     // Error handling for acceptor
     if (!checkAndGetAtom(atomGroup, hbondPair.acceptor, acceptorAtom) || 
         !checkAndGetAtom(atomGroup, hbondPair.hydrogen, hydrogenAtom)) {
@@ -231,14 +241,27 @@ void Flexibility::addHBond(const HBondManager::HBondPair &hbondPair)
     int acceptorBlock_idx = accessAtomBlock(acceptorAtom);
     int hydrogenBlock_idx = accessAtomBlock(hydrogenAtom);
 
+
+
     // Access the donor and acceptor AtomBlock objects
     const std::vector<AtomBlock>& blocks = _resources.sequences->sequence()->blocks();
     const AtomBlock& donorBlock = blocks[donorBlock_idx];
     const AtomBlock& acceptorBlock = blocks[acceptorBlock_idx];
     const AtomBlock& hydrogenBlock = blocks[hydrogenBlock_idx];
-    
     int parentDonor_idx = blocks[donorBlock_idx].parent_idx;
     int parentAcceptor_idx = blocks[acceptorBlock_idx].parent_idx;
+
+    std::cout << "[DEBUG] Donor block " << donorBlock_idx 
+              << " atom: " << (blocks[donorBlock_idx].atom ? 
+                 blocks[donorBlock_idx].atom->desc() : "NULL")
+              << " depth: " << blocks[donorBlock_idx].depth
+              << " parent_idx: " << blocks[donorBlock_idx].parent_idx << std::endl;
+
+    std::cout << "[DEBUG] Acceptor block " << acceptorBlock_idx 
+              << " atom: " << (blocks[acceptorBlock_idx].atom ? 
+                 blocks[acceptorBlock_idx].atom->desc() : "NULL")
+              << " depth: " << blocks[acceptorBlock_idx].depth
+              << " parent_idx: " << blocks[acceptorBlock_idx].parent_idx << std::endl;
 
     // Compute positions, distances, and angles
     glm::vec3 donorPos = blocks[donorBlock_idx].my_position();
@@ -303,6 +326,8 @@ void Flexibility::addHBond(const HBondManager::HBondPair &hbondPair)
     // _globalTorsionSet.insert(hbe.TorsionVec.begin(), hbe.TorsionVec.end());
     for (auto &[torsionIdx, isHSide] : hbe.TorsionVec)
         _globalTorsionSet.insert(torsionIdx);
+
+    std::cout << "[DEBUG addHBond] END: successfully added" << std::endl;
 }
 
 double getVdWRadius(const Atom* atom) 
@@ -437,6 +462,11 @@ std::vector<std::pair<int,bool>> Flexibility::lastCommonAncestorIdx(int donorBlo
     const std::vector<AtomBlock>& blocks = _resources.sequences->sequence()->blocks();
     while (true)
     {
+        if (donorBlock_idx < 0 || acceptorBlock_idx < 0) // is this correct? 
+        {
+            std::cerr << "[ERROR] lastCommonAncestorIdx: no common ancestor found" << std::endl;
+            return {};  // return empty vector, addHBond should skip this bond
+        }
         // CASE 1: Donor is deeper -> Move Donor up
         if (blocks[donorBlock_idx].depth > blocks[acceptorBlock_idx].depth)
         {
@@ -462,6 +492,7 @@ std::vector<std::pair<int,bool>> Flexibility::lastCommonAncestorIdx(int donorBlo
 
 int Flexibility::rewindBlock(int &block_idx, std::vector<std::pair<int,bool>> &torsionVector, bool isHSide)
 {
+
     const std::vector<AtomBlock>& blocks = _resources.sequences->sequence()->blocks();
     TorsionBasis *basis = _resources.sequences->sequence()->torsionBasis();
 
@@ -479,6 +510,13 @@ int Flexibility::rewindBlock(int &block_idx, std::vector<std::pair<int,bool>> &t
     }
     
     int blockParent_idx = blocks[block_idx].parent_idx;
+    // prevent infinite loop
+    if (blockParent_idx == 0)
+    {
+        std::cerr << "[ERROR] rewindBlock: parent_idx block is 0 at block " << block_idx << "-- no common ancestor found" << std::endl;
+        return -1;
+    }
+
     block_idx += blockParent_idx;
     return block_idx;
 }

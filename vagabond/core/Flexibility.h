@@ -92,7 +92,6 @@ public:
     void printHBonds() const;
     void clearHBonds();
     bool validateHBondPair(const HBondManager::HBondPair &hbondPair);
-    void loadHBondsFromManager(HBondManager* hbondManager);
     bool checkAndGetAtom(AtomGroup* atomGroup, const std::string& atomDesc, Atom*& atom);
 
 
@@ -172,6 +171,10 @@ public:
     float dihedral2GradientASide(const glm::vec3 &axisA, const glm::vec3 &axisB,
                                            const glm::vec3 &D, const glm::vec3 &H,
                                            const glm::vec3 &A, const glm::vec3 &AA, bool isAABond);
+    std::string getChain()
+    {
+        return _targetChain;
+    }
 
 
     // === DEBUGGING ===
@@ -203,7 +206,7 @@ private:
 
     int _colIdx = 0;
     int _vSize = 0;
-
+    std::string _targetChain = "";
 };
 
 #endif
