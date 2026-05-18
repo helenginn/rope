@@ -33,7 +33,6 @@
 #include "PathData.h"
 #include "EntityManager.h"
 #include "RouteExplorer.h"
-#include "Instance.h"
 #include "paths/PlausibleRoute.h"
 #include "PathManager.h"
 #include "PathsDetail.h"
@@ -147,7 +146,7 @@ void PathsMenu::setup()
 			else
 			{
 				_selected.clear();
-                tb->toggle("all");
+                tb->toggle("");
 			}
 			
 			refresh();
@@ -239,6 +238,7 @@ Renderable *PathsMenu::getLine(int i)
 			{
                 std::cout << "Erasing " << i << std::endl;
 				_selected.erase(i);
+                tb->toggle("");
 			}
 		};
 
