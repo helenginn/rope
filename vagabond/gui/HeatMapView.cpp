@@ -1,4 +1,5 @@
 #include <vagabond/gui/TableView.h>
+#include <vagabond/gui/VagWindow.h>
 #include <vagabond/gui/elements/TextButton.h>
 #include <vagabond/gui/elements/Slider.h>
 #include <vagabond/gui/VagWindow.h>
@@ -114,6 +115,8 @@ void HeatMapView::sumHeatMap()
     {
         matrix += _entropyData->dataMatrix[t];
     }
+  
+    VagWindow::window()->requestProgressBar(_entropy->ticks(), "Generating heatmap");
 
     for (int i = 0; i < _entropy->rows(); i++)
     {
@@ -243,25 +246,25 @@ void HeatMapView::redrawHeatMap(double num)
 
     int t = (int) num;
 
-    int rows = _entropy.dataMatrix[t].rows();
-    int cols = _entropy.dataMatrix[t].cols();
+    int rows = entropyData.dataMatrix[t].rows();
+    int cols = entropyData.dataMatrix[t].cols();
 
     Eigen::MatrixXf matrix = Eigen::MatrixXf::Zero(rows, cols);
     
-    std::vector<double> entropyVals(_entropy.total[t].size());
+    std::vector<double> entropyVals(entropyData.total[t].size());
 
-    double maxEntVal = _entropy.total[t].front();
-    double minEntVal = _entropy.total[t].front();
+    double maxEntVal = entropyData.total[t].front();
+    double minEntVal = entropyData.total[t].front();
 
-    for(int i = 0; i < _entropy.total[t].size(); i++)
+    for(int i = 0; i < entropyData.total[t].size(); i++)
     {
-        if(_entropy.total[t][i] > maxEntVal)
+        if(entropyData.total[t][i] > maxEntVal)
         {
-            maxEntVal = _entropy.total[t][i];
+            maxEntVal = entropyData.total[t][i];
         }
-        if(_entropy.total[t][i] < minEntVal)
+        if(entropyData.total[t][i] < minEntVal)
         {
-            minEntVal = _entropy.total[t][i];
+            minEntVal = entropyData.total[t][i];
         }
     }
 
@@ -269,7 +272,7 @@ void HeatMapView::redrawHeatMap(double num)
     {
         for (int j = 0; j < cols; j++)
         {
-			matrix(i, j) = _entropy.dataMatrix[t](i, j);
+			matrix(i, j) = entropyData.dataMatrix[t](i, j);
         }
     }
 
@@ -297,22 +300,22 @@ void HeatMapView::sumHeatMap()
         removeObject(_rangeSlider);
     }
 
-    int rows = _entropy.dataMatrix[0].rows();
-    int cols = _entropy.dataMatrix[0].cols();
+    int rows = entropyData.dataMatrix[0].rows();
+    int cols = entropyData.dataMatrix[0].cols();
 
     Eigen::MatrixXf matrix = Eigen::MatrixXf::Zero(rows, cols);
     
-    std::vector<double> entropyVals(_entropy.total[0].size());
+    std::vector<double> entropyVals(entropyData.total[0].size());
 
-    for (int t = 0; t < _entropy.numDivisions; t++)
+    for (int t = 0; t < entropyData.numDivisions; t++)
     {
-        for(int i = 0; i < _entropy.total[t].size(); i++) 
+        for(int i = 0; i < entropyData.total[t].size(); i++) 
         {
-            entropyVals[i] += _entropy.total[t][i];
+            entropyVals[i] += entropyData.total[t][i];
             
             std::cout << i << ": " << entropyVals[i] << std::endl;
         }
-        matrix += _entropy.dataMatrix[t];
+        matrix += entropyData.dataMatrix[t];
     }
    
     double meanEntropy = mean(entropyVals);
@@ -394,6 +397,6 @@ void HeatMapView::mousePressEvent(double x, double y, SDL_MouseButtonEvent butto
 	int left = v.x * _pcaMatrix.cols;
 	int right = v.y * _pcaMatrix.rows;
 	std::cout << left << " " << right << std::endl;
-	setInformation(_entropy.start[left] + " to " + _entropy.end[right]);
+	setInformation(entropyData.start[left] + " to " + entropyData.end[right]);
 	Scene::mousePressEvent(x, y, button);
 }

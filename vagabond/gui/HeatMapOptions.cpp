@@ -28,8 +28,6 @@ void HeatMapOptions::setup()
 {
     addTitle("Select Calculation Parameters");
 
-    PathManager::GroupedMap map = Environment::pathManager()->groupedPathsForEntity(_entity);
-
     {
         Text *t = new Text("Use MIST algorithm?");
         t->setLeft(0.15, 0.22);

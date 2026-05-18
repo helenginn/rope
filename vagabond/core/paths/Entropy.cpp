@@ -7,9 +7,8 @@ Entropy::Entropy(const std::vector<PathGroup> &paths, const struct FlagParameter
     _flagPar = flagPar;
     _paths = paths;
     _ticks = 0;
-
+    
     sortPathGroupsByInstance(_paths);
-
     for (const PathGroup &group : paths)
     {
         _starts.insert(group[0]->startInstance());
@@ -53,6 +52,7 @@ void Entropy::populateHeatMap(struct EntropyForHeatMap *entropyData)
 std::vector<double> Entropy::pathEntropyInstancePair(int numPaths, std::vector<Path *> paths, int numDivisions, bool mist)
 {
     PathEntropy *pE = new PathEntropy();
+
     std::vector<double> entropyPair;
     
     std::cout << "Entering subroutine..." << std::endl;

@@ -255,6 +255,7 @@ Renderable *PathsMenu::getLine(int i)
 		};
 
 		bool is_selected = _selected.count(i);
+
 		tb->addOption("", func, is_selected);
 		tb->arrange(-0.01, 0.0, 0.05, 0.1);
 		b->addObject(tb);

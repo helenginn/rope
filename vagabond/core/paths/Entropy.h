@@ -104,5 +104,4 @@ private:
 
     std::mutex _mutex;
 };
-
 #endif
