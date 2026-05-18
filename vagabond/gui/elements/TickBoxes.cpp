@@ -205,7 +205,7 @@ void TickBoxes::Option::set(TickBoxes *boxes, const std::string &str,
 	
 	auto wrapped_job = [job, boxes, new_tag]
 	{
-		if (boxes->oneOnly())
+		if (boxes->oneOnly() && boxes->_options.size() > 1)
 		{
 			boxes->untickAllExcept(new_tag);
 			boxes->tick(new_tag);
