@@ -170,7 +170,7 @@ struct EntropyForMatrix PathEntropy::calculateEntropyIndependent(int nf, struct 
 
     for(int n = 0; n < numDivisions; n++)
     {
-		struct Entropy* entropy = new Entropy;
+		struct EntropyKL* entropy = new EntropyKL;
 		entropy->nSingle = numResPerModel;
 		entropy->nNearestNeighbours = flagParameters.n;
 		allocEntropy(entropy, numResPerModel, 0, entropy->nNearestNeighbours, flagParameters);
@@ -238,7 +238,7 @@ struct EntropyForMatrix PathEntropy::calculateEntropyMI(int nf, struct FlagParam
 
     for(int n = 0; n < numDivisions; n++) 
     {
-        struct Entropy* entropy = new Entropy;
+        struct EntropyKL* entropy = new EntropyKL;
         entropy->nSingle = numResPerModelMI;
         entropy->nNearestNeighbours = flagParameters.n;   
         entropy->nPairs = nPairs;     
@@ -472,7 +472,7 @@ void PathEntropy::torsRes2MI(std::vector<TorsRes4NN*> torsRes, int numResPerMode
 	}
 }
 
-void PathEntropy::kNearestNeighbours(std::vector<TorsRes4NN*> torsRes, struct Entropy* entropy, struct FlagParameters flagParameters, int &numTors, int nf, int numResPerModel, int K, int timeDivisions)
+void PathEntropy::kNearestNeighbours(std::vector<TorsRes4NN*> torsRes, struct EntropyKL* entropy, struct FlagParameters flagParameters, int &numTors, int nf, int numResPerModel, int K, int timeDivisions)
 { 
     std::vector<std::vector<double>> phit(nf); 
     std::vector<double> entk, entkTotal, entk2, entkTotal2, sigmak;
@@ -675,7 +675,7 @@ void PathEntropy::fitlw(std::vector<double> y, std::vector<double> x, std::vecto
 	sd[1] = sqrt(sig2 * (double) n / (double) (n-2)) / sqrt((double) n * (x2 - xm*xm));
 }
 
-void PathEntropy::kruskal(struct Entropy *entropy, int *group2res, struct FlagParameters flagParameters)
+void PathEntropy::kruskal(struct EntropyKL *entropy, int *group2res, struct FlagParameters flagParameters)
 {
     std::vector<Edge*> edges;
     std::vector<Edge*> MST;
@@ -781,7 +781,7 @@ void PathEntropy::kruskal(struct Entropy *entropy, int *group2res, struct FlagPa
 }
 
 /* allocates memory to entropy structure */
-void PathEntropy::allocEntropy(struct Entropy *entropy, int nSingle, int nPairs, int nNearestNeighbours, struct FlagParameters flagParameters)
+void PathEntropy::allocEntropy(struct EntropyKL *entropy, int nSingle, int nPairs, int nNearestNeighbours, struct FlagParameters flagParameters)
 {
     entropy->nPairs = nPairs;
 

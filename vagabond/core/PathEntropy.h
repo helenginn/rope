@@ -6,7 +6,9 @@
 #include <string>
 #include <Path.h>
 
-struct Entropy {
+//struct for calculation using the k-NN method with Kozachenko-Leonenko estimator
+
+struct EntropyKL {
 int nSingle{};
 int nPairs{};
 int nEdges{};
@@ -94,12 +96,12 @@ public:
 
     void torsRes2MI(std::vector<TorsRes4NN*> torsRes, int resPerModel, std::vector<TorsRes4NN*> &torsMI, int& resPerModelMI, int *group2res, struct FlagParameters flagParameters, int timeDivisions = 1);
 
-    void kNearestNeighbours(std::vector<TorsRes4NN*> torsRes, struct Entropy* entropy, struct FlagParameters flagParameters, int &nTors, int nf, int numResPerModel, int K, int timeDivisions = 1);
+    void kNearestNeighbours(std::vector<TorsRes4NN*> torsRes, struct EntropyKL* entropy, struct FlagParameters flagParameters, int &nTors, int nf, int numResPerModel, int K, int timeDivisions = 1);
 
     /* kruskal algorithm */
-    void kruskal(struct Entropy *entropy, int *group2res, struct FlagParameters flagParameters);
+    void kruskal(struct EntropyKL *entropy, int *group2res, struct FlagParameters flagParameters);
 	
-    void allocEntropy(struct Entropy *entropy, int nSingle, int nPairs, int nNearestNeighbours, struct FlagParameters flagParameters);
+    void allocEntropy(struct EntropyKL *entropy, int nSingle, int nPairs, int nNearestNeighbours, struct FlagParameters flagParameters);
 
     void allocVariables(int nf, std::vector<double> &entk, std::vector<double> &entkTotal, std::vector<double> &entk2, std::vector<double> &entkTotal2, std::vector<double> &sigmak, struct FlagParameters &flagParameters);
 };

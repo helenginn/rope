@@ -2,7 +2,8 @@
 #define __vagabond__HeatMapView__
 
 #include <mutex>
-#include <vagabond/core/Entropy.h>
+#include <vagabond/core/PathEntropy.h>
+#include <vagabond/core/paths/Entropy.h>
 #include <vagabond/utils/Eigen/Dense>
 #include <vagabond/gui/elements/DragResponder.h>
 
@@ -12,7 +13,7 @@ class Slider;
 class HeatMapView : public Scene, public DragResponder
 {
 public:
-    HeatMapView(Scene *prev, const struct EntropyForHeatMap &entropy);
+    HeatMapView(Scene *prev, const std::vector<PathGroup> &paths, struct FlagParameters flagPar);
     ~HeatMapView();
 
     virtual void setup();
@@ -26,9 +27,10 @@ public:
     virtual void buttonPressed(std::string tag, Button *button = nullptr);
     virtual void mousePressEvent(double x, double y, SDL_MouseButtonEvent button);
 private:
-    struct EntropyForHeatMap _entropy;
+    struct FlagParameters _flagPar{};
 
-    long *_timeDivisions = nullptr;
+    Entropy *_entropy{};
+    std::thread *_worker = nullptr;
 
     PCA::Matrix _pcaMatrix{};    
     MatrixPlot *_plot{};

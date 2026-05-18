@@ -211,7 +211,7 @@ void Dictator::processRequest(std::string &first, std::string &last)
 		}
 
         std::cout << "Calling map function" << std::endl;
-        PathManager::manager()->pathEntropyHeatMap(args);
+//        PathManager::manager()->pathEntropyHeatMap(args);
 
         std::cout << "done" << std::endl;
     }

@@ -38,7 +38,7 @@
 #include "PathManager.h"
 #include "PathsDetail.h"
 #include "MakeNewPaths.h"
-#include "Entropy.h"
+#include "paths/Entropy.h"
 #include "PathThermodynamics.h"
 #include "HeatMapOptions.h"
 #include <functional>
@@ -230,10 +230,10 @@ Renderable *PathsMenu::getLine(int i)
 		TickBoxes *tb = new TickBoxes(this, this);
 		auto func = [this, tb, i]()
 		{
-			std::cout << "Inserting " << i << std::endl;
 			if (_selected.count(i) == 0)
 			{
-				_selected.insert(i);
+				std::cout << "Inserting " << i << std::endl;
+		    	_selected.insert(i);
 			}
 			else
 			{
@@ -242,7 +242,9 @@ Renderable *PathsMenu::getLine(int i)
 			}
 		};
 
-		tb->addOption("", func, _selected.count(i));
+		bool is_selected = _selected.count(i);
+		std::cout << "Tickbox " << i << " is: " << is_selected << std::endl;
+		tb->addOption("", func, is_selected);
 		tb->arrange(-0.01, 0.0, 0.05, 0.1);
 		b->addObject(tb);
 	}
@@ -525,3 +527,8 @@ void PathsMenu::prepareSpace()
 	csv->show();
 }
 
+void PathsMenu::refresh()
+{
+	std::cout << "Refreshing" << std::endl;
+	ListView::refresh();
+}

@@ -21,11 +21,11 @@ public:
     virtual void finishedDragging(std::string tag, double x, double y);
 
 private:
-    void prepareProgress(int ticks, std::string text);
     void loadOptions();
 
     PathEntropy *_pathEntropy = nullptr;
     struct FlagParameters _flagPar;
+    std::vector<PathGroup> _paths;
     Entity *_entity = nullptr;
 
     Slider *_pathsSlider;
