@@ -3,6 +3,7 @@
 #include <vagabond/core/PathEntropy.h>
 #include <vagabond/core/PathManager.h>
 #include <vagabond/core/Entity.h>
+#include <vagabond/core/paths/Entropy.h>
 
 #include <vagabond/gui/elements/Slider.h>
 #include <vagabond/gui/elements/TickBoxes.h>
@@ -13,7 +14,8 @@
 HeatMapOptions::HeatMapOptions(Scene *prev, Entity *entity, const std::vector<PathGroup> &paths) : Scene(prev)
 {
     _entity = entity;
-
+    _paths = paths;
+ 
     _pathEntropy = new PathEntropy();
     _flagPar = _pathEntropy->initFlagPar();
 }
@@ -26,8 +28,6 @@ HeatMapOptions::~HeatMapOptions()
 void HeatMapOptions::setup()
 {
     addTitle("Select Calculation Parameters");
-
-    PathManager::GroupedMap map = Environment::pathManager()->groupedPathsForEntity(_entity);
 
     {
         Text *t = new Text("Use MIST algorithm?");
@@ -122,32 +122,8 @@ void HeatMapOptions::buttonPressed(std::string tag, Button *button)
 
     if (tag == "heatmap")
     {
-        struct FlagParameters options = _flagPar;
-
-        struct EntropyForHeatMap entropyData = {};
-
-        std::function<void(EntropyForHeatMap &)> callback;
-		callback = [this, button](EntropyForHeatMap &entropyData)
-		{
-			addMainThreadJob([this, entropyData, button]()
-			{
-			HeatMapView *view = new HeatMapView(this, entropyData);
-
-            showBackButton();
-			button->setInert(false);
-
-            view->show();
-			});
-		};
-           
-	    Environment::pathManager()->setEntropyCallback(callback);
-        
-        hideBackButton();
-        button->setInert();
-
-        prepareProgress(_entity->instanceCount()-1, "Calculating path entropy...");
-
-        VagWindow::addJob("path-entropy=" + _entity->name() + "," + std::to_string(options.nf) + "," + std::to_string(options.timeDivisions));
+		HeatMapView *view = new HeatMapView(this, _paths, _flagPar);
+        view->show();
     }
 
     Scene::buttonPressed(tag, button);
@@ -167,11 +143,6 @@ void HeatMapOptions::finishedDragging(std::string tag, double x, double y)
     {
         _flagPar.timeDivisions = lrint(x);
     }
-}
-
-void HeatMapOptions::prepareProgress(int ticks, std::string text)
-{
-    VagWindow::window()->requestProgressBar(ticks, text);
 }
 
 void HeatMapOptions::refresh()

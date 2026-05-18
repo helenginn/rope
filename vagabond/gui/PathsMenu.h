@@ -41,6 +41,7 @@ public:
 	
 	virtual void setup();
 	virtual void respond();
+	virtual void refresh();
 
 	virtual size_t lineCount();
 	virtual Renderable *getLine(int i);
