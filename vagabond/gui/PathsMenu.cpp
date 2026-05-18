@@ -148,7 +148,7 @@ void PathsMenu::setup()
 				{
 					_selected.insert(i);
 				}
-			 
+
 				for(int i = 0; i < _tbs.size(); i++)
 				{
 					_tbs[i]->tick("");
@@ -251,6 +251,7 @@ Renderable *PathsMenu::getLine(int i)
 			{
                 std::cout << "Erasing " << i << std::endl;
 				_selected.erase(i);
+                tb->toggle("");
 			}
 		};
 
