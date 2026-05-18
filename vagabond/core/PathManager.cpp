@@ -21,7 +21,7 @@
 #include "Environment.h"
 #include "paths/NewPath.h"
 #include "PathEntropy.h"
-#include "Entropy.h"
+#include "paths/Entropy.h"
 #include "Progressor.h"
 #include <fstream>
 
@@ -473,7 +473,7 @@ std::vector<double> PathManager::pathEntropyInstancePair(int numPaths, std::vect
     return entropy;
 }
 
-void PathManager::pathEntropyHeatMap(const std::vector<std::string> &args)
+/*void PathManager::pathEntropyHeatMap(const std::vector<std::string> &args)
 {
     std::cout << "Entity: " << args[0] << std::endl;
 	Entity *ent = Environment::entityManager()->entity(args[0]);
@@ -565,11 +565,11 @@ void PathManager::pathEntropyHeatMap(const std::vector<std::string> &args)
         _callback(entropyData);
 		_callback = {};
 	}
-	/*else
-	{
-		writeToFile(data); // pseudocode
-	}*/
+	//else
+	//{
+	//	writeToFile(data); // pseudocode
+	//}
 
     ModelManager::manager()->finishTicker();
-}
+}*/
 
