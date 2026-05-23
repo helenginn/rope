@@ -325,6 +325,7 @@ inline OpSet<ABPair> uninvolvedCoordinators(const AtomConf &atom)
 		conf += atom.conf;
 	}
 	std::vector<FindUninvolved> list = {{"SER", "OG", "CB"},
+										{"CYS", "SG", "CB"},
 		                                {"THR", "OG1", "CB"},
 		                                {"TYR", "OH", "CZ"},
 		                                {"", "N", "CA"},
@@ -348,7 +349,9 @@ inline OpSet<ABPair> uninvolvedCoordinators(const AtomConf &atom)
 		                                {"ARG", "NH2", "CZ"},
 		                                {"ARG", "NE", "CZ"},
 		                                {"ARG", "NE", "CD"},
-		                                {"LYS", "NZ", "CE"}};
+		                                {"LYS", "NZ", "CE"},
+		                                {"MET", "SD", "CG"},
+		                                {"MET", "SD", "CE"}};
 
 	OpSet<ABPair> found;
 	for (FindUninvolved &find : list)
