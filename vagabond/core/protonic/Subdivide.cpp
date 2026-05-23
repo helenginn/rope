@@ -126,6 +126,11 @@ void Subdivide::spread(OpSet<Probe *> &chunk, bool force)
 		{
 			for (Probe *const &other : current->others())
 			{
+				if (chunk.size() + add.size() > _min)
+				{
+					return;
+				}
+
 				if (other->is_definitely_not_present())
 				{
 					continue;
@@ -173,21 +178,41 @@ void Subdivide::subdivide()
 	OpSet<OpSet<Probe *>> chunks;
 	OpSet<Clique> cliques;
 	
+	auto grow_clique = [this]<class Grow>(Probe *start, Grow &grow)
+	{
+		OpSet<Probe *> chunk = {start};
+		grow(chunk);
+		while (finish_ends(chunk)) {}
+
+		prune(chunk);
+		return chunk;
+	};
+	
+	auto shoot_grow = [this](OpSet<Probe *> &chunk) { return shoot(chunk); };
+	auto spread_grow = [this](OpSet<Probe *> &chunk) { return spread(chunk); };
+
+
 	for (Probe *probe : to_chunk)
 	{
-		for (int i = 0; i < 5; i++)
+		/*
+		for (int i = 0; i < 3; i++)
 		{
-			OpSet<Probe *> chunk = {probe};
-			shoot(chunk);
-			while (finish_ends(chunk)) {}
-
-			prune(chunk);
+			OpSet<Probe *> chunk = grow_clique(probe, shoot_grow);
 			if (chunk.size() > 0)
 			{
 				chunks += chunk;
 			}
 		}
+		*/
 
+		for (int i = 0; i < 5; i++)
+		{
+			OpSet<Probe *> chunk = grow_clique(probe, shoot_grow);
+			if (chunk.size() > 0)
+			{
+				chunks += chunk;
+			}
+		}
 	}
 	
 	for (const OpSet<Probe *> &chunk : chunks)
