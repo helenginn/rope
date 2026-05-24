@@ -154,15 +154,15 @@ ProbeCorrelation correlate(const std::vector<ProbeResult> &source,
 	for (int j = 0; j < corr.mat.rows(); j++)
 	{
 		float row_total = corr.mat.row(j).sum();
-		int row_count = corr.mat.row(j).size();
+		int col_count = corr.mat.cols();
 		
 		if (row_total > 1e-6)
 		{
 			corr.mat.row(j) /= row_total;
 			
-			for (int i = 0; i < row_count; i++)
+			for (int i = 0; i < col_count; i++)
 			{
-				corr.mat.row(j)(i) -= 1.f / (float)row_count;
+				corr.mat.row(j)(i) -= 1.f / (float)col_count;
 			}
 		}
 
