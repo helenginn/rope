@@ -124,6 +124,7 @@ public:
 	}
 	
 	void updateModelCliques();
+	AtomGroup *assignCertainHydrogens(std::ostringstream &ss);
 private:
 	void establishAtom(::Atom *atom);
 

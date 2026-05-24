@@ -64,6 +64,7 @@ public:
 	
 	void setMenu(Menu *menu);
 	void makeMainMenu();
+	void exportHBonds();
 	virtual void keyReleaseEvent(SDL_Keycode pressed);
 	virtual void keyPressEvent(SDL_Keycode pressed);
 	virtual void mouseMoveEvent(double x, double y);

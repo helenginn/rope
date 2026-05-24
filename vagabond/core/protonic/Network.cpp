@@ -766,3 +766,97 @@ Clique *Network::newClique(const OpSet<Probe *> &probes)
 
 	return &_cliques.back();
 }
+
+AtomGroup *Network::assignCertainHydrogens(std::ostringstream &ss)
+{
+	ss << "H-bond_ID\tH-chain\tH-resi\tH-resn\t";
+	ss << "Donor-Atom\tH-atomn\tAcc-chain\tAcc-resi\t";
+	ss << "Acc-resn\tAcc-atomn";
+	ss << std::endl;
+
+	std::map<Probe *, int> num_assigned;
+
+	AtomGroup *write = new AtomGroup();
+	write->add(_original);
+	std::map<std::pair<::Atom *, std::string>, ::Atom *> renewed;
+
+	int counter = 0;
+	for (BondProbe *const &bond : _bondProbes)
+	{
+		if (!bond->is_certain())
+		{
+			continue;
+		}
+
+		Bond::Values val = bond->_obj.value();
+		if (val != Bond::Donor)
+		{
+			continue;
+		}
+		
+		Probe *pAtom = (bond->_left.is_atom() ? &bond->_left : &bond->_right);
+		Probe *hydrogen = (bond->_left.is_atom() ? &bond->_right : &bond->_left);
+		
+		std::cout << "Atom: " << pAtom->desc() << " - hName: ";
+		::Atom *atom = pAtom->atom();
+		int hNum = ++num_assigned[pAtom];
+		std::string name = atom->atomName();
+		std::string code = atom->code();
+		name[0] = 'H';
+		if (name.size() == 2)
+		{
+			name += std::to_string(hNum);
+		}
+		else if (code == "ARG" && name.size() == 3)
+		{
+			name += std::to_string(hNum)[0];
+		}
+		std::cout << name << std::endl;
+		
+		::Atom *const &hAtom = hydrogen->_h;
+		if (renewed.count({atom, name}) == 0)
+		{
+			::Atom *re = new ::Atom(*hAtom);
+			renewed[{atom, name}] = re;
+			write->add(re);
+		}
+		::Atom *re = renewed[{atom, name}];
+
+		re->setAtomName(name);
+		re->setChain(atom->chain());
+		
+		glm::vec3 vec = hAtom->initialPosition() - atom->initialPosition();
+		vec = glm::normalize(vec);
+		vec *= 0.96;
+		vec += atom->initialPosition();
+
+		::Atom::ConformerInfo &info = re->conformerPositions();
+		std::string conf; conf += pAtom->atomConf().conf;
+		info[conf].pos.ave = vec;
+
+		HydrogenProbe *h = static_cast<HydrogenProbe *>(hydrogen);
+		AtomProbe *otherAtom = &(h->_left);
+		if (&(h->_left) == pAtom)
+		{
+			otherAtom = &(h->_right);
+		}
+
+		::Atom *other = otherAtom->atom();
+		ResidueId hResi = atom->residueId();
+		ResidueId accResi = other->residueId();
+		
+		ss << std::to_string(++counter) << "\t"; // H-bond_ID;
+		ss << atom->chain() << "\t"; // H-chain
+		ss << atom->residueId() << "\t"; // H-resi
+		ss << atom->code() << "\t"; // H-resn
+		ss << atom->atomName() << "\t"; // Donor-Atom
+		ss << re->atomName() << "\t"; // H-atomn
+		ss << other->chain() << "\t"; // Acc-chain
+		ss << other->residueId() << "\t"; // Acc-resi
+		ss << other->code() << "\t"; // Acc-resn
+		ss << other->atomName() << "\t"; // Acc-resn
+		ss << std::endl;
+	}
+
+	return write;
+}

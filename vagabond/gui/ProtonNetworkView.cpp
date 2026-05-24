@@ -404,6 +404,10 @@ void ProtonNetworkView::makeMainMenu()
 			Environment::environment().save();
 		});
 		
+		m->addOption("Export H-bonds", [this]()
+        {
+	              exportHBonds();
+        });
 		OpSet<Probe *> selected = selected_probes(_textProbes);
 		selected += selected_probes(_bondProbes);
 
@@ -662,7 +666,19 @@ void ProtonNetworkView::setManualAdjust(ProbeAtom *probe)
 		_shifter->setSkip(probe);
 		_manual = probe;
 	}
+}
 
+void ProtonNetworkView::exportHBonds()
+{
+	std::ostringstream tsv;
+	AtomGroup *write = _network.assignCertainHydrogens(tsv);
+	write->writeToFile("tmp_h.pdb");
+	delete write;
+
+	std::ofstream file; 
+	file.open("tmp_hbonds.txt");
+	file << tsv.str();
+	file.close();
 }
 
 void ProtonNetworkView::mouseReleaseEvent(double x, double y,
