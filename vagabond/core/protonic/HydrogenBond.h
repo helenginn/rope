@@ -83,15 +83,15 @@ struct HydrogenBond : public ConstraintBase
 		// if H is present, one bond must be a donor, other cannot be a donor
 		if (_centre.value() == Existence::Present)
 		{
-			if (_right.value() == Bond::Strong)
+			if (_right.value() == Bond::Donor)
 			{
-				assign(_left, Bond::NotStrong, "a hydrogen with a donor on"\
+				assign(_left, Bond::NotDonor, "a hydrogen with a donor on"\
 				       " one side must be accepted on the other");
 			}
 			
-			if (!(_right.value() & Bond::Strong))
+			if (!(_right.value() & Bond::Donor))
 			{
-				assign(_left, Bond::Strong, "a hydrogen with a non-donor on "\
+				assign(_left, Bond::Donor, "a hydrogen with a non-donor on "\
 				       "one side must be a donor on the other");
 			}
 
@@ -102,14 +102,14 @@ struct HydrogenBond : public ConstraintBase
 				       "if H-bond is not complete on "\
 				       "both sides, remaining side cannot be acceptor/broken");
 			}
+			// if we only have choice between lone pair and acceptor, it's acceptor
+			if (_left.value() == Bond::LonePairOrWeak)
+			{
+				assign(_left, Bond::Weak, "if we only have choice between lone "\
+				       "pair and acceptor, it's acceptor");
+			}
 		}
 
-		// if we only have choice between lone pair and acceptor, it's acceptor
-		if (_left.value() == Bond::LonePairOrWeak)
-		{
-			assign(_left, Bond::Weak, "if we only have choice between lone "\
-			       "pair and acceptor, it's acceptor");
-		}
 		
 		// if we definitely have a donor/acceptor bond then we must have H
 		if (bond_definitely_present(_left.value()))
@@ -123,6 +123,12 @@ struct HydrogenBond : public ConstraintBase
 		{
 			assign(_centre, Existence::Absent, "a hydrogen braced by two "\
 			       "non-bonds must be absent");
+		}
+
+		if (_left.value() == Bond::LonePair)
+		{
+			assign(_centre, Existence::Absent, "a lone pair cannot be braced"\
+			       " by a proton");
 		}
 		
 		if (_right.value() == Bond::Broken)

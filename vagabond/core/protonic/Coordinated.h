@@ -98,12 +98,12 @@ public:
 	
 	hnet::CountConnector *const &strong() const
 	{
-		return _strong;
+		return _donors;
 	}
 	
 	hnet::CountConnector *const &weak() const
 	{
-		return _weak;
+		return _acceptors;
 	}
 	
 	hnet::CountConnector *const &present() const
@@ -201,10 +201,9 @@ private:
 
 	hnet::CountConnector *_coord_num{};
 	hnet::CountConnector *_charge{};
-	hnet::CountConnector *_donors{};
 
-	hnet::CountConnector *_strong{};
-	hnet::CountConnector *_weak{};
+	hnet::CountConnector *_donors{};
+	hnet::CountConnector *_acceptors{};
 	hnet::CountConnector *_present{};
 	hnet::CountConnector *_absent{};
 	hnet::CountConnector *_expl_bonds{};

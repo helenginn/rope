@@ -163,6 +163,7 @@ public:
 	}
 	
 	Atom *_atom = nullptr;
+	Atom *_h = nullptr;
 	char _conf;
 	glm::vec3 _pos = {};
 	glm::vec3 _init = {};
@@ -296,12 +297,13 @@ class HydrogenProbe : public Probe
 public:
 	HydrogenProbe(hnet::ExistenceConnector &obj, 
 	              hnet::ExistenceConnector &exist,
-	              AtomProbe &left, AtomProbe &right) :
+	              AtomProbe &left, AtomProbe &right, Atom *hAtom) :
 	_obj(obj), _exist(exist), _left(left), _right(right)
 	{
 		_init = left.position() + right.position();
 		_init /= 2;
 		_pos = _init;
+		_h = hAtom;
 
 		// covered by creation of bonds I think!
 //		left.register_probe(this);
@@ -517,7 +519,7 @@ public:
 			break;
 
 			case hnet::Bond::LonePair:
-			str = "transparency";
+			str = "lone_pair";
 			break;
 
 			case hnet::Bond::Broken:

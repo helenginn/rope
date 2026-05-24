@@ -138,7 +138,16 @@ struct Conditions
 	                     const Value &value)
 	{
 		std::unique_lock<std::mutex> lk(_m);
-		_conditions[std::make_pair(informant, gv)] = value;
+		auto blame = std::make_pair(informant, gv);
+		if (_conditions.count(blame) == 0)
+		{
+			_conditions[blame] = value;
+		}
+		else
+		{
+			auto before = _conditions[blame];
+			_conditions[blame] = (Value)(before & value);
+		}
 	}
 	
 };

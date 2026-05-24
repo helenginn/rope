@@ -34,8 +34,7 @@ class BreakMatrix : public ConstraintBase
 public:
 	BreakMatrix(Coordinated *coord, const ConnectMap &bonds,
 	            const OpSet<AcceptableGroup> &groups,
-	            CountConnector &unbroken_count,
-	            CountConnector &twirling_bonds);
+	            CountConnector &unbroken_count);
 	
 	std::string desc()
 	{
@@ -48,38 +47,34 @@ public:
 	bool check(const GuiltVersion &gv, CheckList &list);
 private:
 	void accounting();
+	void print_current(const std::vector<BondConnector *> &in_game);
+
+	struct BreakEntry
+	{
+		BondConnector *bond{};
+		ExistenceConnector *exist{}; // existence of bond
+		bool fake;
+		int index{};
+		
+		Existence::Values existence();
+	};
+	
 	bool evaluate(make_assign_and_say<BreakMatrix> &assign); 
 	void checks_forgets();
-	bool assertExistence(make_assign_and_say<BreakMatrix> &assign, 
-	                    BondConnector *chosen);
 	bool assertAbsence(make_assign_and_say<BreakMatrix> &assign, 
-	                   BondConnector *chosen, std::string reason = {});
+	                   BreakEntry &chosen, std::string reason = {});
 	Eigen::MatrixXi partialMatrix(const std::vector<BondConnector *> 
 	                              &partial);
 	bool break_others(make_assign_and_say<BreakMatrix> &assign, 
-	                  BondConnector *definite);
+	                  BreakEntry &definite);
 
 	const Coordinated *_coord{};
 	const AtomConf &_ac;
 	ConnectMap _bonds;
 	CountConnector &_unbrokenCount;
 	ExistenceConnector &_myExist;
-	CountConnector &_twirling;
 	std::map<BondConnector *, int> _indexing{};
 	Eigen::MatrixXi _matrix{};
-	
-	struct BreakEntry
-	{
-		BondConnector *bond{};
-		ExistenceConnector *exist{}; // existence of bond
-		ExistenceConnector *partner{}; // existence of partner
-		ExistenceConnector *hSample{}; // sampling of hBond
-		ExistenceConnector *hStatus{}; // status of hBond
-		bool fake;
-		int index{};
-		
-		Existence::Values existence();
-	};
 	
 	std::vector<BreakEntry> _entries;
 };

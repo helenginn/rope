@@ -178,7 +178,7 @@ bool Network::setupHistidine(AtomConf atom)
 	}
 
 	const Count::Values charge = Count::OneOrZero;
-	const Count::Values valency = Count::Three;
+	const Count::Values valency = Count::Two;
 
 	const Count::Values charge_sum = Count::OneOrZero;
 	const Count::Values strong_sum = Count::Values(Count::One | Count::Two);
@@ -366,6 +366,7 @@ void Network::setupInactiveAtom(AtomConf atom)
 			<< diff << std::endl;
 			std::cout << "\t" << atom.occupancy() << " vs " <<
 			connected.occupancy() << std::endl;
+			add_constraint(new SubExistence(left, covalent, right));
 		}
 		
 		std::cout << "Making certain bond between " << ss.str() << std::endl;

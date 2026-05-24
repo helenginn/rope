@@ -22,29 +22,7 @@
 #include <vector>
 #include <sstream>
 #include "ConstraintBase.h"
-
-enum CountType
-{
-	Certain,
-	Maybe,
-	Not,
-};
-
-inline std::ostream &operator<<(std::ostream &ss, const CountType &ct)
-{
-	switch (ct)
-	{
-		case Certain:
-		ss << "Certain"; break;
-		case Maybe:
-		ss << "Maybe"; break;
-		case Not:
-		ss << "Not"; break;
-		default:
-		ss << "WeirdCountType"; break;
-	}
-	return ss;
-}
+#include "Attachment.h"
 
 namespace hnet
 {
@@ -62,44 +40,6 @@ struct BondAdder : public ConstraintBase
 		return existence;
 	}
 	
-	CountType type_of_bond(BondConnector *const &bond,
-	                       ExistenceConnector *const &exist)
-	{
-		Existence::Values existence = existence_of(exist);
-		Bond::Values obj = bond->value();
-		
-		if (existence == Existence::Absent)
-		{
-			return Not;
-		}
-		else if (existence == Existence::Unassigned)
-		{
-			if (obj & Request)
-			{
-				return Maybe;
-			}
-			else
-			{
-				return Not;
-			}
-		}
-		else
-		{
-			if (value_is_not_purely_requested(obj))
-			{
-				return Maybe;
-			}
-			else if (value_is_requested_and_nothing_else(obj))
-			{
-				return Certain;
-			}
-			else
-			{
-				return Not;
-			}
-		}
-	}
-
 	void get_certains_maybes(int &total, int &certain, int &maybe)
 	{
 		total = 0;
@@ -111,7 +51,8 @@ struct BondAdder : public ConstraintBase
 			BondConnector *const &bond = it->first;
 			ExistenceConnector *const &exist = it->second;
 
-			CountType type = type_of_bond(bond, exist);
+			Attachment attach(*bond, *exist);
+			CountType type = attach.type_of_bond(Request);
 //			std::cout << "What type of bond is " << *bond << " (requested:"
 //			<< Request << ")? -> " << type << std::endl;
 			
@@ -169,28 +110,35 @@ struct BondAdder : public ConstraintBase
 	
 	template <class MakeAssign>
 	void tell_maybe_bonds(const Bond::Values &tell, MakeAssign &assign,
-	                      bool positive)
+	                      CountType certainty)
 	{
 		for (auto it = _bonds.begin(); it != _bonds.end(); it++)
 		{
 			BondConnector *const &bond = it->first;
 			ExistenceConnector *const &exist = it->second;
 
-			Bond::Values obj = bond->value();
-			Existence::Values existence = existence_of(exist);
+			Attachment attach(*bond, *exist);
+			CountType type = attach.type_of_bond(Request);
 
-			CountType type = type_of_bond(bond, exist);
 			if (type != Maybe)
 			{
 				continue;
 			}
+			if (_coordExist->value() & Existence::Absent)
+			{
+				certainty = Maybe;
+			}
+
+			attach.inform(tell, assign, certainty);
+
 			// don't even think about playing with sampling!
 			// a bond adder cannot determine occupancy
+			// 			^ update: LIES?
 
 			/* go on, tell them they're not requested! */
-			if (existence == Existence::Present || !positive)
+//			if (existence == Existence::Present || !positive)
 			{
-				assign(*bond, tell);
+//				assign(*bond, tell);
 			}
 		}
 	}
@@ -213,7 +161,7 @@ struct BondAdder : public ConstraintBase
 		get_certains_maybes(total, certain, maybe);
 //		std::cout << "BondAdder (" << Request << ") for " << *_coordExist << std::endl;
 //		std::cout << _centre << ": " << total << " bonds of which " << certain << " are "\
-		"certainly " << Request << " and " << maybe << " maybe" << std::endl;
+//		"certainly " << Request << " and " << maybe << " maybe" << std::endl;
 //		std::cout << "Bonds: ";
 		for (auto it = _bonds.begin(); it != _bonds.end(); it++)
 		{
@@ -243,44 +191,42 @@ struct BondAdder : public ConstraintBase
 		*/
 
 		Count::Values count = values_as_count(possibilities);
+		/*
 		assign(_sum, count);
 		if (!assign.okay())
 		{
 			return assign.okay();
 		}
+		*/
 		
 		/* now we find all the possible values of sum, in integer form. */
 		OpSet<int> sum_options = possible_values(_sum.value());
 		
 		OpSet<int> common = possibilities.common_to_both(sum_options);
-
-		/*
-		std::cout << "Possibilities from counting: ";
-		print(possibilities);
-		std::cout << "Possibilities from prescribed sum: ";
-		print(sum_options);
-		std::cout << "Common to both: ";
-		print(common);
-		*/
 		
 		/* if there's only one acceptable value and it's either certain or
 		 * (certain + maybe) then we can assign the remainder */
 
-		
+		if (common.size() >= 1)
+		{
+			assign(_sum, count);
+		}
 		if (common.size() == 1)
 		{
 			if (*common.begin() == certain)
 			{
-//				std::cout << "Common is equal to certain" << std::endl;
-				Bond::Values not_request;
-				not_request = (Bond::Values)(Bond::Unassigned & ~Request);
-				tell_maybe_bonds(not_request, assign, false);
+				tell_maybe_bonds((Bond::Values)~Request, assign, Certain);
 			}
 			else if (*common.begin() == certain + maybe)
 			{
-//				std::cout << "Common is equal to certain + maybe" << std::endl;
-				tell_maybe_bonds((Bond::Values)Request, assign, true);
+				tell_maybe_bonds((Bond::Values)Request, assign, Certain);
 			}
+		}
+		/* if we're about to kill off a bond count, but we could set the
+		 * atom existence instead, do that */
+		else if (common.size() == 0 && (_coordExist->value() & Existence::Absent))
+		{
+			assign(*_coordExist, Existence::Absent);
 		}
 		/* but if there's no acceptable solution then it's a contradiction */
 		else if (common.size() == 0)

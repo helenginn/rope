@@ -29,6 +29,7 @@
 #include "BondAdder.h"
 #include "EqualBonds.h"
 #include "CountAdder.h"
+#include "Attachment.h"
 #include "HydrogenBond.h"
 #include "SubExistence.h"
 #include "BreakMatrix.h"
@@ -54,6 +55,7 @@ struct Constant : public ConstraintBase
 	bool check(const GuiltVersion &gv, CheckList &list)
 	{
 		auto assign = make_assign_and_say(this, gv, list);
+		bool changed = true;
 		assign(_connector, _constant);
 		return assign.okay();
 	}

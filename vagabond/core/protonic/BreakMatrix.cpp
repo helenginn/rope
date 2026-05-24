@@ -24,11 +24,9 @@ using namespace hnet;
 
 BreakMatrix::BreakMatrix(Coordinated *coord, const ConnectMap &bonds,
                          const OpSet<AcceptableGroup> &groups,
-                         CountConnector &unbroken_count,
-                         CountConnector &twirling_bonds)
+                         CountConnector &unbroken_count)
 : _coord(coord), _ac(coord->atomConf()), _bonds(bonds), 
-_unbrokenCount(unbroken_count), _myExist(*coord->existence()),
-_twirling(twirling_bonds)
+_unbrokenCount(unbroken_count), _myExist(*coord->existence())
 {
 	setup(groups);
 }
@@ -77,8 +75,6 @@ void BreakMatrix::accounting()
 			be.fake = true;
 			if (_coord->bond2HydrogenSample().count(be.bond))
 			{
-				be.hSample = _coord->bond2HydrogenSample().at(be.bond);
-				be.hStatus = _coord->bond2HydrogenStatus().at(be.bond);
 				be.fake = false;
 			}
 			be.index = count;
@@ -90,7 +86,6 @@ void BreakMatrix::accounting()
 					continue;
 				}
 				Coordinated *other = _coord->atomMap()[ab.first];
-				be.partner = other->existence();
 				break;
 			}
 			
@@ -107,14 +102,10 @@ void BreakMatrix::checks_forgets()
 	std::vector<ConnectBase *> connectors;
 	connectors.push_back(&_myExist);
 	connectors.push_back(&_unbrokenCount);
-	connectors.push_back(&_twirling);
 	for (const BreakEntry &entry : _entries)
 	{
 		connectors.push_back(entry.bond);
 		connectors.push_back(entry.exist);
-		connectors.push_back(entry.partner);
-		connectors.push_back(entry.hSample);
-		connectors.push_back(entry.hStatus);
 	}
 	
 	prep_constraints_and_forgets(this, connectors);
@@ -183,13 +174,32 @@ Eigen::MatrixXi BreakMatrix::partialMatrix(const std::vector<BondConnector *>
 	return tmp;
 }
 
-bool BreakMatrix::break_others(hnet::make_assign_and_say<BreakMatrix> &assign, 
-                               BondConnector *definite)
+void BreakMatrix::print_current(const std::vector<BondConnector *> &in_game)
 {
-	int row = _indexing[definite];
+	if (ConnectBase::_silent)
+	{
+		return;
+	}
+
+	Eigen::MatrixXi tmp = partialMatrix(in_game);
+	
+	ConnectBase::out() << _myExist << " working on matrix: " << std::endl;
+	for (int i = 0; i < in_game.size(); i++)
+	{
+		ConnectBase::out() << tmp.row(i) << " <- " << *in_game[i] << " (" <<
+		in_game[i]->value() << ")" << std::endl;
+	}
+
+	ConnectBase::out() << std::endl;
+}
+
+bool BreakMatrix::break_others(hnet::make_assign_and_say<BreakMatrix> &assign, 
+                               BreakEntry &definite)
+{
+	BondConnector *bond = definite.bond;
+	int row = _indexing[bond];
 
 	Eigen::VectorXi break_list = _matrix(row, Eigen::all);
-//	std::cout << "Breaking antagonists of " << *definite << std::endl;
 	
 	for (int i = 0; i < break_list.size(); i++)
 	{
@@ -198,12 +208,12 @@ bool BreakMatrix::break_others(hnet::make_assign_and_say<BreakMatrix> &assign,
 			continue; // safe from being broken;
 		}
 
-		BondConnector *other = _entries[i].bond;
+		BreakEntry &other = _entries[i];
 		std::string str = {};
 		if (!ConnectBase::_silent)
 		{
 			std::ostringstream ss; 
-			ss << "breaking antagonists of " << *definite;
+			ss << "breaking antagonists of " << *bond;
 			str = ss.str();
 		}
 		if (assertAbsence(assign, other, str))
@@ -227,10 +237,13 @@ bool BreakMatrix::evaluate(hnet::make_assign_and_say<BreakMatrix> &assign)
 	 * where an unbroken/present bond is identified. */
 	std::vector<BondConnector *> in_game;
 	std::vector<BondConnector *> nonfake_in;
+
 	for (BreakEntry &entry : _entries)
 	{
 		Bond::Values obj = entry.bond->value();
 		Existence::Values exist = entry.existence();
+		
+		Attachment attach(*entry.bond, *entry.exist);
 		
 		if (_indexing.count(entry.bond) == 0)
 		{
@@ -238,31 +251,22 @@ bool BreakMatrix::evaluate(hnet::make_assign_and_say<BreakMatrix> &assign)
 		}
 		
 		// definitely not broken, definitely exists
-		if ((obj & Bond::NotBroken && !(obj & Bond::Broken))
-		    && (exist == Existence::Present))
+
+		CountType type = attach.type_of_bond(Bond::NotBroken);
+		if (type == Certain)
 		{
-			if (break_others(assign, entry.bond))
+			if (break_others(assign, entry))
 			{
 				return true;
 			}
 		}
 
-		if ((obj != Bond::Broken) && (exist & Existence::Present))
+		if (type == Certain || type == Maybe)
 		{
-			/*
-			std::cout << "I am " << desc() << std::endl;
-			std::cout << "Bond value desc: " << entry.bond->desc() << " ";
-			std::cout << exist << std::endl;
-			*/
 			in_game.push_back(entry.bond);
 			if (!entry.fake)
 			{
 				nonfake_in.push_back(entry.bond);
-			}
-			
-			if (assertExistence(assign, entry.bond))
-			{
-				return true;
 			}
 		}
 	}
@@ -277,17 +281,13 @@ bool BreakMatrix::evaluate(hnet::make_assign_and_say<BreakMatrix> &assign)
 	}
 	
 	int lower_limit = options[0];
-
-	Eigen::MatrixXi tmp = partialMatrix(in_game);
-	/*
-	std::cout << _myExist << " working on matrix: " << std::endl;
-	for (int i = 0; i < in_game.size(); i++)
+	if (!ConnectBase::_silent)
 	{
-		std::cout << tmp.row(i) << " <- " << *in_game[i] << std::endl;
+		ConnectBase::out() << "Lower limit: " << lower_limit << std::endl;
 	}
 
-	std::cout << "Lower limit: " << lower_limit << std::endl;
-	*/
+//	print_current(in_game);
+	Eigen::MatrixXi tmp = partialMatrix(in_game);
 
 	int max_sum = 0;
 	int min_sum = INT_MAX;
@@ -296,24 +296,19 @@ bool BreakMatrix::evaluate(hnet::make_assign_and_say<BreakMatrix> &assign)
 		max_sum = std::max(max_sum, tmp(i, Eigen::all).sum());
 		min_sum = std::min(min_sum, tmp(i, Eigen::all).sum());
 	}
-	if ((lower_limit > 1 || min_sum > 1) &&
-	    _twirling.value() != Count::Zero)
-	{
-		return assign(_twirling, Count::Zero, 
-		              wrap("lower limit of explicit bonds "\
-		              "is >2, twirling is not required"));
-	}
-	
+
 	/* break rows where the configurations available cannot reach 
-	 * the lower limit */
+	 * the lower limit
+	 * 	looking for instances of e.g. 1 1 0 0 0 where min from bond count is 3
+	 *  */
 	for (int i = 0; i < in_game.size(); i++)
 	{
 		int total = tmp(i, Eigen::all).sum();
 		if (total < lower_limit && lower_limit < in_game.size() && 
 		    max_sum >= lower_limit)
 		{
-			//std::cout << "Breaking row " << i << "!" << std::endl;
-			if (assertAbsence(assign, in_game[i], 
+			int idx = _indexing[in_game[i]];
+			if (assertAbsence(assign, _entries[idx], 
 			                  wrap("this configuration has too "\
 			                  "few partners to complete the coordination")))
 			{
@@ -324,33 +319,43 @@ bool BreakMatrix::evaluate(hnet::make_assign_and_say<BreakMatrix> &assign)
 	
 	/* check whether any rows are purely non-broken, in which case there is
 	 * no configuration where this bond cannot be included, therefore the
-	 * bond must be unbroken */
+	 * bond must be unbroken
+	 * 	looking for instances of e.g. 1 1 1 1 with no zeros
+	 *  */
 	for (int i = 0; i < in_game.size(); i++)
 	{
 		int total = tmp(i, Eigen::all).sum();
 		int idx = _indexing[in_game[i]];
+		BreakEntry &entry = _entries[idx];
+		Attachment attach(*entry.bond, *entry.exist);
+
 		if (total == in_game.size())
 		{
 			//std::cout << "Removing possibility of broken for " << i << std::endl;
-			if (assign(*in_game[i], Bond::NotBroken))
+			CountType certainty = (_myExist.value() == Existence::Present ?
+			                       Certain : Maybe);
+			
+			if (entry.exist->value() == Existence::Unassigned)
 			{
-				return true;
+				certainty = Maybe;
 			}
 
-			// this only changes things if the bond is also sampled
-			if (assertExistence(assign, in_game[i]))
+			if (attach.inform(Bond::NotBroken, assign, certainty))
 			{
 				return true;
 			}
 		}
 	}
+	
+	return false;
 
 	/* next we check for hydrogen bonds to non-existent partners. These
 	 * are sometimes geometrically necessary even if the partner isn't there
 	 * and isn't involved. However, if there is an equivalent row in the matrix
-	 * for a partner which may exist instead, then that will always be a
+	 * for a partner which does exist instead, then that will always be a
 	 * preferred hydrogen bond. Therefore we break the hydrogen bond 
 	 * in question */
+	/*
 	for (int i = 0; i < in_game.size(); i++)
 	{
 		int l_idx = _indexing[in_game[i]];
@@ -358,6 +363,7 @@ bool BreakMatrix::evaluate(hnet::make_assign_and_say<BreakMatrix> &assign)
 		{
 			continue;
 		}
+		// isolated a bond where the partner's definitely not there
 
 		Eigen::VectorXi ref = tmp.row(i);
 		for (int j = 0; j < in_game.size(); j++)
@@ -365,13 +371,14 @@ bool BreakMatrix::evaluate(hnet::make_assign_and_say<BreakMatrix> &assign)
 			if (i == j) continue;
 			int r_idx = _indexing[in_game[j]];
 			
+			// don't consider ourselves a second time!
 			if (_entries[r_idx].partner == &_myExist)
 			{
 				continue;
 			}
 
-			// non-existent partners are just as uninformative.
-			if (!(_entries[r_idx].partner->value() & Existence::Present))
+			// if we've found another not-surely-present partner, no better
+			if (_entries[r_idx].partner->value() != Existence::Present)
 			{
 				continue;
 			}
@@ -386,8 +393,8 @@ bool BreakMatrix::evaluate(hnet::make_assign_and_say<BreakMatrix> &assign)
 
 			if (result < 1e-6)
 			{
-				continue;
-				if (assertAbsence(assign, in_game[i], 
+				continue; // ignore this entire section
+				if (assertAbsence(assign, _entries[l_idx], 
 				                  wrap("there was an equivalent "\
 				                  "hydrogen-bonding pattern with an existent"\
 				                  " partner")))
@@ -397,6 +404,7 @@ bool BreakMatrix::evaluate(hnet::make_assign_and_say<BreakMatrix> &assign)
 			}
 		}
 	}
+	*/
 
 	Eigen::MatrixXi unfake = partialMatrix(nonfake_in);
 //	std::cout << "Working on non-fake matrix: " << std::endl << 
@@ -413,7 +421,7 @@ bool BreakMatrix::evaluate(hnet::make_assign_and_say<BreakMatrix> &assign)
 			int idx = _indexing[in_game[i]];
 			if (_entries[idx].fake)
 			{
-				if (assertAbsence(assign, in_game[i], 
+				if (assertAbsence(assign, _entries[idx], 
 				                  wrap("the entirety of the "\
 				"remaining non-fake coordination perfectly matches, so fake Hs"\
 				"are now to be broken")))
@@ -428,77 +436,17 @@ bool BreakMatrix::evaluate(hnet::make_assign_and_say<BreakMatrix> &assign)
 }
 
 bool BreakMatrix::assertAbsence(make_assign_and_say<BreakMatrix> &assign, 
-                                 BondConnector *chosen, std::string reason)
+                                 BreakEntry &chosen, std::string reason)
 {
-	int idx = _indexing[chosen];
-	ExistenceConnector *hExist = _entries[idx].hSample;
-	if (!hExist)
-	{
-		if (assign(*chosen, Bond::Broken, wrap(reason)))
-		{
-			return true;
-		}
-	}
-	else if (hExist->value() & Existence::Absent)
-	{
-		bool changed = false;
-		changed |= assign(*_entries[idx].exist, Existence::Absent, wrap(reason));
-
-		if (changed)
-		{
-			return true;
-		}
-	}
-
-	return false;
-}
-
-bool BreakMatrix::assertExistence(make_assign_and_say<BreakMatrix> &assign, 
-                                 BondConnector *chosen)
-{
-	if (chosen->value() & Bond::Broken)
-	{
-//		std::cout << "might be broken" << std::endl;
-		return false;
-	}
-
 	if (_myExist.value() != Existence::Present)
 	{
-//		std::cout << "doesn't def exist" << std::endl;
 		return false;
 	}
 
-	int idx = _indexing[chosen];
-
-	if (_entries[idx].partner && 
-	    _entries[idx].partner->value() != Existence::Present)
-	{
-//		std::cout << "partner doesn't def exist" << std::endl;
-		return false;
-	}
-
-	if (assign(*_entries[idx].exist, Existence::Present))
-	{
-//		std::cout << "assigned existence" << std::endl;
-		return true;
-	}
-
-	if (_entries[idx].hSample && 
-	    assign(*_entries[idx].hSample, Existence::Present))
-	{
-//		std::cout << "assigned h-sampling" << std::endl;
-		return true;
-	}
-
-	if (_entries[idx].hStatus && 
-	    assign(*_entries[idx].hStatus, Existence::Present))
-	{
-//		std::cout << "assigned h-status" << std::endl;
-		return true;
-	}
-
-//	std::cout << "didn't assign" << std::endl;
-	return false;
+	int idx = _indexing[chosen.bond];
+	Attachment attach(*chosen.bond, *chosen.exist);
+	bool changed = attach.inform(Bond::Broken, assign, Certain);
+	return changed;
 }
 
 bool BreakMatrix::check(const GuiltVersion &gv, CheckList &list)

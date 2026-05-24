@@ -175,11 +175,13 @@ struct Connector : public ConnectBase
 		*/
 		
 		Value before = _conditions.belief();
+		/*
 		bool constriction = (before & ~value);
 		if (!constriction)
 		{
 			return false;
 		}
+		*/
 
 		_conditions.apply_condition(informant, gv, value);
 		Value after = _conditions.belief();
@@ -391,7 +393,18 @@ template <class Me>
 struct make_assign_and_say
 {
 	make_assign_and_say(Me *me, const GuiltVersion &gv, CheckList &list)
-	: _me(me), _gv(gv), _list(list) {}
+	: _me(me), _gv(gv), _list(list)
+	{
+		/*
+		if (!ConnectBase::_silent)
+		{
+			ConnectBase::out() << " * * * " << std::endl;
+			ConnectBase::out() << "Checking CONSTRAINT: \"" << _me->desc()
+			<< std::endl;
+		}
+		*/
+	
+	}
 
 	template <typename Type>
 	bool operator()(Connector<Type> &which, const Type &what,
@@ -401,9 +414,15 @@ struct make_assign_and_say
 		{
 			ConnectBase::my_out().str("");
 		}
+
 		Type before = which.value();
 		_okay &= which.assign_value(what, _me, _gv, _list);
 		Type after = which.value();
+		
+		if (is_contradictory(after))
+		{
+			_okay = false;
+		}
 
 		if (before != after && !ConnectBase::_silent)
 		{

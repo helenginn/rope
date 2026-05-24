@@ -49,9 +49,9 @@ struct MutualExistence : public ConstraintBase
 		{
 			assign(_right, Existence::Present);
 		}
-		else if (_left.value() == Existence::Absent)
+		if (_right.value() == Existence::Absent)
 		{
-			assign(_right, Existence::Absent);
+			assign(_left, Existence::Absent);
 		}
 
 		return assign.okay();
