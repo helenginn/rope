@@ -178,6 +178,7 @@ ProbeBond::ProbeBond(ProtonNetworkView *view, BondProbe *probe)
 		            "assets/images/strong_bond.png", 
 		            "assets/images/transparency.png", 
 		            "assets/images/present_bond.png", 
+		            "assets/images/lone_pair.png", 
 		            "assets/images/unassigned_bond.png"});
 	_view = view;
 	_probe = probe;
