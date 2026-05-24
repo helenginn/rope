@@ -33,6 +33,7 @@
 #include <vagabond/gui/elements/FloatingText.h>
 #include <vagabond/gui/elements/TextButton.h>
 #include <vagabond/gui/elements/Menu.h>
+#include <fstream>
 
 ProtonNetworkView::ProtonNetworkView(Scene *scene, Network &network) 
 : Scene(scene), Mouse3D(scene), IndexResponseView(scene), _network(network)
