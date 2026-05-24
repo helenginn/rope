@@ -277,6 +277,11 @@ bool Library::hasTexture(std::string key, GLuint &id, int *w, int *h)
 		return true;
 	}
 	
+	if (key.length() > 0)
+	{
+		_counts[_textures[key]]++;
+	}
+			
 	return false;
 }
 
