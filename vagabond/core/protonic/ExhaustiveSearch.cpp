@@ -41,11 +41,22 @@ void ExhaustiveSearch::setup()
 		options = probe->_obj.values();
 		IteratedProbe *ip = 
 		new IterateDecree<hnet::BondConnector, hnet::Bond::Values>
-		(probe, probe->_obj, probe->_exist, options, "obj");
+		(probe, probe->_obj, probe->_exist, &probe->_obj, options, "bond");
 		return ip;
 	};
 
-	auto make_exist_decree = [this]<class Existing>(Existing *probe)
+	auto make_exist_atom_decree = [this]<class Existing>(Existing *probe)
+	-> IteratedProbe *
+	{
+		if (probe->_exist.is_certain()) { return nullptr; }
+		std::vector<hnet::Existence::Values> options = probe->_exist.values();
+		IteratedProbe *ip = 
+		new IterateDecree<hnet::ExistenceConnector, hnet::Existence::Values>
+		(probe, probe->_exist, probe->_exist, nullptr, options, "exist");
+		return ip;
+	};
+
+	auto make_exist_bond_decree = [this]<class Existing>(Existing *probe)
 	-> IteratedProbe *
 	{
 		if (probe->_exist.is_certain()) { return nullptr; }
@@ -53,7 +64,7 @@ void ExhaustiveSearch::setup()
 		std::vector<hnet::Existence::Values> options = probe->_exist.values();
 		IteratedProbe *ip = 
 		new IterateDecree<hnet::ExistenceConnector, hnet::Existence::Values>
-		(probe, probe->_exist, probe->_exist, options, "exist");
+		(probe, probe->_exist, probe->_exist, &probe->_obj, options, "exist");
 		return ip;
 	};
 	
@@ -65,7 +76,7 @@ void ExhaustiveSearch::setup()
 		{
 			BondProbe *bp = static_cast<BondProbe *>(probe);
 			{
-				IteratedProbe *ip = make_exist_decree(bp);
+				IteratedProbe *ip = make_exist_bond_decree(bp);
 				if (ip) { _iterations.push_back(ip); }
 			}
 		}
@@ -73,7 +84,7 @@ void ExhaustiveSearch::setup()
 		{
 			AtomProbe *ap = static_cast<AtomProbe *>(probe);
 			{
-				IteratedProbe *ip = make_exist_decree(ap);
+				IteratedProbe *ip = make_exist_atom_decree(ap);
 				if (ip) { _iterations.push_back(ip); }
 			}
 		}
@@ -137,10 +148,16 @@ float ExhaustiveSearch::score_wider_clique()
 		if (probe->is_bond() && !probe->is_covalent())
 		{
 			BondProbe *bp = static_cast<BondProbe *>(probe);
+			hnet::Existence::Values ex = bp->_exist.value();
+
+			if (ex == hnet::Existence::Absent)
+			{
+				continue;
+			}
+
 			hnet::Bond::Values val = bp->_obj.value();
 
-			if (val & hnet::Bond::Weak && 
-			    !(val & hnet::Bond::NotWeak))
+			if ((int)val == (int)hnet::Bond::Weak)
 			{
 				score -= 0.75 * 4.18; // kcal -> mol
 			}
@@ -152,7 +169,7 @@ float ExhaustiveSearch::score_wider_clique()
 
 bool ExhaustiveSearch::next()
 {
-	if (_iterations.size() == 0)
+	if (_iterations.size() <= 1)
 	{
 		return false;
 	}
@@ -181,6 +198,7 @@ bool ExhaustiveSearch::next()
 		int i = 0;
 		for (IteratedProbe *ip : _iterations)
 		{
+			float masked = ip->value_as_int();
 			results[i] = ip->value_as_int();
 			i++;
 		}
@@ -210,9 +228,9 @@ bool ExhaustiveSearch::next()
 			float score = score_wider_clique();
 			_configs += c;
 			_scores[c] = score;
-			//print(c);
-//			std::cout << "\t" << score;
-//			std::cout << std::endl;
+			print(c);
+			std::cout << "\t" << score;
+			std::cout << std::endl;
 		}
 	};
 	
@@ -290,7 +308,7 @@ bool ExhaustiveSearch::next()
 	auto process_result = [this, &ave_score](const Config &c)
 	{
 		int i = 0;
-		float sc = _scores[c] - ave_score;
+		float sc = _scores[c];// - ave_score;
 		ProbeResult result{{}, sc};
 		for (IteratedProbe *ip : _iterations)
 		{
