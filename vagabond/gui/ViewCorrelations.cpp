@@ -133,14 +133,42 @@ void ViewCorrelations::viewAll()
 	float all_ave = all_sum / all_count;
 	
 	std::map<ProbeTypePair, std::pair<int, int>> insertions;
+	std::map<int, ProbeTypePair> lookup;
 
 	int accumulative = 0;
 	for (const ProbeTypePair &ptp : all)
 	{
 		int dim = dim_for_type(ptp.second);
 		insertions[ptp] = {accumulative, dim};
+		for (int i = accumulative; i <= accumulative + dim; i++)
+		{
+			lookup[i] = ptp;
+		}
 		accumulative += dim;
 	}
+	std::cout << "Lookup: " << lookup.size() << std::endl;
+	
+	auto lookup_elements = [this, accumulative, lookup](float x, float y)
+	{
+		int xi = x * accumulative;
+		int yi = -y * accumulative;
+		
+
+		if (lookup.count(xi) == 0)
+		{
+			return;
+		}
+		if (lookup.count(yi) == 0)
+		{
+			return;
+		}
+		const ProbeTypePair &ptpx = lookup.at(xi);
+		const ProbeTypePair &ptpy = lookup.at(yi);
+		std::string xstr = ptpx.first->desc();
+		std::string ystr = ptpy.first->desc();
+		std::string info = xstr + " / " + ystr;
+		setInformation(info);
+	};
 	
 	_overall = MatrixXf(accumulative, accumulative);
 	_written = MatrixXf(accumulative, accumulative);
@@ -211,6 +239,7 @@ void ViewCorrelations::viewAll()
 	deleteTemps();
 	_matrix = PCA::Matrix(_overall);
 	MatrixPlot *mp = new MatrixPlot(_matrix, _mutex);
+	mp->setHoverJob(lookup_elements);
 	glm::mat3x3 rot = glm::mat3x3(1.f);
 	rot[1] *= -1;
 	mp->rotateRoundCentre(rot);
