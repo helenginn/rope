@@ -31,7 +31,7 @@
 //#include <SDL2/SDL_ttf.h>
 #include <string>
 
-Library *Library::_library = NULL;
+Library *Library::_library = nullptr;
 std::string Library::_nativePath = "";
 
 Library::Library()

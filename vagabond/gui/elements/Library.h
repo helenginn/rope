@@ -22,7 +22,7 @@ public:
 
 	static Library *getLibrary()
 	{
-		if (_library == NULL)
+		if (_library == nullptr)
 		{
 			_library = new Library();
 		}
