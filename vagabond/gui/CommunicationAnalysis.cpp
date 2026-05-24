@@ -24,6 +24,7 @@
 #include <vagabond/gui/MatrixPlot.h>
 #include <vagabond/core/protonic/Clique.h>
 #include <vagabond/core/protonic/ProbeResult.h>
+#include <vagabond/utils/FileReader.h>
 #include <vagabond/utils/Canonical.h>
 
 using Eigen::seqN;
@@ -254,19 +255,14 @@ void CommunicationAnalysis::svd()
 	_w = w;
 	_wU = u;
 	
-	/*
 	int n = 0;
 	for (const float &val : w)
 	{
-		if (val < 1)
-		{
-//			break;
-		}
-
+		_wU.row(n) *= val;
 		n++;
 	}
-	*/
-	int n = w.size();
+
+	n = w.size();
 	
 	/*
 	PCA::Matrix mat = PCA::Matrix(_wU);
@@ -283,12 +279,49 @@ void CommunicationAnalysis::setup()
 	addTitle("Communication Analysis");
 	
 	svd();
-//	prepareGroups();
 
 	OpSet<std::string> names = _clique->allCommsNames();
 
 	Eigen::MatrixXf mat(names.size(), names.size());
 	mat.setZero();
+
+	/*
+	auto get_vector = [this](const std::string &name) -> Eigen::VectorXf
+	{
+		const OpSet<Probe *> &probes = _clique->probes();
+		int n = 0;
+		auto it = probes.begin();
+		while (n < _wU.rows())
+		{
+			if ((*it)->desc() == name)
+			{
+				return _wU.row(n);
+			}
+			n++; it++;
+		}
+		return Eigen::VectorXf();
+	};
+
+	int m = 0;
+	for (const std::string &first : names)
+	{
+		int n = 0;
+		for (const std::string &second : names)
+		{
+			Eigen::VectorXf left = get_vector(first);
+			Eigen::VectorXf right = get_vector(second);
+			std::vector<float> l = {left.begin(), left.end()};
+			std::vector<float> r = {right.begin(), right.end()};
+
+			float cc = correlation(l, r);
+
+			mat(m, n) = cc;
+			n++;
+		}
+		m++;
+	}
+	*/
+	
 
 	int m = 0;
 	for (const std::string &first : names)
@@ -302,6 +335,65 @@ void CommunicationAnalysis::setup()
 		}
 		m++;
 	}
+	
+	Eigen::JacobiSVD<MatrixXf> svd(mat, Eigen::ComputeFullU | 
+	                               Eigen::ComputeFullV);
+	Eigen::VectorXf w = svd.singularValues();
+	float total = names.size();
+	
+	float shannon = 0;
+	std::cout << "Shannon entropy probs: " << std::endl;
+	for (const float &weight : w)
+	{
+		float prob = weight / total;
+		std::cout << prob << " ";
+		shannon -= prob * log(prob) / log(2);
+	}
+	std::cout << std::endl;
+
+	Text *text = new Text("Shannon entropy: " + f_to_str(shannon, 3));
+	text->setCentre(0.5, 0.87);
+	addObject(text);
+
+	Eigen::MatrixXf u = svd.matrixU();
+	
+	float average_dot = 0;
+	float num = 0;
+	auto name = names.begin();
+	for (int i = 0; i < u.rows(); i++)
+	{
+		Eigen::VectorXf v1 = mat.row(i);
+		for (int j = i; j < u.rows(); j++)
+		{
+			Eigen::VectorXf v2 = mat.row(j);
+
+			float dot = 0;
+			for (int k = 0; k < v1.size(); k++)
+			{
+				float weight = w.size() > k ? w(k) : 0.f;
+				weight = 1;
+				dot += v1(k) * v2(k) * weight;
+			}
+//			std::cout << dot << " ";
+			float weight = 1;//(1 - fabs(dot));
+			average_dot += dot * weight;
+			num += weight;
+		}
+		std::cout << *name << ", ";
+		name++;
+		for (int j = 0; j < v1.size(); j++)
+		{
+			std::cout << v1(j) * w(j) << ", ";
+//			std::cout << mat(i, j) * w(j) << " ";
+		}
+		std::cout << std::endl;
+	}
+
+	average_dot /= num;
+	std::cout << "Average dot: " << average_dot << std::endl;
+	text = new Text("Average dot product: " + f_to_str(average_dot, 3));
+	text->setCentre(0.5, 0.93);
+	addObject(text);
 	
 	Box *box = new Box();
 
