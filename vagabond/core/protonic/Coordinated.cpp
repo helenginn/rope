@@ -698,19 +698,25 @@ OpSet<AcceptableGroup> Coordinated::developSeed(const PairSet &seed,
 // we need to make a custom equality function as we need to ignore
 // the Atom; the fake hydrogens would otherwise always register as
 // different.
-bool are_equivalent(const PairSet &a, const PairSet &b)
+bool are_equivalent(const PairSet &a_all, const PairSet &b_all)
 {
+	auto strip_fake_h = [](const ABPair &pair)
+	{
+		return (pair.first.ptr->atomName() != "H!");
+	};
+
+	PairSet a = a_all.filter(strip_fake_h);
+	PairSet b = b_all.filter(strip_fake_h);
+	
+	if (a.size() != b.size())
+	{
+		return false;
+	}
+
 	auto a_it = a.begin(); auto b_it = b.begin();
 
 	while (a_it != a.end() && b_it != b.end())
 	{
-		if (a_it->first.ptr->atomName() == "H!" && 
-		    b_it->first.ptr->atomName() == "H!")
-		{
-			a_it++; b_it++;
-			continue;
-		}
-
 		if (a_it->second != b_it->second)
 		{
 			return false;
@@ -722,13 +728,23 @@ bool are_equivalent(const PairSet &a, const PairSet &b)
 	return true;
 };
 
+bool are_equivalent(const AcceptableGroup &a_all, const AcceptableGroup &b_all)
+{
+	if (a_all.coord_num != b_all.coord_num)
+	{
+		return false;
+	}
+	
+	return are_equivalent(a_all.group, b_all.group);
+};
+
 void add_unique_to_set(OpSet<AcceptableGroup> &dest,
                        const AcceptableGroup &newest)
 {
 	bool found = false;
 	for (const AcceptableGroup &old_solution : dest)
 	{
-		if (are_equivalent(old_solution.group, newest.group))
+		if (are_equivalent(old_solution, newest))
 		{
 			found = true;
 		}
