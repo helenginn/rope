@@ -370,22 +370,8 @@ void ProtonNetworkView::makeMainMenu()
 		}
 	};
 	
-	auto analyse = [this](const OpSet<Probe *> &interesting)
-	{
-		return [this, interesting]()
-		{
-			_shifter->pause();
-			ExhaustiveSearch *es = new ExhaustiveSearch(interesting, interesting);
-			new DoJob([this, es]()
-			{
-				es->search();
-				_shifter->unpause();
-			});
-		};
-	};
-
 	TextButton *text = new TextButton("Menu", this);
-	auto make_menu = [this, browse_cliques, analyse, text]()
+	auto make_menu = [this, browse_cliques, text]()
 	{
 		if (hasObject(_cv))
 		{
@@ -408,15 +394,7 @@ void ProtonNetworkView::makeMainMenu()
         {
 	              exportHBonds();
         });
-		OpSet<Probe *> selected = selected_probes(_textProbes);
-		selected += selected_probes(_bondProbes);
 
-		if (selected.size())
-		{
-			m->addOption("Exhaustive search selected", 
-			             analyse(selected));
-		}
-		
 		auto control_analysis = [this]()
 		{
 			HBondAnalysisControl *hbac = 
