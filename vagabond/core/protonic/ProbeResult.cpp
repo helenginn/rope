@@ -123,7 +123,7 @@ ProbeCorrelation correlate(const std::vector<ProbeResult> &source,
 		int r = get_index(nv);
 		
 		// we also want to figure out the total sum of energy weights
-		float contrib = exp((pr.score - ave) / rt);
+		float contrib = exp((ave - pr.score) / rt);
 		relProbs[idx] = contrib;
 		lSum[l] += contrib;
 		rSum[r] += contrib;
