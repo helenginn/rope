@@ -25,10 +25,12 @@
 #include <mutex>
 
 class ColourLegend;
+class MatrixBox;
 
 class MatrixPlot : public Image
 {
 public:
+	friend MatrixBox;
 	MatrixPlot(PCA::Matrix &mat, std::mutex &mutex);
 	MatrixPlot(PCA::Matrix &mat);
 

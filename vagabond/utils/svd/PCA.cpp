@@ -38,6 +38,30 @@ Matrix::Matrix(const Eigen::MatrixXf &matrix)
 	}
 }
 
+void PCA::Matrix::dropFromEigen(const Eigen::MatrixXf &matrix)
+{
+	for (int i = 0; i < rows; i++)
+	{
+		for (int j = 0; j < cols; j++)
+		{
+			ptrs[i][j] = matrix(i, j);
+		}
+	}
+}
+
+Eigen::MatrixXf PCA::Matrix::toEigen()
+{
+	Eigen::MatrixXf mat(rows, cols);
+	for (int i = 0; i < rows; i++)
+	{
+		for (int j = 0; j < cols; j++)
+		{
+			mat(i, j) = (*this)[i][j];
+		}
+	}
+	return mat;
+}
+
 void PCA::setupMatrix(Matrix *mat, int rows, int cols)
 {
 	mat->vals = (double *)calloc(rows * cols, sizeof(double));
