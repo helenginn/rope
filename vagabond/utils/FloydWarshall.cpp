@@ -29,6 +29,7 @@ FloydWarshall::FloydWarshall(Eigen::MatrixXf &sqMat, const CombineWeight &cw,
 void FloydWarshall::run() // symmetric matrix
 {
 	int size = _sqMat.rows();
+	int update = size / 10.f;
 
 	for (int k = 0; k < size; k++)
 	{
@@ -55,7 +56,7 @@ void FloydWarshall::run() // symmetric matrix
 			}
 		}
 		
-		if (_update && k % 10 == 0)
+		if (_update && k % update == 0)
 		{
 			_update();
 		}
