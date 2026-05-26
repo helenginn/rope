@@ -9,7 +9,8 @@
 class TextButton : public Text, public Button
 {
 public:
-	TextButton(std::string text, ButtonResponder *sender, bool delay = false,
+	TextButton(std::string text, ButtonResponder *sender = nullptr, 
+	           bool delay = false,
            Font::Type type = Font::Thin) :
 	Text(text, type, delay), Button(sender) {};
 
