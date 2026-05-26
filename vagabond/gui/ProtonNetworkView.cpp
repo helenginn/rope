@@ -30,6 +30,7 @@
 #include <vagabond/utils/DoJob.h>
 #include <vagabond/gui/CliqueView.h>
 #include <vagabond/gui/HBondAnalysisControl.h>
+#include <vagabond/gui/elements/AskYesNo.h>
 #include <vagabond/gui/elements/FloatingText.h>
 #include <vagabond/gui/elements/TextButton.h>
 #include <vagabond/gui/elements/Menu.h>
@@ -38,6 +39,7 @@
 ProtonNetworkView::ProtonNetworkView(Scene *scene, Network &network) 
 : Scene(scene), Mouse3D(scene), IndexResponseView(scene), _network(network)
 {
+
 	_translation.z -= 50;
 	_farSlab = 40;
 	_slabbing = true;
@@ -112,6 +114,33 @@ void ProtonNetworkView::findAtomProbes()
 	setMakesSelections();
 	IndexResponseView::setup();
 //	preparePingPongBuffers();
+
+	auto reclique_request = [this]()
+	{
+		if (!_network._reclique) return;
+
+		auto recalculate_cliques = [this]()
+		{
+			_network.cliques().clear();
+		};
+
+		std::string text = "Cliques saved in rope environment appear to be\n"\
+		"out of date. Delete to allow recalculation?\n"\
+		"This will delete any customisations.";
+
+		AskYesNo *ayn = new AskYesNo(this, text);
+		ayn->addJob("yes", recalculate_cliques);
+		
+		addMainThreadJob
+		([this, ayn]()
+		{
+			setModal(ayn);
+		});
+		
+		_network._reclique = false;
+	};
+	
+	addMainThreadJob(reclique_request);
 }
 
 template <class Container>

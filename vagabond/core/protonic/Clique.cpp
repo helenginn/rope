@@ -106,6 +106,7 @@ void Clique::housekeeping(Network &network)
 		else
 		{
 			std::cout << "Warning! Missing probe for desc: " << desc << std::endl;
+			network.promptReclique();
 		}
 	}
 	_descs = {};
