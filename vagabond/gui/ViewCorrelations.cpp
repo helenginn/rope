@@ -280,10 +280,13 @@ void ViewCorrelations::viewAll()
 		{
 			return x * y;
 		};
+		
+		setInformation("Deriving intermediate correlations");
 
 		FloydWarshall fw(_overall, combine, true);
 		fw.addDisplayMatrix(_matrix, _mutex, [mp]() { mp->update(); });
 		fw.run();
+		setInformation("Finished deriving intermediates");
 		std::cout << "Done filling gaps" << std::endl;
 	};
 	
