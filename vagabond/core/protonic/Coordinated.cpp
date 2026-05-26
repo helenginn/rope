@@ -149,6 +149,41 @@ void Coordinated::probeAtom()
 	}
 }
 
+bool Coordinated::acceptablePlane(const glm::vec3 &child)
+{
+	if (!_planar.ptr)
+	{
+		std::cout << "No planar constraint on " << _atomConf << " to "\
+		"worry about." << std::endl;
+		return true;
+	}
+
+	OpSet<ABPair> uninvolved = uninvolvedCoordinators();
+	glm::vec3 grandparent = _planar.position();
+	glm::vec3 me = _atomConf.position();
+
+	for (const ABPair &unin : uninvolved)
+	{
+		glm::vec3 parent = unin.first.position();
+		glm::vec3 list[] = {grandparent, parent, me, child};
+		float torsion = measure_bond_torsion(list);
+		while (torsion >= 90) torsion -= 180;
+		while (torsion <= -90) torsion += 180;
+		std::cout << "Torsion of " << _atomConf << " with " << unin.first << 
+		" for planar restriction: " 
+		<< torsion << " - ";
+
+		if (fabs(torsion) < PLANAR_TOLERANCE)
+		{
+			std::cout << "Okay" << std::endl;
+			return true;
+		}
+		std::cout << "Nope" << std::endl;
+	}
+
+	return false;
+}
+
 void Coordinated::comparePairs(OpSet<PairSet> &results,
                                   const ABPair &first, const ABPair &second,
                                   glm::vec3 &centre, int coordNum)
@@ -190,36 +225,17 @@ void Coordinated::comparePairs(OpSet<PairSet> &results,
 				continue;
 			}
 			
-			if (!_planar.ptr)
+			bool my_accept = acceptablePlane(child);
+			
+			if (my_accept)
 			{
 				return true;
-			}
-			
-			glm::vec3 grandparent = _planar.position();
-			glm::vec3 me = _atomConf.position();
-			
-			for (const ABPair &unin : uninvolved)
-			{
-				glm::vec3 parent = unin.first.position();
-				glm::vec3 list[] = {grandparent, parent, me, child};
-				float torsion = measure_bond_torsion(list);
-				while (torsion >= 90) torsion -= 180;
-				while (torsion <= -90) torsion += 180;
-				std::cout << "Torsion of " << check.first << 
-				" for planar restriction: " 
-				<< torsion << std::endl;
-
-				if (fabs(torsion) < PLANAR_TOLERANCE)
-				{
-					return true;
-				}
 			}
 		}
 
 		return false;
 	};
 	
-	// warning: we are not testing all the coordination angles yet.
 	float target_angle = expected_angle_for_coordination(coordNum);
 	glm::vec3 l = left.position();
 	glm::vec3 r = right.position();
@@ -231,6 +247,11 @@ void Coordinated::comparePairs(OpSet<PairSet> &results,
 	{
 		std::cout << "Dropping option due to bad coordination" << std::endl;
 		return;
+	}
+	else
+	{
+		std::cout << "Accepting pair: " << first.first << " " << 
+		second.first << std::endl;
 	}
 
 	PairSet both;
@@ -278,17 +299,12 @@ AtomConf Coordinated::findPlanarAtom()
 	{
 		return {};
 	}
+	*/
 	
 	if (code == "ARG" && _atomConf.ptr->atomName() == "NE")
 	{
 		return {};
 	}
-	
-	if (_atomConf.ptr->atomName() == "O" || _atomConf.ptr->atomName() == "N")
-	{
-		return {};
-	}
-	*/
 	
 	::Atom *planar = nullptr;
 	for (int i = 0; i < _atomConf.ptr->bondAngleCount() && !planar; i++)
@@ -297,6 +313,10 @@ AtomConf Coordinated::findPlanarAtom()
 		for (int j = 0; j < 3 && !planar; j++)
 		{
 			::Atom *other = ba->atom(j);
+			if (other == _atomConf.ptr)
+			{
+				continue;
+			}
 
 			if ((code == "ASP" || code == "ASN") && other->atomName() == "CB")
 			{
@@ -876,7 +896,7 @@ void Coordinated::mutualExclusions(AtomGroup *toClashCheck)
 	uninvolvedCoordinators();
 
 	std::cout << "========================================" << std::endl;
-	std::cout << "==          MUTUAL EXCLUSIONS         ==" << std::endl;
+	std::cout << "==          MUTUAL EXCLUSION          ==" << std::endl;
 	std::cout << "========================================" << std::endl;
 	std::cout << std::endl;
 	std::cout << "Atom: " << _atomConf << std::endl;
@@ -1068,13 +1088,22 @@ void Coordinated::attachToNeighbours(AtomGroup *searchGroup)
 	AtomProbe *ref = atomMap()[_atomConf]->probe();
 	
 	OpSet<ABPair> uninvolved = uninvolvedCoordinators();
+	std::cout << "Finding neighbours for " << _atomConf << std::endl;
 
 	for (const AtomConf &candidate : rough) 
 	{
 		glm::vec3 pos1 = _atomConf.position();
 		glm::vec3 pos2 = candidate.position();
+		
+		glm::vec3 midpoint = (pos1 + pos2) / 2.f;
+		Coordinated *candCoord = atomMap()[candidate];
+		candCoord->uninvolvedCoordinators();
+		if (!acceptablePlane(midpoint) || !candCoord->acceptablePlane(midpoint))
+		{
+			continue;
+		}
 
-		AtomProbe *other = atomMap()[candidate]->probe();
+		AtomProbe *other = candCoord->probe();
 		if ((other->_obj.value() == hnet::Atom::Inactive)
 		    || (candidate.ptr == _atomConf.ptr))
 		{
@@ -1090,7 +1119,7 @@ void Coordinated::attachToNeighbours(AtomGroup *searchGroup)
 		ExistenceConnector &hExist = add(new ExistenceConnector());
 		hExist.setDesc("existence of hydrogen atom "
 		               "in H-bond between " + ss.str());
-		::Atom *hAtom = makeHydrogen((pos1 + pos2) / 2.f);
+		::Atom *hAtom = makeHydrogen(midpoint);
 
 		HydrogenProbe &hProbe = 
 		_network.add_probe(new HydrogenProbe(h, hExist, *ref, *other, hAtom));
@@ -1106,11 +1135,12 @@ void Coordinated::attachToNeighbours(AtomGroup *searchGroup)
 		ExistenceConnector &re = add(new ExistenceConnector());
 		re.setDesc("existence of half the H-bond between " + rev.str());
 		
-		add_constraint(new MutualExistence(le, ref->existence(), true)); 
-//		add_constraint(new MutualExistence(ref->existence(), le, false)); 
+		ExistenceConnector &eRef = ref->existence();
+		ExistenceConnector &eOther = other->existence();
+		
+		add_constraint(new MutualExistence(le, eRef, true)); 
 		add_constraint(new SubExistence(le, hExist, re, true));
-		add_constraint(new MutualExistence(re, other->existence(), true));
-//		add_constraint(new MutualExistence(other->existence(), re, false));
+		add_constraint(new MutualExistence(re, eOther, true));
 		
 		auto unpaired_right = [&le, &re]()
 		{
@@ -1156,6 +1186,21 @@ void Coordinated::attachToNeighbours(AtomGroup *searchGroup)
 				        bond.value() == Bond::Weak);
 			};
 		};
+		
+		auto both_ends_exist = [&eRef, &eOther]()
+		{
+			return (eRef.value() == Existence::Present &&
+			        eOther.value() == Existence::Present);
+		};
+
+		add_constraint(new Stricter<Existence::Values>
+		               ({&eRef, &eOther}, both_ends_exist, 
+		               le, Existence::Present));
+
+		add_constraint(new Stricter<Existence::Values>
+		               ({&eRef, &eOther}, both_ends_exist, 
+		               re, Existence::Present));
+
 		
 		// If one side of a hydrogen bond is not sampled and the other side 
 		// is not a donor/acceptor, then the intervening hydrogen is believed 

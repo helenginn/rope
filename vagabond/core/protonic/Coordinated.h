@@ -180,6 +180,7 @@ private:
 	::Atom *makeHydrogen(const glm::vec3 &pos);
 	ABPair makePossibleHydrogen(const glm::vec3 &pos);
 	bool acceptableHydrogenAngle(const glm::vec3 &hydrogen, int coordNum);
+	bool acceptablePlane(const glm::vec3 &child);
 	void comparePairs(OpSet<PairSet> &results,
 	                  const ABPair &first, const ABPair &second,
 	                  glm::vec3 &centre, int coordNum);

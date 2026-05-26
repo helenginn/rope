@@ -153,7 +153,7 @@ bool Network::setupAsnGlnNitrogen(AtomConf atom)
 	}
 	if (bad) return false;
 
-	_atomMap[atom]->prepareCoordinated(Count::Zero, Count::Three, Count::Two);
+	_atomMap[atom]->prepareCoordinated(Count::Zero, Count::Three, Count::Three);
 	return true;
 }
 
@@ -616,6 +616,10 @@ Network::Network(AtomGroup *group, const std::string &spg_name,
 		};
 	};
 
+	std::cout << "================================" << std::endl;
+	std::cout << "==      FIND NEIGHBOURS       ==" << std::endl;
+	std::cout << "================================" << std::endl;
+
 	// record the hydrogen-bonding neighbours for each atom
 	// generate connectors for each acquired bond
 	donors->do_op(on_each_conf([this, symDonors](::Atom *a, char conf)
@@ -668,6 +672,8 @@ Network::Network(AtomGroup *group, const std::string &spg_name,
 	std::cout << "Out of " << atomMap().size() << " coordinated atoms, ";
 	std::cout << failCount << " failed some logical check." << std::endl;
 	std::cout << std::endl;
+	
+	firstOrderLogic();
 
 	for (Clique &cl : _cliques)
 	{
@@ -768,6 +774,76 @@ Clique *Network::newClique(const OpSet<Probe *> &probes)
 	return &_cliques.back();
 }
 
+void Network::firstOrderLogic()
+{
+	ConnectBase::_silent = true;
+
+	auto check_and_or_revert = []<class Connector, typename Value>
+	(Connector &connect, const Value &test, GuiltVersion &v, int &found,
+	 bool reverse)
+	{
+		Value opposite = (Value)(~test);
+		if (connect.value() & test && 
+		    connect.value() != test) // more than just test
+		{
+			bool ok = connect.assign_value_and_check(test, v);
+			if (!ok)
+			{
+				connect.forget_all(v);
+				connect.assign_value_and_check(opposite, v);
+				std::cout << "\tEliminating " << test << " from options for "
+				<< connect.desc() << std::endl;
+				found++;
+				v = Guilt::issueNext();
+				return false;
+			}
+		}
+		if (reverse)
+		{
+			connect.forget_all(v);
+			v = Guilt::issueNext();
+		}
+		return true;
+	};
+
+	auto round = [this, check_and_or_revert]()
+	{
+		int found = 0;
+		for (BondProbe *bp : _bondProbes)
+		{
+			if (bp->is_certain() || bp->is_covalent())
+			{
+				continue;
+			}
+
+			BondConnector &obj = bp->_obj;
+			ExistenceConnector &exist = bp->_exist;
+
+			GuiltVersion v = Guilt::issueNext();
+			bool taken = check_and_or_revert(exist, Existence::Present, 
+			                                 v, found, false);
+			if (!taken)
+			{
+				continue;
+			}
+
+			taken = check_and_or_revert(obj, Bond::Weak, v, found, true);
+			taken = check_and_or_revert(obj, Bond::LonePair, v, found, true);
+			taken = check_and_or_revert(obj, Bond::Donor, v, found, true);
+			taken = check_and_or_revert(obj, Bond::Broken, v, found, true);
+		}
+
+		return found;
+	};
+
+	int found = 1;
+	while (found > 0)
+	{
+		found = round();
+		std::cout << "Summary: " << found << " options eliminated" << std::endl;
+	}
+}
+
 AtomGroup *Network::assignCertainHydrogens(std::ostringstream &ss)
 {
 	ss << "H-bond_ID\tH-chain\tH-resi\tH-resn\t";
@@ -860,4 +936,9 @@ AtomGroup *Network::assignCertainHydrogens(std::ostringstream &ss)
 	}
 
 	return write;
+}
+
+void Network::promptReclique()
+{
+	_reclique = true;
 }

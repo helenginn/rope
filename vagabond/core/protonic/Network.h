@@ -124,6 +124,11 @@ public:
 	}
 	
 	void updateModelCliques();
+	void firstOrderLogic();
+	
+	void promptReclique();
+	bool _reclique = false;
+
 	AtomGroup *assignCertainHydrogens(std::ostringstream &ss);
 private:
 	void establishAtom(::Atom *atom);
@@ -140,6 +145,7 @@ private:
 	bool setupHistidine(hnet::AtomConf atom);
 	bool setupTryptophan(hnet::AtomConf atom);
 	bool setupMethionine(hnet::AtomConf atom);
+
 
 	void shareCharges(hnet::AtomConf left, hnet::AtomConf right,
 	                 const hnet::Count::Values &allowable);

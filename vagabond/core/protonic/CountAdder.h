@@ -81,7 +81,7 @@ struct CountAdder : public ConstraintBase
 
 			// limited: options in existing sum which should be ruled out
 			bool limit = (~sum_should_be & _sum.value());
-//			if (limit)
+			if (limit)
 			{
 				assign(_sum, sum_should_be, "imposition on sum");
 			}
@@ -98,7 +98,7 @@ struct CountAdder : public ConstraintBase
 
 			Count::Values left_should_be = values_as_count(options);
 			bool limit = (~left_should_be & _left.value());
-//			if (limit)
+			if (limit)
 			{
 				assign(_left, left_should_be, "imposition on left");
 			}
@@ -115,7 +115,7 @@ struct CountAdder : public ConstraintBase
 
 			Count::Values right_should_be = values_as_count(options);
 			bool limit = (~right_should_be & _right.value());
-//			if (limit)
+			if (limit)
 			{
 				assign(_right, right_should_be, "imposition on right");
 			}
