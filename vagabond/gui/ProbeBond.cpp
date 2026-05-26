@@ -210,6 +210,8 @@ void ProbeBond::declareBondExistence(Existence::Values value)
 			_view->setInformation("Contradiction occurred in logical "\
 			                      "network!!\nCtrl+Z to undo");
 		}
+		_view->network().firstOrderLogic();
+		ConnectBase::_silent = false;
 	};
 
 	auto rescind_declaration = [gv, this]
@@ -243,6 +245,8 @@ void ProbeBond::declareBond(Bond::Values value)
 		{
 			_view->setInformation("Contradiction occurred in logical "\
 			                      "network!!\nCtrl+Z to undo");
+		_view->network().firstOrderLogic();
+		ConnectBase::_silent = false;
 		}
 	};
 
