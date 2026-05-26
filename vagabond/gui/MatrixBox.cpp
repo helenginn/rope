@@ -51,38 +51,7 @@ void MatrixBox::draw()
 	float x = -width / 2 + xstep / 2;
 	float y = +height / 2 + ystep / 2;
 	
-	auto swap_matrix_row_or_col = [this](int i, int j, int coord)
-	{
-		Eigen::MatrixXf A = _plot->_mat.toEigen();
-		
-		if (coord == 1 && !_identical)
-		{
-			A.row(i).swap(A.row(j));
-		}
-		else if (coord == 0 && !_identical)
-		{
-			A.col(i).swap(A.col(j));
-		}
-		else if (_identical)
-		{
-			A.row(i).swap(A.row(j));
-			A.col(i).swap(A.col(j));
-		}
-		
-		if (_plot->_mutex)
-		{
-			std::unique_lock<std::mutex> lock(*(_plot->_mutex));
-			_plot->_mat.dropFromEigen(A);
-			_plot->update();
-		}
-		else
-		{
-			_plot->_mat.dropFromEigen(A);
-			_plot->update();
-		}
-	};
-	
-	auto drag_button = [this, swap_matrix_row_or_col](TextButton *tb, int coord)
+	auto drag_button = [this](TextButton *tb, int coord)
 	{
 		_info[tb] = {};
 		_info[tb].coord = coord;
@@ -161,8 +130,8 @@ void MatrixBox::draw()
 			}
 		};
 
-		return [this, tb, create_order, swap_required, swap_matrix_row_or_col,
-		        steal_coordinate_from_other, save_current_pos_info, coord]
+		return [this, tb, create_order, swap_required, coord,
+		        steal_coordinate_from_other, save_current_pos_info]
 		(double x, double y, bool lastOne)
 		{
 			Status &status = _info[tb];
@@ -192,6 +161,7 @@ void MatrixBox::draw()
 			auto it = _order.begin();
 			bool changed = false;
 			
+			std::vector<int> order; order.reserve(tmp.size());
 			for (auto &pair : tmp)
 			{
 				TextButton *current = pair.second;
@@ -200,18 +170,38 @@ void MatrixBox::draw()
 				{
 					steal_coordinate_from_other(current, old);
 					changed = true;
-					std::pair<int, int> swap = swap_required(_order, tmp, 
-					                                         current);
-					if (swap.first > swap.second)
-					{
-						swap_matrix_row_or_col(swap.first, swap.second, coord);
-					}
 				}
+
+				std::pair<int, int> swap = swap_required(_order, tmp, current);
+				order.push_back(swap.first);
 				it++;
 			}
 
 			if (changed)
 			{
+				Eigen::MatrixXf A = _plot->_mat.toEigen();
+				Eigen::VectorXi perm = Eigen::Map<Eigen::VectorXi>(order.data(), 
+				                                                   order.size());
+
+				Eigen::PermutationMatrix<Eigen::Dynamic, Eigen::Dynamic> P(perm);
+				Eigen::MatrixXf pA;
+				if (_identical)
+				{
+					pA = P.transpose() * A * P;
+				}
+				else if (coord == 1) // buttons on y -> row swaps
+				{
+					std::cout << "Implement non-square matrix permutations pls" << std::endl;
+				}
+				else if (coord == 0)
+				{
+					std::cout << "Implement non-square matrix permutations pls" << std::endl;
+
+				}
+				A = pA;
+				_plot->_mat.dropFromEigen(A);
+				_plot->update();
+
 				save_current_pos_info();
 				_order = tmp;
 			}
@@ -314,17 +304,38 @@ void MatrixBox::guessReordering()
 		if (j > i) j--;
 		list.insert(list.begin() + j, tmp);
 	};
+	
+	for (auto &r : _rowNames)
+	{
+		std::cout << r << " ";
+	}
+	std::cout << std::endl;
+
 
 	auto insert_rows = [&](int i, int j)
 	{
+		std::cout << "inserting " << i << " where " << j << " is" << std::endl;
 		std::vector<int> reorder = {row_list.begin(), row_list.end()};
 		insertion(reorder, i, j);
+		
+		for (int &r : reorder)
+		{
+			std::cout << r << " ";
+		}
+		std::cout << std::endl;
+
 		insertion(_rowNames, i, j);
+		
+		for (auto &r : _rowNames)
+		{
+			std::cout << r << " ";
+		}
+		std::cout << std::endl;
 		Eigen::VectorXi perm = Eigen::Map<Eigen::VectorXi>(reorder.data(), 
 		                                                   reorder.size());
 
 		Eigen::PermutationMatrix<Eigen::Dynamic, Eigen::Dynamic> P(perm);
-		Eigen::MatrixXf pA = P * A * P.transpose();
+		Eigen::MatrixXf pA = P.transpose() * A * P;
 		A = pA;
 	};
 	
@@ -366,31 +377,32 @@ void MatrixBox::guessReordering()
 					bcc = dot; bi = j;
 				}
 			}
-			std::cout << "For row " << i << " best row " << bi;
 
+			std::cout << "Best neighbour for " << i << " would be " << bi << std::endl;
 			if (i - bi == 1 || bi - i == 1 || bi == -1)
 			{
-				std::cout << " - already a neighbour so leaving it" << std::endl;
 				continue;
 			}
+			/*
 			else if (bi == 0)
 			{
 				insert_rows(i, bi + 1);
+				return;
 			}
+			*/
 			else if (bi == A.rows() - 1)
 			{
 				insert_rows(i, bi - 1);
 			}
 			else
 			{
-				int left = bi - 1;
+				int left = bi;
 				int right = bi + 1;
 				
 				int ldot = get_dot(i, left);
 				int rdot = get_dot(i, right);
 
 				int target = (ldot > rdot ? left : right);
-				std::cout << " - moving " << i << " to " << target << std::endl;
 				insert_rows(i, target);
 			}
 		}
