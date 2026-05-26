@@ -67,6 +67,10 @@ void MatrixPlot::update()
 			updateColours();
 		}
 	}
+	else
+	{
+		updateColours();
+	}
 }
 
 void MatrixPlot::updateColours()

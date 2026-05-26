@@ -38,6 +38,8 @@ namespace PCA
 	{
 		Matrix() = default;
 		Matrix(const Eigen::MatrixXf &matrix);
+		void dropFromEigen(const Eigen::MatrixXf &matrix);
+		Eigen::MatrixXf toEigen();
 
 		double *vals = nullptr;
 		double **ptrs = nullptr;

@@ -4,6 +4,7 @@
 #define __Slip_Renderable__
 
 #include <vagabond/utils/gl_import.h>
+#include <functional>
 #include <mutex>
 #include <map>
 #include <atomic>
@@ -183,7 +184,13 @@ public:
 	
 	virtual void unMouseOver();
 	virtual bool mouseOver() { return false; };
-	virtual void undrag() {};
+	virtual void undrag()
+	{
+		if (_dragFunc)
+		{
+			_dragFunc(0.f, 0.f, true);
+		}
+	};
 
 	void reorderIndices();
 	void boundaries(glm::vec3 *min, glm::vec3 *max);
@@ -248,11 +255,27 @@ public:
 	void setSelectable(bool selectable);
 	
 	virtual void click(bool left = true) {};
-	virtual void drag(double x, double y) {};
+	virtual void drag(double x, double y)
+	{
+		if (_dragFunc)
+		{
+			_dragFunc(x, y, false);
+		}
+	};
 	
 	void setDraggable(bool draggable)
 	{
 		_draggable = draggable;
+	}
+
+	void setDragFunction(const std::function<void(double, double, bool)> &dragMe)
+	{
+		if (dragMe)
+		{
+			_draggable = true;
+		}
+
+		_dragFunc = dragMe;
 	}
 
 	bool isDraggable()
@@ -465,6 +488,7 @@ private:
 	GLuint _uProj = 0;
 	std::vector<IndexTrio> _temp; // stores with model mat
 	std::string _name = "generic object";
+	std::function<void(double, double, bool)> _dragFunc{};
 	
 	glm::mat4x4 _glLightMat;
 	glm::mat4x4 _glProj;
