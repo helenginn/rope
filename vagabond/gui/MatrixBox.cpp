@@ -16,32 +16,44 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
+#include <climits>
+#include <vagabond/utils/OpSet.h>
 #include "MatrixBox.h"
 #include <vagabond/gui/MatrixPlot.h>
 #include <vagabond/gui/elements/TextButton.h>
 #include <vagabond/gui/elements/Window.h>
 
 MatrixBox::MatrixBox(MatrixPlot *mp, const std::vector<std::string> &rowNames,
-                     const std::vector<std::string> &colNames)
+                     const std::vector<std::string> &colNames,
+                     bool reorder)
 : _plot(mp), _rowNames(rowNames), _colNames(colNames)
 {
-	mp->setCentre(0.0, 0.0);
-	addObject(mp);
 	_identical = (&rowNames == &colNames);
 	std::reverse(_colNames.begin(), _colNames.end());
 
-	float width = mp->maximalWidth() / 2.f;
-	float height = mp->maximalHeight() / 2.f;
-	float xstep = width / (float)colNames.size();
-	float ystep = -height / (float)rowNames.size();
+	_plot->setCentre(0.0, 0.0);
+	addObject(_plot);
+
+	if (reorder)
+	{
+		guessReordering();
+	}
+	draw();
+}
+
+void MatrixBox::draw()
+{
+
+	float width = _plot->maximalWidth() / 2.f;
+	float height = _plot->maximalHeight() / 2.f;
+	float xstep = width / (float)_colNames.size();
+	float ystep = -height / (float)_rowNames.size();
 	float x = -width / 2 + xstep / 2;
 	float y = +height / 2 + ystep / 2;
 	
 	auto swap_matrix_row_or_col = [this](int i, int j, int coord)
 	{
 		Eigen::MatrixXf A = _plot->_mat.toEigen();
-		std::cout << "Before: " << std::endl;
-		std::cout << A << std::endl;
 		
 		if (coord == 1 && !_identical)
 		{
@@ -56,9 +68,6 @@ MatrixBox::MatrixBox(MatrixPlot *mp, const std::vector<std::string> &rowNames,
 			A.row(i).swap(A.row(j));
 			A.col(i).swap(A.col(j));
 		}
-		
-		std::cout << "After: " << std::endl;
-		std::cout << A << std::endl;
 		
 		if (_plot->_mutex)
 		{
@@ -181,7 +190,6 @@ MatrixBox::MatrixBox(MatrixPlot *mp, const std::vector<std::string> &rowNames,
 			
 			auto tmp = create_order();
 			auto it = _order.begin();
-			int n = 0;
 			bool changed = false;
 			
 			for (auto &pair : tmp)
@@ -194,8 +202,6 @@ MatrixBox::MatrixBox(MatrixPlot *mp, const std::vector<std::string> &rowNames,
 					changed = true;
 					std::pair<int, int> swap = swap_required(_order, tmp, 
 					                                         current);
-					std::cout << "Swap " << swap.first << " to " << 
-					swap.second << std::endl;
 					if (swap.first > swap.second)
 					{
 						swap_matrix_row_or_col(swap.first, swap.second, coord);
@@ -229,6 +235,7 @@ MatrixBox::MatrixBox(MatrixPlot *mp, const std::vector<std::string> &rowNames,
 		y += ystep;
 		if (_identical)
 		{
+			_indices[pairs.size()] = t;
 			pairs.push_back({t, nullptr});
 		}
 	}
@@ -257,3 +264,303 @@ MatrixBox::MatrixBox(MatrixPlot *mp, const std::vector<std::string> &rowNames,
 	_couples = std::map<TextButton *, TextButton *>(pairs.begin(), pairs.end());
 }
 
+void removeRow(Eigen::MatrixXf& matrix, unsigned int rowToRemove)
+{
+	unsigned int numRows = matrix.rows() - 1;
+	unsigned int numCols = matrix.cols();
+
+	if (rowToRemove < numRows)
+	{
+		matrix.block(rowToRemove,0,numRows-rowToRemove,numCols) 
+		= matrix.block(rowToRemove+1,0,numRows-rowToRemove,numCols);
+
+	}
+	matrix.conservativeResize(numRows,numCols);
+}
+
+void removeColumn(Eigen::MatrixXf& matrix, unsigned int colToRemove)
+{
+	unsigned int numRows = matrix.rows();
+	unsigned int numCols = matrix.cols() - 1;
+
+	if (colToRemove < numCols)
+	{
+		matrix.block(0,colToRemove,numRows,numCols-colToRemove) 
+		= matrix.block(0,colToRemove+1,numRows,numCols-colToRemove);
+	}
+
+	matrix.conservativeResize(numRows,numCols);
+}
+
+void MatrixBox::guessReordering()
+{
+	if (!_identical || cutoff == FLT_MAX)
+	{
+		return;
+	}
+
+	std::cout << "here" << std::endl;
+	Eigen::MatrixXf A = _plot->_mat.toEigen();
+	OpSet<int> row_list;
+	for (int i = 0; i < A.rows(); i++)
+	{
+		row_list += i;
+	}
+	
+	auto insertion = []<typename Obj>(std::vector<Obj> &list, int i, int j)
+	{
+		Obj tmp = list[i];
+		list.erase(list.begin() + i);
+		if (j > i) j--;
+		list.insert(list.begin() + j, tmp);
+	};
+
+	auto insert_rows = [&](int i, int j)
+	{
+		std::vector<int> reorder = {row_list.begin(), row_list.end()};
+		insertion(reorder, i, j);
+		insertion(_rowNames, i, j);
+		Eigen::VectorXi perm = Eigen::Map<Eigen::VectorXi>(reorder.data(), 
+		                                                   reorder.size());
+
+		Eigen::PermutationMatrix<Eigen::Dynamic, Eigen::Dynamic> P(perm);
+		Eigen::MatrixXf pA = P * A * P.transpose();
+		A = pA;
+	};
+	
+	auto get_dot = [&](int i, int j)
+	{
+		Eigen::VectorXf myRow = A.row(i);
+		Eigen::VectorXf other = A.row(j);
+
+		float dot = 0;
+		for (int k = 0; k < myRow.size(); k++)
+		{
+			if (myRow(k) == myRow(k) && other(k) == other(k))
+			{
+				dot += myRow(k) * other(k);
+			}
+		}
+
+		dot /= (float)myRow.size();
+		return dot;
+	};
+
+	auto round = [&]()
+	{
+		for (int i = 0; i < A.rows(); i++)
+		{
+			float bcc = 0; float bi = -1;
+
+			for (int j = 0; j < A.rows(); j++)
+			{
+				if (i == j)
+				{
+					continue;
+				}
+				
+				float dot = get_dot(i, j);
+
+				if (dot > bcc)
+				{
+					bcc = dot; bi = j;
+				}
+			}
+			std::cout << "For row " << i << " best row " << bi;
+
+			if (i - bi == 1 || bi - i == 1 || bi == -1)
+			{
+				std::cout << " - already a neighbour so leaving it" << std::endl;
+				continue;
+			}
+			else if (bi == 0)
+			{
+				insert_rows(i, bi + 1);
+			}
+			else if (bi == A.rows() - 1)
+			{
+				insert_rows(i, bi - 1);
+			}
+			else
+			{
+				int left = bi - 1;
+				int right = bi + 1;
+				
+				int ldot = get_dot(i, left);
+				int rdot = get_dot(i, right);
+
+				int target = (ldot > rdot ? left : right);
+				std::cout << " - moving " << i << " to " << target << std::endl;
+				insert_rows(i, target);
+			}
+		}
+	};
+	
+	for (int i = 0; i < 5000; i++)
+	{
+		round();
+	}
+
+	_colNames = _rowNames;
+	std::reverse(_colNames.begin(), _colNames.end());
+
+	_plot->_mat.dropFromEigen(A);
+	_plot->update();
+}
+
+/*
+void MatrixBox::guessReordering(float cutoff)
+{
+	if (!_identical || cutoff == FLT_MAX)
+	{
+		return;
+	}
+
+	std::vector<int> reordering;
+	
+	auto establish_row = [&reordering](int row)
+	{
+		reordering.push_back(row);
+	};
+
+	Eigen::MatrixXf A = _plot->_mat.toEigen();
+	OpSet<int> row_list;
+	for (int i = 0; i < A.rows(); i++)
+	{
+		row_list += i;
+	}
+
+	std::cout << "Row list: " << row_list.size() << std::endl;
+	
+	auto meets_threshold = [&cutoff, &A](int i, int j)
+	{
+		return ((A(i, j) == A(i, j) && A(i, j) > cutoff) || 
+		        (A(j, i) == A(j, i) && A(j, i) > cutoff));
+	};
+
+	int lowest_row = -1;
+	int lowest_deg = INT_MAX;
+	
+	auto row_degree = [meets_threshold, &A](int i)
+	{
+		int degree = 0;
+		for (int j = 0; j < A.row(i).size(); j++)
+		{
+			if (meets_threshold(i, j)) degree++;
+		}
+		return degree;
+	};
+	
+	for (int i = 0; i < A.rows(); i++)
+	{
+		int deg = row_degree(i);
+		if (lowest_deg > deg)
+		{
+			lowest_row = i;
+			lowest_deg = deg;
+		}
+		if (deg == 0)
+		{
+			establish_row(i);
+		}
+	}
+	
+	auto make_adjacency_set = [&reordering, &A, &meets_threshold](int node)
+	{
+		OpSet<int> done_already(reordering);
+		OpSet<int> adj_set;
+
+		for (int r = 0; r < A.rows(); r++)
+		{
+			if (done_already.count(r))
+			{
+				continue;
+			}
+
+			if (meets_threshold(node, r))
+			{
+				adj_set += r;
+			}
+		}
+
+		return adj_set;
+	};
+	
+	std::cout << "Lowest row: " << _rowNames[lowest_row] << std::endl;
+	establish_row(lowest_row);
+
+	int i = 0;
+	while (true)
+	{
+		int prior = reordering[i];
+		i++;
+		OpSet<int> next = make_adjacency_set(prior);
+
+		std::cout << "Adding set of " << next.size() << std::endl;
+
+		if (next.size() == 0)
+		{
+			break;
+		}
+
+		OpSet<std::pair<int, int>> scores;
+		
+		std::cout << "\t";
+		for (int r : next)
+		{
+			std::cout << _rowNames[r] << " ";
+			Eigen::MatrixXf vec = A.row(r);
+
+			int score = reordering.size() - 1;
+			for (int j : reordering)
+			{
+				if (vec(j) == vec(j) && vec(j) > cutoff)
+				{
+					score = j;
+					break;
+				}
+			}
+
+			scores += {score, r};
+		}
+		std::cout << std::endl;
+		
+		for (auto &pair : scores)
+		{
+			establish_row(pair.second);
+		}
+	}
+	
+	OpSet<int> reordered(reordering);
+
+	for (int r : row_list)
+	{
+		if (!reordered.count(r))
+		{
+			establish_row(r);
+		}
+	}
+	
+	Eigen::VectorXi perm = Eigen::Map<Eigen::VectorXi>(reordering.data(), 
+	                                                   reordering.size());
+	std::vector<std::string> rowNames;
+	for (int i : reordering)
+	{
+		rowNames.push_back(_rowNames[i]);
+		std::cout << i << " ";
+	}
+	std::cout << std::endl;
+
+//	_rowNames = rowNames;
+	_colNames = rowNames;
+	std::reverse(_colNames.begin(), _colNames.end());
+	
+	Eigen::PermutationMatrix<Eigen::Dynamic, Eigen::Dynamic> P(perm);
+	Eigen::MatrixXf pA = P * A;
+
+//	_plot->_mat.dropFromEigen(pA);
+//	_plot->update();
+}
+
+
+*/
