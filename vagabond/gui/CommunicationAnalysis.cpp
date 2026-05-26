@@ -126,7 +126,7 @@ float CommunicationAnalysis::compare(const std::string &first,
 	
 	auto add_to_matrix = [this](MatrixXf &mat, int &inc, float &drop)
 	{
-		return [this, &drop, &inc, &mat](const ProbeTypePair &ptp)
+		return [this, &inc, &mat](const ProbeTypePair &ptp)
 		{
 			int ins = _lookup[ptp].first;
 			int dim = _lookup[ptp].second;
