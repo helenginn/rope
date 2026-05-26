@@ -131,7 +131,7 @@ MatrixBox::MatrixBox(MatrixPlot *mp, const std::vector<std::string> &rowNames,
 		auto set_coordinate = [this]
 		(TextButton *tb, const glm::vec3 &pos, int coord)
 		{
-			glm::vec3 curr = tb->centroid();
+			glm::vec3 curr = _info[tb].start;
 			curr[coord] = pos[coord];
 			tb->setPosition(curr);
 		};
