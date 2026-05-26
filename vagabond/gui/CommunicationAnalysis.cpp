@@ -22,6 +22,7 @@
 #include <vagabond/gui/elements/ScrollBox.h>
 #include <vagabond/gui/elements/Window.h>
 #include <vagabond/gui/MatrixPlot.h>
+#include <vagabond/gui/MatrixBox.h>
 #include <vagabond/core/protonic/Clique.h>
 #include <vagabond/core/protonic/ProbeResult.h>
 #include <vagabond/utils/FileReader.h>
@@ -280,48 +281,10 @@ void CommunicationAnalysis::setup()
 	
 	svd();
 
-	OpSet<std::string> names = _clique->allCommsNames();
+	std::vector<std::string> names = _clique->allCommsNames().toVector();
 
 	Eigen::MatrixXf mat(names.size(), names.size());
 	mat.setZero();
-
-	/*
-	auto get_vector = [this](const std::string &name) -> Eigen::VectorXf
-	{
-		const OpSet<Probe *> &probes = _clique->probes();
-		int n = 0;
-		auto it = probes.begin();
-		while (n < _wU.rows())
-		{
-			if ((*it)->desc() == name)
-			{
-				return _wU.row(n);
-			}
-			n++; it++;
-		}
-		return Eigen::VectorXf();
-	};
-
-	int m = 0;
-	for (const std::string &first : names)
-	{
-		int n = 0;
-		for (const std::string &second : names)
-		{
-			Eigen::VectorXf left = get_vector(first);
-			Eigen::VectorXf right = get_vector(second);
-			std::vector<float> l = {left.begin(), left.end()};
-			std::vector<float> r = {right.begin(), right.end()};
-
-			float cc = correlation(l, r);
-
-			mat(m, n) = cc;
-			n++;
-		}
-		m++;
-	}
-	*/
-	
 
 	int m = 0;
 	for (const std::string &first : names)
@@ -339,13 +302,15 @@ void CommunicationAnalysis::setup()
 	Eigen::JacobiSVD<MatrixXf> svd(mat, Eigen::ComputeFullU | 
 	                               Eigen::ComputeFullV);
 	
+	_cc = PCA::Matrix(mat);
+	MatrixPlot *mp = new MatrixPlot(_cc);
+	MatrixBox *mBox = new MatrixBox(mp, names, names);
+	mBox->setCentre(0.5, 0.5);
+	addObject(mBox);
 
 
-	
+	/*
 	Box *box = new Box();
-
-	PCA::Matrix oldmat(mat);
-	MatrixPlot *mp = new MatrixPlot(oldmat);
 	mp->setCentre(0.0, 0.0);
 	box->addObject(mp);
 	
@@ -387,4 +352,5 @@ void CommunicationAnalysis::setup()
 
 	box->setCentre(0.5, 0.5);
 	addObject(box);
+	*/
 }

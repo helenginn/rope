@@ -21,6 +21,7 @@
 
 #include <vagabond/gui/elements/Scene.h>
 #include <vagabond/utils/Eigen/Dense>
+#include <vagabond/utils/svd/PCA.h>
 #include <vagabond/core/protonic/ProbeResult.h>
 #include <vagabond/core/Item.h>
 
@@ -53,6 +54,7 @@ private:
 	
 	MatrixXf _lMat{};
 	MatrixXf _rMat{};
+	PCA::Matrix _cc;
 
 	std::map<ProbeTypePair, std::pair<int, int>> _lookup;
 	
