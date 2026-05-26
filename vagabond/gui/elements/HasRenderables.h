@@ -4,6 +4,7 @@
 #define __practical__HasRenderables__
 
 #include <mutex>
+#include <deque>
 #include <vector>
 #include <functional>
 #include <SDL2/SDL.h>
@@ -88,7 +89,7 @@ protected:
 	Renderable *_chosen = nullptr;
 	Renderable *_dragged = nullptr;
 	
-	std::vector<std::function<void()>> _jobs;
+	std::deque<std::function<void()>> _jobs;
 	std::mutex _joblock;
 };
 
