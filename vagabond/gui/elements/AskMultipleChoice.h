@@ -34,7 +34,6 @@ public:
 
 	virtual void refresh();
 private:
-	ButtonResponder *_sender;
 	std::string _tag;
 
 	float _top = 0.43;
