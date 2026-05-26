@@ -397,6 +397,7 @@ Competition::clean_order(const std::vector<std::string> &order)
 	{
 		finalised.push_back(ab);
 	}
+
 	return finalised;
 }
 
@@ -417,6 +418,8 @@ Eigen::MatrixXf Competition::make_plot(std::vector<std::string> &order)
 		}
 
 	}
+
+	order = all;
 	return mat;
 }
 
