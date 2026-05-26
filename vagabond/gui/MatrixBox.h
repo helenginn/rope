@@ -29,8 +29,11 @@ class MatrixBox : public Box
 {
 public:
 	MatrixBox(MatrixPlot *mp, const std::vector<std::string> &rowNames,
-	          const std::vector<std::string> &colNames);
+	          const std::vector<std::string> &colNames, 
+	          bool reorder = false);
 
+	void guessReordering();
+	void draw();
 private:
 	MatrixPlot *_plot{};
 
@@ -52,6 +55,7 @@ private:
 	std::vector<std::string> _rowNames;
 	std::vector<std::string> _colNames;
 	std::map<TextButton *, TextButton *> _couples;
+	std::map<int, TextButton *> _indices;
 };
 
 #endif
