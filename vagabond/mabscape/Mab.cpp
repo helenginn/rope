@@ -414,6 +414,10 @@ Eigen::MatrixXf Competition::make_plot(std::vector<std::string> &order)
 		{
 			const std::string &b = all[j];
 			float val = value(a, b);
+			if (val != val)
+			{
+				val = value(b, a);
+			}
 			mat(i, j) = val;
 		}
 

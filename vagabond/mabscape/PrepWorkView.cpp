@@ -93,7 +93,7 @@ void PrepWorkView::prepareAntigens(Antigens &antigens)
 		addObject(mesh);
 		shiftToCentre(mesh->centroid(), 0);
 
-		mesh->refine();
+//		mesh->refine();
 		_messages.push_back("Refined mesh for antigen " + antigen.title);
 
 		for (Fiducial &fid : _mab.fiducials)
@@ -122,7 +122,7 @@ void PrepWorkView::prepareAntigens(Antigens &antigens)
 				for (const glm::mat4x4 &mat : contact.transforms())
 				{
 					contact.applyTransform(mat);
-					std::this_thread::sleep_for(std::chrono::milliseconds(5000));
+					std::this_thread::sleep_for(std::chrono::milliseconds(1000));
 				}
 
 				_tidy.push_back

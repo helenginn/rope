@@ -42,9 +42,9 @@ void AntibodyOrderingView::makePlot()
 	_forDisplay = PCA::Matrix(mat);
 
 	MatrixPlot *plot = new MatrixPlot(_forDisplay);
-	plot->resize(1.4);
-	MatrixBox *mb = new MatrixBox(plot, order, order);
-	mb->setCentre(0.5, 0.55);
+	plot->resize(1.5);
+	MatrixBox *mb = new MatrixBox(plot, order, order, true);
+	mb->setCentre(0.5, 0.6);
 	addTempObject(mb);
 
 }
