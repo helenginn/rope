@@ -294,7 +294,7 @@ void removeColumn(Eigen::MatrixXf& matrix, unsigned int colToRemove)
 
 void MatrixBox::guessReordering()
 {
-	if (!_identical || cutoff == FLT_MAX)
+	if (!_identical)
 	{
 		return;
 	}
