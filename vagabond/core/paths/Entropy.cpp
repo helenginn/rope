@@ -33,7 +33,6 @@ void Entropy::populateHeatMap(struct EntropyForHeatMap *entropyData)
         {
             std::unique_lock<std::mutex> lock(mutex());
             std::vector<double> entropy = pathEntropyInstancePair(_flagPar.nf, group, _flagPar.timeDivisions, _flagPar.mist);
-
 			entropyData->total.push_back(entropy);
 
 			for (int t = 0; t < _flagPar.timeDivisions; t++)
@@ -140,3 +139,24 @@ std::pair<std::string, std::string> Entropy::names(int l, int r)
 	return {st_name, end_name};
 }
 
+    auto fix_value = [](const Entropy::InstanceSet &insts, Instance *inst, int &idx)
+    {
+        idx = -1;
+        int n = 0;
+
+        for(Instance *const &check : insts)
+        {
+            if(inst == check)
+            {
+                idx = n;
+                break;
+            }
+            n++;
+        }
+    };
+
+    fix_value(_starts, start, stIdx);
+    fix_value(_ends, end, endIdx);
+
+    return {stIdx, endIdx};
+}
