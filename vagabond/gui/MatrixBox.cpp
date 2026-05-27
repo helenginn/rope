@@ -240,7 +240,7 @@ void MatrixBox::draw()
 		glm::mat4x4 base = glm::mat3x3(1.f);
 		base[1] /= Window::aspect();
 		glm::mat3x3 rot;
-		rot = glm::mat3x3(glm::rotate(base, (float)deg2rad(-45),
+		rot = glm::mat3x3(glm::rotate(base, (float)deg2rad(-90),
 		                              glm::vec3(0., 0., -1.)));
 		t->rotateRoundCentre(rot);
 		addObject(t);
