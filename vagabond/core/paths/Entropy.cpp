@@ -2,8 +2,6 @@
 #include <paths/Entropy.h>
 #include <PathEntropy.h>
 
-std::mutex *Entropy::EntropyForHeatMap::mutex = new std::mutex();
-
 Entropy::Entropy(const std::vector<PathGroup> &paths, const struct FlagParameters &flagPar)
 {
     _flagPar = flagPar;
@@ -18,26 +16,34 @@ Entropy::Entropy(const std::vector<PathGroup> &paths, const struct FlagParameter
     }
 }
 
-void Entropy::populateHeatMap(struct EntropyForHeatMap entropyData)
+void Entropy::populateHeatMap(struct EntropyForHeatMap *entropyData)
 {
     std::cout << "Number of divisions: " << _flagPar.timeDivisions << std::endl; 
 
-    entropyData.numDivisions = _flagPar.timeDivisions;
+    entropyData->numDivisions = _flagPar.timeDivisions;
 
     for(int t = 0; t < _flagPar.timeDivisions; t++)
     {
-        entropyData.dataMatrix.push_back(Eigen::MatrixXf::Zero(_starts.size(), _ends.size()));
+        entropyData->dataMatrix.push_back(Eigen::MatrixXf::Zero(_starts.size(), _ends.size()));
     }
 
     for (const PathGroup &group : _paths)
     {
-        entropyData.start.push_back(group[0]->startInstance()->model_id());
-        entropyData.end.push_back(group[0]->endInstance()->model_id());
-        std::vector<double> entropy = pathEntropyInstancePair(_flagPar.n, group, _flagPar.timeDivisions, _flagPar.mist);
+        std::cout << "Group: " << group[0]->startInstance()->model_id() << " to " << group[0]->endInstance()->model_id() << std::endl;
 
-        for(int t = 0; t < _flagPar.timeDivisions; t++)
+        entropyData->start.push_back(group[0]->startInstance()->model_id());
+        entropyData->end.push_back(group[0]->endInstance()->model_id());
+
+        std::pair<int, int> idxs = index(group[0]->startInstance(), group[0]->endInstance());
+
+        std::vector<double> entropy = pathEntropyInstancePair(_flagPar.nf, group, _flagPar.timeDivisions, _flagPar.mist);
+
+        entropyData->total.push_back(entropy);
+
+        for (int t = 0; t < _flagPar.timeDivisions; t++)
         {
-            entropyData.total.push_back(entropy);
+           entropyData->dataMatrix[t](idxs.first, idxs.second) = entropy[t];
+            //entropyData.dataMatrix[t](idxs.second, idxs.first) = entropy[t];
         }
      
         clickTicker();
@@ -69,4 +75,29 @@ std::vector<double> Entropy::pathEntropyInstancePair(int numPaths, std::vector<P
     return entropy;
 }
 
+std::pair<int, int> Entropy::index(Instance *start, Instance *end)
+{
+    int stIdx = -1;
+    int endIdx = -1;
 
+    auto fix_value = [](const Entropy::InstanceSet &insts, Instance *inst, int &idx)
+    {
+        idx = -1;
+        int n = 0;
+
+        for(Instance *const &check : insts)
+        {
+            if(inst == check)
+            {
+                idx = n;
+                break;
+            }
+            n++;
+        }
+    };
+
+    fix_value(_starts, start, stIdx);
+    fix_value(_ends, end, endIdx);
+
+    return {stIdx, endIdx};
+}

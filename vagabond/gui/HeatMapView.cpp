@@ -9,12 +9,13 @@
 #include <MatrixPlot.h>
 #include <ColourLegend.h>
 
-struct Entropy::EntropyForHeatMap entropyData{};
-
 HeatMapView::HeatMapView(Scene *prev, const std::vector<PathGroup> &paths, struct FlagParameters flagPar) : Scene(prev)
 {
     _entropy = new Entropy(paths, flagPar);
     _flagPar = flagPar;
+
+    _entropyData = new Entropy::EntropyForHeatMap;
+    PCA::setupMatrix(&_pcaMatrix, _entropy->rows(), _entropy->cols());
 }
 
 HeatMapView::~HeatMapView()
@@ -25,6 +26,11 @@ void HeatMapView::setup()
 {
     addTitle("Heat Map");    
 
+    VagWindow::window()->requestProgressBar(_entropy->ticks(), "Generating heatmap");
+
+    std::cout << "Populating data matrix..." << std::endl;
+    _entropy->populateHeatMap(_entropyData);
+ 
     if (_flagPar.timeDivisions > 1)
     { 
         std::cout << "adding slider..." << std::endl;
@@ -36,14 +42,9 @@ void HeatMapView::setup()
         t->setRight(0.9, 0.1);
         t->setReturnTag("sum");
         addObject(t);
-    }
-  
-    VagWindow::window()->requestProgressBar(_entropy->ticks(), "Generating heatmap");
-
-    std::cout << "Populating data matrix..." << std::endl;
-    _entropy->populateHeatMap(entropyData);
-   
-//	redrawHeatMap(+0.1f);
+    }  
+	
+	redrawHeatMap(+0.1f);
 }
 
 void HeatMapView::redrawHeatMap(double num)
@@ -55,25 +56,25 @@ void HeatMapView::redrawHeatMap(double num)
 
     int t = (int) num;
 
-    int rows = entropyData.dataMatrix[t].rows();
-    int cols = entropyData.dataMatrix[t].cols();
+    int rows = _entropy->rows();
+    int cols = _entropy->cols();
 
     Eigen::MatrixXf matrix = Eigen::MatrixXf::Zero(rows, cols);
     
-    std::vector<double> entropyVals(entropyData.total[t].size());
+    std::vector<double> entropyVals(_entropyData->total[t].size());
 
-    double maxEntVal = entropyData.total[t].front();
-    double minEntVal = entropyData.total[t].front();
+    double maxEntVal = _entropyData->total[t].front();
+    double minEntVal = _entropyData->total[t].front();
 
-    for(int i = 0; i < entropyData.total[t].size(); i++)
+    for(int i = 0; i < _entropyData->total[t].size(); i++)
     {
-        if(entropyData.total[t][i] > maxEntVal)
+        if(_entropyData->total[t][i] > maxEntVal)
         {
-            maxEntVal = entropyData.total[t][i];
+            maxEntVal = _entropyData->total[t][i];
         }
-        if(entropyData.total[t][i] < minEntVal)
+        if(_entropyData->total[t][i] < minEntVal)
         {
-            minEntVal = entropyData.total[t][i];
+            minEntVal = _entropyData->total[t][i];
         }
     }
 
@@ -81,7 +82,7 @@ void HeatMapView::redrawHeatMap(double num)
     {
         for (int j = 0; j < cols; j++)
         {
-			matrix(i, j) = entropyData.dataMatrix[t](i, j);
+			matrix(i, j) = _entropyData->dataMatrix[t](i, j);
         }
     }
 
@@ -109,22 +110,22 @@ void HeatMapView::sumHeatMap()
         removeObject(_rangeSlider);
     }
 
-    int rows = entropyData.dataMatrix[0].rows();
-    int cols = entropyData.dataMatrix[0].cols();
+    int rows = _entropy->rows();
+    int cols = _entropy->cols();
 
     Eigen::MatrixXf matrix = Eigen::MatrixXf::Zero(rows, cols);
     
-    std::vector<double> entropyVals(entropyData.total[0].size());
+    std::vector<double> entropyVals(_entropyData->total[0].size());
 
-    for (int t = 0; t < entropyData.numDivisions; t++)
+    for (int t = 0; t < _entropyData->numDivisions; t++)
     {
-        for(int i = 0; i < entropyData.total[t].size(); i++) 
+        for(int i = 0; i < _entropyData->total[t].size(); i++) 
         {
-            entropyVals[i] += entropyData.total[t][i];
+            entropyVals[i] += _entropyData->total[t][i];
             
             std::cout << i << ": " << entropyVals[i] << std::endl;
         }
-        matrix += entropyData.dataMatrix[t];
+        matrix += _entropyData->dataMatrix[t];
     }
    
     double meanEntropy = mean(entropyVals);
@@ -206,6 +207,6 @@ void HeatMapView::mousePressEvent(double x, double y, SDL_MouseButtonEvent butto
 	int left = v.x * _pcaMatrix.cols;
 	int right = v.y * _pcaMatrix.rows;
 	std::cout << left << " " << right << std::endl;
-	setInformation(entropyData.start[left] + " to " + entropyData.end[right]);
+	setInformation(_entropyData->start[left] + " to " + _entropyData->end[right]);
 	Scene::mousePressEvent(x, y, button);
 }
