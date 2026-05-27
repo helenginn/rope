@@ -28,6 +28,7 @@ public:
     virtual void mousePressEvent(double x, double y, SDL_MouseButtonEvent button);
 private:
     struct FlagParameters _flagPar{};
+    struct Entropy::EntropyForHeatMap *_entropyData{};   
 
     Entropy *_entropy{};
     std::thread *_worker = nullptr;
