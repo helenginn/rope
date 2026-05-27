@@ -34,7 +34,7 @@ public:
 		std::vector<Eigen::MatrixXf> dataMatrix;
 	}; 
 
-    void populateHeatMap(struct EntropyForHeatMap entropyData);
+    void populateHeatMap(struct EntropyForHeatMap *entropyData);
 
     virtual const std::string progressName() const
     {
@@ -51,7 +51,19 @@ public:
         }
     };
 
+    std::pair<int, int> index(Instance *start, Instance *end);
+
     typedef std::set<Instance *, compare_ids> InstanceSet;
+
+    int rows()
+    {
+        return _starts.size();
+    }
+
+    int cols()
+    {
+        return _ends.size();
+    }
 
 private:
     std::vector<PathGroup> _paths;
@@ -61,5 +73,4 @@ private:
     InstanceSet _ends;
 };
 
-;
 #endif
