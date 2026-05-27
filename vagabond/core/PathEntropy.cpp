@@ -95,7 +95,6 @@ std::vector<TorsRes4NN*> PathEntropy::getAtomsAndResidues(int numPaths, const st
 			if((torsRes[i]->torsName[j] == "chi2" && (res->code() == "ASP"|| res->code() == "PHE" || res->code() == "TYR")) ||
 					(torsRes[i]->torsName[j] == "chi3" && res->code() == "GLU") ||
 					(torsRes[i]->torsName[j] == "chi4" && res->code() == "ARG"))
-
 			{
 				torsRes[i]->bondSymmetry[j] = 180.0;
 			}
@@ -951,7 +950,9 @@ void PathEntropy::allocVariables(int nf, std::vector<double> &entk, std::vector<
         flagParameters.n = K - 1;
     }
 
+    std::cout << "K: " << K << std::endl;
 	entk.resize(K-1);
+    std::cout << "entk size:" << entk.size() << std::endl;
     entkTotal.resize(K-1);
     entk2.resize(K-1);
     entkTotal2.resize(K-1);
