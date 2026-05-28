@@ -237,7 +237,10 @@ void PathManager::makePathBetween(const std::string &start,
 			std::cout << "Cycle: " << minutes << "m " << seconds 
 			<< "s." << std::endl;
 		}
-	}
+  
+        std::cout << "Saving..." << std::endl;
+        Environment::env().save();
+    }
 	
 	delete grp;
 	delete route;
