@@ -74,7 +74,7 @@ void HeatMapOptions::loadOptions()
         Slider *sPaths = new Slider();
         sPaths->setDragResponder(this);
         sPaths->resize(0.5);
-        sPaths->setup("Number of paths", 2, 20, 1);
+        sPaths->setup("Number of paths", 2, maxPaths(), 1);
         sPaths->setReturnTag("paths");
 	    sPaths->setCentre(0.7, 0.35);
         addTempObject(sPaths);
@@ -84,7 +84,7 @@ void HeatMapOptions::loadOptions()
         Slider *sNN = new Slider();
         sNN->setDragResponder(this);
         sNN->resize(0.5);
-        sNN->setup("Number of nearest neighbours", 2, 20, 1);
+        sNN->setup("Number of nearest neighbours", 2, maxPaths()-1, 1);
         sNN->setReturnTag("neighbours");
 	    sNN->setCentre(0.7, 0.5);
         addTempObject(sNN);
@@ -143,6 +143,18 @@ void HeatMapOptions::finishedDragging(std::string tag, double x, double y)
     {
         _flagPar.timeDivisions = lrint(x);
     }
+}
+
+int HeatMapOptions::maxPaths()
+{
+    int max = _paths[0].size();
+
+    for (PathGroup &group : _paths)
+    {
+        if(group.size() < max) max = group.size();
+    }
+
+    return max;
 }
 
 void HeatMapOptions::refresh()
