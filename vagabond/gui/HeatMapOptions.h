@@ -20,6 +20,8 @@ public:
     virtual void buttonPressed(std::string tag, Button *button = nullptr);
     virtual void finishedDragging(std::string tag, double x, double y);
 
+    int maxPaths();
+
 private:
     void loadOptions();
 
