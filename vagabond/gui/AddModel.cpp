@@ -195,6 +195,7 @@ void AddModel::buttonPressed(std::string tag, Button *button)
 		auto set_filename = [this](std::string name)
 		{
 			_obj.setFilename(name);
+			refreshInfo();
 		};
 
 		FileView *view = new FileView(this, set_filename);
@@ -206,6 +207,7 @@ void AddModel::buttonPressed(std::string tag, Button *button)
 		auto set_datafile = [this](std::string name)
 		{
 			_obj.setDataFile(name);
+			refreshInfo();
 		};
 
 		FileView *view = new FileView(this, set_datafile);
