@@ -22,6 +22,7 @@
 #include <vagabond/gui/elements/Scene.h>
 #include "CompareDistances.h"
 #include <vagabond/utils/svd/PCA.h>
+#include <vagabond/gui/FlexibilityView.h>
 #include "AtomGroup.h"
 #include "RAMovement.h"
 
@@ -33,24 +34,37 @@ class Instance;
 class MatrixPlot;
 class ColourLegend;
 class PositionalCluster;
+class Image;
 
 class Atom2AtomExplorer : public Scene, public DragResponder
 {
 public:
+	enum MarkerType { HBondMarker, VdWMarker };
 	Atom2AtomExplorer(Scene *scene, Instance *instance,
-	                  const RAMovement &movements, std::string polymerTitle);
+	                  const RAMovement &movements, std::string polymerTitle, bool bondFlag);
 
 	virtual void setup();
 
 	virtual void finishedDragging(std::string tag, double x, double y);
 	virtual void mousePressEvent(double x, double y, SDL_MouseButtonEvent button);
+	MatrixPlot *plot() { return _plot; }
+	prepare_atom_list *atomVec() { return _atom2Vec; }
+	int residueToMatrixIndex(const ResidueId &resId);
+	void setFlexibilityView(FlexibilityView *fv) { _flexView = fv; }
+	void setupBondTickBoxes();
+	void showHBondSelector();
+	void showVdWSelector();
+	void placeMarker(int x_idx, int y_idx, MarkerType type);
+	void markerSlider();
+	void updateMarkerSizes();
+	
 private:
 	void sampleFromPlot(double x, double y);
-
 	void update();
 
 	Instance *_instance = nullptr;
 	AtomGroup *_atoms = nullptr;
+	FlexibilityView *_flexView = nullptr;
 
 	void slider();
 	void addPlot();
@@ -59,7 +73,8 @@ private:
 	const RAMovement _movement;
 	float _motionScale = 1;
 	float _colourScale = 1;
-	
+	bool _bondFlag = false;
+
 	prepare_atom_list *_atom2Vec;
 	
 	CompareDistances _cd;
@@ -71,6 +86,14 @@ private:
 	
 	Slider *_colourSlide = nullptr;
 	ColourLegend *_legend = nullptr;
+	Flexibility *_flex = nullptr;
+	std::map<ResidueId, int> _residueToIndex;
+	std::vector<Image *> _hbondMarkers;
+	std::vector<Image *> _vdwMarkers;
+	std::vector<std::pair<int,int>> _hbondMarkerIndices;
+	std::vector<std::pair<int,int>> _vdwMarkerIndices;
+	float _markerSize = 0.1f;
+	float _originalMarkerSize = 0.1f;
 };
 
 #endif
