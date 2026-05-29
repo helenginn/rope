@@ -19,6 +19,8 @@ mabscapefiles = [
 'MabscapeSetup.cpp',
 'Mesh.h',
 'Mesh.cpp',
+'Playground.h',
+'Playground.cpp',
 'PrepWorkView.h',
 'PrepWorkView.cpp',
 'Symmetry.h',

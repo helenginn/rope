@@ -17,6 +17,7 @@
 // Please email: vagabond @ hginn.co.uk for more details.
 
 #include "AntibodyOrderingView.h"
+#include "Playground.h"
 #include <vagabond/gui/MatrixBox.h>
 #include <vagabond/gui/MatrixPlot.h>
 #include "Mab.h"
@@ -30,7 +31,7 @@ AntibodyOrderingView::AntibodyOrderingView(Scene *prev, Mab &mab)
 void AntibodyOrderingView::setup()
 {
 	addTitle("Adjust antibody ordering");
-
+	
 	refresh();
 }
 
@@ -46,6 +47,21 @@ void AntibodyOrderingView::makePlot()
 	MatrixBox *mb = new MatrixBox(plot, order, order, true);
 	mb->setCentre(0.5, 0.6);
 	addTempObject(mb);
+
+	auto save_and_move_on = [this, mb]()
+	{
+		std::cout << "Here" << std::endl;
+		std::vector<std::string> reordered = mb->rowNames();
+		comp().favoured_ordering = reordered;
+
+		Playground *playground = new Playground(this, _mab);
+		playground->show();
+	};
+	
+	TextButton *tb = new TextButton("Next");
+	tb->setRight(0.9, 0.9);
+	tb->setReturnJob(save_and_move_on);
+	addObject(tb);
 
 }
 
