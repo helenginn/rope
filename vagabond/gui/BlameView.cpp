@@ -36,7 +36,7 @@ BlameView::BlameView(Scene *prev, Entity *entity,
 	_entity = entity;
 
 	std::cout << _blame->rows() << " x " << _blame->cols() << std::endl;
-	PCA::setupMatrix(&_data, _blame->cols(), _blame->rows());
+	PCA::setupMatrix(&_data, _blame->rows(), _blame->cols());
 }
 
 void BlameView::setup()

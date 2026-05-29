@@ -26,7 +26,7 @@ void HeatMapView::setup()
 {
     addTitle("Heat Map");    
 
-    VagWindow::window()->requestProgressBar(_entropy->ticks(), "Generating heatmap");
+    VagWindow::window()->requestProgressBar(_entropy->ticks(), "Generating heatmap...");
 
     std::cout << "Populating data matrix..." << std::endl;
     _entropy->populateHeatMap(_entropyData);
@@ -210,3 +210,4 @@ void HeatMapView::mousePressEvent(double x, double y, SDL_MouseButtonEvent butto
 	setInformation(_entropyData->start[left] + " to " + _entropyData->end[right]);
 	Scene::mousePressEvent(x, y, button);
 }
+
