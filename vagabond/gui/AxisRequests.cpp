@@ -35,11 +35,14 @@
 
 #include "AxisRequests.h"
 
+
 DoEditMenu editMenu(PositionData *group)
 {
 	return [](Axes *axes, Menu *menu)
 	{
 		menu->addOption("explore axis", "explore_axis");
+		menu->addOption("explore hbonds", "explore_bonds");
+
 	};
 };
 
@@ -95,6 +98,7 @@ DoRequest doRequest(PositionData *group)
 
 		if (request == "explore_axis")
 		{
+			bool bondFlag = false;
 			std::vector<Atom3DPosition> list;
 			list = group->headers();
 			std::vector<Posular> vec;
@@ -112,10 +116,36 @@ DoRequest doRequest(PositionData *group)
 			ConfSpaceView *scene = axes->scene();
 			std::string polymerTitle = static_cast<Polymer *>(instance)->return_model_id();
 
-			Atom2AtomExplorer *a2a = new Atom2AtomExplorer(scene, instance, movement, polymerTitle);
+			Atom2AtomExplorer *a2a = new Atom2AtomExplorer(scene, instance, movement, polymerTitle, bondFlag);
 			a2a->setFutureTitle(str);
 			a2a->show();
 		}
+		else if (request == "explore_bonds")
+		{
+			bool bondFlag = true;
+			std::vector<Atom3DPosition> list;
+			list = group->headers();
+			std::vector<Posular> vec;
+			vec = vectorFrom<Posular>(axis, axes->cluster(), group);
+
+			if (vec.size() == 0)
+			{
+				return;
+			}
+			RAMovement movement = RAMovement::movements_from(list, vec);
+
+			std::string str = axes->titleForAxis();
+			Instance *instance = static_cast<Instance *>(axes->focus());
+			ConfSpaceView *scene = axes->scene();
+			std::string polymerTitle = static_cast<Polymer *>(instance)->return_model_id();
+
+			Atom2AtomExplorer *a2a = new Atom2AtomExplorer(scene, instance, movement, polymerTitle, bondFlag);
+			a2a->setFutureTitle(str);
+			a2a->show();
+
+		}
+
+
 	};
 };
 
