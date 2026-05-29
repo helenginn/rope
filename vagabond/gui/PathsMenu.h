@@ -21,6 +21,7 @@
 
 #include <vagabond/gui/elements/ListView.h>
 #include <vagabond/gui/elements/list/LineGroup.h>
+#include <vagabond/gui/elements/TickBoxes.h>
 #include "PathGroup.h"
 #include "Path.h"
 #include <Responder.h>
@@ -62,6 +63,7 @@ private:
 	bool _parent = false;
 	SavedSpace *_space = nullptr;
 	std::set<int> _selected;
+    std::vector<TickBoxes*> _tbs;
 };
 
 #endif
