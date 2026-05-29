@@ -17,6 +17,7 @@
 // Please email: vagabond @ hginn.co.uk for more details.
 
 #include <iostream>
+#include <regex>
 #include "matrix_functions.h"
 #include "BondTorsion.h"
 #include "AtomGroup.h"
@@ -106,6 +107,78 @@ const std::string BondTorsion::desc()
 	         _c->atomName() + "-" + _d->atomName());
 	
 	return _desc;
+}
+
+const std::string BondTorsion::shortDesc() 
+{
+	if (_sDesc.length()) return _sDesc;
+
+	auto checkBothPairs = [this](std::function<bool(Atom *)> req1,
+			std::function<bool(Atom *)> req2)
+	{
+		return ((req1(_b) && req2(_c)) || (req1(_c) && req2(_b)));
+	};
+
+	auto matchesName = [](std::string name)
+	{
+		return [name](Atom *atom)
+		{
+			return (atom->atomName() == name);
+		};
+
+	};
+
+	auto matchesRegex = [](std::string reg)
+			//from Katie's code: assign a conventional name (chi1-chi5) to each of the side chains angles.
+			//Make it easy to rename the angles, and then modifying them
+	{
+		return [reg](Atom *atom)
+		{
+			return (std::regex_match(atom->atomName(), std::regex(reg)));
+		};
+	};
+
+	if (checkBothPairs(matchesName("CA"), matchesName("N")))
+	{
+		_sDesc = "phi";
+	}
+
+	if (checkBothPairs(matchesName("CA"), matchesName("C")))
+	{
+		_sDesc = "psi";
+	}
+
+	if (checkBothPairs(matchesName("C"), matchesName("N")))
+	{
+		_sDesc = "omega";
+	}
+
+	if (checkBothPairs(matchesName("CA"), matchesName("CB")))
+	{
+		_sDesc = "chi1";
+	}
+
+	if (checkBothPairs(matchesName("CB"), matchesRegex("CG.?")))
+	{
+		_sDesc = "chi2";
+	}
+
+	if (checkBothPairs(matchesName("CG"), matchesRegex(".D")))
+	{
+		_sDesc = "chi3";
+	}
+
+	if (checkBothPairs(matchesName("CD"), matchesRegex(".E")))
+	{
+		_sDesc = "chi4";
+	}
+
+	if (std::regex_match(_b->atomName(), std::regex(".Z")) || std::regex_match(_c->atomName(), std::regex(".Z")))
+	{
+		_sDesc = "chi5";
+	}
+
+	return _sDesc;
 }
 
 double BondTorsion::startingAngle()
