@@ -55,14 +55,14 @@ ArbitraryMap Mesh::mappedAtoms()
 	bounds.min -= glm::vec3(5);
 	bounds.max += glm::vec3(5);
 	glm::vec3 size = bounds.max - bounds.min;
-	size *= 2;
+	size *= 1.5;
 
 	ArbitraryMap map;
 	glm::mat3x3 mat = glm::mat3x3(1.f);
-	mat[0][0] = size.x;
-	mat[1][1] = size.y;
-	mat[2][2] = size.z;
 	map.setDimensions(size.x, size.y, size.z, true);
+	mat[0][0] = map.nx();
+	mat[1][1] = map.ny();
+	mat[2][2] = map.nz();
 	map.setOrigin(bounds.min);
 	map.setRealMatrix(mat);
 	map.clear();
@@ -70,9 +70,14 @@ ArbitraryMap Mesh::mappedAtoms()
 	auto add_one = [&map](glm::vec3 real)
 	{
 		map.real2Voxel(real);
-
-		long idx = map.index(real.x, real.y, real.z);
-		map.setReal(idx, 1);
+		
+		for (int k = 0; k < 1; k++)
+		for (int j = 0; j < 1; j++)
+		for (int i = 0; i < 1; i++)
+		{
+			long idx = map.index(real.x + i, real.y + j, real.z + k);
+			map.setReal(idx, 1);
+		}
 	};
 
 	atoms()->do_op
@@ -162,7 +167,7 @@ int Mesh::removeHollows(ArbitraryMap &map)
 		
 		std::vector<long int> list;
 
-		int N = 3;
+		int N = 4;
 		int zero_run = -1;
 		ArbitraryMap &_map;
 		int changed = 0;
@@ -443,7 +448,7 @@ void Mesh::refine()
 		while (true)
 		{
 			float result = adjustVertices(planar);
-			if (result < 1e-04)
+			if (result < 5e-04)
 			{
 				break;
 			}
