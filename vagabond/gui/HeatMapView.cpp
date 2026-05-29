@@ -400,3 +400,4 @@ void HeatMapView::mousePressEvent(double x, double y, SDL_MouseButtonEvent butto
 	setInformation(_entropyData->start[left] + " to " + _entropyData->end[right]);
 	Scene::mousePressEvent(x, y, button);
 }
+
