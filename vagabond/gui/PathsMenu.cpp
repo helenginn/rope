@@ -135,20 +135,28 @@ void PathsMenu::setup()
 		tb->addOption("all", 
 		[this, tb]()
 		{
-			if (tb->isTicked(""))
-			{
+            _selected.clear();
+
+            if(tb->isTicked("all"))      
+            {
 				for (int i = 0; i < _paths.size(); i++)
 				{
 					_selected.insert(i);
 				}
-			}
-			else
-			{
-				_selected.clear();
-                tb->toggle("");
-			}
-			
-			refresh();
+			 
+				for(int i = 0; i < _tbs.size(); i++)
+				{
+					_tbs[i]->tick("");
+				}
+            }				
+            else
+            {
+                for(int i = 0; i < _tbs.size(); i++)
+				{
+					_tbs[i]->toggle("");
+				}
+            }
+            refresh();
 		});
 		tb->arrange(0.19, 0.24, 0.29, 0.34);
 		addObject(tb);
@@ -226,23 +234,22 @@ Renderable *PathsMenu::getLine(int i)
 	// add the option box
 	{
 		TickBoxes *tb = new TickBoxes(this, this);
+        
+        _tbs.push_back(tb);
+
 		auto func = [this, tb, i]()
 		{
 			if (_selected.count(i) == 0)
 			{
-				std::cout << "Inserting " << i << std::endl;
 		    	_selected.insert(i);
 			}
 			else
 			{
-                std::cout << "Erasing " << i << std::endl;
 				_selected.erase(i);
-                tb->toggle("");
 			}
 		};
 
 		bool is_selected = _selected.count(i);
-		std::cout << "Tickbox " << i << " is: " << is_selected << std::endl;
 		tb->addOption("", func, is_selected);
 		tb->arrange(-0.01, 0.0, 0.05, 0.1);
 		b->addObject(tb);
@@ -526,6 +533,7 @@ void PathsMenu::prepareSpace()
 
 void PathsMenu::refresh()
 {
+	_tbs.clear();
 	std::cout << "Refreshing" << std::endl;
 	ListView::refresh();
 }
