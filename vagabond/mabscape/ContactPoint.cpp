@@ -125,17 +125,7 @@ void ContactPoint::findMapping()
 		write_instances(pair.second);
 	}
 	
-	auto similarity_score = [](const glm::mat4x4 &left,
-	                           const glm::mat4x4 &right)
-	{
-		glm::mat4x4 undo = glm::inverse(right) * left;
-		float trace = 3 - (undo[0][0] + undo[1][1] + undo[2][2]);
-		float trans = glm::length(glm::vec3(undo[3]));
-		float result = (1 + trace) * (1 + trans) - 1;
-		return result;
-	};
-	
-	auto check_permutation = [&fid_to_agn, &write_instances, &similarity_score]
+	auto check_permutation = [&fid_to_agn, &write_instances, this]
 	(const std::vector<Instance *> &ref, std::list<Instance *> &arranged)
 	{
 		std::vector<glm::mat4x4> mats;
@@ -171,8 +161,6 @@ void ContactPoint::findMapping()
 		std::cout << "score: " << ave << std::endl;
 		return ave;
 	};
-	
-	std::vector<glm::mat4x4> accepted;
 	
 	for (const auto &pair : lefts)
 	{
@@ -244,18 +232,10 @@ void ContactPoint::findMapping()
 			Instance::superposeInstances(ltrunc, arrangement, false);
 			std::cout << new_mat << std::endl;
 
-			bool found = false;
-			for (const glm::mat4x4 &old : accepted)
-			{
-				if (similarity_score(old, new_mat) < _threshold)
-				{
-					found = true; break;
-				}
-			}
+			bool added = add_if_new(new_mat);
 
-			if (!found)
+			if (added)
 			{
-				_transforms.push_back(new_mat);
 				_entries.push_back({new_mat, ltrunc, arrangement});
 			}
 		}
@@ -311,12 +291,32 @@ void ContactPoint::establishMidpoint()
 void ContactPoint::applyTransform(const glm::mat4x4 &which)
 {
 	AtomGroup *myAtoms = _fiducial.model.currentAtoms();
-	glm::mat4x4 undo = which * glm::inverse(_applied);
-	for (Atom *mine : myAtoms->atomVector())
+	
+	struct loop_over_atoms
 	{
-		glm::vec3 d = mine->derivedPosition();
-		glm::vec3 update = glm::vec3(undo * glm::vec4(d, 1.f));
-		mine->setDerivedPosition(update);
-	}
-	_applied = undo;
+		loop_over_atoms(AtomGroup *atoms) : _atoms(atoms) {};
+
+		glm::vec3 *operator()()
+		{
+			if (n >  0)
+			{
+				glm::vec3 d = _atoms->atomVector()[n - 1]->derivedPosition();
+				_atoms->atomVector()[n - 1]->setDerivedPosition(d);
+			}
+
+			if (n >= _atoms->atomVector().size())
+			{
+				return nullptr;
+			}
+
+			glm::vec3 &v = _atoms->atomVector()[n]->derivedPosition();
+			n++;
+			return &v;
+		};
+
+		int n = 0;
+		AtomGroup *_atoms{};
+	};
+
+	Symmetry::applyTransform(which, loop_over_atoms(myAtoms));
 }
