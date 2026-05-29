@@ -255,11 +255,18 @@ Renderable *HasRenderables::tab(bool shift)
 		}
 	}
 
+	int max = _objects.size();
+	int trials = 0;
 	int i = idx;
 	shift ? i-- : i++;
 	for (; i != idx; shift ? i-- : i++)
 	{
-		std::cout << "Next: " << i << " - ";
+		trials++;
+		if (trials > _objects.size())
+		{
+			return nullptr;
+		}
+
 		if (i >= (int)_objects.size())
 		{
 			i = 0;
