@@ -20,6 +20,7 @@
 #define __vagabond__Mab__
 
 #include <list>
+#include "Symmetry.h"
 #include <vagabond/core/Model.h>
 #include <vagabond/utils/OpSet.h>
 #include <vagabond/utils/Eigen/Dense>
@@ -28,6 +29,7 @@ class Mesh;
 class Chain;
 class Metadata;
 class AtomGroup;
+class ContactPoint;
 
 namespace MabUtils
 {
@@ -70,6 +72,7 @@ struct Antigen
 	std::string validate() const;
 	
 	Mesh *mesh();
+	Symmetry sym{};
 
 	void wipe() { /* fill me in */ }
 
@@ -101,6 +104,11 @@ public:
 	
 	const Antigen *antigen(const std::string &id) const;
 	Antigen *antigen(const std::string &id);
+
+	Antigen *operator()(const std::string &id)
+	{
+		return antigen(id);
+	}
 };
 
 struct Competition
@@ -183,6 +191,7 @@ struct Fiducial
 	OpSet<std::string> non_antigen_entities(const Antigens &antigens);
 
 	std::string antigen;
+	ContactPoint *contact{};
 
 	std::string validate(const Antigens &antigens);
 	void housekeeping();
