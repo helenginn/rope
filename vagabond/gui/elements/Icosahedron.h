@@ -28,7 +28,7 @@ public:
 
 	virtual void triangulate();
 protected:
-	virtual void calculateNormals();
+	virtual void calculateNormals(bool already_locked = false);
 private:
 	void makeIco();
 };

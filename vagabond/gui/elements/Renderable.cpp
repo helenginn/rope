@@ -1132,9 +1132,14 @@ void Renderable::setUsesProjection(bool usesProj)
 	}
 }
 
-void Renderable::calculateNormals()
+void Renderable::calculateNormals(bool already_locked)
 {
-	std::unique_lock<std::mutex> lock(_vertLock);
+	std::unique_lock<std::mutex> lock(_vertLock, std::defer_lock);
+	if (!already_locked)
+	{
+		lock.lock();
+	}
+
 	for (size_t i = 0; i < _vertices.size(); i++)
 	{
 		_vertices[i].normal = glm::vec3(0.);
@@ -1242,7 +1247,7 @@ void Renderable::triangulate()
 		addIndices(i23, i12, i2);
 	}
 	
-	calculateNormals();
+	calculateNormals(true);
 }
 
 void Renderable::setArbitrary(double x, double y, Alignment a)

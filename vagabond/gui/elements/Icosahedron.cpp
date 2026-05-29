@@ -22,6 +22,7 @@
 Icosahedron::Icosahedron() : SimplePolygon()
 {
 	makeIco();
+	setAlpha(1.f);
 	calculateNormals();
 
 	setUsesProjection(true);
@@ -89,7 +90,7 @@ void Icosahedron::triangulate()
 	rebufferVertexData();
 }
 
-void Icosahedron::calculateNormals()
+void Icosahedron::calculateNormals(bool already_locked)
 {
 	glm::vec3 centre = centroid();
 	
@@ -114,5 +115,5 @@ void Icosahedron::calculateNormals()
 		}
 	}
 
-	Renderable::calculateNormals();
+	Renderable::calculateNormals(already_locked);
 }

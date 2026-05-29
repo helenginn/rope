@@ -195,7 +195,7 @@ public:
 	void changeToTriangles();
 
 	virtual void triangulate();
-	virtual void calculateNormals();
+	virtual void calculateNormals(bool already_locked = false);
 	
 	void remove()
 	{
