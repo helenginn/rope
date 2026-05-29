@@ -20,7 +20,15 @@ public:
     virtual size_t lineCount();
     virtual Renderable *getLine(int i);
 
+    using ApplyCallback = std::function<void(const std::vector<int> &selectedIndices)>;
+
+    void setApplyCallback(ApplyCallback callback)
+    {
+        _applyCallback = callback;
+    }
+
 private:
+    ApplyCallback _applyCallback = nullptr;
     const std::vector<Flexibility::VdWBondEntity> &_VdWBonds;
     GuiBalls *_balls;
     TickBoxes *_allTickBoxes = nullptr;

@@ -118,13 +118,27 @@ void VdWSelectorView::buttonPressed(std::string tag, Button *button)
     
     if (tag == "apply")
     {
-        // Clear old highlights
-        _balls->clearAtomHighlights(GuiBalls::VdW);
-                
-        // Highlight ticked H-bonds
+        std::vector<int> selected;
         for (size_t i = 0; i < _VdWBonds.size(); i++)
         {
             if (_tickStates[i])
+            {
+                selected.push_back(i);
+            }            
+        }
+
+        if (_applyCallback)
+        {
+            _applyCallback(selected);
+        }
+        else if (_balls)
+        {
+
+            // Clear old highlights
+            _balls->clearAtomHighlights(GuiBalls::VdW);
+                    
+            // Highlight ticked H-bonds
+            for (int i : selected)
             {
                 const auto &vdw = _VdWBonds[i];
                 _balls->highlightAtom(vdw.Atom1, GuiBalls::VdW);

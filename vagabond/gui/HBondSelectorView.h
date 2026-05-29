@@ -4,6 +4,7 @@
 #include <vagabond/core/Flexibility.h>
 #include <vagabond/gui/elements/ListView.h>
 #include <map>
+#include <functional>
 
 class TickBoxes;
 class GuiBalls;
@@ -20,7 +21,14 @@ public:
     virtual size_t lineCount();
     virtual Renderable *getLine(int i);
 
+    using ApplyCallback = std::function<void(const std::vector<int> &selectedIndices)>;
+
+    void setApplyCallback(ApplyCallback callback)
+    {
+        _applyCallback = callback;
+    }
 private:
+    ApplyCallback _applyCallback = nullptr;
     const std::vector<Flexibility::HBondEntity> &_hbonds;
     GuiBalls *_balls;
     TickBoxes *_allTickBoxes = nullptr;

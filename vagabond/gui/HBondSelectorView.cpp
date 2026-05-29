@@ -118,15 +118,25 @@ void HBondSelectorView::buttonPressed(std::string tag, Button *button)
     
     if (tag == "apply")
     {
-        // Clear old highlights
-        // _balls->clearHighlights();
-        _balls->clearAtomHighlights(GuiBalls::HBond);
-        
-        // Highlight ticked H-bonds
-        glm::vec4 hbondColor = glm::vec4(2.5f, 2.5f, 2.5f, 1.0f);
+        std::vector<int> selected;
         for (size_t i = 0; i < _hbonds.size(); i++)
         {
             if (_tickStates[i])
+            {
+                selected.push_back(i);
+            }
+        }
+        back();
+
+        if (_applyCallback)
+        {
+            _applyCallback(selected);
+        }
+        else if (_balls)
+        {
+            // fallback: original behaviour for FlexibilityView
+            _balls->clearAtomHighlights(GuiBalls::HBond);
+            for (int i : selected)
             {
                 const auto &hbe = _hbonds[i];
                 _balls->highlightAtom(hbe.Hydrogen, GuiBalls::HBond);
@@ -134,7 +144,6 @@ void HBondSelectorView::buttonPressed(std::string tag, Button *button)
             }
         }
         
-        back();
         return;
     }
     
