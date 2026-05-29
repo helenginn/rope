@@ -27,6 +27,8 @@ void Entropy::populateHeatMap(struct EntropyForHeatMap *entropyData)
         entropyData->dataMatrix.push_back(Eigen::MatrixXf::Zero(_starts.size(), _ends.size()));
     }
 
+    Progressor *prog = new Progressor();
+
     for (const PathGroup &group : _paths)
     {
         std::cout << "Group: " << group[0]->startInstance()->model_id() << " to " << group[0]->endInstance()->model_id() << std::endl;
@@ -46,10 +48,10 @@ void Entropy::populateHeatMap(struct EntropyForHeatMap *entropyData)
             //entropyData.dataMatrix[t](idxs.second, idxs.first) = entropy[t];
         }
      
-        clickTicker();
+        prog->clickTicker();
     }
 
-    finishTicker();
+    prog->finishTicker();
 }
 
 std::vector<double> Entropy::pathEntropyInstancePair(int numPaths, std::vector<Path *> paths, int numDivisions, bool mist)
