@@ -21,11 +21,13 @@
 #include <vagabond/core/Instance.h>
 #include <vagabond/core/FlexSample.h>
 #include <vagabond/core/FlexAnalysis.h>
+#include <vagabond/core/FlexibilityCache.h>
 #include <vagabond/gui/elements/Menu.h>
 #include <vagabond/gui/elements/Button.h>
 #include <vagabond/gui/elements/AskForText.h>
 #include <vagabond/gui/elements/TextButton.h>
 #include <vagabond/gui/elements/BadChoice.h>
+
 
 
 FlexibilityController::FlexibilityController(FlexibilityView *view, Instance *instance, Flexibility *flex)
@@ -271,6 +273,9 @@ void FlexibilityController::callAddHBonds(const std::vector<HBondManager::HBondP
     	_flex->addHBond(pair);
     }
     _flex->addVnWBond();
+    FlexibilityCache::instance().store(_instance, _flex);
+
+
 }
 
 void FlexibilityController::finishedDragging(std::string tag, double x, double y)
