@@ -82,7 +82,7 @@ CyclicView::CyclicView(Cyclic *cyclic)
 		f.open(proline);
 		f >> data;
 		f.close();
-		
+
 		Cyclic *c = new Cyclic(data["cyclic"]);
 		_cyclic = c;
 	}

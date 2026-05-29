@@ -34,7 +34,7 @@ class AtomContent;
 class TabulatedData;
 class ConcertedBasis;
 
-class AxisExplorer : public Display, public DragResponder, 
+class AxisExplorer : public Display, public DragResponder,
 public StructureModification
 {
 public:
