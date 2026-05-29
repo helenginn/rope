@@ -14,7 +14,7 @@ Button::Button(ButtonResponder *sender) : Box()
 
 void Button::click(bool left)
 {
-	if (_sender == NULL || _inert)
+	if ((!_returnJob && _sender == nullptr) || _inert)
 	{
 		return;
 	}
