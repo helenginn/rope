@@ -49,6 +49,8 @@ public:
 	{
 		return _legend;
 	}
+	float xProp() const{ return _xProp; }
+	float yProp() const{ return _yProp; }
 protected:
 	std::map<int, int> _index2Vertex;
 private:
