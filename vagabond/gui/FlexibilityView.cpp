@@ -18,9 +18,6 @@
 #include <vagabond/utils/Eigen/Dense>
 
 
-
-
-
 using Eigen::Matrix3f;
 
 
@@ -146,6 +143,7 @@ void FlexibilityView::setupBondTickBoxes()
 	tickboxes->setVertical(true);
 	tickboxes->setOneOnly(false);
 	tickboxes->arrange(0.8, 0.2, 1.02, 0.52);
+	tickboxes->hideTickboxes();
 	addObject(tickboxes);
 	_bondTickBoxes = tickboxes; 
 }
@@ -232,7 +230,7 @@ void FlexibilityView::openAtom2AtomExplorer()
 	}
 
 	RAMovement movement = RAMovement::movements_from(list, disVec);
-	Atom2AtomExplorer *a2a = new Atom2AtomExplorer(this, _instance, movement, polymer_name);
+	Atom2AtomExplorer *a2a = new Atom2AtomExplorer(this, _instance, movement, polymer_name, false);
 	a2a->show();
 }
 
