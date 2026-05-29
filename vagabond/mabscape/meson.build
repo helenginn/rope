@@ -21,6 +21,8 @@ mabscapefiles = [
 'Mesh.cpp',
 'PrepWorkView.h',
 'PrepWorkView.cpp',
+'Symmetry.h',
+'Symmetry.cpp',
 'main.cpp',
 ]
 
