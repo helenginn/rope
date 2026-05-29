@@ -226,6 +226,8 @@ private:
 	std::mutex *_loadMutex = nullptr;
 	File *_currentFile = nullptr;
 	AtomContent *_currentAtoms = nullptr;
+	bool _everything =false;
+	LoadOptions _loadOptions {};
 };
 
 // defined in Model.cpp, not here - both touch value._cliques, which needs

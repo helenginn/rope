@@ -255,7 +255,7 @@ bool Model::unload()
 	{
 		inst->wipeAtoms();
 	}
-
+	_everything = false;
 	return true;
 }
 
@@ -630,7 +630,7 @@ void Model::load(LoadOptions opts)
 
 	_loadCounter++;
 
-	if (_loadCounter > 1)
+	if ((_loadCounter > 1 && opts !=Everything )|| (_loadCounter > 1 && opts ==Everything && _everything))
 	{
 		return;
 	}
@@ -653,6 +653,7 @@ void Model::load(LoadOptions opts)
 	if (opts == Everything)
 	{
 		insertTorsions();
+		_everything = true;
 	}
 	
 	std::vector<Instance *> insts = instances();
