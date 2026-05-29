@@ -241,6 +241,7 @@ Renderable *PathsMenu::getLine(int i)
 		TickBoxes *tb = new TickBoxes(this, this);
         
         _tbs.push_back(tb);
+
 		auto func = [this, tb, i]()
 		{
 			if (_selected.count(i) == 0)
@@ -249,14 +250,11 @@ Renderable *PathsMenu::getLine(int i)
 			}
 			else
 			{
-                std::cout << "Erasing " << i << std::endl;
 				_selected.erase(i);
-                tb->toggle("");
 			}
 		};
 
 		bool is_selected = _selected.count(i);
-
 		tb->addOption("", func, is_selected);
 		tb->arrange(-0.01, 0.0, 0.05, 0.1);
 		b->addObject(tb);
@@ -610,6 +608,7 @@ void PathsMenu::prepareSpace()
 
 void PathsMenu::refresh()
 {
+	_tbs.clear();
 	std::cout << "Refreshing" << std::endl;
 	ListView::refresh();
 }

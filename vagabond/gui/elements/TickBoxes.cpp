@@ -164,7 +164,7 @@ void TickBoxes::tick(const std::string &tag, bool yes)
 	opt->ticked = yes;
 }
 
-void TickBoxes::toggle(const std::string &tag)
+void TickBoxes::toggle(const std::string &tag, bool fire_callback)
 {
 	Option *opt = optionForTag(tag);
 	if (!opt)
