@@ -19,6 +19,7 @@
 #include "ChainAssignment.h"
 #include "Display.h"
 #include "DisplayUnit.h"
+#include "Rotamers.h"
 
 #include <vagabond/gui/elements/TextButton.h>
 #include <vagabond/gui/SequenceView.h>
@@ -28,6 +29,7 @@
 
 #include <vagabond/core/files/File.h>
 #include <vagabond/core/Chain.h>
+#include <vagabond/core/Polymer.h>
 #include <vagabond/core/AtomContent.h>
 #include <vagabond/core/Sequence.h>
 #include <vagabond/core/Model.h>
@@ -166,25 +168,11 @@ void ChainAssignment::buttonPressed(std::string tag, Button *button)
 
 		auto rotamerView = [this, tag]() // submenu to send to a view of the selected chain
 		{
-			Chain *chain = _contents->chain(tag.substr(6, std::string::npos));
-			RotamerView *rv = new RotamerView(this, _model.name(), chain);
+			Polymer *polymer = _model.polymerForChain(tag.substr(6, std::string::npos));
+			RotamerView *rv = new RotamerView(this, _model.name(), polymer);
 			rv->show();
 			rv->viewModel();
 			std::cout << "Rotamer View\n";
-			/* //std::string id = tag.substr(6, std::string::npos);
-			//std::cout << "id: " << id << "\n";
-			//Chain *chaiz = _contents->chain(id);
-			//std::cout << "zboui "<< chaiz->id() << chaiz->fullSequence() <<'\n';
-			//Polymer *pol = _model.polymerFromChain(chaiz);				//It compiles BUT shows ALL the chain Maybe an issue of line 173
-			std::cout << "Pol\n";										//Will try to find a solution tommorrow
-			Display *d = new Display(this);
-			DisplayUnit *unit = new DisplayUnit(d);
-			std::cout << "display\n";
-			unit->setOwnsAtoms();
-			unit->loadAtoms(_contents->chain(id));
-			unit->displayAtoms(false, false);
-			d->show();
-			std::cout << "loaded\n" << id; //<< pol->entity_id(); */
 
 
 		};
@@ -205,22 +193,10 @@ void ChainAssignment::buttonPressed(std::string tag, Button *button)
 		std::cout << "Rotamer Menu\n";
 		std::cout << "model name : " << _model.name(); //<< "\nand id : "<< id << "\nand entity : " << entity << '\n';
 
-		//std::cout << "id: " << tag << "\n";
 		std::string id = tag.substr(prefix.length(), std::string::npos);
 		std::cout << "id: " << id << "\n";
 		Chain *chain = _contents->chain(id);
-
-		//RotamerMenu *m = new RotamerMenu(this, chain);
 	}
-	/*prefix = "rotamer_view";
-	if (tag.rfind(prefix, 0) != std::string::npos)
-	{
-		std::cout << "Rotamer View\n";
-		std::string id = tag.substr(prefix.length()+6, std::string::npos);
-		std::cout << "id: " << id << "\n";
-		Chain *chain = _contents->chain(id);
-		viewModel(_model.name(), chain); // provide rotamer view with only the information needed qnd put everything in RotamerView
-	}*/
 }
 
 void ChainAssignment::refreshInfo()
@@ -232,22 +208,3 @@ void ChainAssignment::refreshInfo()
 	}
 	refresh();
 }
-
-/*void ChainAssignment::viewModel(std::string name, Chain *chain)
-{
-	/*try
-	{
-		ModelManager *mm = ModelManager::manager();
-		Model *mod = mm->model(name);
-
-		Display *d = new Display(this);
-		DisplayUnit *unit = new DisplayUnit(d);
-		unit->setOwnsAtoms();
-		unit->loadModelChain(mod, chain);
-		d->show();
-	}
-	catch (const std::runtime_error &err)
-	{
-		std::cout << err.what() << " - skipping." << std::endl;
-	}
-}*/
