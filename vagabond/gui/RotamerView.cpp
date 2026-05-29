@@ -3,78 +3,87 @@
 //
 
 #include "RotamerView.h"
+#include "vagabond/gui/elements/Slider.h"
 #include <vagabond/core/Model.h>
-#include "vagabond/core/Chain.h"
+#include <vagabond/core/Rotamers.h>
+#include <vagabond/core/RotamerModifier.h>
 #include <vagabond/core/ModelManager.h>
-#include <vagabond/core/EntityManager.h>
+#include <vagabond/gui/elements/TextButton.h>
 
 
 
 
-RotamerView::RotamerView(Scene *prev, std::string modelName, Chain *chain) : Scene(prev),  _modelName(modelName), _chain(chain)
+RotamerView::RotamerView(Scene *prev, std::string modelName, Instance *inst)
+:  Scene(prev), Display(prev), _inst(inst), _modelName(modelName)
 {
-    std::cout << "qwak\n";
-
+    _inst->load();
+    _modifier = new RotamerModifier(_inst);
 }
 
 RotamerView::~RotamerView()
 {
-    //previous();
-    _model->unload();
+    _inst->unload();
     std::cout << "model unloaded\n";
-
+    delete _modifier;
 }
 void RotamerView::setup()
 {
     addTitle ("Rotamer View");
-    //showChain();
-   // std::cout << "RotamerView::setup() end\n";
-    viewModel(/*std::string modelName, Chain *chain*/);
-
 }
 
-/*void RotamerView::buttonPressed(std::string tag, Button *button)
+void RotamerView::buttonPressed(std::string tag, Button *button)
 {
-    Scene::buttonPressed(tag, button);
-    std::cout << "boom\n";
+    if (tag == "zero")
+    {
+        _modifier->resetRotamers();
+    }
+}
 
-}*/
-
-/*void RotamerView::showChain(Model *model, Chain *chain)
+void RotamerView::loadModelChain(Model *model, Instance *inst, DisplayUnit *unit)
 {
-    /*std::cout << "Pol\n";
-    Display *d = new Display(this);
-    DisplayUnit *unit = new DisplayUnit(d);
-    std::cout << "display " << _iddd << '\n';
-    unit->setOwnsAtoms();
-    unit->loadAtoms(_group->chain(_iddd));
-    unit->displayAtoms(false, false);
-    d->show();
-    std::cout << "qwak\n";
-}*/
-void RotamerView::loadModelChain(Model *model, Chain *chain, DisplayUnit *unit)
-{
-    //loadModelChain function
-    model->polymerFromChain(chain)->load();
-    unit->loadAtoms(model->polymerFromChain(chain)->currentAtoms());
+    unit->loadAtoms(inst->currentAtoms());
     unit->displayAtoms(false, false);
     unit->startWatch();
-    //std::cout << "BOOM\n";
 }
 
-void RotamerView::viewModel(/*std::string modelName, Chain *chain*/)
+void RotamerView::viewModel()
 {
-
-    //chainAssignement ViewModel
     ModelManager *mm = ModelManager::manager();
     _model = mm->model(_modelName);
 
-    Display *d = new Display(this);
-    DisplayUnit *unit = new DisplayUnit(d);
+    DisplayUnit *unit = new DisplayUnit(this);
     unit->setOwnsAtoms();
-    loadModelChain(_model, _chain,unit);
-    d->addDisplayUnit(unit);
-    d->show();
+    loadModelChain(_model, _inst,unit);
+    setupSlider();
+    addDisplayUnit(unit);
+}
 
-    //std::cout << "boop\n";
+void RotamerView::rotaList()
+{
+    RotamerLibrary();
+}
+
+void RotamerView::finishedDragging(std::string tag, double x, double y)
+{
+    _modifier->submitJobAndRetrieve(x);
+}
+
+void RotamerView::setupSlider()
+{
+    removeObject(_rangeSlider);
+    delete _rangeSlider;
+    Slider *s = new Slider();
+    s->setDragResponder(this);
+    s->resize(0.5);
+    s->setup("Rotamer selection", _min, _max, _step);
+    s->setStart(0.5, 0.);
+    s->setCentre(0.5, 0.85);
+    _rangeSlider = s;
+    addObject(s);
+    {
+        TextButton *t = new TextButton("Initial rotamers", this);
+        t->setRight(0.8, 0.8);
+        t->setReturnTag("zero");
+        addObject(t);
+    }
 }

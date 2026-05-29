@@ -1,0 +1,1536 @@
+{
+    "ARG": [
+        {
+            "id": 1, 
+            "name": "ptp85", 
+            "chi_1": 62, 
+            "chi-width_1": null, 
+            "chi_2": 180, 
+            "chi-width_2": null, 
+            "chi_3": 65, 
+            "chi-width_3": null, 
+            "chi_4": 85, 
+            "chi-width_4": null
+        }, 
+        {
+            "id": 2, 
+            "name": "ptp180", 
+            "chi_1": 62, 
+            "chi-width_1": 14, 
+            "chi_2": 180, 
+            "chi-width_2": 17, 
+            "chi_3": 65, 
+            "chi-width_3": 10, 
+            "chi_4": -175, 
+            "chi-width_4": 13
+        }, 
+        {
+            "id": 3, 
+            "name": "ptt85", 
+            "chi_1": 62, 
+            "chi-width_1": 13, 
+            "chi_2": 180, 
+            "chi-width_2": 14, 
+            "chi_3": 180, 
+            "chi-width_3": 13, 
+            "chi_4": 85, 
+            "chi-width_4": 17
+        }, 
+        {
+            "id": 4, 
+            "name": "ptt180", 
+            "chi_1": 62, 
+            "chi-width_1": 15, 
+            "chi_2": 180, 
+            "chi-width_2": 13, 
+            "chi_3": 180, 
+            "chi-width_3": 15, 
+            "chi_4": 180, 
+            "chi-width_4": 19
+        }, 
+        {
+            "id": 5, 
+            "name": "ptt-85", 
+            "chi_1": 62, 
+            "chi-width_1": 15, 
+            "chi_2": 180, 
+            "chi-width_2": 14, 
+            "chi_3": 180, 
+            "chi-width_3": 12, 
+            "chi_4": -85, 
+            "chi-width_4": 14
+        }, 
+        {
+            "id": 6, 
+            "name": "ptm180", 
+            "chi_1": 62, 
+            "chi-width_1": null, 
+            "chi_2": 180, 
+            "chi-width_2": null, 
+            "chi_3": -65, 
+            "chi-width_3": null, 
+            "chi_4": 175, 
+            "chi-width_4": null
+        }, 
+        {
+            "id": 7, 
+            "name": "ptm-85", 
+            "chi_1": 62, 
+            "chi-width_1": null, 
+            "chi_2": 180, 
+            "chi-width_2": null, 
+            "chi_3": -65, 
+            "chi-width_3": null, 
+            "chi_4": -85, 
+            "chi-width_4": null
+        }, 
+        {
+            "id": 8, 
+            "name": "tpp85", 
+            "chi_1": -177, 
+            "chi-width_1": 13, 
+            "chi_2": 65, 
+            "chi-width_2": 13, 
+            "chi_3": 65, 
+            "chi-width_3": 12, 
+            "chi_4": 85, 
+            "chi-width_4": 15
+        }, 
+        {
+            "id": 9, 
+            "name": "tpp180", 
+            "chi_1": -177, 
+            "chi-width_1": null, 
+            "chi_2": 65, 
+            "chi-width_2": null, 
+            "chi_3": 65, 
+            "chi-width_3": null, 
+            "chi_4": -175, 
+            "chi-width_4": null
+        }, 
+        {
+            "id": 10, 
+            "name": "tpt85", 
+            "chi_1": -177, 
+            "chi-width_1": 14, 
+            "chi_2": 65, 
+            "chi-width_2": 13, 
+            "chi_3": 180, 
+            "chi-width_3": 15, 
+            "chi_4": 85, 
+            "chi-width_4": 14
+        }, 
+        {
+            "id": 11, 
+            "name": "tpt180", 
+            "chi_1": -177, 
+            "chi-width_1": 13, 
+            "chi_2": 65, 
+            "chi-width_2": 17, 
+            "chi_3": 180, 
+            "chi-width_3": 14, 
+            "chi_4": 180, 
+            "chi-width_4": 17
+        }, 
+        {
+            "id": 12, 
+            "name": "ttp85", 
+            "chi_1": -177, 
+            "chi-width_1": 14, 
+            "chi_2": 180, 
+            "chi-width_2": 17, 
+            "chi_3": 65, 
+            "chi-width_3": 13, 
+            "chi_4": 85, 
+            "chi-width_4": 15
+        }, 
+        {
+            "id": 13, 
+            "name": "ttp180", 
+            "chi_1": -177, 
+            "chi-width_1": 14, 
+            "chi_2": 180, 
+            "chi-width_2": 16, 
+            "chi_3": 65, 
+            "chi-width_3": 14, 
+            "chi_4": -175, 
+            "chi-width_4": 26
+        }, 
+        {
+            "id": 14, 
+            "name": "ttp-105", 
+            "chi_1": -177, 
+            "chi-width_1": null, 
+            "chi_2": 180, 
+            "chi-width_2": null, 
+            "chi_3": 65, 
+            "chi-width_3": null, 
+            "chi_4": -105, 
+            "chi-width_4": null
+        }, 
+        {
+            "id": 15, 
+            "name": "ttt85", 
+            "chi_1": -177, 
+            "chi-width_1": 14, 
+            "chi_2": 180, 
+            "chi-width_2": 14, 
+            "chi_3": 180, 
+            "chi-width_3": 13, 
+            "chi_4": 85, 
+            "chi-width_4": 14
+        }, 
+        {
+            "id": 16, 
+            "name": "ttt180", 
+            "chi_1": -177, 
+            "chi-width_1": 15, 
+            "chi_2": 180, 
+            "chi-width_2": 13, 
+            "chi_3": 180, 
+            "chi-width_3": 12, 
+            "chi_4": 180, 
+            "chi-width_4": 27
+        }, 
+        {
+            "id": 17, 
+            "name": "ttt-85", 
+            "chi_1": -177, 
+            "chi-width_1": 15, 
+            "chi_2": 180, 
+            "chi-width_2": 14, 
+            "chi_3": 180, 
+            "chi-width_3": 14, 
+            "chi_4": -85, 
+            "chi-width_4": 15
+        }, 
+        {
+            "id": 18, 
+            "name": "ttm105", 
+            "chi_1": -177, 
+            "chi-width_1": 15, 
+            "chi_2": 180, 
+            "chi-width_2": 16, 
+            "chi_3": -65, 
+            "chi-width_3": 15, 
+            "chi_4": 105, 
+            "chi-width_4": 15
+        }, 
+        {
+            "id": 19, 
+            "name": "ttm180", 
+            "chi_1": -177, 
+            "chi-width_1": 15, 
+            "chi_2": 180, 
+            "chi-width_2": 12, 
+            "chi_3": -65, 
+            "chi-width_3": 11, 
+            "chi_4": 175, 
+            "chi-width_4": 15
+        }, 
+        {
+            "id": 20, 
+            "name": "ttm-85", 
+            "chi_1": -177, 
+            "chi-width_1": 14, 
+            "chi_2": 180, 
+            "chi-width_2": 16, 
+            "chi_3": -65, 
+            "chi-width_3": 15, 
+            "chi_4": -85, 
+            "chi-width_4": 14
+        }, 
+        {
+            "id": 21, 
+            "name": "mtp85", 
+            "chi_1": -67, 
+            "chi-width_1": 13, 
+            "chi_2": 180, 
+            "chi-width_2": 17, 
+            "chi_3": 65, 
+            "chi-width_3": 13, 
+            "chi_4": 85, 
+            "chi-width_4": 13
+        }, 
+        {
+            "id": 22, 
+            "name": "mtp180", 
+            "chi_1": -67, 
+            "chi-width_1": 12, 
+            "chi_2": 180, 
+            "chi-width_2": 19, 
+            "chi_3": 65, 
+            "chi-width_3": 13, 
+            "chi_4": -175, 
+            "chi-width_4": 19
+        }, 
+        {
+            "id": 23, 
+            "name": "mtp-105", 
+            "chi_1": -67, 
+            "chi-width_1": 11, 
+            "chi_2": 180, 
+            "chi-width_2": 15, 
+            "chi_3": 65, 
+            "chi-width_3": 13, 
+            "chi_4": -105, 
+            "chi-width_4": 15
+        }, 
+        {
+            "id": 24, 
+            "name": "mtt85", 
+            "chi_1": -67, 
+            "chi-width_1": 12, 
+            "chi_2": 180, 
+            "chi-width_2": 19, 
+            "chi_3": 180, 
+            "chi-width_3": 13, 
+            "chi_4": 85, 
+            "chi-width_4": 19
+        }, 
+        {
+            "id": 25, 
+            "name": "mtt180", 
+            "chi_1": -67, 
+            "chi-width_1": 14, 
+            "chi_2": 180, 
+            "chi-width_2": 13, 
+            "chi_3": 180, 
+            "chi-width_3": 13, 
+            "chi_4": 180, 
+            "chi-width_4": 21
+        }, 
+        {
+            "id": 26, 
+            "name": "mtt-85", 
+            "chi_1": -67, 
+            "chi-width_1": 13, 
+            "chi_2": 180, 
+            "chi-width_2": 13, 
+            "chi_3": 180, 
+            "chi-width_3": 13, 
+            "chi_4": -85, 
+            "chi-width_4": 13
+        }, 
+        {
+            "id": 27, 
+            "name": "mtm105", 
+            "chi_1": -67, 
+            "chi-width_1": 12, 
+            "chi_2": 180, 
+            "chi-width_2": 13, 
+            "chi_3": -65, 
+            "chi-width_3": 13, 
+            "chi_4": 105, 
+            "chi-width_4": 15
+        }, 
+        {
+            "id": 28, 
+            "name": "mtm180", 
+            "chi_1": -67, 
+            "chi-width_1": 14, 
+            "chi_2": 180, 
+            "chi-width_2": 17, 
+            "chi_3": -65, 
+            "chi-width_3": 13, 
+            "chi_4": 175, 
+            "chi-width_4": 30
+        }, 
+        {
+            "id": 29, 
+            "name": "mtm-85", 
+            "chi_1": -67, 
+            "chi-width_1": 14, 
+            "chi_2": -167, 
+            "chi-width_2": 13, 
+            "chi_3": -65, 
+            "chi-width_3": 13, 
+            "chi_4": -85, 
+            "chi-width_4": 13
+        }, 
+        {
+            "id": 30, 
+            "name": "mmt85", 
+            "chi_1": -62, 
+            "chi-width_1": null, 
+            "chi_2": -68, 
+            "chi-width_2": null, 
+            "chi_3": 180, 
+            "chi-width_3": null, 
+            "chi_4": 85, 
+            "chi-width_4": null
+        }, 
+        {
+            "id": 31, 
+            "name": "mmt180", 
+            "chi_1": -62, 
+            "chi-width_1": 13, 
+            "chi_2": -68, 
+            "chi-width_2": 13, 
+            "chi_3": 180, 
+            "chi-width_3": 10, 
+            "chi_4": 180, 
+            "chi-width_4": 29
+        }, 
+        {
+            "id": 32, 
+            "name": "mmt-85", 
+            "chi_1": -62, 
+            "chi-width_1": 14, 
+            "chi_2": -68, 
+            "chi-width_2": 13, 
+            "chi_3": 180, 
+            "chi-width_3": 15, 
+            "chi_4": -85, 
+            "chi-width_4": 13
+        }, 
+        {
+            "id": 33, 
+            "name": "mmm180", 
+            "chi_1": -62, 
+            "chi-width_1": 14, 
+            "chi_2": -68, 
+            "chi-width_2": 15, 
+            "chi_3": -65, 
+            "chi-width_3": 10, 
+            "chi_4": 175, 
+            "chi-width_4": 13
+        }, 
+        {
+            "id": 34, 
+            "name": "mmm-85", 
+            "chi_1": -62, 
+            "chi-width_1": 14, 
+            "chi_2": -68, 
+            "chi-width_2": 13, 
+            "chi_3": -65, 
+            "chi-width_3": 15, 
+            "chi_4": -85, 
+            "chi-width_4": 13
+        }
+    ], 
+    "LYS": [
+        {
+            "id": 1, 
+            "name": "ptpt", 
+            "chi_1": 62, 
+            "chi-width_1": null, 
+            "chi_2": 180, 
+            "chi-width_2": null, 
+            "chi_3": 68, 
+            "chi-width_3": null, 
+            "chi_4": 180, 
+            "chi-width_4": null
+        }, 
+        {
+            "id": 2, 
+            "name": "pttp", 
+            "chi_1": 62, 
+            "chi-width_1": 13, 
+            "chi_2": 180, 
+            "chi-width_2": 14, 
+            "chi_3": 180, 
+            "chi-width_3": 14, 
+            "chi_4": 65, 
+            "chi-width_4": 11
+        }, 
+        {
+            "id": 3, 
+            "name": "pttt", 
+            "chi_1": 62, 
+            "chi-width_1": 13, 
+            "chi_2": 180, 
+            "chi-width_2": 13, 
+            "chi_3": 180, 
+            "chi-width_3": 13, 
+            "chi_4": 180, 
+            "chi-width_4": 10
+        }, 
+        {
+            "id": 4, 
+            "name": "pttm", 
+            "chi_1": 62, 
+            "chi-width_1": null, 
+            "chi_2": 180, 
+            "chi-width_2": null, 
+            "chi_3": 180, 
+            "chi-width_3": null, 
+            "chi_4": -65, 
+            "chi-width_4": null
+        }, 
+        {
+            "id": 5, 
+            "name": "ptmt", 
+            "chi_1": 62, 
+            "chi-width_1": null, 
+            "chi_2": 180, 
+            "chi-width_2": null, 
+            "chi_3": -68, 
+            "chi-width_3": null, 
+            "chi_4": 180, 
+            "chi-width_4": null
+        }, 
+        {
+            "id": 6, 
+            "name": "tptp", 
+            "chi_1": -177, 
+            "chi-width_1": 13, 
+            "chi_2": 68, 
+            "chi-width_2": 12, 
+            "chi_3": 180, 
+            "chi-width_3": 10, 
+            "chi_4": 65, 
+            "chi-width_4": 11
+        }, 
+        {
+            "id": 7, 
+            "name": "tptt", 
+            "chi_1": -177, 
+            "chi-width_1": 10, 
+            "chi_2": 68, 
+            "chi-width_2": 10, 
+            "chi_3": 180, 
+            "chi-width_3": 13, 
+            "chi_4": 180, 
+            "chi-width_4": 14
+        }, 
+        {
+            "id": 8, 
+            "name": "tptm", 
+            "chi_1": -177, 
+            "chi-width_1": 14, 
+            "chi_2": 68, 
+            "chi-width_2": 9, 
+            "chi_3": 180, 
+            "chi-width_3": 12, 
+            "chi_4": -65, 
+            "chi-width_4": 10
+        }, 
+        {
+            "id": 9, 
+            "name": "ttpp", 
+            "chi_1": -177, 
+            "chi-width_1": null, 
+            "chi_2": 180, 
+            "chi-width_2": null, 
+            "chi_3": 68, 
+            "chi-width_3": null, 
+            "chi_4": 65, 
+            "chi-width_4": null
+        }, 
+        {
+            "id": 10, 
+            "name": "ttpt", 
+            "chi_1": -177, 
+            "chi-width_1": 14, 
+            "chi_2": 180, 
+            "chi-width_2": 12, 
+            "chi_3": 68, 
+            "chi-width_3": 14, 
+            "chi_4": 180, 
+            "chi-width_4": 14
+        }, 
+        {
+            "id": 11, 
+            "name": "tttp", 
+            "chi_1": -177, 
+            "chi-width_1": 14, 
+            "chi_2": 180, 
+            "chi-width_2": 13, 
+            "chi_3": 180, 
+            "chi-width_3": 12, 
+            "chi_4": 65, 
+            "chi-width_4": 12
+        }, 
+        {
+            "id": 12, 
+            "name": "tttt", 
+            "chi_1": -177, 
+            "chi-width_1": 13, 
+            "chi_2": 180, 
+            "chi-width_2": 13, 
+            "chi_3": 180, 
+            "chi-width_3": 15, 
+            "chi_4": 180, 
+            "chi-width_4": 13
+        }, 
+        {
+            "id": 13, 
+            "name": "tttm", 
+            "chi_1": -177, 
+            "chi-width_1": 12, 
+            "chi_2": 180, 
+            "chi-width_2": 13, 
+            "chi_3": 180, 
+            "chi-width_3": 15, 
+            "chi_4": -65, 
+            "chi-width_4": 13
+        }, 
+        {
+            "id": 14, 
+            "name": "ttmt", 
+            "chi_1": -177, 
+            "chi-width_1": 14, 
+            "chi_2": 180, 
+            "chi-width_2": 14, 
+            "chi_3": -68, 
+            "chi-width_3": 10, 
+            "chi_4": 180, 
+            "chi-width_4": 15
+        }, 
+        {
+            "id": 15, 
+            "name": "ttmm", 
+            "chi_1": -177, 
+            "chi-width_1": null, 
+            "chi_2": 180, 
+            "chi-width_2": null, 
+            "chi_3": -68, 
+            "chi-width_3": null, 
+            "chi_4": -65, 
+            "chi-width_4": null
+        }, 
+        {
+            "id": 16, 
+            "name": "mptt", 
+            "chi_1": -90, 
+            "chi-width_1": null, 
+            "chi_2": 68, 
+            "chi-width_2": null, 
+            "chi_3": 180, 
+            "chi-width_3": null, 
+            "chi_4": 180, 
+            "chi-width_4": null
+        }, 
+        {
+            "id": 17, 
+            "name": "mtpp", 
+            "chi_1": -67, 
+            "chi-width_1": 10, 
+            "chi_2": 180, 
+            "chi-width_2": 9, 
+            "chi_3": 68, 
+            "chi-width_3": 10, 
+            "chi_4": 65, 
+            "chi-width_4": 13
+        }, 
+        {
+            "id": 18, 
+            "name": "mtpt", 
+            "chi_1": -67, 
+            "chi-width_1": 12, 
+            "chi_2": 180, 
+            "chi-width_2": 13, 
+            "chi_3": 68, 
+            "chi-width_3": 11, 
+            "chi_4": 180, 
+            "chi-width_4": 9
+        }, 
+        {
+            "id": 19, 
+            "name": "mttp", 
+            "chi_1": -67, 
+            "chi-width_1": 13, 
+            "chi_2": 180, 
+            "chi-width_2": 13, 
+            "chi_3": 180, 
+            "chi-width_3": 14, 
+            "chi_4": 65, 
+            "chi-width_4": 14
+        }, 
+        {
+            "id": 20, 
+            "name": "mttt", 
+            "chi_1": -67, 
+            "chi-width_1": 14, 
+            "chi_2": 180, 
+            "chi-width_2": 13, 
+            "chi_3": 180, 
+            "chi-width_3": 12, 
+            "chi_4": 180, 
+            "chi-width_4": 14
+        }, 
+        {
+            "id": 21, 
+            "name": "mttm", 
+            "chi_1": -67, 
+            "chi-width_1": 13, 
+            "chi_2": 180, 
+            "chi-width_2": 12, 
+            "chi_3": 180, 
+            "chi-width_3": 13, 
+            "chi_4": -65, 
+            "chi-width_4": 14
+        }, 
+        {
+            "id": 22, 
+            "name": "mtmt", 
+            "chi_1": -67, 
+            "chi-width_1": 12, 
+            "chi_2": 180, 
+            "chi-width_2": 13, 
+            "chi_3": -68, 
+            "chi-width_3": 14, 
+            "chi_4": 180, 
+            "chi-width_4": 13
+        }, 
+        {
+            "id": 23, 
+            "name": "mtmm", 
+            "chi_1": -67, 
+            "chi-width_1": 12, 
+            "chi_2": 180, 
+            "chi-width_2": 12, 
+            "chi_3": -68, 
+            "chi-width_3": 12, 
+            "chi_4": -65, 
+            "chi-width_4": 11
+        }, 
+        {
+            "id": 24, 
+            "name": "mmtp", 
+            "chi_1": -62, 
+            "chi-width_1": null, 
+            "chi_2": -68, 
+            "chi-width_2": null, 
+            "chi_3": 180, 
+            "chi-width_3": null, 
+            "chi_4": 65, 
+            "chi-width_4": null
+        }, 
+        {
+            "id": 25, 
+            "name": "mmtt", 
+            "chi_1": -62, 
+            "chi-width_1": 12, 
+            "chi_2": -68, 
+            "chi-width_2": 13, 
+            "chi_3": 180, 
+            "chi-width_3": 13, 
+            "chi_4": 180, 
+            "chi-width_4": 13
+        }, 
+        {
+            "id": 26, 
+            "name": "mmtm", 
+            "chi_1": -62, 
+            "chi-width_1": 14, 
+            "chi_2": -68, 
+            "chi-width_2": 12, 
+            "chi_3": 180, 
+            "chi-width_3": 10, 
+            "chi_4": -65, 
+            "chi-width_4": 15
+        }, 
+        {
+            "id": 27, 
+            "name": "mmmt", 
+            "chi_1": -62, 
+            "chi-width_1": 12, 
+            "chi_2": -68, 
+            "chi-width_2": 13, 
+            "chi_3": -68, 
+            "chi-width_3": 10, 
+            "chi_4": 180, 
+            "chi-width_4": 15
+        }
+    ], 
+    "MET": [
+        {
+            "id": 1, 
+            "name": "ptp", 
+            "chi_1": 62, 
+            "chi-width_1": 11, 
+            "chi_2": 180, 
+            "chi-width_2": 17, 
+            "chi_3": 75, 
+            "chi-width_3": 12
+        }, 
+        {
+            "id": 2, 
+            "name": "ptm", 
+            "chi_1": 62, 
+            "chi-width_1": 9, 
+            "chi_2": 180, 
+            "chi-width_2": 10, 
+            "chi_3": -75, 
+            "chi-width_3": 9
+        }, 
+        {
+            "id": 3, 
+            "name": "tpp", 
+            "chi_1": -177, 
+            "chi-width_1": 10, 
+            "chi_2": 65, 
+            "chi-width_2": 15, 
+            "chi_3": 75, 
+            "chi-width_3": 15
+        }, 
+        {
+            "id": 4, 
+            "name": "tpt", 
+            "chi_1": -177, 
+            "chi-width_1": 9, 
+            "chi_2": 65, 
+            "chi-width_2": 8, 
+            "chi_3": 180, 
+            "chi-width_3": 9
+        }, 
+        {
+            "id": 5, 
+            "name": "ttp", 
+            "chi_1": -177, 
+            "chi-width_1": 10, 
+            "chi_2": 180, 
+            "chi-width_2": 11, 
+            "chi_3": 75, 
+            "chi-width_3": 11
+        }, 
+        {
+            "id": 6, 
+            "name": "ttt", 
+            "chi_1": -177, 
+            "chi-width_1": 9, 
+            "chi_2": 180, 
+            "chi-width_2": 9, 
+            "chi_3": 180, 
+            "chi-width_3": 19
+        }, 
+        {
+            "id": 7, 
+            "name": "ttm", 
+            "chi_1": -177, 
+            "chi-width_1": 10, 
+            "chi_2": 180, 
+            "chi-width_2": 10, 
+            "chi_3": -75, 
+            "chi-width_3": 13
+        }, 
+        {
+            "id": 8, 
+            "name": "mtp", 
+            "chi_1": -67, 
+            "chi-width_1": 10, 
+            "chi_2": 180, 
+            "chi-width_2": 12, 
+            "chi_3": 75, 
+            "chi-width_3": 14
+        }, 
+        {
+            "id": 9, 
+            "name": "mtt", 
+            "chi_1": -67, 
+            "chi-width_1": 10, 
+            "chi_2": 180, 
+            "chi-width_2": 13, 
+            "chi_3": 180, 
+            "chi-width_3": 15
+        }, 
+        {
+            "id": 10, 
+            "name": "mtm", 
+            "chi_1": -67, 
+            "chi-width_1": 12, 
+            "chi_2": 180, 
+            "chi-width_2": 11, 
+            "chi_3": -75, 
+            "chi-width_3": 16
+        }, 
+        {
+            "id": 11, 
+            "name": "mmp", 
+            "chi_1": -65, 
+            "chi-width_1": 9, 
+            "chi_2": -65, 
+            "chi-width_2": 10, 
+            "chi_3": 103, 
+            "chi-width_3": 10
+        }, 
+        {
+            "id": 12, 
+            "name": "mmt", 
+            "chi_1": -65, 
+            "chi-width_1": 12, 
+            "chi_2": -65, 
+            "chi-width_2": 14, 
+            "chi_3": 180, 
+            "chi-width_3": 19
+        }, 
+        {
+            "id": 13, 
+            "name": "mmm", 
+            "chi_1": -65, 
+            "chi-width_1": 11, 
+            "chi_2": -65, 
+            "chi-width_2": 13, 
+            "chi_3": -70, 
+            "chi-width_3": 16
+        }
+    ], 
+    "GLU": [
+        {
+            "id": 1, 
+            "name": "pt-20", 
+            "chi_1": 62, 
+            "chi-width_1": 14, 
+            "chi_2": 180, 
+            "chi-width_2": 13, 
+            "chi_3": -20, 
+            "chi-width_3": 23
+        }, 
+        {
+            "id": 2, 
+            "name": "pm0", 
+            "chi_1": 70, 
+            "chi-width_1": 14, 
+            "chi_2": -80, 
+            "chi-width_2": 13, 
+            "chi_3": 0, 
+            "chi-width_3": 17
+        }, 
+        {
+            "id": 3, 
+            "name": "tp10", 
+            "chi_1": -177, 
+            "chi-width_1": 14, 
+            "chi_2": 65, 
+            "chi-width_2": 13, 
+            "chi_3": 10, 
+            "chi-width_3": 17
+        }, 
+        {
+            "id": 4, 
+            "name": "tt0", 
+            "chi_1": -177, 
+            "chi-width_1": 14, 
+            "chi_2": 180, 
+            "chi-width_2": 14, 
+            "chi_3": 0, 
+            "chi-width_3": 30
+        }, 
+        {
+            "id": 5, 
+            "name": "tm-20", 
+            "chi_1": -177, 
+            "chi-width_1": 13, 
+            "chi_2": -80, 
+            "chi-width_2": 13, 
+            "chi_3": -25, 
+            "chi-width_3": 15
+        }, 
+        {
+            "id": 6, 
+            "name": "mp0", 
+            "chi_1": -65, 
+            "chi-width_1": 14, 
+            "chi_2": 85, 
+            "chi-width_2": 13, 
+            "chi_3": 0, 
+            "chi-width_3": 25
+        }, 
+        {
+            "id": 7, 
+            "name": "mt-10", 
+            "chi_1": -67, 
+            "chi-width_1": 13, 
+            "chi_2": 180, 
+            "chi-width_2": 16, 
+            "chi_3": -10, 
+            "chi-width_3": 25
+        }, 
+        {
+            "id": 8, 
+            "name": "mm-40", 
+            "chi_1": -65, 
+            "chi-width_1": 14, 
+            "chi_2": -65, 
+            "chi-width_2": 14, 
+            "chi_3": -40, 
+            "chi-width_3": 25
+        }
+    ], 
+    "GLN": [
+        {
+            "id": 1, 
+            "name": "pt20", 
+            "chi_1": 62, 
+            "chi-width_1": 13, 
+            "chi_2": 180, 
+            "chi-width_2": 14, 
+            "chi_3": 20, 
+            "chi-width_3": 16
+        }, 
+        {
+            "id": 2, 
+            "name": "pm0", 
+            "chi_1": 70, 
+            "chi-width_1": null, 
+            "chi_2": -75, 
+            "chi-width_2": null, 
+            "chi_3": 0, 
+            "chi-width_3": null
+        }, 
+        {
+            "id": 3, 
+            "name": "tp-100", 
+            "chi_1": -177, 
+            "chi-width_1": null, 
+            "chi_2": 65, 
+            "chi-width_2": null, 
+            "chi_3": -100, 
+            "chi-width_3": null
+        }, 
+        {
+            "id": 4, 
+            "name": "tp60", 
+            "chi_1": -177, 
+            "chi-width_1": 14, 
+            "chi_2": 65, 
+            "chi-width_2": 15, 
+            "chi_3": 60, 
+            "chi-width_3": 24
+        }, 
+        {
+            "id": 5, 
+            "name": "tt0", 
+            "chi_1": -177, 
+            "chi-width_1": 14, 
+            "chi_2": 180, 
+            "chi-width_2": 13, 
+            "chi_3": 0, 
+            "chi-width_3": 40
+        }, 
+        {
+            "id": 6, 
+            "name": "mp0", 
+            "chi_1": -65, 
+            "chi-width_1": null, 
+            "chi_2": 85, 
+            "chi-width_2": null, 
+            "chi_3": 0, 
+            "chi-width_3": null
+        }, 
+        {
+            "id": 7, 
+            "name": "mt-30", 
+            "chi_1": -67, 
+            "chi-width_1": 16, 
+            "chi_2": 180, 
+            "chi-width_2": 15, 
+            "chi_3": -25, 
+            "chi-width_3": 37
+        }, 
+        {
+            "id": 8, 
+            "name": "mm-40", 
+            "chi_1": -65, 
+            "chi-width_1": 16, 
+            "chi_2": -65, 
+            "chi-width_2": 18, 
+            "chi_3": -40, 
+            "chi-width_3": 26
+        }, 
+        {
+            "id": 9, 
+            "name": "mm100", 
+            "chi_1": -65, 
+            "chi-width_1": null, 
+            "chi_2": -65, 
+            "chi-width_2": null, 
+            "chi_3": 100, 
+            "chi-width_3": null
+        }
+    ], 
+    "ASP": [
+        {
+            "id": 1, 
+            "name": "p-10", 
+            "chi_1": 62, 
+            "chi-width_1": 9, 
+            "chi_2": -10, 
+            "chi-width_2": 19
+        }, 
+        {
+            "id": 2, 
+            "name": "p30", 
+            "chi_1": 62, 
+            "chi-width_1": 8, 
+            "chi_2": 30, 
+            "chi-width_2": 14
+        }, 
+        {
+            "id": 3, 
+            "name": "t0", 
+            "chi_1": -177, 
+            "chi-width_1": 12, 
+            "chi_2": 0, 
+            "chi-width_2": 30
+        }, 
+        {
+            "id": 4, 
+            "name": "t70", 
+            "chi_1": -177, 
+            "chi-width_1": 12, 
+            "chi_2": 65, 
+            "chi-width_2": 18
+        }, 
+        {
+            "id": 5, 
+            "name": "m-20", 
+            "chi_1": -70, 
+            "chi-width_1": 10, 
+            "chi_2": -15, 
+            "chi-width_2": 16
+        }
+    ], 
+    "ASN": [
+        {
+            "id": 1, 
+            "name": "p-10", 
+            "chi_1": 62, 
+            "chi-width_1": 8, 
+            "chi_2": -10, 
+            "chi-width_2": 9
+        }, 
+        {
+            "id": 2, 
+            "name": "p30", 
+            "chi_1": 62, 
+            "chi-width_1": 6, 
+            "chi_2": 30, 
+            "chi-width_2": 7
+        }, 
+        {
+            "id": 3, 
+            "name": "t-20", 
+            "chi_1": -174, 
+            "chi-width_1": 5, 
+            "chi_2": -20, 
+            "chi-width_2": 21
+        }, 
+        {
+            "id": 4, 
+            "name": "t30", 
+            "chi_1": -177, 
+            "chi-width_1": 14, 
+            "chi_2": 30, 
+            "chi-width_2": 22
+        }, 
+        {
+            "id": 5, 
+            "name": "m-20", 
+            "chi_1": -65, 
+            "chi-width_1": 10, 
+            "chi_2": -20, 
+            "chi-width_2": 20
+        }, 
+        {
+            "id": 6, 
+            "name": "m-80", 
+            "chi_1": -65, 
+            "chi-width_1": 9, 
+            "chi_2": -75, 
+            "chi-width_2": 9
+        }, 
+        {
+            "id": 7, 
+            "name": "m120", 
+            "chi_1": -65, 
+            "chi-width_1": 9, 
+            "chi_2": 120, 
+            "chi-width_2": 18
+        }
+    ], 
+    "ILE": [
+        {
+            "id": 1, 
+            "name": "pp", 
+            "chi_1": 62, 
+            "chi-width_1": null, 
+            "chi_2": 100, 
+            "chi-width_2": null
+        }, 
+        {
+            "id": 2, 
+            "name": "pt", 
+            "chi_1": 62, 
+            "chi-width_1": 10, 
+            "chi_2": 170, 
+            "chi-width_2": 10
+        }, 
+        {
+            "id": 3, 
+            "name": "tp", 
+            "chi_1": -177, 
+            "chi-width_1": 13, 
+            "chi_2": 66, 
+            "chi-width_2": 11
+        }, 
+        {
+            "id": 4, 
+            "name": "tt", 
+            "chi_1": -177, 
+            "chi-width_1": 13, 
+            "chi_2": 165, 
+            "chi-width_2": 11
+        }, 
+        {
+            "id": 5, 
+            "name": "mp", 
+            "chi_1": -65, 
+            "chi-width_1": null, 
+            "chi_2": 100, 
+            "chi-width_2": null
+        }, 
+        {
+            "id": 6, 
+            "name": "mt", 
+            "chi_1": -65, 
+            "chi-width_1": 10, 
+            "chi_2": 170, 
+            "chi-width_2": 10
+        }, 
+        {
+            "id": 7, 
+            "name": "mm", 
+            "chi_1": -57, 
+            "chi-width_1": 10, 
+            "chi_2": -60, 
+            "chi-width_2": 10
+        }
+    ], 
+    "LEU": [
+        {
+            "id": 1, 
+            "name": "pp", 
+            "chi_1": 62, 
+            "chi-width_1": null, 
+            "chi_2": 80, 
+            "chi-width_2": null
+        }, 
+        {
+            "id": 2, 
+            "name": "tp", 
+            "chi_1": -177, 
+            "chi-width_1": 10, 
+            "chi_2": 65, 
+            "chi-width_2": 10
+        }, 
+        {
+            "id": 3, 
+            "name": "tt", 
+            "chi_1": -172, 
+            "chi-width_1": 9, 
+            "chi_2": 145, 
+            "chi-width_2": 9
+        }, 
+        {
+            "id": 4, 
+            "name": "mp", 
+            "chi_1": -85, 
+            "chi-width_1": 11, 
+            "chi_2": 65, 
+            "chi-width_2": 14
+        }, 
+        {
+            "id": 5, 
+            "name": "mt", 
+            "chi_1": -65, 
+            "chi-width_1": 11, 
+            "chi_2": 175, 
+            "chi-width_2": 11
+        }
+    ], 
+    "HIS": [
+        {
+            "id": 1, 
+            "name": "p-80", 
+            "chi_1": 62, 
+            "chi-width_1": 10, 
+            "chi_2": -75, 
+            "chi-width_2": 12
+        }, 
+        {
+            "id": 2, 
+            "name": "p80", 
+            "chi_1": 62, 
+            "chi-width_1": 13, 
+            "chi_2": 80, 
+            "chi-width_2": 10
+        }, 
+        {
+            "id": 3, 
+            "name": "t-160", 
+            "chi_1": -177, 
+            "chi-width_1": 12, 
+            "chi_2": -165, 
+            "chi-width_2": 20
+        }, 
+        {
+            "id": 4, 
+            "name": "t-80", 
+            "chi_1": -177, 
+            "chi-width_1": 10, 
+            "chi_2": -80, 
+            "chi-width_2": 22
+        }, 
+        {
+            "id": 5, 
+            "name": "t60", 
+            "chi_1": -177, 
+            "chi-width_1": 13, 
+            "chi_2": 60, 
+            "chi-width_2": 19
+        }, 
+        {
+            "id": 6, 
+            "name": "m-70", 
+            "chi_1": -65, 
+            "chi-width_1": 11, 
+            "chi_2": -70, 
+            "chi-width_2": 23
+        }, 
+        {
+            "id": 7, 
+            "name": "m170", 
+            "chi_1": -65, 
+            "chi-width_1": 10, 
+            "chi_2": 165, 
+            "chi-width_2": 16
+        }, 
+        {
+            "id": 8, 
+            "name": "m80", 
+            "chi_1": -65, 
+            "chi-width_1": 11, 
+            "chi_2": 80, 
+            "chi-width_2": 18
+        }
+    ], 
+    "TRP": [
+        {
+            "id": 1, 
+            "name": "p-90", 
+            "chi_1": 62, 
+            "chi-width_1": 12, 
+            "chi_2": -90, 
+            "chi-width_2": 10
+        }, 
+        {
+            "id": 2, 
+            "name": "p90", 
+            "chi_1": 62, 
+            "chi-width_1": 12, 
+            "chi_2": 90, 
+            "chi-width_2": 8
+        }, 
+        {
+            "id": 3, 
+            "name": "t-105", 
+            "chi_1": -177, 
+            "chi-width_1": 16, 
+            "chi_2": -105, 
+            "chi-width_2": 14
+        }, 
+        {
+            "id": 4, 
+            "name": "t90", 
+            "chi_1": -177, 
+            "chi-width_1": 10, 
+            "chi_2": 90, 
+            "chi-width_2": 11
+        }, 
+        {
+            "id": 5, 
+            "name": "m-90", 
+            "chi_1": -65, 
+            "chi-width_1": 9, 
+            "chi_2": -90, 
+            "chi-width_2": 12
+        }, 
+        {
+            "id": 6, 
+            "name": "m0", 
+            "chi_1": -65, 
+            "chi-width_1": 9, 
+            "chi_2": -5, 
+            "chi-width_2": 20
+        }, 
+        {
+            "id": 7, 
+            "name": "m95", 
+            "chi_1": -65, 
+            "chi-width_1": 11, 
+            "chi_2": 95, 
+            "chi-width_2": 19
+        }
+    ], 
+    "TYR": [
+        {
+            "id": 1, 
+            "name": "p90", 
+            "chi_1": 62, 
+            "chi-width_1": 13, 
+            "chi_2": 90, 
+            "chi-width_2": 13
+        }, 
+        {
+            "id": 2, 
+            "name": "t80", 
+            "chi_1": -177, 
+            "chi-width_1": 11, 
+            "chi_2": 80, 
+            "chi-width_2": 14
+        }, 
+        {
+            "id": 3, 
+            "name": "m-85", 
+            "chi_1": -65, 
+            "chi-width_1": 11, 
+            "chi_2": -85, 
+            "chi-width_2": 21
+        }, 
+        {
+            "id": 4, 
+            "name": "m-30", 
+            "chi_1": -65, 
+            "chi-width_1": 11, 
+            "chi_2": -30, 
+            "chi-width_2": 18
+        }
+    ], 
+    "PHE": [
+        {
+            "id": 1, 
+            "name": "p90", 
+            "chi_1": 62, 
+            "chi-width_1": 11, 
+            "chi_2": 90, 
+            "chi-width_2": 11
+        }, 
+        {
+            "id": 2, 
+            "name": "t80", 
+            "chi_1": -177, 
+            "chi-width_1": 13, 
+            "chi_2": 80, 
+            "chi-width_2": 17
+        }, 
+        {
+            "id": 3, 
+            "name": "m-85", 
+            "chi_1": -65, 
+            "chi-width_1": 12, 
+            "chi_2": -85, 
+            "chi-width_2": 17
+        }, 
+        {
+            "id": 4, 
+            "name": "m-30", 
+            "chi_1": -65, 
+            "chi-width_1": 9, 
+            "chi_2": -30, 
+            "chi-width_2": 20
+        }
+    ], 
+    "PRO": [
+        {
+            "id": 1, 
+            "name": "C-gamma-endo", 
+            "chi_1": 30, 
+            "chi-width_1": 7
+        }, 
+        {
+            "id": 2, 
+            "name": "C-gamma-exo", 
+            "chi_1": -30, 
+            "chi-width_1": 6
+        }, 
+        {
+            "id": 3, 
+            "name": "cis-C-gamma-endo", 
+            "chi_1": 30, 
+            "chi-width_1": 5
+        }
+    ], 
+    "THR": [
+        {
+            "id": 1, 
+            "name": "p", 
+            "chi_1": 62, 
+            "chi-width_1": 10
+        }, 
+        {
+            "id": 2, 
+            "name": "t", 
+            "chi_1": -175, 
+            "chi-width_1": 6
+        }, 
+        {
+            "id": 3, 
+            "name": "m", 
+            "chi_1": -65, 
+            "chi-width_1": 7
+        }
+    ], 
+    "VAL": [
+        {
+            "id": 1, 
+            "name": "p", 
+            "chi_1": 63, 
+            "chi-width_1": 8
+        }, 
+        {
+            "id": 2, 
+            "name": "t", 
+            "chi_1": 175, 
+            "chi-width_1": 8
+        }, 
+        {
+            "id": 3, 
+            "name": "m", 
+            "chi_1": -60, 
+            "chi-width_1": 7
+        }
+    ], 
+    "SER": [
+        {
+            "id": 1, 
+            "name": "p", 
+            "chi_1": 62, 
+            "chi-width_1": 10
+        }, 
+        {
+            "id": 2, 
+            "name": "t", 
+            "chi_1": -177, 
+            "chi-width_1": 11
+        }, 
+        {
+            "id": 3, 
+            "name": "m", 
+            "chi_1": -65, 
+            "chi-width_1": 9
+        }
+    ], 
+    "CYS": [
+        {
+            "id": 1, 
+            "name": "p", 
+            "chi_1": 62, 
+            "chi-width_1": 14
+        }, 
+        {
+            "id": 2, 
+            "name": "t", 
+            "chi_1": -177, 
+            "chi-width_1": 10
+        }, 
+        {
+            "id": 3, 
+            "name": "m", 
+            "chi_1": -65, 
+            "chi-width_1": 11
+        }
+    ]
+}
