@@ -57,7 +57,7 @@ public:
 	
 	void setInert(const std::string &tag, bool inert = true);
 	void tick(const std::string &tag, bool yes = true);
-	void toggle(const std::string &tag, bool fire_callback = false);
+	void toggle(const std::string &tag);
 	void untickAllExcept(const std::string &tag);
 	
 	bool isTicked(const std::string &tag);
