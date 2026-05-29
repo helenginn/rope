@@ -93,7 +93,7 @@ void PrepWorkView::prepareAntigens(Antigens &antigens)
 		addObject(mesh);
 		shiftToCentre(mesh->centroid(), 0);
 
-//		mesh->refine();
+		mesh->refine();
 		_messages.push_back("Refined mesh for antigen " + antigen.title);
 
 		for (Fiducial &fid : _mab.fiducials)
@@ -111,18 +111,20 @@ void PrepWorkView::prepareAntigens(Antigens &antigens)
 					addDisplayUnit(unit);
 				 });
 
-				ContactPoint contact(fid, _mab.antigens);
-				contact.findMapping();
+				ContactPoint *contact = new ContactPoint(fid, _mab.antigens);
+				contact->findMapping();
+				fid.contact = contact;
 
-				int total = contact.transforms().size();
+				int total = contact->transforms().size();
 				_messages.push_back("Mapped " + std::to_string(total) + 
 				" orientation" + (total == 1 ? "" : "s") + 
 				" for antibody " + fid.name);
 				
-				for (const glm::mat4x4 &mat : contact.transforms())
+				for (const glm::mat4x4 &mat : contact->transforms())
 				{
-					contact.applyTransform(mat);
+					contact->applyTransform(mat);
 					std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+					antigen.sym.add_if_new(mat);
 				}
 
 				_tidy.push_back
@@ -133,6 +135,11 @@ void PrepWorkView::prepareAntigens(Antigens &antigens)
 				});
 			}
 		}
+
+		int total = antigen.sym.transforms().size();
+		_messages.push_back("Collected " + std::to_string(total) + 
+		                    " orientation" + (total == 1 ? "" : "s") + 
+		                    " for antigen " + antigen.title);
 
 		_tidy.push_back
 		([this, mesh]()
