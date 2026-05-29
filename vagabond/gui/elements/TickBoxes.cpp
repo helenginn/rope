@@ -258,3 +258,12 @@ float TickBoxes::Option::totalDim(int dim)
 
 	return max - min;
 }
+
+void TickBoxes::hideTickboxes()
+{
+	for (Option &option : _options)
+	{
+		option.tickbox->resize(0);
+		option.tickbox->setInert(true);
+	}
+}

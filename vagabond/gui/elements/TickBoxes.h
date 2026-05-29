@@ -72,6 +72,7 @@ public:
 	             float bottomright_x, float bottomright_y);
 
 	virtual void buttonPressed(std::string tag, Button *button);
+	void hideTickboxes();
 private:
 	ButtonResponder *_responder = nullptr;
 	Scene *_scene = nullptr;
@@ -107,6 +108,7 @@ private:
 	
 	bool _oneOnly = true;
 	bool _vertical = false;
+
 };
 
 #endif
