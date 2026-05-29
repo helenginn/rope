@@ -41,6 +41,24 @@ MatrixBox::MatrixBox(MatrixPlot *mp, const std::vector<std::string> &rowNames,
 	draw();
 }
 
+typedef std::pair<float, TextButton *> OrderedButton;
+auto MatrixBox::create_order_function(int coord)
+{
+	return [this, coord]()
+	{
+		std::set<OrderedButton> ordered;
+		for (auto &pair : _info)
+		{
+			if (pair.second.coord == coord)
+			{
+				ordered.insert({pair.second.hypothetical[coord],
+				               pair.first});
+			}
+		}
+		return ordered;
+	};
+};
+
 void MatrixBox::draw()
 {
 
@@ -55,22 +73,7 @@ void MatrixBox::draw()
 	{
 		_info[tb] = {};
 		_info[tb].coord = coord;
-		
-		typedef std::pair<float, TextButton *> OrderedButton;
-
-		auto create_order = [this, coord]()
-		{
-			std::set<OrderedButton> ordered;
-			for (auto &pair : _info)
-			{
-				if (pair.second.coord == coord)
-				{
-					ordered.insert({pair.second.hypothetical[coord],
-					               pair.first});
-				}
-			}
-			return ordered;
-		};
+		auto create_order = create_order_function(coord);
 		
 		auto swap_required = [](const std::set<OrderedButton> &orig,
 		                   const std::set<OrderedButton> &update,
@@ -211,14 +214,14 @@ void MatrixBox::draw()
 	
 	Renderable::Alignment row_align = Renderable::Alignment::Right;
 	Renderable::Alignment col_align = Renderable::Alignment
-	(Renderable::Alignment::Left | Renderable::Alignment::Bottom);
+	(Renderable::Alignment::Centre | Renderable::Alignment::Bottom);
 	
 	std::vector<std::pair<TextButton *, TextButton *>> pairs;
 
 	for (const std::string &first : _rowNames)
 	{
 		TextButton *t = new TextButton(first);
-		t->resize(0.4);
+		t->resize(0.3);
 		t->setArbitrary(-width / 2, y, row_align);
 		t->setDragFunction(drag_button(t, 1));
 		addObject(t);
@@ -234,14 +237,15 @@ void MatrixBox::draw()
 	for (const std::string &first : _colNames)
 	{
 		TextButton *t = new TextButton(first);
-		t->resize(0.4);
+		t->resize(0.3);
 		t->setDragFunction(drag_button(t, 0));
 		t->setArbitrary(x, -height / 2, col_align);
 		glm::mat4x4 base = glm::mat3x3(1.f);
-		base[1] /= Window::aspect();
 		glm::mat3x3 rot;
 		rot = glm::mat3x3(glm::rotate(base, (float)deg2rad(-90),
 		                              glm::vec3(0., 0., -1.)));
+		rot[1] *= 0.8;
+		rot[0] /= 0.8;
 		t->rotateRoundCentre(rot);
 		addObject(t);
 		x += xstep;
@@ -289,7 +293,6 @@ void MatrixBox::guessReordering()
 		return;
 	}
 
-	std::cout << "here" << std::endl;
 	Eigen::MatrixXf A = _plot->_mat.toEigen();
 	OpSet<int> row_list;
 	for (int i = 0; i < A.rows(); i++)
@@ -305,32 +308,13 @@ void MatrixBox::guessReordering()
 		list.insert(list.begin() + j, tmp);
 	};
 	
-	for (auto &r : _rowNames)
-	{
-		std::cout << r << " ";
-	}
-	std::cout << std::endl;
-
-
 	auto insert_rows = [&](int i, int j)
 	{
-		std::cout << "inserting " << i << " where " << j << " is" << std::endl;
 		std::vector<int> reorder = {row_list.begin(), row_list.end()};
 		insertion(reorder, i, j);
 		
-		for (int &r : reorder)
-		{
-			std::cout << r << " ";
-		}
-		std::cout << std::endl;
-
 		insertion(_rowNames, i, j);
 		
-		for (auto &r : _rowNames)
-		{
-			std::cout << r << " ";
-		}
-		std::cout << std::endl;
 		Eigen::VectorXi perm = Eigen::Map<Eigen::VectorXi>(reorder.data(), 
 		                                                   reorder.size());
 
@@ -378,7 +362,6 @@ void MatrixBox::guessReordering()
 				}
 			}
 
-			std::cout << "Best neighbour for " << i << " would be " << bi << std::endl;
 			if (i - bi == 1 || bi - i == 1 || bi == -1)
 			{
 				continue;
@@ -420,159 +403,26 @@ void MatrixBox::guessReordering()
 	_plot->update();
 }
 
-/*
-void MatrixBox::guessReordering(float cutoff)
+std::vector<std::string> MatrixBox::names(int coord)
 {
-	if (!_identical || cutoff == FLT_MAX)
+	auto create_order = create_order_function(1);
+	std::set<OrderedButton> ordered = create_order();
+	
+	std::vector<std::string> texts; texts.reserve(ordered.size());
+	for (const OrderedButton &button  : ordered)
 	{
-		return;
+		texts.push_back(button.second->text());
 	}
-
-	std::vector<int> reordering;
-	
-	auto establish_row = [&reordering](int row)
-	{
-		reordering.push_back(row);
-	};
-
-	Eigen::MatrixXf A = _plot->_mat.toEigen();
-	OpSet<int> row_list;
-	for (int i = 0; i < A.rows(); i++)
-	{
-		row_list += i;
-	}
-
-	std::cout << "Row list: " << row_list.size() << std::endl;
-	
-	auto meets_threshold = [&cutoff, &A](int i, int j)
-	{
-		return ((A(i, j) == A(i, j) && A(i, j) > cutoff) || 
-		        (A(j, i) == A(j, i) && A(j, i) > cutoff));
-	};
-
-	int lowest_row = -1;
-	int lowest_deg = INT_MAX;
-	
-	auto row_degree = [meets_threshold, &A](int i)
-	{
-		int degree = 0;
-		for (int j = 0; j < A.row(i).size(); j++)
-		{
-			if (meets_threshold(i, j)) degree++;
-		}
-		return degree;
-	};
-	
-	for (int i = 0; i < A.rows(); i++)
-	{
-		int deg = row_degree(i);
-		if (lowest_deg > deg)
-		{
-			lowest_row = i;
-			lowest_deg = deg;
-		}
-		if (deg == 0)
-		{
-			establish_row(i);
-		}
-	}
-	
-	auto make_adjacency_set = [&reordering, &A, &meets_threshold](int node)
-	{
-		OpSet<int> done_already(reordering);
-		OpSet<int> adj_set;
-
-		for (int r = 0; r < A.rows(); r++)
-		{
-			if (done_already.count(r))
-			{
-				continue;
-			}
-
-			if (meets_threshold(node, r))
-			{
-				adj_set += r;
-			}
-		}
-
-		return adj_set;
-	};
-	
-	std::cout << "Lowest row: " << _rowNames[lowest_row] << std::endl;
-	establish_row(lowest_row);
-
-	int i = 0;
-	while (true)
-	{
-		int prior = reordering[i];
-		i++;
-		OpSet<int> next = make_adjacency_set(prior);
-
-		std::cout << "Adding set of " << next.size() << std::endl;
-
-		if (next.size() == 0)
-		{
-			break;
-		}
-
-		OpSet<std::pair<int, int>> scores;
-		
-		std::cout << "\t";
-		for (int r : next)
-		{
-			std::cout << _rowNames[r] << " ";
-			Eigen::MatrixXf vec = A.row(r);
-
-			int score = reordering.size() - 1;
-			for (int j : reordering)
-			{
-				if (vec(j) == vec(j) && vec(j) > cutoff)
-				{
-					score = j;
-					break;
-				}
-			}
-
-			scores += {score, r};
-		}
-		std::cout << std::endl;
-		
-		for (auto &pair : scores)
-		{
-			establish_row(pair.second);
-		}
-	}
-	
-	OpSet<int> reordered(reordering);
-
-	for (int r : row_list)
-	{
-		if (!reordered.count(r))
-		{
-			establish_row(r);
-		}
-	}
-	
-	Eigen::VectorXi perm = Eigen::Map<Eigen::VectorXi>(reordering.data(), 
-	                                                   reordering.size());
-	std::vector<std::string> rowNames;
-	for (int i : reordering)
-	{
-		rowNames.push_back(_rowNames[i]);
-		std::cout << i << " ";
-	}
-	std::cout << std::endl;
-
-//	_rowNames = rowNames;
-	_colNames = rowNames;
-	std::reverse(_colNames.begin(), _colNames.end());
-	
-	Eigen::PermutationMatrix<Eigen::Dynamic, Eigen::Dynamic> P(perm);
-	Eigen::MatrixXf pA = P * A;
-
-//	_plot->_mat.dropFromEigen(pA);
-//	_plot->update();
+	return texts;
 }
 
+std::vector<std::string> MatrixBox::rowNames()
+{
+	return names(1);
+}
 
-*/
+std::vector<std::string> MatrixBox::colNames()
+{
+	return names(0);
+}
+

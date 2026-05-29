@@ -34,10 +34,15 @@ public:
 
 	void guessReordering();
 	void draw();
+	
+	std::vector<std::string> rowNames();
+	std::vector<std::string> colNames();
 private:
 	MatrixPlot *_plot{};
 
 	std::function<void(bool)> _enableButtons;
+	auto create_order_function(int coord);
+	std::vector<std::string> names(int coord);
 
 	struct Status
 	{
