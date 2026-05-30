@@ -23,6 +23,7 @@
 FloatingText::FloatingText(std::string text, float mult, float yOff) : Text(text)
 {
 	setVertexShaderFile("assets/shaders/floating_box.vsh");
+	setFragmentShaderFile("assets/shaders/floating_box.fsh");
 	correctBox(mult, yOff);
 	setUsesProjection(true);
 }
@@ -37,6 +38,7 @@ void FloatingText::correctBox(float mult, float y_offset)
 		v.extra *= mult;
 		
 		v.extra.y += y_offset;
+		v.extra.z -= 10;
 		v.pos = centre;
 	}
 }
