@@ -168,7 +168,7 @@ std::string Competitions::validate(const Antigens &antigens)
 	(validate_comp, *this);
 }
 
-OpSet<std::string> Competition::antibody_names()
+OpSet<std::string> Competition::antibody_names() const
 {
 	OpSet<std::string> all;
 	TabulatedData *data = metadata->asData();

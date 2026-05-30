@@ -24,6 +24,8 @@
 struct Mab;
 struct Competition;
 
+class Positions;
+
 class Playground : public Display
 {
 public:
@@ -35,6 +37,7 @@ private:
 	void showFiducials(const Competition &comp);
 	Mab &_mab;
 
+	Positions *_positions{};
 };
 
 #endif

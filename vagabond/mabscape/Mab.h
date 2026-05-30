@@ -137,7 +137,7 @@ struct Competition
 	std::string antigen;
 
 	std::string interpretation_as_desc();
-	OpSet<std::string> antibody_names();
+	OpSet<std::string> antibody_names() const;
 	
 	std::vector<std::string> favoured_ordering;
 
