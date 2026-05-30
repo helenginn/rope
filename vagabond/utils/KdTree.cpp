@@ -52,8 +52,6 @@ KdTree::KdTree(const NextIdxPos &next)
 		list.push_back({vec, idx});
 	}
 
-	std::cout << "Total vertices: " << list.size() << std::endl;
-	
 	reorder_list(list, 0);
 	_nodes.resize(list.size());
 
