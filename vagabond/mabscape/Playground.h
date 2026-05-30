@@ -25,7 +25,10 @@ struct Mab;
 struct Competition;
 
 class Mesh;
+class AbWatch;
+class PosToComp;
 class Positions;
+class MatrixPlot;
 
 class Playground : public Display
 {
@@ -33,6 +36,9 @@ public:
 	Playground(Scene *prev, Mab &mab);
 
 	virtual void setup();
+	void refine();
+
+	virtual void interactedWithNothing(bool left, bool hover);
 private:
 	void showMesh(const Competition &competition);
 	void showFiducials(const Competition &comp);
@@ -40,6 +46,10 @@ private:
 
 	Positions *_positions{};
 	Mesh *_mesh{};
+	std::vector<AbWatch *> _watches;
+
+	PosToComp *_model{};
+	MatrixPlot *_mp{};
 };
 
 #endif

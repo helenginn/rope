@@ -24,8 +24,8 @@
 #include "Mab.h"
 
 Positions::Positions(Antigen &antigen, const Competition &comp, Mab &mab,
-                     const FromMesh &fm) 
-: _antigen(antigen), _mab(mab), _fromMesh(fm)
+                     const FromMesh &fm, const RandomFromMesh &rm) 
+: _antigen(antigen), _mab(mab), _fromMesh(fm), _random(rm)
 {
 	OpSet<std::string> list;
 
@@ -40,7 +40,7 @@ Positions::Positions(Antigen &antigen, const Competition &comp, Mab &mab,
 
 			int n = sym->transforms().size();
 			int i = _raw.size();
-			AntibodyPos ap = {&fid, fid.name, i, n, sym, 0, nullptr};
+			AntibodyPos ap = {&fid, fid.name, i, n, *sym, 0, nullptr};
 			ap.mut = new std::mutex();
 			_raw.resize(_raw.size() + n);
 			ap.setPosition(_raw, sym->reference(), _fromMesh);
@@ -63,9 +63,11 @@ Positions::Positions(Antigen &antigen, const Competition &comp, Mab &mab,
 
 		int n = sym.transforms().size();
 		int i = _raw.size();
-		AntibodyPos ap = {nullptr, name, i, n, &sym, 0, nullptr};
+		AntibodyPos ap = {nullptr, name, i, n, sym, 0, nullptr};
 		ap.mut = new std::mutex();
 		_raw.resize(_raw.size() + n);
+		glm::vec3 random = _random();
+		ap.setPosition(_raw, random, _fromMesh);
 
 		list += name;
 		_positions.push_back(ap);
@@ -94,9 +96,10 @@ AbWatch *Positions::AntibodyPos::icoAbWatch(const std::vector<glm::vec3> &raw,
 {
 	Icosahedron ico;
 	ico.triangulate();
-	ico.setPosition(raw[start_idx + offset]);
+//	ico.setPosition(raw[start_idx + offset]);
 
-	AbWatch *aw = new AbWatch(ico, version, mut, raw[start_idx + offset]);
+	AbWatch *aw = new AbWatch(ico, version, mut, raw[start_idx + offset],
+	                          name);
 	return aw;
 }
 
@@ -118,9 +121,9 @@ void Positions::AntibodyPos::setPosition(std::vector<glm::vec3> &raw,
 
 	std::unique_lock<std::mutex> lock(*mut);
 
-	for (const glm::mat4x4 &transform : sym->transforms())
+	for (const glm::mat4x4 &transform : sym.transforms())
 	{
-		sym->applyTransform(transform, Symmetry::next_pointer(&ref));
+		sym.applyTransform(transform, Symmetry::next_pointer(&ref));
 		if (fromMesh)
 		{
 			fromMesh(ref, raw[i], meshIdx);
@@ -135,14 +138,61 @@ void Positions::AntibodyPos::setPosition(std::vector<glm::vec3> &raw,
 	version++;
 }
 
-void Positions::loadAntibodiesInto(HasRenderables *bucket)
+void Positions::loadAntibodiesInto(HasRenderables *bucket,
+                                   std::vector<AbWatch *> &watches)
 {
 	for (const AntibodyPos &ap : _positions)
 	{
 		for (int i = 0; i < ap.num; i++)
 		{
 			AbWatch *aw = ap.icoAbWatch(_raw, i);
+			
+			if (!ap.fid)
+			{
+				aw->setSelectable(true);
+				aw->setColour(0.2, 0.2, 0.6);
+			}
+
 			bucket->addObject(aw);
+			watches.push_back(aw);
 		}
 	}
+}
+
+const glm::vec3 &Positions::operator()(const std::string &name,
+                                       const glm::vec3 *closest) const
+{
+	if (_lookup.count(name) == 0)
+	{
+		return {};
+	}
+	AntibodyPos *ap = _lookup.at(name);
+	return ap->closest_to(_raw, closest);
+}
+
+const glm::vec3 &
+Positions::AntibodyPos::closest_to(const std::vector<glm::vec3> &raw,
+                                   const glm::vec3 *other) const
+{
+	 std::unique_lock<std::mutex> lock(*mut);
+	if (other == nullptr)
+	{
+		return raw[start_idx];
+	}
+
+	float best = FLT_MAX; int n = -1;
+	for (int i = start_idx; i < start_idx + num; i++)
+	{
+		const glm::vec3 &candidate = raw[i];
+		glm::vec3 diff = candidate - *other;
+		float sql = glm::dot(diff, diff);
+
+		if (sql < best)
+		{
+			best = sql;
+			n = i;
+		}
+	}
+
+	return raw[n];
 }

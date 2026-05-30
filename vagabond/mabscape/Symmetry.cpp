@@ -23,6 +23,7 @@ Symmetry::Symmetry()
 {
 }
 
+
 void Symmetry::applyTransform(const glm::mat4x4 &which, const NextPoint &next_point)
 {
 	glm::mat4x4 undo = which * glm::inverse(_applied);

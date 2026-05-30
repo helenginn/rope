@@ -98,6 +98,7 @@ void PrepWorkView::prepareAntigens(Antigens &antigens)
 
 		for (Fiducial &fid : _mab.fiducials)
 		{
+			setInformation("Aligning " + fid.name);
 			if (fid.antigen == antigen.title)
 			{
 				fid.model.load();
@@ -119,11 +120,12 @@ void PrepWorkView::prepareAntigens(Antigens &antigens)
 				_messages.push_back("Mapped " + std::to_string(total) + 
 				" orientation" + (total == 1 ? "" : "s") + 
 				" for antibody " + fid.name);
+				std::this_thread::sleep_for(std::chrono::milliseconds(400));
 				
 				for (const glm::mat4x4 &mat : contact->transforms())
 				{
 					contact->applyTransform(mat);
-					std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+					std::this_thread::sleep_for(std::chrono::milliseconds(400));
 					antigen.sym.add_if_new(mat);
 				}
 
@@ -140,6 +142,11 @@ void PrepWorkView::prepareAntigens(Antigens &antigens)
 		_messages.push_back("Collected " + std::to_string(total) + 
 		                    " orientation" + (total == 1 ? "" : "s") + 
 		                    " for antigen " + antigen.title);
+
+		for (const glm::mat4x4 &mat : antigen.sym.transforms())
+		{
+			std::cout << mat << std::endl << std::endl;
+		}
 
 		_tidy.push_back
 		([this, mesh]()

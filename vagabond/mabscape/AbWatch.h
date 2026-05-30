@@ -20,18 +20,30 @@
 #define __vagabond__AbWatch__
 
 #include <vagabond/gui/elements/SimplePolygon.h>
+#include <vagabond/gui/elements/IndexResponder.h>
 
-class AbWatch : public SimplePolygon
+class AbWatch : public IndexResponder
 {
 public:
 	AbWatch(const SimplePolygon &other, const unsigned int &version_track, 
-	        std::mutex *mut, const glm::vec3 &pos);
+	        std::mutex *mut, const glm::vec3 &pos, const std::string &name);
 
+	void interacted(int idx, bool hover, bool left);
+
+	virtual size_t requestedIndices()
+	{
+		return _vertices.size();
+	}
+
+	virtual void reindex();
+	virtual void render(SnowGL *gl);
 private:
 	unsigned int _currVersion = 0;
 	const unsigned int &_versionTrack;
 	std::mutex *_mut{};
 	const glm::vec3 &_pos;
+	const std::string &_name;
+	glm::vec3 _last;
 
 	void doThings();
 };

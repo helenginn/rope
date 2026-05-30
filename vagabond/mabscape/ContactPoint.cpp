@@ -221,7 +221,6 @@ void ContactPoint::findMapping()
 		{
 			arrangements.insert(arrangement);
 		}
-		std::cout << "total: " << arrangements.size() << std::endl;
 		
 		for (auto arrangement : arrangements)
 		{
@@ -230,7 +229,6 @@ void ContactPoint::findMapping()
 
 			glm::mat4x4 new_mat = 
 			Instance::superposeInstances(ltrunc, arrangement, false);
-			std::cout << new_mat << std::endl;
 
 			bool added = add_if_new(new_mat);
 
