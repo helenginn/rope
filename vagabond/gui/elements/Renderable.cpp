@@ -810,7 +810,7 @@ void Renderable::setHighlighted(bool selected)
 	if (!_selected && selected)
 	{
 		_unselectedVertices = _vertices;
-		recolour(0.2, 0.2, 0.2);
+		recolour(_hc.x, _hc.y, _hc.z);
 		resize(_selectionResize, false, false, false);
 	}
 	
