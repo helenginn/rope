@@ -23,6 +23,8 @@ mabscapefiles = [
 'Mesh.cpp',
 'Playground.h',
 'Playground.cpp',
+'PosToComp.h',
+'PosToComp.cpp',
 'Positions.h',
 'Positions.cpp',
 'PrepWorkView.h',

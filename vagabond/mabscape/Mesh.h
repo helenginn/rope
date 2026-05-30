@@ -43,6 +43,7 @@ public:
 	int nearestVertex(const glm::vec3 &v);
 
 	std::function<void(const glm::vec3 &, glm::vec3 &, int &)> vertexFinder();
+	std::function<glm::vec3()> random();
 private:
 	ArbitraryMap mappedAtoms();
 	int removeHollows(ArbitraryMap &map);

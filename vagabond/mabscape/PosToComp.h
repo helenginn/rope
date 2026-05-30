@@ -16,40 +16,42 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __vagabond__Playground__
-#define __vagabond__Playground__
+#ifndef __vagabond__PosToComp__
+#define __vagabond__PosToComp__
 
-#include <vagabond/gui/Display.h>
+#include <vagabond/utils/Eigen/Dense>
+#include <vagabond/utils/svd/PCA.h>
 
-struct Mab;
 struct Competition;
 
-class Mesh;
-class AbWatch;
-class PosToComp;
 class Positions;
 class MatrixPlot;
 
-class Playground : public Display
+class PosToComp
 {
 public:
-	Playground(Scene *prev, Mab &mab);
+	PosToComp(Competition &comp, Positions &pos);
 
-	virtual void setup();
-	void refine();
+	Eigen::MatrixXf fromModel(MatrixPlot *mp = nullptr);
 
-	virtual void interactedWithNothing(bool left, bool hover);
+	PCA::Matrix &modelDisplay(std::mutex **mut)
+	{
+		*mut = &_modelMutex;
+		return _modelDisplay;
+	}
 private:
-	void showMesh(const Competition &competition);
-	void showFiducials(const Competition &comp);
-	Mab &_mab;
+	Competition &_comp;
+	Positions &_positions;
 
-	Positions *_positions{};
-	Mesh *_mesh{};
-	std::vector<AbWatch *> _watches;
-
-	PosToComp *_model{};
-	MatrixPlot *_mp{};
+	Eigen::MatrixXf _data;
+	Eigen::MatrixXf _model;
+	
+	PCA::Matrix _dataDisplay;
+	PCA::Matrix _modelDisplay;
+	std::mutex _modelMutex;
+	
+	float _radius{11.f};
+	float _slope{2.f};
 };
 
 #endif

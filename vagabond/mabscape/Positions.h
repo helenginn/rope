@@ -20,6 +20,7 @@
 #define __vagabond__Positions__
 
 #include <vagabond/utils/glm_import.h>
+#include "Symmetry.h"
 #include <mutex>
 #include <map>
 
@@ -36,14 +37,17 @@ class Positions
 {
 public:
 	typedef std::function<void(const glm::vec3 &, glm::vec3 &, int &)> FromMesh;
+	typedef std::function<glm::vec3()> RandomFromMesh;
 
 	Positions(Antigen &antigen, const Competition &comp, Mab &mab,
-	          const FromMesh &fm);
+	          const FromMesh &fm, const RandomFromMesh &rm);
 	~Positions();
 	
-	
 	void setPosition(const std::string &name, glm::vec3 pos);
-	void loadAntibodiesInto(HasRenderables *bucket);
+	const glm::vec3 &operator()(const std::string &name, 
+	                            const glm::vec3 *closest = nullptr) const;
+	void loadAntibodiesInto(HasRenderables *bucket,
+	                        std::vector<AbWatch *> &watches);
 private:
 	Antigen &_antigen;
 	Mab &_mab;
@@ -52,6 +56,9 @@ private:
 	{
 		void setPosition(std::vector<glm::vec3> &raw, glm::vec3 ref, 
 		                 const FromMesh &fromMesh);
+		
+		const glm::vec3 &closest_to(const std::vector<glm::vec3> &raw,
+		                            const glm::vec3 *other) const;
 		
 		~AntibodyPos()
 		{
@@ -65,7 +72,7 @@ private:
 		std::string name{};
 		int start_idx = -1; // for accessing _raw
 		int num = 1;
-		Symmetry *sym{};
+		Symmetry sym{};
 		unsigned int version = 0;
 		std::mutex *mut{};
 		int meshIdx = -1;
@@ -75,6 +82,7 @@ private:
 	std::vector<glm::vec3> _raw;
 	std::map<std::string, AntibodyPos *> _lookup;
 	FromMesh _fromMesh;
+	RandomFromMesh _random;
 };
 
 #endif

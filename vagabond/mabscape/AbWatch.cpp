@@ -16,14 +16,17 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
+#include <vagabond/gui/elements/FloatingText.h>
 #include "AbWatch.h"
 
 AbWatch::AbWatch(const SimplePolygon &other, const unsigned int &version_track, 
-                 std::mutex *mut, const glm::vec3 &pos)
-: _versionTrack(version_track), _mut(mut), _pos(pos)
+                 std::mutex *mut, const glm::vec3 &pos, const std::string &name)
+: _versionTrack(version_track), _mut(mut), _pos(pos), _name(name)
 {
 	_vertices = other.vertices();
 	_indices = other.indices();
+	_hc = {0.5, 0.5, 0.9};
+	_selectionResize = 1.3;
 
 	setUsesProjection(true);
 	setVertexShaderFile("assets/shaders/with_matrix.vsh");
@@ -34,7 +37,7 @@ void AbWatch::doThings()
 {
 	 std::unique_lock<std::mutex> lock(*_mut, std::defer_lock);
 
-	if (lock.try_lock())
+	if (!lock.try_lock())
 	{
 		return;
 	}
@@ -46,4 +49,40 @@ void AbWatch::doThings()
 	
 	_currVersion = _versionTrack;
 	setPosition(_pos);
+	_last = _pos;
+}
+
+void AbWatch::reindex()
+{
+	size_t offset = indexOffset();
+	for (size_t i = 0; i < vertexCount(); i++)
+	{
+		/* in the case of multiple responders */
+		_vertices[i].extra[0] = i + offset + 1.5;
+	}
+}
+
+void AbWatch::interacted(int idx, bool hover, bool left)
+{
+	if (hover)
+	{
+		if (isSelectable())
+		{
+			setHighlighted(true);
+		}
+
+		FloatingText *text = new FloatingText(_name, 150, 10.);
+		text->FloatingText::setPosition(_last);
+		addTempObject(text);
+	}
+}
+
+void AbWatch::render(SnowGL *gl)
+{
+	glEnable(GL_DEPTH_TEST);
+
+	_model = gl->getModel();
+	Renderable::render(gl);
+
+	glDisable(GL_DEPTH_TEST);
 }

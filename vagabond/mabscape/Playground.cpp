@@ -19,15 +19,21 @@
 #include "ContactPoint.h"
 #include "Playground.h"
 #include "Positions.h"
+#include "PosToComp.h"
+#include "AbWatch.h"
 #include "Mesh.h"
 #include "Mab.h"
 #include <vagabond/gui/elements/Icosahedron.h>
+#include <vagabond/gui/elements/TextButton.h>
+#include <vagabond/gui/elements/Menu.h>
+#include <vagabond/gui/MatrixPlot.h>
 
 Playground::Playground(Scene *prev, Mab &mab) 
 : Scene(prev), Display(prev), _mab(mab)
 {
 	_farSlab = 80;
 	_slabbing = true;
+	setPingPong(true);
 	shiftToCentre({}, 80);
 
 }
@@ -48,8 +54,14 @@ void Playground::showMesh(const Competition &comp)
 void Playground::showFiducials(const Competition &comp)
 {
 	_positions = new Positions(*_mab.antigens(comp.antigen), comp, _mab,
-	                           _mesh->vertexFinder());
-	_positions->loadAntibodiesInto(this);
+	                           _mesh->vertexFinder(), _mesh->random());
+	_watches = {};
+	_positions->loadAntibodiesInto(this, _watches);
+	
+	for (AbWatch *aw : _watches)
+	{
+		addIndexResponder(aw);
+	}
 }
 
 void Playground::setup()
@@ -57,4 +69,46 @@ void Playground::setup()
 	Competition &comp = *_mab.competitions.begin();
 	showMesh(comp);
 	showFiducials(comp);
+	
+	TextButton *tb = new TextButton("Menu");
+	tb->setCentre(0.9, 0.1);
+
+	auto show_menu = [this, tb]()
+	{
+		Menu *menu = new Menu(this);
+		menu->addOption("refine", [this]() { refine(); });
+		menu->setup(tb, 1);
+		setModal(menu);
+	};
+	
+	tb->setReturnJob(show_menu);
+	addObject(tb);
+	
+	Display::setup();
+}
+
+void Playground::interactedWithNothing(bool left, bool hover)
+{
+	for (AbWatch *aw : _watches)
+	{
+		aw->setHighlighted(false);
+		aw->deleteTemps();
+	}
+}
+
+void Playground::refine()
+{
+	Competition &comp = *_mab.competitions.begin();
+	_model = new PosToComp(comp, *_positions);
+
+	std::mutex *mutex{};
+	PCA::Matrix &display = _model->modelDisplay(&mutex);
+
+	MatrixPlot *mp = new MatrixPlot(display, *mutex);
+	Eigen::MatrixXf mat = _model->fromModel(mp);
+
+	mp->resize(0.4);
+	mp->setCentre(0.95, 0.9);
+	addObject(mp);
+	_mp = mp;
 }

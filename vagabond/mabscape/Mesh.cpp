@@ -459,6 +459,7 @@ void Mesh::refine()
 
 	loop(true);
 	loop(false);
+	triangulate();
 }
 
 void Mesh::kdTree()
@@ -504,6 +505,13 @@ Mesh::vertexFinder()
 		i = nearestVertex(t);
 		p = _vertices[i].pos;
 	};
-
 }
 
+std::function<glm::vec3()> Mesh::random()
+{
+	return [this]()
+	{
+		int i = (rand() % vertexCount());
+		return _vertices[i].pos;
+	};
+}
