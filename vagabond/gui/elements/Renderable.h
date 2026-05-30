@@ -479,6 +479,7 @@ protected:
 	std::mutex _vertLock;
 	std::mutex _buffLock;
 	bool _prioritySelect = false;
+	glm::vec3 _hc{0.2, 0.2, 0.2}; // highlight colour
 private:
 	glm::mat4x4 getModel();
 	void deleteTextures();
