@@ -23,8 +23,9 @@
 #include "AbWatch.h"
 #include "Mab.h"
 
-Positions::Positions(Antigen &antigen, const Competition &comp, Mab &mab) 
-: _antigen(antigen), _mab(mab)
+Positions::Positions(Antigen &antigen, const Competition &comp, Mab &mab,
+                     const FromMesh &fm) 
+: _antigen(antigen), _mab(mab), _fromMesh(fm)
 {
 	OpSet<std::string> list;
 
@@ -42,7 +43,7 @@ Positions::Positions(Antigen &antigen, const Competition &comp, Mab &mab)
 			AntibodyPos ap = {&fid, fid.name, i, n, sym, 0, nullptr};
 			ap.mut = new std::mutex();
 			_raw.resize(_raw.size() + n);
-			ap.setPosition(_raw, sym->reference());
+			ap.setPosition(_raw, sym->reference(), _fromMesh);
 
 			list += fid.name;
 			_positions.push_back(ap);
@@ -107,11 +108,11 @@ void Positions::setPosition(const std::string &name, glm::vec3 pos)
 		return;
 	}
 
-	_lookup[name]->setPosition(_raw, pos);
+	_lookup[name]->setPosition(_raw, pos, _fromMesh);
 }
 
 void Positions::AntibodyPos::setPosition(std::vector<glm::vec3> &raw, 
-                                         glm::vec3 ref)
+                                         glm::vec3 ref, const FromMesh &fromMesh)
 {
 	int i = start_idx;
 
@@ -120,7 +121,14 @@ void Positions::AntibodyPos::setPosition(std::vector<glm::vec3> &raw,
 	for (const glm::mat4x4 &transform : sym->transforms())
 	{
 		sym->applyTransform(transform, Symmetry::next_pointer(&ref));
-		raw[i] = ref;
+		if (fromMesh)
+		{
+			fromMesh(ref, raw[i], meshIdx);
+		}
+		else
+		{
+			raw[i] = ref;
+		}
 		i++;
 	}
 

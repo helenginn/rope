@@ -41,12 +41,14 @@ void Playground::showMesh(const Competition &comp)
 	addObject(mesh);
 	shiftToCentre(mesh->centroid(), 0);
 	std::cout << "Mesh centre: " << mesh->centroid() << std::endl;
+	_mesh = mesh;
 
 }
 
 void Playground::showFiducials(const Competition &comp)
 {
-	_positions = new Positions(*_mab.antigens(comp.antigen), comp, _mab);
+	_positions = new Positions(*_mab.antigens(comp.antigen), comp, _mab,
+	                           _mesh->vertexFinder());
 	_positions->loadAntibodiesInto(this);
 }
 

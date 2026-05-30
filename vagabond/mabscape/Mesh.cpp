@@ -22,6 +22,7 @@
 #include <vagabond/core/GroupBounds.h>
 #include <vagabond/core/AtomGroup.h>
 #include <vagabond/core/matrix_functions.h>
+#include <vagabond/utils/KdTree.h>
 
 Mesh::Mesh(Antigen &antigen) : _antigen(antigen)
 {
@@ -459,3 +460,50 @@ void Mesh::refine()
 	loop(true);
 	loop(false);
 }
+
+void Mesh::kdTree()
+{
+	if (_tree)
+	{
+		return;
+	}
+
+	struct ReturnPos
+	{
+		ReturnPos(std::vector<Vertex> &list)
+		: _list(list) {}
+		
+		bool operator()(size_t &idx, glm::vec3 &v)
+		{
+			if (n >= _list.size()) return false;
+			idx = n;
+			v = _list[n].pos;
+			n++;
+			return true;
+		};
+
+		std::vector<Vertex> &_list;
+		int n = 0;
+	};
+
+	_tree = new KdTree(ReturnPos(_vertices));
+}
+
+int Mesh::nearestVertex(const glm::vec3 &v)
+{
+	kdTree();
+
+	return _tree->nearestVertex(v);
+}
+
+std::function<void(const glm::vec3 &, glm::vec3 &, int &)> 
+Mesh::vertexFinder()
+{
+	return [this](const glm::vec3 &t, glm::vec3 &p, int &i)
+	{
+		i = nearestVertex(t);
+		p = _vertices[i].pos;
+	};
+
+}
+

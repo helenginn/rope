@@ -26,6 +26,8 @@
 using nlohmann::json;
 
 struct Antigen;
+
+class KdTree;
 class AtomGroup;
 
 class Mesh : public SimplePolygon
@@ -36,6 +38,11 @@ public:
 	AtomGroup *atoms();
 
 	void refine();
+	void kdTree();
+
+	int nearestVertex(const glm::vec3 &v);
+
+	std::function<void(const glm::vec3 &, glm::vec3 &, int &)> vertexFinder();
 private:
 	ArbitraryMap mappedAtoms();
 	int removeHollows(ArbitraryMap &map);
@@ -51,6 +58,8 @@ private:
 	
 	std::vector<GLuint> _triangleIdxs;
 	std::vector<GLuint> _lineIdxs;
+	
+	KdTree *_tree{};
 };
 
 #endif

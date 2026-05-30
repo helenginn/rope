@@ -24,6 +24,7 @@
 struct Mab;
 struct Competition;
 
+class Mesh;
 class Positions;
 
 class Playground : public Display
@@ -38,6 +39,7 @@ private:
 	Mab &_mab;
 
 	Positions *_positions{};
+	Mesh *_mesh{};
 };
 
 #endif
