@@ -16,28 +16,34 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __vagabond__Playground__
-#define __vagabond__Playground__
+#include "AbWatch.h"
 
-#include <vagabond/gui/Display.h>
-
-struct Mab;
-struct Competition;
-
-class Positions;
-
-class Playground : public Display
+AbWatch::AbWatch(const SimplePolygon &other, const unsigned int &version_track, 
+                 std::mutex *mut, const glm::vec3 &pos)
+: _versionTrack(version_track), _mut(mut), _pos(pos)
 {
-public:
-	Playground(Scene *prev, Mab &mab);
+	_vertices = other.vertices();
+	_indices = other.indices();
 
-	virtual void setup();
-private:
-	void showMesh(const Competition &competition);
-	void showFiducials(const Competition &comp);
-	Mab &_mab;
+	setUsesProjection(true);
+	setVertexShaderFile("assets/shaders/with_matrix.vsh");
+	setFragmentShaderFile("assets/shaders/lighting.fsh");
+}
 
-	Positions *_positions{};
-};
+void AbWatch::doThings()
+{
+	 std::unique_lock<std::mutex> lock(*_mut, std::defer_lock);
 
-#endif
+	if (lock.try_lock())
+	{
+		return;
+	}
+
+	if (_currVersion >= _versionTrack)
+	{
+		return;
+	}
+	
+	_currVersion = _versionTrack;
+	setPosition(_pos);
+}

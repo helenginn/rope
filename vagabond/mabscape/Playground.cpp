@@ -18,6 +18,7 @@
 
 #include "ContactPoint.h"
 #include "Playground.h"
+#include "Positions.h"
 #include "Mesh.h"
 #include "Mab.h"
 #include <vagabond/gui/elements/Icosahedron.h>
@@ -45,33 +46,8 @@ void Playground::showMesh(const Competition &comp)
 
 void Playground::showFiducials(const Competition &comp)
 {
-	std::string antigen_name = comp.antigen;
-	for (Fiducial &fid : _mab.fiducials)
-	{
-		if (fid.antigen == antigen_name)
-		{
-			ContactPoint *cp = fid.contact;
-			if (!cp)
-			{
-				continue;
-			}
-			
-			glm::vec3 position = cp->reference();
-			std::cout << "Position: " << position << std::endl;
-			
-			for (const glm::mat4x4 &transform : cp->transforms())
-			{
-				cp->Symmetry::applyTransform(transform, 
-				                             Symmetry::next_pointer(&position));
-
-				Icosahedron *ico = new Icosahedron();
-				ico->triangulate();
-				ico->setPosition(position);
-				std::cout << "\tSymmetry: " << position << std::endl;
-				addObject(ico);
-			}
-		}
-	}
+	_positions = new Positions(*_mab.antigens(comp.antigen), comp, _mab);
+	_positions->loadAntibodiesInto(this);
 }
 
 void Playground::setup()

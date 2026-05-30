@@ -16,28 +16,26 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __vagabond__Playground__
-#define __vagabond__Playground__
+#ifndef __vagabond__AbWatch__
+#define __vagabond__AbWatch__
 
-#include <vagabond/gui/Display.h>
+#include <vagabond/gui/elements/SimplePolygon.h>
 
-struct Mab;
-struct Competition;
-
-class Positions;
-
-class Playground : public Display
+class AbWatch : public SimplePolygon
 {
 public:
-	Playground(Scene *prev, Mab &mab);
+	AbWatch(const SimplePolygon &other, const unsigned int &version_track, 
+	        std::mutex *mut, const glm::vec3 &pos);
 
-	virtual void setup();
 private:
-	void showMesh(const Competition &competition);
-	void showFiducials(const Competition &comp);
-	Mab &_mab;
+	unsigned int _currVersion = 0;
+	const unsigned int &_versionTrack;
+	std::mutex *_mut{};
+	const glm::vec3 &_pos;
 
-	Positions *_positions{};
+	void doThings();
 };
 
 #endif
+
+

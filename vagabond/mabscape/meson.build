@@ -1,4 +1,6 @@
 mabscapefiles = [
+'AbWatch.h',
+'AbWatch.cpp',
 'AntibodyOrderingView.h',
 'AntibodyOrderingView.cpp',
 'AntigenSetup.h',
@@ -21,6 +23,8 @@ mabscapefiles = [
 'Mesh.cpp',
 'Playground.h',
 'Playground.cpp',
+'Positions.h',
+'Positions.cpp',
 'PrepWorkView.h',
 'PrepWorkView.cpp',
 'Symmetry.h',
