@@ -35,9 +35,13 @@ class HasRenderables;
 class Positions
 {
 public:
-	Positions(Antigen &antigen, const Competition &comp, Mab &mab);
-	~Positions();
+	typedef std::function<void(const glm::vec3 &, glm::vec3 &, int &)> FromMesh;
 
+	Positions(Antigen &antigen, const Competition &comp, Mab &mab,
+	          const FromMesh &fm);
+	~Positions();
+	
+	
 	void setPosition(const std::string &name, glm::vec3 pos);
 	void loadAntibodiesInto(HasRenderables *bucket);
 private:
@@ -46,7 +50,8 @@ private:
 	
 	struct AntibodyPos
 	{
-		void setPosition(std::vector<glm::vec3> &raw, glm::vec3 ref);
+		void setPosition(std::vector<glm::vec3> &raw, glm::vec3 ref, 
+		                 const FromMesh &fromMesh);
 		
 		~AntibodyPos()
 		{
@@ -63,11 +68,13 @@ private:
 		Symmetry *sym{};
 		unsigned int version = 0;
 		std::mutex *mut{};
+		int meshIdx = -1;
 	};
 
 	std::vector<AntibodyPos> _positions;
 	std::vector<glm::vec3> _raw;
 	std::map<std::string, AntibodyPos *> _lookup;
+	FromMesh _fromMesh;
 };
 
 #endif
