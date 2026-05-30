@@ -12,6 +12,8 @@ utilfiles = [
 'Mapping.h',
 'Variable.h',
 'maths.cpp',
+'KdTree.cpp',
+'KdTree.h',
 'version.h',
 'polyfit.h',
 'Hypersphere.h',
