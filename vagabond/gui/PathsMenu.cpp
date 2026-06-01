@@ -380,7 +380,15 @@ void PathsMenu::buttonPressed(std::string tag, Button *button)
                 Environment::purgePath(*path);
             }
 		}
-    
+
+        _selected.clear();
+
+		for(int i = 0; i < _tbs.size(); i++)
+		{
+            std::cout << _selected.count(i) << std::endl;
+			_tbs[i]->tick("", _selected.count(i));
+		}
+		
         refresh();
 	}
 
@@ -533,7 +541,6 @@ void PathsMenu::prepareSpace()
 
 void PathsMenu::refresh()
 {
-	_tbs.clear();
 	std::cout << "Refreshing" << std::endl;
 	ListView::refresh();
 }
