@@ -8,6 +8,8 @@ Entropy::Entropy(const std::vector<PathGroup> &paths, const struct FlagParameter
     _paths = paths;
     _ticks = 0;
 
+    sortPathGroupsByInstance(_paths);
+
     for (const PathGroup &group : paths)
     {
         _starts.insert(group[0]->startInstance());
@@ -24,7 +26,7 @@ void Entropy::populateHeatMap(struct EntropyForHeatMap *entropyData)
 
     for(int t = 0; t < _flagPar.timeDivisions; t++)
     {
-        entropyData->dataMatrix.push_back(Eigen::MatrixXf::Zero(_starts.size(), _ends.size()));
+        entropyData->dataMatrix.push_back(Eigen::MatrixXf::Constant(_starts.size(), _ends.size(), NAN));
     }
 
     Progressor *prog = new Progressor();
@@ -33,8 +35,8 @@ void Entropy::populateHeatMap(struct EntropyForHeatMap *entropyData)
     {
         std::cout << "Group: " << group[0]->startInstance()->model_id() << " to " << group[0]->endInstance()->model_id() << std::endl;
 
-        entropyData->start.push_back(group[0]->startInstance()->model_id());
-        entropyData->end.push_back(group[0]->endInstance()->model_id());
+        entropyData->start.push_back(group[0]->startInstance());
+        entropyData->end.push_back(group[0]->endInstance());
 
         std::pair<int, int> idxs = index(group[0]->startInstance(), group[0]->endInstance());
 
@@ -75,6 +77,19 @@ std::vector<double> Entropy::pathEntropyInstancePair(int numPaths, std::vector<P
     }
 
     return entropy;
+}
+
+void Entropy::sortPathGroupsByInstance(std::vector<PathGroup> &paths)
+{
+    auto compareNames = [](const PathGroup& a, const PathGroup& b)
+    {
+        std::string aName = a[0]->startInstance()->model_id() + " to " + a[0]->endInstance()->model_id();
+        std::string bName = b[0]->startInstance()->model_id() + " to " + b[0]->endInstance()->model_id();
+    
+        return aName < bName;
+    };
+
+    std::sort(paths.begin(), paths.end(), compareNames);
 }
 
 std::pair<int, int> Entropy::index(Instance *start, Instance *end)
