@@ -89,6 +89,19 @@ void Entropy::sortPathGroupsByInstance(std::vector<PathGroup> &paths)
     std::sort(paths.begin(), paths.end(), compareNames);
 }
 
+void Entropy::sortPathGroupsByInstance(std::vector<PathGroup> &paths)
+{
+    auto compareNames = [](const PathGroup& a, const PathGroup& b)
+    {
+        std::string aName = a[0]->startInstance()->model_id() + " to " + a[0]->endInstance()->model_id();
+        std::string bName = b[0]->startInstance()->model_id() + " to " + b[0]->endInstance()->model_id();
+    
+        return aName < bName;
+    };
+
+    std::sort(paths.begin(), paths.end(), compareNames);
+}
+
 std::pair<int, int> Entropy::index(Instance *start, Instance *end)
 {
     int stIdx = -1;
