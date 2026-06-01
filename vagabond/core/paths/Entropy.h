@@ -26,8 +26,8 @@ public:
 		{
 		}
 
-		std::vector<std::string> start;
-		std::vector<std::string> end;
+		std::vector<Instance*> start;
+		std::vector<Instance*> end;
 		std::vector<std::vector<double>> total;
 		std::vector<std::vector<double>> perRes;
 
@@ -54,6 +54,8 @@ public:
     std::pair<int, int> index(Instance *start, Instance *end);
 
     typedef std::set<Instance *, compare_ids> InstanceSet;
+
+    void sortPathGroupsByInstance(std::vector<PathGroup> &paths);
 
     int rows()
     {
