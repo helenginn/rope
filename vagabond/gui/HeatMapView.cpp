@@ -58,7 +58,7 @@ void HeatMapView::redrawHeatMap(double num)
     int rows = _entropy->rows();
     int cols = _entropy->cols();
 
-    Eigen::MatrixXf matrix = Eigen::MatrixXf::Zero(rows, cols);
+    Eigen::MatrixXf matrix = Eigen::MatrixXf::Constant(rows, cols, NAN);
     
     std::vector<double> entropyVals(_entropyData->total[t].size());
 
@@ -81,12 +81,13 @@ void HeatMapView::redrawHeatMap(double num)
     {
         for (int j = 0; j < cols; j++)
         {
-			matrix(i, j) = _entropyData->dataMatrix[t](i, j);
+            if(!(isnan(_entropyData->dataMatrix[t](i,j))))
+            {
+			    matrix(i, j) = maxEntVal - _entropyData->dataMatrix[t](i, j);
+                matrix(i, j) = matrix(i, j)/(maxEntVal - minEntVal);
+            }
         }
     }
-
-    matrix = Eigen::MatrixXf::Ones(rows, cols) * maxEntVal - matrix;
-    matrix = matrix/(maxEntVal - minEntVal);
 
     _pcaMatrix = PCA::Matrix(matrix);
 	printMatrix(&_pcaMatrix);
@@ -205,7 +206,7 @@ void HeatMapView::mousePressEvent(double x, double y, SDL_MouseButtonEvent butto
 	int left = v.x * _pcaMatrix.cols;
 	int right = v.y * _pcaMatrix.rows;
 	std::cout << left << " " << right << std::endl;
-	setInformation(_entropyData->start[left] + " to " + _entropyData->end[right]);
+	setInformation(_entropyData->start[left]->model_id() + " to " + _entropyData->end[right]->model_id());
 	Scene::mousePressEvent(x, y, button);
 }
 
