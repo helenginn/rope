@@ -18,8 +18,6 @@ public:
 
 	struct EntropyForHeatMap
 	{
-		static std::mutex *mutex;
-
 		int numDivisions;
 
 		~EntropyForHeatMap()
@@ -67,12 +65,19 @@ public:
         return _ends.size();
     }
 
+    std::mutex &mutex()
+    {
+        return _mutex;
+    }
+
 private:
     std::vector<PathGroup> _paths;
     struct FlagParameters _flagPar;
 
     InstanceSet _starts;
     InstanceSet _ends;
+
+    std::mutex _mutex;
 };
 
 #endif

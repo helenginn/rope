@@ -20,8 +20,6 @@ Entropy::Entropy(const std::vector<PathGroup> &paths, const struct FlagParameter
 
 void Entropy::populateHeatMap(struct EntropyForHeatMap *entropyData)
 {
-    std::cout << "Number of divisions: " << _flagPar.timeDivisions << std::endl; 
-
     entropyData->numDivisions = _flagPar.timeDivisions;
 
     for(int t = 0; t < _flagPar.timeDivisions; t++)
@@ -29,54 +27,54 @@ void Entropy::populateHeatMap(struct EntropyForHeatMap *entropyData)
         entropyData->dataMatrix.push_back(Eigen::MatrixXf::Constant(_starts.size(), _ends.size(), NAN));
     }
 
-    Progressor *prog = new Progressor();
-
     for (const PathGroup &group : _paths)
     {
-        std::cout << "Group: " << group[0]->startInstance()->model_id() << " to " << group[0]->endInstance()->model_id() << std::endl;
-
         entropyData->start.push_back(group[0]->startInstance());
         entropyData->end.push_back(group[0]->endInstance());
 
         std::pair<int, int> idxs = index(group[0]->startInstance(), group[0]->endInstance());
-
-        std::vector<double> entropy = pathEntropyInstancePair(_flagPar.nf, group, _flagPar.timeDivisions, _flagPar.mist);
-
-        entropyData->total.push_back(entropy);
-
-        for (int t = 0; t < _flagPar.timeDivisions; t++)
+        
         {
-           entropyData->dataMatrix[t](idxs.first, idxs.second) = entropy[t];
-            //entropyData.dataMatrix[t](idxs.second, idxs.first) = entropy[t];
+            std::unique_lock<std::mutex> lock(mutex());
+            std::vector<double> entropy = pathEntropyInstancePair(_flagPar.nf, group, _flagPar.timeDivisions, _flagPar.mist);
+
+			std::cout << "entropy size = " << entropy.size() << std::endl;
+			entropyData->total.push_back(entropy);
+			std::cout << "total size = " << entropyData->total.size() << std::endl;
+
+			for (int t = 0; t < _flagPar.timeDivisions; t++)
+			{
+			   entropyData->dataMatrix[t](idxs.first, idxs.second) = entropy[t];
+				//entropyData.dataMatrix[t](idxs.second, idxs.first) = entropy[t];
+			}
         }
      
-        prog->clickTicker();
     }
-
-    prog->finishTicker();
 }
 
 std::vector<double> Entropy::pathEntropyInstancePair(int numPaths, std::vector<Path *> paths, int numDivisions, bool mist)
 {
     PathEntropy *pE = new PathEntropy();
-    std::vector<double> entropy;
-
+    std::vector<double> entropyPair;
+    
+    std::cout << "Entering subroutine..." << std::endl;
     std::vector<TorsRes4NN*> torsRes = pE->getAtomsAndResidues(numPaths, paths, numDivisions);
 
     if (mist == false)
     {
         struct EntropyForMatrix ent4Mat = pE->calculateEntropyIndependent(numPaths, _flagPar, torsRes, numDivisions);
-
-        entropy = ent4Mat.totalEntropy;
+        std::cout << "No MIST case..." << std::endl;
+        entropyPair = ent4Mat.totalEntropy;
     }
     else
     {
         struct EntropyForMatrix ent4Mat = pE->calculateEntropyMI(numPaths, _flagPar, torsRes);
-
-        entropy = ent4Mat.totalEntropy;
+        std::cout << "MIST case..." << std::endl;
+        entropyPair = ent4Mat.totalEntropy;
     }
 
-    return entropy;
+    std::cout << "Entropy total vector size: " << entropyPair.size() << std::endl;
+    return entropyPair;
 }
 
 void Entropy::sortPathGroupsByInstance(std::vector<PathGroup> &paths)
