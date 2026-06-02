@@ -1,12 +1,13 @@
 #include <vagabond/gui/TableView.h>
-#include <vagabond/gui/VagWindow.h>
 #include <vagabond/gui/elements/TextButton.h>
 #include <vagabond/gui/elements/Slider.h>
 #include <vagabond/utils/Eigen/Dense>
 #include <vagabond/utils/svd/PCA.h>
 #include <vagabond/utils/maths.h>
+#include <vagabond/utils/DoJob.h>
 #include <HeatMapView.h>
 #include <MatrixPlot.h>
+#include <MatrixBox.h>
 #include <ColourLegend.h>
 
 HeatMapView::HeatMapView(Scene *prev, const std::vector<PathGroup> &paths, struct FlagParameters flagPar) : Scene(prev)
@@ -15,7 +16,7 @@ HeatMapView::HeatMapView(Scene *prev, const std::vector<PathGroup> &paths, struc
     _flagPar = flagPar;
 
     _entropyData = new Entropy::EntropyForHeatMap;
-    PCA::setupMatrix(&_pcaMatrix, _entropy->rows(), _entropy->cols());
+    //PCA::setupMatrix(&_pcaMatrix, _entropy->rows(), _entropy->cols());
 }
 
 HeatMapView::~HeatMapView()
@@ -26,13 +27,11 @@ void HeatMapView::setup()
 {
     addTitle("Heat Map");    
 
-    VagWindow::window()->requestProgressBar(_entropy->ticks(), "Generating heatmap...");
-
     std::cout << "Populating data matrix..." << std::endl;
     _entropy->populateHeatMap(_entropyData);
- 
+
     if (_flagPar.timeDivisions > 1)
-    { 
+    {   
         std::cout << "adding slider..." << std::endl;
         setupSlider(_flagPar.timeDivisions);
     }
@@ -93,7 +92,6 @@ void HeatMapView::redrawHeatMap(double num)
 	printMatrix(&_pcaMatrix);
 
     _plot = new MatrixPlot(_pcaMatrix, _mutex);
-
     _plot->legend()->setScheme(Heat);
     addObject(_plot);
 }
