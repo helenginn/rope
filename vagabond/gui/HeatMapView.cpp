@@ -94,6 +94,9 @@ void HeatMapView::redrawHeatMap(double num)
 
     _plot = new MatrixPlot(_pcaMatrix, _mutex);
     _plot->legend()->setScheme(Heat);
+
+    MatrixBox* matBox = new MatrixBox(_plot, _entropy->rowNames(_entropyData->start), _entropy->colNames(_entropyData->end));
+
     addObject(_plot);
 }
 
