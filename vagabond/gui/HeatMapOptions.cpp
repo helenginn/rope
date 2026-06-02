@@ -75,6 +75,7 @@ void HeatMapOptions::loadOptions()
         sPaths->setDragResponder(this);
         sPaths->resize(0.5);
         sPaths->setup("Number of paths", 2, maxPaths(), 1);
+        sPaths->setStart(maxPaths(), 0.);
         sPaths->setReturnTag("paths");
 	    sPaths->setCentre(0.7, 0.35);
         addTempObject(sPaths);
@@ -85,6 +86,7 @@ void HeatMapOptions::loadOptions()
         sNN->setDragResponder(this);
         sNN->resize(0.5);
         sNN->setup("Number of nearest neighbours", 2, maxPaths()-1, 1);
+        sNN->setStart(maxPaths()-1, 0.);
         sNN->setReturnTag("neighbours");
 	    sNN->setCentre(0.7, 0.5);
         addTempObject(sNN);
