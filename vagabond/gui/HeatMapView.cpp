@@ -1,5 +1,4 @@
 #include <vagabond/gui/TableView.h>
-#include <vagabond/gui/VagWindow.h>
 #include <vagabond/gui/elements/TextButton.h>
 #include <vagabond/gui/elements/Slider.h>
 #include <vagabond/gui/VagWindow.h>
@@ -283,7 +282,6 @@ void HeatMapView::redrawHeatMap(double num)
 	printMatrix(&_pcaMatrix);
 
     _plot = new MatrixPlot(_pcaMatrix, _mutex);
-
     _plot->legend()->setScheme(Heat);
     addObject(_plot);
 }

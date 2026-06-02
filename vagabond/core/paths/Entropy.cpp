@@ -26,8 +26,6 @@ void Entropy::populateHeatMap(struct EntropyForHeatMap *entropyData)
         entropyData->dataMatrix.push_back(Eigen::MatrixXf::Constant(_starts.size(), _ends.size(), NAN));
     }
 
-    Progressor *prog = new Progressor();
-
     for (const PathGroup &group : _paths)
     {
         std::pair<int, int> idxs = index(group[0]->startInstance(), group[0]->endInstance());
@@ -53,7 +51,6 @@ void Entropy::populateHeatMap(struct EntropyForHeatMap *entropyData)
 std::vector<double> Entropy::pathEntropyInstancePair(int numPaths, std::vector<Path *> paths, int numDivisions, bool mist)
 {
     PathEntropy *pE = new PathEntropy();
-
     std::vector<double> entropyPair;
     
     std::cout << "Entering subroutine..." << std::endl;

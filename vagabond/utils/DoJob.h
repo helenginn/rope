@@ -29,9 +29,9 @@ struct DoJob
 	{
 		_worker = std::thread(func);
 		_worker.detach();
+		_worker.join();
 		/*
-		_worker->join();
-		delete _worker;
+        delete _worker;
 		delete this;
 		*/
 	}
