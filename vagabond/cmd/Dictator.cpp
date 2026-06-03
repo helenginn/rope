@@ -53,7 +53,8 @@ void Dictator::makeCommands()
 	_commands["path-matrix"] = "Matrix of thermodynamic scores for paths between list of instances. First argument: output filename; all following arguments: instance identifiers";
     _commands["path-entropy"] = "Generate heat map of average entropy for paths between list of instances.";
 	_commands["refine-path"] = "Refine between instances (first and second argument), for N cycles (third argument, default 1)";
-	_commands["auto-paths"] = "Refine all pairs within a group of instances. First argument: integer number of cycles; all following arguments: instance identifiers";
+	_commands["auto-paths"] = "Refine all pairs within a group of instances. First argument: integer number of cycles; Second argument: starting perturbation angle; all following arguments: instance identifiers";
+	_commands["auto-paths-reduced"] = "Refine all pairs between first instance and rest of the group of instances. First argument: integer number of cycles; Second argument: starting perturbation angle; all following arguments: instance identifiers";
 	_commands["save"] = "Save to environment file.";
 
 	_commands["environment"] = ("Link to json file (usually rope.json) to "\
@@ -226,8 +227,19 @@ void Dictator::processRequest(std::string &first, std::string &last)
 
 		PathManager::manager()->makePathsWithinGroup(args, num, startAng);
 	}
+    
+    if (first == "auto-paths-reduced")
+	{
+		std::vector<std::string> args = split(last, ',');
+		int num = atoi(args[0].c_str());
+        float startAng = atoi(args[1].c_str());
 
-	if (first == "refine-path")
+		args.erase(args.begin(), args.begin()+1);
+
+		PathManager::manager()->makePathsWithinGroupReduced(args, num, startAng);
+	}
+	
+    if (first == "refine-path")
 	{
 		std::cout << "here" << std::endl;
 		std::vector<std::string> args = split(last, ',');

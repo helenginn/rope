@@ -317,6 +317,23 @@ void PathManager::makePathsWithinGroup(const std::vector<std::string> &insts,
 	do_on_each_pair_of_paths(make_path, insts);
 }
 
+void PathManager::makePathsWithinGroupReduced(const std::vector<std::string> &insts, int cycles, float startAng)
+{
+	auto make_path = [this, cycles, startAng](Instance *startInstance, Instance *endInstance)
+	{
+		std::vector<Path *> pairPaths = pathsBetweenInstances(startInstance, endInstance);
+		int total = cycles - pairPaths.size();
+		if (total <= 0) { return false; };
+
+		makePathBetween(startInstance->id(), endInstance->id(), total, startAng);
+		return true;
+	};
+	
+    Instance* startInstance = ModelManager::manager()->instance(insts[0]);
+    std::vector<std::string> endInstance = {insts.begin()+1, insts.end()};
+ 
+	do_on_each_pair_of_paths(make_path, insts);
+}
 void PathManager::obstacles(const std::vector<std::string> &insts)
 {
 	std::map<ScoreBucket, float> results;
