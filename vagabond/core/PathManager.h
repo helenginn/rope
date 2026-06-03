@@ -41,6 +41,7 @@ public:
 	                          int cycles, float startAng);
 	void makePathsWithinGroupReduced(const std::vector<std::string> &insts,
 	                          int cycles, float startAng);
+	                          
 	virtual const std::string progressName() const
 	{
 		return "paths";
