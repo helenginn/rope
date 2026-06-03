@@ -16,7 +16,7 @@ HeatMapView::HeatMapView(Scene *prev, const std::vector<PathGroup> &paths, struc
     _flagPar = flagPar;
 
     _entropyData = new Entropy::EntropyForHeatMap;
-    //PCA::setupMatrix(&_pcaMatrix, _entropy->rows(), _entropy->cols());
+   // PCA::setupMatrix(&_pcaMatrix, _entropy->rows(), _entropy->cols());
 }
 
 HeatMapView::~HeatMapView()
@@ -60,20 +60,18 @@ void HeatMapView::redrawHeatMap(double num)
 
     Eigen::MatrixXf matrix = Eigen::MatrixXf::Constant(rows, cols, NAN);
     
-    std::vector<double> entropyVals(_entropyData->total[t].size());
-
     double maxEntVal = _entropyData->total[t].front();
     double minEntVal = _entropyData->total[t].front();
 
-    for(int i = 0; i < _entropyData->total[t].size(); i++)
+    for(int i = 0; i < _entropyData->total.size(); i++)
     {
-        if(_entropyData->total[t][i] > maxEntVal)
+        if(_entropyData->total[i][t] > maxEntVal)
         {
-            maxEntVal = _entropyData->total[t][i];
+            maxEntVal = _entropyData->total[i][t];
         }
-        if(_entropyData->total[t][i] < minEntVal)
+        if(_entropyData->total[i][t] < minEntVal)
         {
-            minEntVal = _entropyData->total[t][i];
+            minEntVal = _entropyData->total[i][t];
         }
     }
 
@@ -117,17 +115,21 @@ void HeatMapView::sumHeatMap()
 
     Eigen::MatrixXf matrix = Eigen::MatrixXf::Zero(rows, cols);
     
-    std::vector<double> entropyVals(_entropyData->total[0].size());
-
     for (int t = 0; t < _entropyData->numDivisions; t++)
     {
-        for(int i = 0; i < _entropyData->total[t].size(); i++) 
+        matrix += _entropyData->dataMatrix[t];
+    }
+
+    std::vector<double> entropyVals(_entropyData->total.size());
+
+    for (int i = 0; i < _entropyData->total.size(); i++)
+    {
+        for(int t = 0; t < _entropyData->numDivisions; t++) 
         {
-            entropyVals[i] += _entropyData->total[t][i];
+            entropyVals[i] += _entropyData->total[i][t];
             
             std::cout << i << ": " << entropyVals[i] << std::endl;
         }
-        matrix += _entropyData->dataMatrix[t];
     }
    
     double meanEntropy = mean(entropyVals);
