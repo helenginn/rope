@@ -55,7 +55,7 @@ MatrixBox::MatrixBox(MatrixPlot *mp, const std::vector<std::string> &rowNames,
 
 	refreshDisplay();
 
-	_plot->setCentre(0.0, 0.0);
+	_plot->setCentre(0.5, 0.5);
 	addObject(_plot);
 
 	if (reorder)
