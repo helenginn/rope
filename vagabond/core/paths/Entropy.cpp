@@ -38,9 +38,7 @@ void Entropy::populateHeatMap(struct EntropyForHeatMap *entropyData)
             std::unique_lock<std::mutex> lock(mutex());
             std::vector<double> entropy = pathEntropyInstancePair(_flagPar.nf, group, _flagPar.timeDivisions, _flagPar.mist);
 
-			std::cout << "entropy size = " << entropy.size() << std::endl;
 			entropyData->total.push_back(entropy);
-			std::cout << "total size = " << entropyData->total.size() << std::endl;
 
 			for (int t = 0; t < _flagPar.timeDivisions; t++)
 			{
