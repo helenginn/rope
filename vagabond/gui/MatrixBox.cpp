@@ -502,7 +502,7 @@ void MatrixBox::guessReordering()
 		}
 	};
 	
-	for (int i = 0; i < 5000; i++)
+	for (int i = 0; i < 2500; i++)
 	{
 		round();
 	}
