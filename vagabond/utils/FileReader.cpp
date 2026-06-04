@@ -164,7 +164,7 @@ std::vector<std::string> glob_pattern(const std::string &pattern)
         if (strcmp(name, ".") == 0 || strcmp(name, "..") == 0)
             continue;
 
-        std::string fullPath = dir + "\\" + name;
+        std::string fullPath = name;
         results.push_back(fullPath);
     }
     while (FindNextFileA(hFind, &ffd) != 0);
