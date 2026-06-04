@@ -7,6 +7,7 @@
 #include <iostream>
 #include <SDL2/SDL_image.h>
 #include "config/config.h"
+#include <vagabond/utils/os.h>
 
 #ifdef __EMSCRIPTEN__
 #include <emscripten.h>
@@ -42,6 +43,10 @@ EM_JS(int, get_canvas_width, (), { return window.innerWidth; });
 
 void Window::instateWindow()
 {
+#ifdef OS_WINDOWS
+    // High DPI awareness for Windows
+    SDL_SetHint(SDL_HINT_WINDOWS_DPI_SCALING, "1");
+#endif
 	unsigned int windowFlags = SDL_WINDOW_OPENGL;
 	SDL_SetHintWithPriority(SDL_HINT_VIDEO_MAC_FULLSCREEN_SPACES, "1",
 	                        SDL_HINT_OVERRIDE);
