@@ -33,7 +33,7 @@ private:
     Entropy *_entropy{};
     std::thread *_worker = nullptr;
 
-    PCA::Matrix _pcaMatrix{};    
+    PCA::Matrix _displayMatrix{};    
     MatrixPlot *_plot{};
     Slider *_rangeSlider;
     std::mutex _mutex;
