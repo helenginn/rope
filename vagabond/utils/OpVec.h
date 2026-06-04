@@ -63,7 +63,7 @@ public:
 	}
 	
 	template <typename Func>
-	void do_on_each(Func &func)
+	void do_on_each(const Func &func)
 	{
 		for (Type &v : *this)
 		{
