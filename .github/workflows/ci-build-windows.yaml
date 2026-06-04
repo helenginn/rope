@@ -5,8 +5,7 @@ on: [push, pull_request, workflow_dispatch]
 jobs:
   build:
     name: Build on ${{ matrix.os }} with conan
-    if: false # keep as skip until windows branch is merged
-    # if: ${{ !contains(github.event.head_commit.message, '/skip-ci') }}
+    if: ${{ !contains(github.event.head_commit.message, '/skip-ci') }}
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
