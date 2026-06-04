@@ -223,6 +223,7 @@ if ($LASTEXITCODE -ne 0) {Die "conan create gemmi failed"}
 Invoke-Conan install . "-of=${BUILDDIR}" "-b=$ConanBuildFlag" -s compiler.cppstd=20
 if ($LASTEXITCODE -ne 0) {Die "conan install failed"}
 
+. "$BUILDDIR\conanbuild.ps1"
 meson setup $BUILDDIR "--native-file=${BUILDDIR}\conan_meson_native.ini" "--buildtype=${BUILD_TYPE}" @EXTRA_MESON_ARGS --reconfigure --clearcache
 if ($LASTEXITCODE -ne 0) {Die "meson setup failed"}
 meson compile -C $BUILDDIR
