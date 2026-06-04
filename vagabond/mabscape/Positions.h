@@ -43,11 +43,16 @@ public:
 	          const FromMesh &fm, const RandomFromMesh &rm);
 	~Positions();
 	
-	void setPosition(const std::string &name, glm::vec3 pos);
+	bool isFixed(const std::string &name) const;
+	void setPosition(const std::string &name, glm::vec3 pos, 
+	                 float snappiness = 0);
 	const glm::vec3 &operator()(const std::string &name, 
 	                            const glm::vec3 *closest = nullptr) const;
 	void loadAntibodiesInto(HasRenderables *bucket,
 	                        std::vector<AbWatch *> &watches);
+	
+	int paramCount();
+	void randomise();
 private:
 	Antigen &_antigen;
 	Mab &_mab;

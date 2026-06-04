@@ -25,6 +25,8 @@
 ContactPoint::ContactPoint(Fiducial &fiducial, Antigens &antigens)
 : _fiducial(fiducial), _antigens(antigens)
 {
+	_transforms.clear();
+
 	OpSet<std::string> fid_ents = 
 	fiducial.non_antigen_entities(antigens);
 
@@ -114,14 +116,14 @@ void ContactPoint::findMapping()
 	std::cout << "Lefts (fid): ";
 	for (auto &pair : lefts)
 	{
-		std::cout << pair.first << " ";
+		std::cout << pair.first << ": ";
 		write_instances(pair.second);
 	}
 
 	std::cout << "Rights (ant): ";
 	for (auto &pair : rights)
 	{
-		std::cout << pair.first << " ";
+		std::cout << pair.first << ": ";
 		write_instances(pair.second);
 	}
 	
@@ -194,7 +196,7 @@ void ContactPoint::findMapping()
 		std::list<Instance *> arrangement;
 		OpSet<std::list<Instance *>> arrangements;
 
-		std::cout << "with: " << std::endl;
+		std::cout << "with: " << leftInsts.size() << " left instances" << std::endl;
 		do
 		{
 			float score = check_permutation(leftInsts, arranged);
@@ -215,6 +217,7 @@ void ContactPoint::findMapping()
 		}
 		while (std::next_permutation(arranged.begin(), arranged.end()));
 		
+		std::cout << "Collected " << arrangements.size() << " arrangements" << std::endl;
 		std::cout << "... -> best: " << std::endl;
 		write_instances(arrangement);
 		if (arrangements.size() == 0)
@@ -243,6 +246,7 @@ void ContactPoint::findMapping()
 	_chosen->model.unload();
 	
 	establishMidpoint();
+	recalibrateToFirst();
 }
 
 void ContactPoint::establishMidpoint()
@@ -278,6 +282,7 @@ void ContactPoint::establishMidpoint()
 	([](Atom *a) { return a->derivedPosition();});
 	std::cout << "Central atom: " << central->desc() << std::endl;
 	_reference = central->derivedPosition();
+	std::cout << "Reference: " << _reference << std::endl;
 	
 	delete interface;
 	delete abs;

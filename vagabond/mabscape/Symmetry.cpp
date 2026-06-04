@@ -21,6 +21,7 @@
 
 Symmetry::Symmetry()
 {
+
 }
 
 
@@ -90,4 +91,26 @@ Symmetry::NextPoint Symmetry::next_pointer(glm::vec3 *vec)
 	};
 	
 	return next_point(vec);
+}
+
+void Symmetry::recalibrateToFirst()
+{
+	if (_transforms.size() == 0)
+	{
+		return;
+	}
+
+	glm::mat4x4 undo = glm::inverse(*_transforms.begin());
+	
+	for (glm::mat4x4 &transform : _transforms)
+	{
+		glm::mat4x4 copy = transform;
+		transform = copy * undo;
+	}
+}
+
+void Symmetry::reset()
+{
+	_applied = glm::mat4x4(1.f);
+
 }

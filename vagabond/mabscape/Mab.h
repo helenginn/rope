@@ -156,6 +156,7 @@ inline void to_json(json &j, const Competition &c)
 	j["right_header"] = c.right_header;
 	j["value_header"] = c.value_header;
 
+	j["favoured_ordering"] = c.favoured_ordering;
 	j["as_competition"] = c.as_competition;
 	j["scale"] = c.scale;
 	j["antigen"] = c.antigen;
@@ -164,11 +165,16 @@ inline void to_json(json &j, const Competition &c)
 inline void from_json(const json &j, Competition &c)
 {
 	c.filename = j.at("filename");
-	c.metadata = new Metadata(j.at("metadata"));;
+	c.metadata = new Metadata(j.at("metadata"));
 
 	c.left_header = j.at("left_header");
 	c.right_header = j.at("right_header");
 	c.value_header = j.at("value_header");
+
+	if (j.count("favoured_ordering"))
+	{
+		c.favoured_ordering = j.at("favoured_ordering");
+	}
 
 	c.as_competition = j.at("as_competition");
 	c.scale = j.at("scale");

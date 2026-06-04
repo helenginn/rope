@@ -37,14 +37,16 @@ void AntibodyOrderingView::setup()
 
 void AntibodyOrderingView::makePlot()
 {
-	std::vector<std::string> order;
+	std::vector<std::string> order = comp().favoured_ordering;
+	bool reorder = (order.size() == 0);
+
 	Eigen::MatrixXf mat = comp().make_plot(order);
 
 	_forDisplay = PCA::Matrix(mat);
 
 	MatrixPlot *plot = new MatrixPlot(_forDisplay);
 	plot->resize(1.5);
-	MatrixBox *mb = new MatrixBox(plot, order, order, true);
+	MatrixBox *mb = new MatrixBox(plot, order, order, reorder);
 	mb->setCentre(0.5, 0.6);
 	addTempObject(mb);
 
@@ -58,10 +60,26 @@ void AntibodyOrderingView::makePlot()
 		playground->show();
 	};
 	
-	TextButton *tb = new TextButton("Next");
-	tb->setRight(0.9, 0.9);
-	tb->setReturnJob(save_and_move_on);
-	addObject(tb);
+	auto save_json = [this, mb]()
+	{
+		std::vector<std::string> reordered = mb->rowNames();
+		comp().favoured_ordering = reordered;
+		_mab.save();
+	};
+
+	{
+		TextButton *tb = new TextButton("Save");
+		tb->setRight(0.9, 0.1);
+		tb->setReturnJob(save_json);
+		addObject(tb);
+	}
+
+	{
+		TextButton *tb = new TextButton("Next");
+		tb->setRight(0.9, 0.9);
+		tb->setReturnJob(save_and_move_on);
+		addObject(tb);
+	}
 
 }
 

@@ -48,8 +48,12 @@ void AbWatch::doThings()
 	}
 	
 	_currVersion = _versionTrack;
-	setPosition(_pos);
 	_last = _pos;
+	if (_last.x == _last.x)
+	{
+		setPosition(_last);
+		forceRender(true, false);
+	}
 }
 
 void AbWatch::reindex()
@@ -62,18 +66,23 @@ void AbWatch::reindex()
 	}
 }
 
+void AbWatch::highlight()
+{
+	if (isSelectable())
+	{
+		setHighlighted(true);
+	}
+
+	FloatingText *text = new FloatingText(_name, 150, 10.);
+	text->FloatingText::setPosition(_last);
+	addTempObject(text);
+}
+
 void AbWatch::interacted(int idx, bool hover, bool left)
 {
 	if (hover)
 	{
-		if (isSelectable())
-		{
-			setHighlighted(true);
-		}
-
-		FloatingText *text = new FloatingText(_name, 150, 10.);
-		text->FloatingText::setPosition(_last);
-		addTempObject(text);
+		highlight();
 	}
 }
 

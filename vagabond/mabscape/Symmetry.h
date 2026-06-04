@@ -29,6 +29,8 @@ public:
 
 	typedef std::function<glm::vec3 *()> NextPoint;
 	void applyTransform(const glm::mat4x4 &which, const NextPoint &next_point);
+	void recalibrateToFirst();
+	void reset();
 	
 	static NextPoint next_pointer(glm::vec3 *v);
 	
