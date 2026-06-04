@@ -29,9 +29,6 @@ void Entropy::populateHeatMap(struct EntropyForHeatMap *entropyData)
 
     for (const PathGroup &group : _paths)
     {
-        entropyData->start.push_back(group[0]->startInstance());
-        entropyData->end.push_back(group[0]->endInstance());
-
         std::pair<int, int> idxs = index(group[0]->startInstance(), group[0]->endInstance());
         
         {
@@ -113,4 +110,29 @@ std::pair<int, int> Entropy::index(Instance *start, Instance *end)
     fix_value(_ends, end, endIdx);
 
     return {stIdx, endIdx};
+}
+
+std::pair<std::string, std::string> Entropy::names(int l, int r)
+{
+	std::string st_name;
+	std::string end_name;
+
+	auto fix_string = [](const Entropy::InstanceSet &insts, int idx)
+	{
+		int n = 0;
+		for (Instance *const &check : insts)
+		{
+			if (n == idx)
+			{
+				return check->id();
+			}
+			n++;
+		}
+		return std::string("");
+	};
+	
+	st_name = fix_string(_starts, l);
+	end_name = fix_string(_ends, r);
+	
+	return {st_name, end_name};
 }
