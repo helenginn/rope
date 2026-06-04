@@ -21,10 +21,10 @@
 
 #include <list>
 #include <thread>
-#include "engine/SimplePhore.h"
-#include "engine/ExpectantPhore.h"
-#include "engine/workers/ThreadWorker.h"
-#include "Job.h"
+#include "SimplePhore.h"
+#include "ExpectantPhore.h"
+#include "workers/ThreadWorker.h"
+#include "../Job.h"
 
 class BaseTask;
 
