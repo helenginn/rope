@@ -101,12 +101,13 @@ KdTree::KdTree(const NextIdxPos &next)
 
 KdTree::Node *KdTree::Node::wind(const glm::vec3 &t)
 {
-	bool is_less = t[coord] < pos[coord];
-	
-	Node *main = (is_less ? left : right);
-	Node *other = (is_less ? right : left);
-	
-	auto closest = [&t](Node *a, Node *b) -> Node *
+	auto distance = [&t](Node *node)
+	{
+		float d = glm::length(node->pos - t);
+		return d;
+	};
+
+	auto closest = [&t, &distance](Node *a, Node *b) -> Node *
 	{
 		if (!a) return b;
 		if (!b) return a;
@@ -117,26 +118,33 @@ KdTree::Node *KdTree::Node::wind(const glm::vec3 &t)
 		return best;
 	};
 
-	if (!main && !other)
+	if (!left && !right)
 	{
-		return nullptr;
+		return this;
 	}
 
-	Node *temp = nullptr;
+	bool is_less = t[coord] < pos[coord];
+	
+	Node *main = (is_less ? left : right);
+	Node *other = (is_less ? right : left);
+	
+	Node *drill = nullptr;
+
 	if (main)
 	{
-		temp = main->wind(t);
+		drill = main->wind(t);
 	}
 
-	Node *best = closest(this, temp);
+	Node *best = closest(this, drill);
 
 	float rootsq = glm::dot(t - best->pos, t - best->pos);
 	float axial = t[coord] - pos[coord];
+	axial *= axial;
 
-	if (rootsq > axial * axial && other)
+	if (rootsq >= axial && other)
 	{
-		Node *temp = other->wind(t);
-		best = closest(this, temp);
+		Node *otherdrill = other->wind(t);
+		best = closest(best, otherdrill);
 	}
 	
 	return best;
@@ -146,8 +154,6 @@ int KdTree::nearestVertex(const glm::vec3 &v)
 {
 	Node *root = &_nodes[0];
 	Node *best = root->wind(v);
-	std::cout << best->idx << " " << best->pos << std::endl;
-
 	return best->idx;
 }
 
