@@ -21,25 +21,44 @@
 
 #include <vagabond/utils/Eigen/Dense>
 #include <vagabond/utils/svd/PCA.h>
+#include <vagabond/core/Engine.h>
 
 struct Competition;
 
 class Positions;
 class MatrixPlot;
 
-class PosToComp
+class PosToComp : public RunsEngine
 {
 public:
 	PosToComp(Competition &comp, Positions &pos);
+	
+	void setPlot(MatrixPlot *mp)
+	{
+		_plot = mp;
+	}
 
-	Eigen::MatrixXf fromModel(MatrixPlot *mp = nullptr);
+	Eigen::MatrixXf &fromModel();
 
 	PCA::Matrix &modelDisplay(std::mutex **mut)
 	{
 		*mut = &_modelMutex;
 		return _modelDisplay;
 	}
+
+	PCA::Matrix &dataDisplay(std::mutex **mut)
+	{
+		*mut = &_dataMutex;
+		return _dataDisplay;
+	}
+
+	void refine();
+	float score();
 private:
+	void refineEngine();
+	int sendJob(const std::vector<float> &all, Engine *sender);
+	void zeroSetter();
+
 	Competition &_comp;
 	Positions &_positions;
 
@@ -49,9 +68,15 @@ private:
 	PCA::Matrix _dataDisplay;
 	PCA::Matrix _modelDisplay;
 	std::mutex _modelMutex;
+	std::mutex _dataMutex;
+	
+	MatrixPlot *_plot{};
 	
 	float _radius{11.f};
 	float _slope{2.f};
+	
+	std::function<void(const std::vector<float> &, bool)> _setter{};
+	std::function<float(int n, int coord)> _gradient_for{};
 };
 
 #endif

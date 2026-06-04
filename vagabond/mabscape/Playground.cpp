@@ -76,6 +76,7 @@ void Playground::setup()
 	auto show_menu = [this, tb]()
 	{
 		Menu *menu = new Menu(this);
+		menu->addOption("show matrices", [this]() { showMatrices(); });
 		menu->addOption("refine", [this]() { refine(); });
 		menu->setup(tb, 1);
 		setModal(menu);
@@ -96,19 +97,45 @@ void Playground::interactedWithNothing(bool left, bool hover)
 	}
 }
 
-void Playground::refine()
+void Playground::showMatrices()
 {
 	Competition &comp = *_mab.competitions.begin();
-	_model = new PosToComp(comp, *_positions);
+	if (!_model)
+	{
+		_model = new PosToComp(comp, *_positions);
+	}
 
-	std::mutex *mutex{};
-	PCA::Matrix &display = _model->modelDisplay(&mutex);
+	if (!_mpModel)
+	{
+		std::mutex *mutex{};
+		PCA::Matrix &display = _model->modelDisplay(&mutex);
+	
+		MatrixPlot *mp = new MatrixPlot(display, *mutex);
+		Eigen::MatrixXf mat = _model->fromModel();
 
-	MatrixPlot *mp = new MatrixPlot(display, *mutex);
-	Eigen::MatrixXf mat = _model->fromModel(mp);
+		mp->resize(0.4);
+		mp->setCentre(0.9, 0.85);
+		addObject(mp);
+		_mpModel = mp;
+	}
 
-	mp->resize(0.4);
-	mp->setCentre(0.95, 0.9);
-	addObject(mp);
-	_mp = mp;
+	if (!_mpData)
+	{
+		std::mutex *mutex{};
+		PCA::Matrix &display = _model->dataDisplay(&mutex);
+
+		MatrixPlot *mp = new MatrixPlot(display);
+		mp->resize(0.4);
+		mp->setCentre(0.75, 0.85);
+		addObject(mp);
+		_mpData = mp;
+	}
+	
+	_model->setPlot(_mpModel);
+}
+
+void Playground::refine()
+{
+	showMatrices();
+	_model->refine();
 }

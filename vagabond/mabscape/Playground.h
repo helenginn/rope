@@ -42,6 +42,8 @@ public:
 private:
 	void showMesh(const Competition &competition);
 	void showFiducials(const Competition &comp);
+	void showMatrices();
+
 	Mab &_mab;
 
 	Positions *_positions{};
@@ -49,7 +51,8 @@ private:
 	std::vector<AbWatch *> _watches;
 
 	PosToComp *_model{};
-	MatrixPlot *_mp{};
+	MatrixPlot *_mpModel{};
+	MatrixPlot *_mpData{};
 };
 
 #endif

@@ -120,12 +120,12 @@ void PrepWorkView::prepareAntigens(Antigens &antigens)
 				_messages.push_back("Mapped " + std::to_string(total) + 
 				" orientation" + (total == 1 ? "" : "s") + 
 				" for antibody " + fid.name);
-				std::this_thread::sleep_for(std::chrono::milliseconds(400));
+				std::this_thread::sleep_for(std::chrono::milliseconds(200));
 				
 				for (const glm::mat4x4 &mat : contact->transforms())
 				{
 					contact->applyTransform(mat);
-					std::this_thread::sleep_for(std::chrono::milliseconds(400));
+					std::this_thread::sleep_for(std::chrono::milliseconds(200));
 					antigen.sym.add_if_new(mat);
 				}
 
@@ -138,6 +138,7 @@ void PrepWorkView::prepareAntigens(Antigens &antigens)
 			}
 		}
 
+		antigen.sym.recalibrateToFirst();
 		int total = antigen.sym.transforms().size();
 		_messages.push_back("Collected " + std::to_string(total) + 
 		                    " orientation" + (total == 1 ? "" : "s") + 

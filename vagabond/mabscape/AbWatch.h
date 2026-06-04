@@ -34,7 +34,13 @@ public:
 	{
 		return _vertices.size();
 	}
+	
+	const std::string &name() const
+	{
+		return _name;
+	}
 
+	void highlight();
 	virtual void reindex();
 	virtual void render(SnowGL *gl);
 private:
@@ -42,7 +48,7 @@ private:
 	const unsigned int &_versionTrack;
 	std::mutex *_mut{};
 	const glm::vec3 &_pos;
-	const std::string &_name;
+	const std::string _name;
 	glm::vec3 _last;
 
 	void doThings();
