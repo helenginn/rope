@@ -15,7 +15,6 @@ class Entropy : public Progressor
 {
 public:
     Entropy(const std::vector<PathGroup> &paths, const struct FlagParameters &flagPar);
-
 	struct EntropyForHeatMap
 	{
 		int numDivisions;
@@ -88,6 +87,8 @@ public:
 
         return colNames;
     }
+
+    std::pair<std::string, std::string> names(int l, int r);
 
     std::mutex &mutex()
     {

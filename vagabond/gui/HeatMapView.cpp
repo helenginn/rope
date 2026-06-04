@@ -16,7 +16,6 @@ HeatMapView::HeatMapView(Scene *prev, const std::vector<PathGroup> &paths, struc
     _flagPar = flagPar;
 
     _entropyData = new Entropy::EntropyForHeatMap;
-   // PCA::setupMatrix(&_pcaMatrix, _entropy->rows(), _entropy->cols());
 }
 
 HeatMapView::~HeatMapView()
@@ -48,10 +47,7 @@ void HeatMapView::setup()
 
 void HeatMapView::redrawHeatMap(double num)
 {
-    if(_plot)
-    {
-        removeObject(_plot);
-    }
+    deleteTemps();
 
     int t = (int) num;
 
@@ -87,23 +83,20 @@ void HeatMapView::redrawHeatMap(double num)
         }
     }
 
-    _pcaMatrix = PCA::Matrix(matrix);
-	printMatrix(&_pcaMatrix);
+    _displayMatrix = PCA::Matrix(matrix);
+	printMatrix(&_displayMatrix);
 
-    _plot = new MatrixPlot(_pcaMatrix, _mutex);
+    _plot = new MatrixPlot(_displayMatrix);
     _plot->legend()->setScheme(Heat);
 
-    MatrixBox* matBox = new MatrixBox(_plot, _entropy->rowNames(_entropyData->start), _entropy->colNames(_entropyData->end));
+    MatrixBox *matBox = new MatrixBox(_plot, _entropy->rowNames(_entropyData->start), _entropy->colNames(_entropyData->end), true);
 
-    addObject(_plot);
+    addTempObject(matBox);
 }
 
 void HeatMapView::sumHeatMap()
 {
-    if(_plot)
-    {
-        removeObject(_plot);
-    }
+    deleteTemps();
 
     if(_rangeSlider)
     {
@@ -153,12 +146,15 @@ void HeatMapView::sumHeatMap()
     matrix = Eigen::MatrixXf::Ones(rows, cols) * maxEntVal - matrix;
     matrix = matrix/(maxEntVal - minEntVal);
 
-    _pcaMatrix = PCA::Matrix(matrix);
-	printMatrix(&_pcaMatrix);
+    _displayMatrix = PCA::Matrix(matrix);
+	printMatrix(&_displayMatrix);
 
-    _plot = new MatrixPlot(_pcaMatrix, _mutex);
-    _plot->setColourScheme(Heat);
-    addObject(_plot);
+    _plot = new MatrixPlot(_displayMatrix);
+    _plot->legend()->setScheme(Heat);
+
+    MatrixBox *matBox = new MatrixBox(_plot, _entropy->rowNames(_entropyData->start), _entropy->colNames(_entropyData->end), true);
+
+    addTempObject(matBox);
 }
 
 void HeatMapView::setupSlider(int timeDivisions)
@@ -208,10 +204,13 @@ void HeatMapView::mousePressEvent(double x, double y, SDL_MouseButtonEvent butto
 		return;
 	}
 
-	int left = v.x * _pcaMatrix.cols;
-	int right = v.y * _pcaMatrix.rows;
+	int left = v.x * _displayMatrix.cols;
+	int right = v.y * _displayMatrix.rows;
 	std::cout << left << " " << right << std::endl;
-	setInformation(_entropyData->start[left]->model_id() + " to " + _entropyData->end[right]->model_id());
+    
+    auto names = _entropy->names(left, right);
+
+	setInformation(names.first + " vs " + names.second);
 	Scene::mousePressEvent(x, y, button);
 }
 
