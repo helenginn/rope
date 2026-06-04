@@ -35,16 +35,6 @@ class Fetcher
 public:
 	Fetcher() {}
 
-	virtual ~Fetcher()
-	{
-#ifndef __EMSCRIPTEN__
-		if (_allocated && _thread.joinable())
-		{
-			_thread.join();
-		}
-#endif
-	}
-
 	static void handleResult(void *ptr, void *data, int nbytes)
 	{
 		Fetcher *me = static_cast<Fetcher *>(ptr);
@@ -80,10 +70,10 @@ public:
 		Fetcher *f = static_cast<Fetcher *>(this);
 #ifndef __EMSCRIPTEN__
 		ThreadStuff *ts = new ThreadStuff{url, &prepareResult, f};
-	    _thread = std::thread([ts]() {
+	    std::thread thr = std::thread([ts]() {
             pull_one_url(ts);
         });
-		_allocated = true;
+	    thr.detach();
 #else
 		emscripten_async_wget_data(url.c_str(), f, handleResult, handleError);
 #endif
@@ -100,8 +90,6 @@ protected:
 	std::string _result;
 	std::atomic<bool> _process{false};
 
-	std::thread _thread;
-	bool _allocated = false;
 private:
 };
 
