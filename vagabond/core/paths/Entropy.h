@@ -90,6 +90,8 @@ public:
    
     std::pair<std::string, std::string> names(int l, int r);
 
+    std::pair<std::string, std::string> names(int l, int r);
+
     std::mutex &mutex()
     {
         return _mutex;
