@@ -22,8 +22,6 @@
 #include <string>
 #include <vector>
 #ifndef __EMSCRIPTEN__
-#include <thread>
-#include "vagabond/utils/extra_curl_utils.h"
 #endif
 #include "files/File.h"
 #include "Progressor.h"
@@ -106,8 +104,6 @@ public:
 	}
 	
 	std::set<std::string> &geometryFiles();
-	
-	void thread(ThreadStuff* ts);
 
 	friend void to_json(json &j, const FileManager &value);
 	friend void from_json(const json &j, FileManager &value);

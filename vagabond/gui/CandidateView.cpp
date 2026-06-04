@@ -137,7 +137,10 @@ void CandidateView::download()
 #ifndef __EMSCRIPTEN__
 	ThreadStuff *ts = new ThreadStuff("", &FileManager::acceptDownload, nullptr);
 	ts->links = _links;
-    Environment::fileManager()->thread(ts);
+    std::thread thr = std::thread([ts]() {
+        pull_one_url(ts);
+    });
+    thr.detach();
 #else
 	for (const std::string &link : _links)
 	{
