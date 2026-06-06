@@ -231,9 +231,9 @@ bool ExhaustiveSearch::next()
 			float score = score_wider_clique();
 			_configs += c;
 			_scores[c] = score;
-			print(c);
-			std::cout << "\t" << score;
-			std::cout << std::endl;
+//			print(c);
+//			std::cout << "\t" << score;
+//			std::cout << std::endl;
 		}
 	};
 	
