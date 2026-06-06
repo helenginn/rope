@@ -36,6 +36,44 @@ float average_score(const std::vector<ProbeResult> &source)
 	return ave;
 }
 
+std::map<int, float> state_proportions(const std::vector<ProbeResult> &source, 
+                                       ProbeTypePair ptp, float &sum, float ave)
+{
+	if (source.size() == 0)
+	{
+		return {};
+	}
+
+	int n = 0;
+	for (const OneProbe &op : source[0].results)
+	{
+		if (op.probe == ptp.first && op.type == ptp.second)
+		{
+			break;
+		}
+		n++;
+	}
+
+	float rt = 2.57;
+	std::map<int, float> totals;
+	sum = 0;
+
+	for (const ProbeResult &pr : source)
+	{
+		int nv = pr.results[n].value;
+		float contrib = exp((ave - pr.score) / rt);
+		totals[nv] += contrib;
+		sum += contrib;
+	}
+	
+	for (auto &pair : totals)
+	{
+//		pair.second /= sum;
+	}
+
+	return totals;
+}
+
 ProbeCorrelation correlate(const std::vector<ProbeResult> &source, 
                            ProbeTypePair left, ProbeTypePair right, float ave,
                            bool norm)
@@ -91,23 +129,8 @@ ProbeCorrelation correlate(const std::vector<ProbeResult> &source,
 		return -1;
 	};
 	
-	auto normalize_map = [](std::map<int, float> &map)
-	{
-		float sum = 0;
-		for (auto it = map.begin(); it != map.end(); it++)
-		{
-			sum += it->second;
-		}
-		for (auto it = map.begin(); it != map.end(); it++)
-		{
-			it->second /= sum;
-		}
-	};
-	
 	// first we need to collect averages, by figuring out proportions for each
 	// possible result for left and right nodes.
-	std::map<int, float> lSum, rSum;
-
 	// we want to keep track of relative probabilities of each state according
 	// to partial energy knowledge.
 	float rt = 2.57;
@@ -118,24 +141,16 @@ ProbeCorrelation correlate(const std::vector<ProbeResult> &source,
 	for (const ProbeResult &pr : source)
 	{
 		int mv = pr.results[m].value;
-		int l = get_index(mv);
 		int nv = pr.results[n].value;
-		int r = get_index(nv);
 		
 		// we also want to figure out the total sum of energy weights
 		float contrib = exp((ave - pr.score) / rt);
 		relProbs[idx] = contrib;
-		lSum[l] += contrib;
-		rSum[r] += contrib;
 		total_probs += contrib;
 
 		idx++;
 	}
 
-//	normalize_map(lSum);
-//	normalize_map(rSum);
-//	normalize_map(relProbs);
-	
 	idx = 0;
 	for (const ProbeResult &pr : source)
 	{
@@ -167,21 +182,6 @@ ProbeCorrelation correlate(const std::vector<ProbeResult> &source,
 		}
 
 	}
-
-	/*
-	for (int i = 0; i < corr.mat.cols(); i++)
-	{
-		float adjust = rSum[i] / total_probs;
-		for (int j = 0; j < corr.mat.rows(); j++)
-		{
-			corr.mat(j, i) -= adjust;
-			if (corr.mat(j, i) != corr.mat(j, i))
-			{
-				corr.mat(j, i) = 0;
-			}
-		}
-	}
-	*/
 
 	return corr;
 }

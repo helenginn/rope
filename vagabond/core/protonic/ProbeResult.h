@@ -83,4 +83,7 @@ ProbeCorrelation correlate(const std::vector<ProbeResult> &source,
                            ProbeTypePair left, ProbeTypePair right, 
                            float all_ave, bool norm);
 
+std::map<int, float> state_proportions(const std::vector<ProbeResult> &source, 
+                                       ProbeTypePair ptp, float &sum, float ave);
+
 #endif
