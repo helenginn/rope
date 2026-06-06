@@ -561,6 +561,7 @@ public:
 	Probe &_left;
 	Probe &_right;
 	hnet::ExistenceConnector &_exist;
+	float _distance{};
 };
 
 class CovalentProbe : public BondProbe

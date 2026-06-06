@@ -159,7 +159,10 @@ float ExhaustiveSearch::score_wider_clique()
 
 			if ((int)val == (int)hnet::Bond::Weak)
 			{
-				score -= 0.75 * 4.18; // kcal -> mol
+				float dist = bp->_distance;
+				float mod = 1 - (dist - 2.f) * (dist - 2.f) / 2.f;
+
+				score -= 1.5 * mod * 4.18; // kcal -> mol
 			}
 		}
 	}

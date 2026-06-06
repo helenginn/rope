@@ -1255,8 +1255,15 @@ void Coordinated::attachToNeighbours(AtomGroup *searchGroup)
 		atomMap()[candidate]->_bond2HydrogenSample[&right] = &hExist;
 		atomMap()[candidate]->_bond2HydrogenStatus[&right] = &h;
 
-		_network.add_probe(new BondProbe(left,  *ref,   hProbe, le));
-		_network.add_probe(new BondProbe(right, *other, hProbe, re));
+		BondProbe &b1 = _network.add_probe(new BondProbe(left, *ref,   
+		                                                 hProbe, le));
+
+		BondProbe &b2 = _network.add_probe(new BondProbe(right, *other, 
+		                                                  hProbe, re));
+
+		float dist = glm::length(pos1 - pos2);
+		b1._distance = dist;
+		b2._distance = dist;
 
 		add_constraint(new HydrogenBond(left, h, right));
 		add_constraint(new HydrogenBond(right, h, left));
