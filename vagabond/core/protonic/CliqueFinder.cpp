@@ -142,4 +142,6 @@ void CliqueFinder::completeAndChop(const OpSet<Probe *> &done,
 			handle_clique(clique);
 		}
 	}
+	
+	handle_clique(all);
 }
