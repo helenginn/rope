@@ -28,7 +28,7 @@ void GraphView::setup()
 {
 	addTitle("Graph");
 
-	_graph->setup(0.5, 0.5);
+	_graph->setup(0.5, 0.6);
 	_graph->addToGraphPosition(0.5, 0.5);
 	addObject(_graph);
 }
