@@ -41,6 +41,7 @@ public:
 	}
 private:
 	Clique *_clique{};
+	void chooseReporters();
 
 	std::set<int> _selected;
 	std::vector<Probe *> _candidates;

@@ -32,6 +32,11 @@ CommunicationChoice::CommunicationChoice(Scene *prev, Clique *clique)
 void CommunicationChoice::setup()
 {
 	addTitle("Choose communication groups");
+	
+	TextButton *tb = new TextButton("Automatic");
+	tb->setRight(0.9, 0.1);
+	tb->setReturnJob([this]() { chooseReporters(); });
+	addObject(tb);
 
 	ListView::setup();
 }
@@ -186,4 +191,42 @@ Renderable *CommunicationChoice::getLine(int i)
 	}
 
 	return box;
+}
+
+void CommunicationChoice::chooseReporters()
+{
+	OpSet<std::pair<std::string, ResidueId>> done;
+
+	for (Probe *probe : _candidates)
+	{
+		if (probe->is_atom() && probe->atom()->isReporterAtom())
+		{
+			std::pair<std::string, ResidueId> id = 
+			{probe->atom()->chain(), probe->atom()->residueId()};
+
+			if (done.count(id) == 0)
+			{
+				_clique->addCommunicationPoints(probe->atomConf().desc(),
+				                                probe->desc());
+				done += id;
+			}
+		}
+	}
+
+	for (Probe *probe : _candidates)
+	{
+		if (probe->is_atom())
+		{
+			std::pair<std::string, ResidueId> id = 
+			{probe->atom()->chain(), probe->atom()->residueId()};
+
+			if (done.count(id) == 0)
+			{
+				_clique->addCommunicationPoints(probe->atomConf().desc(),
+				                                probe->desc());
+				done += id;
+			}
+
+		}
+	}
 }
