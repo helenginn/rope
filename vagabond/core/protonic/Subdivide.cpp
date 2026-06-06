@@ -34,7 +34,6 @@ Subdivide::Subdivide(Clique *clique, int min, int max) : _clique(clique)
 
 bool Subdivide::finish_ends(OpSet<Probe *> &chunk)
 {
-	std::cout << "checking " << chunk.size();
 	for (Probe *const &probe : chunk)
 	{
 		if (!probe->is_atom()) // hydrogen or bond
@@ -52,6 +51,28 @@ bool Subdivide::finish_ends(OpSet<Probe *> &chunk)
 					return true;
 				}
 			}
+		}
+		else // add the alt confs
+		{
+			for (Probe *const &other : probe->others())
+			{
+				if (other->is_definitely_not_present())
+				{
+					continue;
+				}
+
+				if (!other->is_atom())
+				{
+					continue;
+				}
+
+				if (chunk.count(other) == 0)
+				{
+					chunk += other;
+					return true;
+				}
+			}
+
 		}
 	}
 	
@@ -153,6 +174,19 @@ void Subdivide::spread(OpSet<Probe *> &chunk, bool force)
 	}
 }
 
+bool has_non_water(const OpSet<Probe *> &chunk)
+{
+	for (Probe *const &probe : chunk)
+	{
+		if (probe->is_atom() && probe->atom()->code() != "HOH")
+		{
+			return true;
+		}
+	}
+
+	return false;
+}
+
 void Subdivide::prune(OpSet<Probe *> &chunk)
 {
 	std::erase_if(chunk,
@@ -188,27 +222,24 @@ void Subdivide::subdivide()
 		return chunk;
 	};
 	
-	auto shoot_grow = [this](OpSet<Probe *> &chunk) { return shoot(chunk); };
-	auto spread_grow = [this](OpSet<Probe *> &chunk) { return spread(chunk); };
-
+	auto grow = [this](OpSet<Probe *> &chunk)
+	{
+		if (search == Depth)
+		{
+			return shoot(chunk);
+		}
+		else
+		{
+			return spread(chunk);
+		}
+	};
 
 	for (Probe *probe : to_chunk)
 	{
-		/*
-		for (int i = 0; i < 3; i++)
-		{
-			OpSet<Probe *> chunk = grow_clique(probe, shoot_grow);
-			if (chunk.size() > 0)
-			{
-				chunks += chunk;
-			}
-		}
-		*/
-
 		for (int i = 0; i < 5; i++)
 		{
-			OpSet<Probe *> chunk = grow_clique(probe, shoot_grow);
-			if (chunk.size() > 0)
+			OpSet<Probe *> chunk = grow_clique(probe, grow);
+			if (chunk.size() > 0 && has_non_water(chunk))
 			{
 				chunks += chunk;
 			}

@@ -24,6 +24,7 @@
 #include <vagabond/gui/elements/TextButton.h>
 #include <vagabond/gui/elements/ChooseRange.h>
 #include <vagabond/gui/elements/ImageButton.h>
+#include <vagabond/gui/elements/TickBoxes.h>
 #include <vagabond/core/protonic/Subdivide.h>
 #include <vagabond/core/protonic/SearchAll.h>
 #include <vagabond/core/protonic/Clique.h>
@@ -69,11 +70,12 @@ void HBondAnalysisControl::setup()
 		addObject(tb);
 	}
 	
-	auto subdivide_with_values = [this](int min, int max)
+	auto subdivide_with_values = [this](int min, int max, bool depth)
 	{
-		return [this, min, max]()
+		return [this, min, max, depth]()
 		{
 			Subdivide sd(_clique, min, max);
+			sd.search = (depth ? Subdivide::Depth : Subdivide::Breadth);
 			sd.subdivide();
 			refresh();
 		};
@@ -81,9 +83,6 @@ void HBondAnalysisControl::setup()
 
 	auto dont_subdivide = [this]()
 	{
-//		Clique copy = _clique->probes();
-//		_clique->setSubdivisions({copy});
-
 		Subdivide sd(_clique, INT_MAX, INT_MAX);
 		sd.one();
 		refresh();
@@ -91,9 +90,15 @@ void HBondAnalysisControl::setup()
 	
 	auto ask_for_min_max = [this, subdivide_with_values]()
 	{
-		auto convert = [subdivide_with_values](float min, float max)
+		TickBoxes *tb = new TickBoxes(this, this);
+		tb->addOption("depth", "depth", true);
+		tb->addOption("breadth", "breadth");
+		tb->arrange(0.4, 0.35, 0.8, 0.45);
+
+		auto convert = [subdivide_with_values, tb](float min, float max)
 		{
-			subdivide_with_values(min, max)();
+			bool depth = (tb->isTicked("depth"));
+			subdivide_with_values(min, max, depth)();
 		};
 
 		ChooseRange *cr = new ChooseRange(this, "Set search size for "\
@@ -101,6 +106,9 @@ void HBondAnalysisControl::setup()
 		                                  this, true);
 		cr->setRange(2, 50, 48);
 		cr->setReturn(convert);
+		
+		cr->addObject(tb);
+
 		setModal(cr);
 	};
 
@@ -115,7 +123,7 @@ void HBondAnalysisControl::setup()
 	auto ask_to_subdivide = [this, ask_to_brute_force, subdivide_with_values]()
 	{
 		AskYesNo *ayn = new AskYesNo(this, "Subdivide network using defaults?");
-		ayn->addJob("yes", subdivide_with_values(10, 28));
+		ayn->addJob("yes", subdivide_with_values(10, 28, true));
 		ayn->addJob("no", ask_to_brute_force);
 		setModal(ayn);
 	};

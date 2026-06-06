@@ -28,6 +28,13 @@ class Subdivide
 {
 public:
 	Subdivide(Clique *clique, int min, int max);
+	
+	enum Search
+	{
+		Breadth,
+		Depth,
+	};
+	Search search;
 
 	void subdivide();
 	void one();
@@ -36,6 +43,7 @@ public:
 	void shoot(OpSet<Probe *> &chunk);
 	void prune(OpSet<Probe *> &chunk);
 	static bool finish_ends(OpSet<Probe *> &chunk);
+	
 private:
 	Clique *_clique{};
 
