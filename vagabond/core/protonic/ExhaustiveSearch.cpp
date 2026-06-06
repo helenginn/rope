@@ -17,6 +17,7 @@
 // Please email: vagabond @ hginn.co.uk for more details.
 
 #include "ExhaustiveSearch.h"
+#include "CertainStates.h"
 #include "Network.h"
 #include <unistd.h>
 #include <random>
@@ -117,6 +118,9 @@ void ExhaustiveSearch::setup()
 	
 void ExhaustiveSearch::cleanup()
 {
+	_states = new CertainStates(_results);
+	_results.clear();
+
 	for (IteratedProbe *it : _iterations)
 	{
 		it->reset(_cv, _m);
@@ -312,7 +316,7 @@ bool ExhaustiveSearch::next()
 	{
 		int i = 0;
 		float sc = _scores[c];// - ave_score;
-		ProbeResult result{{}, sc};
+		ProbeResult result({}, sc);
 		for (IteratedProbe *ip : _iterations)
 		{
 			int val = c[i];
@@ -323,12 +327,11 @@ bool ExhaustiveSearch::next()
 			i++;
 			
 			OneProbe pres = {pr, type, val};
-			result.results.push_back(pres);
+			result.addResult(pres);
 		}
 
-//		std::cout << sc << " ";
 		_results.push_back(result);
-		return result.results.size();
+		return result.results().size();
 	};
 	
 	if (_counter < 0 || (_counter == 0 && (**it).done()))
@@ -338,8 +341,8 @@ bool ExhaustiveSearch::next()
 			int extra = process_result(c);
 			_total += extra;
 		}
-		return false;
 
+		return false;
 	}
 
 	return true;

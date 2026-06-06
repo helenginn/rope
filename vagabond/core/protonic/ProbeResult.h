@@ -20,10 +20,7 @@
 #define __vagabond__ProbeResult__
 
 #include <vagabond/core/protonic/hnet.h>
-#include <vagabond/utils/Eigen/Dense>
 #include <vagabond/core/protonic/Probe.h>
-
-using Eigen::MatrixXf;
 
 class Probe;
 
@@ -59,31 +56,33 @@ struct OneProbe
 	int value;
 };
 
-struct ProbeResult
+class ProbeResult
 {
-	std::vector<OneProbe> results;
-	float score;
+public:
+	ProbeResult(const std::vector<OneProbe> &results, float score)
+	{
+		_results = results;
+		_score = score;
+	}
+	
+	const std::vector<OneProbe> &results() const
+	{
+		return _results;
+	}
+
+	const void addResult(const OneProbe &result)
+	{
+		_results.push_back(result);
+	}
+
+	const float &score() const
+	{
+		return _score;
+	}
+	
+private:
+	std::vector<OneProbe> _results;
+	float _score;
 };
-
-struct ProbeCorrelation
-{
-	ProbeTypePair left{};
-	ProbeTypePair right{};
-	hnet::Types lType{};
-	hnet::Types rType{};
-	MatrixXf mat{};
-};
-
-int dim_for_type(const hnet::Types &type);
-
-std::vector<ProbeTypePair> probes(const std::vector<ProbeResult> &source);
-float average_score(const std::vector<ProbeResult> &source);
-
-ProbeCorrelation correlate(const std::vector<ProbeResult> &source, 
-                           ProbeTypePair left, ProbeTypePair right, 
-                           float all_ave, bool norm);
-
-std::map<int, float> state_proportions(const std::vector<ProbeResult> &source, 
-                                       ProbeTypePair ptp, float &sum, float ave);
 
 #endif

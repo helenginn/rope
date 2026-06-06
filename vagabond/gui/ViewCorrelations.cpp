@@ -25,6 +25,8 @@
 #include <vagabond/utils/DoJob.h>
 #include <fstream>
 #include <vagabond/core/protonic/Clique.h>
+#include <vagabond/core/protonic/Correlative.h>
+#include <vagabond/core/protonic/CertainStates.h>
 #include <vagabond/gui/elements/list/LineGroup.h>
 #include <vagabond/gui/elements/AskYesNo.h>
 #include <vagabond/gui/elements/TextButton.h>
@@ -49,10 +51,10 @@ void ViewCorrelations::setup()
 	addTitle("Sub-network correlations");
 
 	makeList();
-	
+
 	TextButton *tb = new TextButton("Check occupancies");
 	tb->setReturnJob([this]() { occupancies(); });
-	tb->setRight(0.9, 0.5);
+	tb->setCentre(0.55, 0.84);
 	addObject(tb);
 }
 
@@ -84,7 +86,7 @@ void ViewCorrelations::makeList()
 
 	ScrollBox *sb = new ScrollBox();
 	sb->setContent(lg);
-	sb->setBounds(glm::vec4(0.15, 0.1, 0.9, 0.35));
+	sb->setBounds(glm::vec4(0.15, 0.0, 0.9, 0.28));
 	addObject(sb);
 
 	lg->refreshGroups();
@@ -99,17 +101,17 @@ OpSet<ProbeTypePair> probeTypePairs(const std::list<Clique> &cliques,
 	float all_count = 0;
 	for (const Clique &clique : cliques)
 	{
-		const std::vector<ProbeResult> &results = clique.results();
-		float sum = average_score(results) * results.size();
+		if (!clique.states()) continue;
+
+		const CertainStates &states = *clique.states();
+		float sum = states.average_score() * states.state_count();
 		if (sum != sum)
 		{
 			continue;
 		}
 		all_sum += sum;
-		all_count += results.size();
-		std::vector<ProbeTypePair> active_probes = 
-		probes(results);
-		all += active_probes;
+		all_count += states.state_count();
+		all += states.ptps();
 	}
 
 	all_ave = all_sum / all_count;
@@ -128,15 +130,14 @@ void ViewCorrelations::occupancies()
 	
 	auto process_clique = [&occupancies](const Clique &clique)
 	{
-		const std::vector<ProbeResult> &results = clique.results();
-		float ave = average_score(results);
-		std::vector<ProbeTypePair> active_probes = probes(results);
+		if (!clique.states()) return;
+		const CertainStates &states = *clique.states();
+		float ave = states.average_score();
 
-		for (const ProbeTypePair &ptp : active_probes)
+		for (const ProbeTypePair &ptp : states.ptps())
 		{
 			float sum = 0;
-			std::map<int, float> occs = state_proportions(results, ptp, 
-			                                              sum, ave);
+			std::map<int, float> occs = states.proportions(ptp, sum, ave);
 			occupancies[ptp].push_back({occs, sum});
 		}
 	};
@@ -145,7 +146,6 @@ void ViewCorrelations::occupancies()
 	{
 		process_clique(clique);
 	}
-	
 	
 	CorrelData cd = empty_CD();
 	
@@ -234,89 +234,17 @@ void ViewCorrelations::occupancies()
 void ViewCorrelations::viewAll()
 {
 	float all_ave = 0;
-	OpSet<ProbeTypePair> all = probeTypePairs(_clique->subdivisions(), all_ave);
+	OpSet<ProbeTypePair> all = probeTypePairs(_clique->subdivisions(), 
+	                                          all_ave);
+	std::cout << "All: " << all.size() << std::endl;
+	_correlative = new Correlative(all, all_ave);
+	Correlative &correl = *_correlative;
 
-	std::map<ProbeTypePair, std::pair<int, int>> insertions;
-	std::map<int, ProbeTypePair> lookup;
-
-	int accumulative = 0;
-	for (const ProbeTypePair &ptp : all)
+	auto process_clique = [&correl](const Clique &clique)
 	{
-		int dim = dim_for_type(ptp.second);
-		insertions[ptp] = {accumulative, dim};
-		for (int i = accumulative; i <= accumulative + dim; i++)
-		{
-			lookup[i] = ptp;
-		}
-		accumulative += dim;
-	}
-	std::cout << "Lookup: " << lookup.size() << std::endl;
-	
-	auto lookup_elements = [this, accumulative, lookup](float x, float y)
-	{
-		int xi = x * accumulative;
-		int yi = -y * accumulative;
-		
-
-		if (lookup.count(xi) == 0)
-		{
-			return;
-		}
-		if (lookup.count(yi) == 0)
-		{
-			return;
-		}
-		const ProbeTypePair &ptpx = lookup.at(xi);
-		const ProbeTypePair &ptpy = lookup.at(yi);
-		std::string xstr = ptpx.first->desc();
-		std::string ystr = ptpy.first->desc();
-		std::string info = xstr + " / " + ystr;
-		setInformation(info);
-	};
-	
-	_overall = MatrixXf(accumulative, accumulative);
-	_written = MatrixXf(accumulative, accumulative);
-	_overall.setZero();
-	_written.setZero();
-
-	auto process_clique = [this, &insertions, all_ave](const Clique &clique)
-	{
-		const std::vector<ProbeResult> &results = clique.results();
-		std::vector<ProbeTypePair> active_probes = probes(results);
-
-		for (const ProbeTypePair &left : active_probes)
-		{
-			int x = insertions[left].first;
-			int m = insertions[left].second;
-
-			for (const ProbeTypePair &right : active_probes)
-			{
-				int y = insertions[right].first;
-				int n = insertions[right].second;
-				float ave = average_score(results);
-				ProbeCorrelation c = correlate(results, left, 
-				                                  right, all_ave, false);
-				
-				float w = results.size();
-				Eigen::MatrixXf cc = c.mat * w;
-				Eigen::MatrixXf csq = c.mat;
-				
-				for (int j = 0; j < cc.cols(); j++)
-				{
-					for (int i = 0; i < cc.rows(); i++)
-					{
-						cc(i, j) = cc(i, j);
-						csq(i, j) = w;
-					}
-				}
-				
-				_overall(seqN(x, m), seqN(y, n)) += cc;
-				_written(seqN(x, m), seqN(y, n)) += csq;
-
-				_overall(seqN(y, n), seqN(x, m)) += cc.transpose();
-				_written(seqN(y, n), seqN(x, m)) += csq.transpose();
-			}
-		}
+		if (!clique.states()) return;
+		const CertainStates &states = *clique.states();
+		correl.addStates(states);
 	};
 	
 	for (Clique &clique : _clique->subdivisions())
@@ -324,25 +252,20 @@ void ViewCorrelations::viewAll()
 		process_clique(clique);
 	}
 
-	for (int i = 0; i < _overall.rows(); i++)
-	{
-		for (int j = 0; j < _overall.cols(); j++)
-		{
-			if (_written(i, j) > 1e-6)
-			{
-				_overall(i, j) /= _written(i, j);
-			}
-			else
-			{
-//				_overall(i, j) = NAN;
-			}
-		}
-	}
+	Eigen::MatrixXf overall = correl.acquireMatrix();
 	
 	deleteTemps();
-	_matrix = PCA::Matrix(_overall);
+	_matrix = PCA::Matrix(overall);
 	MatrixPlot *mp = new MatrixPlot(_matrix, _mutex);
-	mp->setHoverJob(lookup_elements);
+	
+	auto lookup = correl.matrixLookup();
+	auto display_lookup = [this, lookup](float x, float y)
+	{
+		std::string info = lookup(x, y);
+		setInformation(info);
+	};
+
+	mp->setHoverJob(display_lookup);
 	glm::mat3x3 rot = glm::mat3x3(1.f);
 	rot[1] *= -1;
 	mp->rotateRoundCentre(rot);
@@ -357,7 +280,7 @@ void ViewCorrelations::viewAll()
 		cc->show();
 	};
 	
-	auto comm_analysis = [this, choose_groups, insertions]()
+	auto comm_analysis = [this, choose_groups, overall]()
 	{
 		int num = _clique->allCommsNames().size();
 		if (num <= 1)
@@ -372,12 +295,13 @@ void ViewCorrelations::viewAll()
 		else
 		{
 			CommunicationAnalysis *ca = 
-			new CommunicationAnalysis(this, _clique, _overall, insertions);
+			new CommunicationAnalysis(this, _clique, 
+			                          overall, _correlative->insertions());
 			ca->show();
 		}
 	};
 	
-	auto fill_gaps = [this, mp]()
+	auto fill_gaps = [this, mp, &overall]()
 	{
 		auto combine = [](float x, float y)
 		{
@@ -386,89 +310,18 @@ void ViewCorrelations::viewAll()
 		
 		setInformation("Deriving intermediate correlations");
 
-		FloydWarshall fw(_overall, combine, true);
+		FloydWarshall fw(overall, combine, true);
 		fw.addDisplayMatrix(_matrix, _mutex, [mp]() { mp->update(); });
 		fw.run();
 		setInformation("Finished deriving intermediates");
 		std::cout << "Done filling gaps" << std::endl;
 	};
 	
-	/*
-	TextButton *fill = new TextButton("Shortest paths", this);
-	fill->setCentre(0.55, 0.8);
-	fill->setReturnJob(fill_gaps);
-	addTempObject(fill);
-	*/
-	
 	TextButton *comm = new TextButton("Communication analysis", this);
 	comm->setCentre(0.55, 0.9);
 	comm->setReturnJob(comm_analysis);
 	addTempObject(comm);
-	
-	std::ofstream file;
-	file.open("hbond_matrix.csv");
-	
-	auto to_str = [](int m, int i)
-	{
-		if (m == 2)
-		{
-			switch (i)
-			{
-				case 0: return "absent";
-				case 1: return "present";
-				default: break;
-			}
-		}
-		else 
-		{
-			switch (i)
-			{
-				case 0: return "missing";
-				case 1: return "donor";
-				case 2: return "acceptor";
-				default: break;
-			}
-		}
-		return "";
-	};
-	
-	file << "left, right, value" << std::endl;
-	for (const ProbeTypePair &left : all)
-	{
-		int m = insertions[left].second;
-		std::string mstr = (m == 2 ? "exists" : "bonding");
 
-		for (const ProbeTypePair &right : all)
-		{
-			int n = insertions[right].second;
-
-			std::string nstr = (n == 2 ? "exists" : "bonding");
-			for (int i = 0; i < m; i++)
-			{
-				std::string istr = to_str(m, i);
-				std::string lstr = (left.first->desc() + " (" + 
-				                    mstr + ", " + istr + ")");
-				std::replace(lstr.begin(), lstr.end(), ',', ':');
-
-				for (int j = 0; j < n; j++)
-				{
-					std::string jstr = to_str(n, j);
-					std::string rstr = (right.first->desc() + " (" + 
-					                    nstr + ", " + jstr + ")");
-					std::replace(rstr.begin(), rstr.end(), ',', ':');
-
-					file << lstr << "," << rstr << ",";
-					int x = insertions[left].first + i;
-					int y = insertions[right].first + j;
-					float v = _overall(x, y);
-					file << v << std::endl;
-				}
-			}
-		}
-	}
-
-	file.close();
-	
 	new DoJob(fill_gaps);
 
 }
@@ -478,11 +331,10 @@ void ViewCorrelations::viewSubnetwork(Clique &clique)
 	setInformation(clique.name());
 	deleteTemps();
 	
-	const std::vector<ProbeResult> &results = clique.results();
-	std::vector<ProbeTypePair> active_probes = 
-	probes(results);
+	if (!clique.states()) return;
+	const CertainStates &states = *clique.states();
 
-	int np = active_probes.size();
+	int np = states.ptps().size();
 	float ydim = std::min(0.05, 0.5 / (float)np);
 	float xdim = ydim * 0.6;
 
@@ -529,12 +381,12 @@ void ViewCorrelations::viewSubnetwork(Clique &clique)
 	
 	auto align_to_grid = make_align_to_grid();
 	
-	std::cout << "Number of probes: " << active_probes.size() << std::endl;
+	std::cout << "Number of probes: " << states.ptps().size() << std::endl;
 	
-	for (int p = 0; p < active_probes.size(); p++)
+	for (int p = 0; p < states.ptps().size(); p++)
 	{
-		std::string desc = active_probes[p].first->desc();
-		std::string type = active_probes[p].second == 
+		std::string desc = states.ptps()[p].first->desc();
+		std::string type = states.ptps()[p].second == 
 		hnet::Types::BondType ? " bonding" : " exists";
 		
 		for (int i = 0; i < 2; i++)
@@ -545,13 +397,14 @@ void ViewCorrelations::viewSubnetwork(Clique &clique)
 		}
 	}
 	
-	for (int m = 0; m < active_probes.size(); m++)
+	for (int m = 0; m < states.ptps().size(); m++)
 	{
-		for (int n = 0; n < active_probes.size(); n++)
+		const ProbeTypePair &left = states.ptps()[m];
+		for (int n = 0; n < states.ptps().size(); n++)
 		{
-			float ave = average_score(results);
-			ProbeCorrelation corr = correlate(results, active_probes[m], 
-			                                  active_probes[n], ave, true);
+			const ProbeTypePair &right = states.ptps()[n];
+			float ave = states.average_score();
+			ProbeCorrelation corr = states.correlate(left, right, ave, true);
 			
 			PCA::Matrix pca = PCA::Matrix(corr.mat);
 			MatrixPlot *mp = new MatrixPlot(pca);

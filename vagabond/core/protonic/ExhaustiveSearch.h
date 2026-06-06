@@ -30,6 +30,7 @@
 #include "ProbeResult.h"
 
 class Network;
+class CertainStates;
 
 class IteratedProbe
 {
@@ -216,9 +217,9 @@ public:
 	bool next();
 	void cleanup();
 	
-	const std::vector<ProbeResult> &results() const
+	CertainStates *const &states() const
 	{
-		return _results;
+		return _states;
 	}
 	
 	virtual void tick()
@@ -240,6 +241,7 @@ private:
 
 	int _total = 0;
 	std::vector<ProbeResult> _results;
+	CertainStates *_states{};
 	std::list<IteratedProbe *> _iterations;
 	OpSet<Probe *> _all;
 	OpSet<Probe *> _wider;

@@ -21,7 +21,6 @@
 
 #include <vagabond/utils/OpSet.h>
 #include "Probe.h"
-#include "ProbeResult.h"
 #include <vagabond/core/Item.h>
 
 #include <nlohmann/json.hpp>
@@ -29,7 +28,8 @@ using nlohmann::json;
 
 class Probe;
 class Network;
-struct ProbeResult;
+class ProbeResult;
+class CertainStates;
 
 class Clique : public Item
 {
@@ -172,12 +172,12 @@ public:
 		_subdivs.push_back(sub);
 	}
 	
-	const std::vector<ProbeResult> &results() const
+	CertainStates *const &states() const
 	{
-		return _results;
+		return _states;
 	}
 	
-	void setResults(const std::vector<ProbeResult> &results);
+	void setStates(CertainStates *const &states);
 private:
 	class ProbeKey : public OpSet<Probe *>
 	{
@@ -220,7 +220,7 @@ private:
 	std::map<std::string, OpSet<std::string>> _communication;
 	std::map<std::string, std::string> _descToCommune;
 	OpSet<std::string> _descs;
-	std::vector<ProbeResult> _results;
+	CertainStates *_states{};
 	std::list<Clique> _subdivs;
 };
 

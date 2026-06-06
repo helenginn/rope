@@ -35,7 +35,7 @@ void CommunicationChoice::setup()
 	
 	TextButton *tb = new TextButton("Automatic");
 	tb->setRight(0.9, 0.1);
-	tb->setReturnJob([this]() { chooseReporters(); });
+	tb->setReturnJob([this]() { chooseReporters(); refresh(); });
 	addObject(tb);
 
 	ListView::setup();

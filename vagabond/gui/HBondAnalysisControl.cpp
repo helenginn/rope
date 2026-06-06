@@ -28,6 +28,7 @@
 #include <vagabond/core/protonic/Subdivide.h>
 #include <vagabond/core/protonic/SearchAll.h>
 #include <vagabond/core/protonic/Clique.h>
+#include <vagabond/core/protonic/CertainStates.h>
 #include <vagabond/utils/FileReader.h>
 #include <vagabond/utils/DoJob.h>
 
@@ -224,7 +225,7 @@ void HBondAnalysisControl::setup()
 			bool has_results = false;
 			for (const Clique &sub : subs)
 			{
-				if (sub.results().size())
+				if (sub.states() && sub.states()->state_count())
 				{
 					has_results = true; break;
 				}

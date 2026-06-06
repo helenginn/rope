@@ -25,6 +25,7 @@
 #include <vagabond/utils/svd/PCA.h>
 #include <mutex>
 
+class Correlative;
 class Clique;
 
 class ViewCorrelations : public Scene
@@ -39,9 +40,8 @@ public:
 	void viewAll();
 private:
 	Clique *_clique{};
+	Correlative *_correlative{};
 
-	Eigen::MatrixXf _overall{};
-	Eigen::MatrixXf _written{};
 	PCA::Matrix _matrix{};
 	std::mutex _mutex{};
 };

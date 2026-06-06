@@ -18,6 +18,7 @@
 
 #include "SearchAll.h"
 #include "ExhaustiveSearch.h"
+#include "CertainStates.h"
 #include "Clique.h"
 #include <time.h>
 
@@ -37,7 +38,7 @@ void SearchAll::run()
 
 	for (Clique &clique : subs)
 	{
-		if (clique.results().size())
+		if (clique.states() && clique.states()->state_count())
 		{
 			_clique->addItem(&clique);
 			continue;
@@ -46,9 +47,9 @@ void SearchAll::run()
 		ExhaustiveSearch search(clique.probes(), _clique->probes());
 		search.search();
 		clickTicker();
-		clique.setResults(search.results());
+		clique.setStates(search.states());
 		int num_nodes = search.probe_count();
-		int num_results = search.results().size();
+		int num_results = search.states()->state_count();
 		std::string name = "Subnetwork (" + std::to_string(num_nodes) +
 		" nodes, " + std::to_string(num_results) + " arrangements)";
 		clique.setName(name);

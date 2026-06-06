@@ -170,9 +170,9 @@ glm::vec3 Clique::centroid()
 	return sum / count;
 }
 
-void Clique::setResults(const std::vector<ProbeResult> &results)
+void Clique::setStates(CertainStates *const &states)
 {
-	_results = results;
+	_states = states;
 }
 
 void Clique::add_clique(const Clique &clique)
