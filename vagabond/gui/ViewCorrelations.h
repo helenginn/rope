@@ -35,6 +35,7 @@ public:
 	virtual void setup();
 	void makeList();
 	void viewSubnetwork(Clique &clique);
+	void occupancies();
 	void viewAll();
 private:
 	Clique *_clique{};
