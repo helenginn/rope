@@ -222,7 +222,7 @@ void ProtonNetworkView::interactedWithNothing(bool left, bool hover)
 
 			menu->addOption("hide selection", hide_selected);
 			
-			if (_2D && _activeClique)
+			if (_analysing && _activeClique)
 			{
 				auto subnetwork = [this, selected]()
 				{
@@ -400,8 +400,17 @@ void ProtonNetworkView::makeMainMenu()
 		}
 	};
 	
+	auto analyse_all = [this]()
+	{
+		OpSet<Probe *> probes = selected_probes(_textProbes);
+		probes += selected_probes(_bondProbes);
+		Clique *all = new Clique(probes);
+		all->setName("active selection");
+		setActive(all);
+	};
+	
 	TextButton *text = new TextButton("Menu", this);
-	auto make_menu = [this, browse_cliques, text]()
+	auto make_menu = [this, browse_cliques, analyse_all, text]()
 	{
 		if (hasObject(_cv))
 		{
@@ -412,6 +421,7 @@ void ProtonNetworkView::makeMainMenu()
 		if (!_activeClique)
 		{
 			m->addOption("Browse cliques", browse_cliques);
+			m->addOption("Analyse in place", analyse_all);
 		}
 
 		m->addOption("Save", [this]()
@@ -431,6 +441,7 @@ void ProtonNetworkView::makeMainMenu()
 			new HBondAnalysisControl(this, _activeClique, _network);
 			hbac->show();
 		};
+
 		
 		if (_activeClique)
 		{
@@ -535,17 +546,17 @@ void ProtonNetworkView::keyReleaseEvent(SDL_Keycode pressed)
 	Scene::keyReleaseEvent(pressed);
 }
 
-void ProtonNetworkView::selectProbes(const OpSet<Probe *> &probes)
+void ProtonNetworkView::selectProbes(const OpSet<Probe *> &probes, bool on)
 {
 	for (Probe *const &other : probes)
 	{
 		if (_textProbes.count(other))
 		{
-			_textProbes[other]->selected(0, 0);
+			_textProbes[other]->selected(0, (on ? 0 : 1));
 		}
 		else if (_bondProbes.count(other))
 		{
-			_bondProbes[other]->selected(0, 0);
+			_bondProbes[other]->selected(0, (on ? 0 : 1));
 		}
 		else
 		{

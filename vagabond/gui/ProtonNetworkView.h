@@ -73,7 +73,7 @@ public:
 	virtual void sendSelection(float t, float l, float b, float r, bool inverse);
 	void expandSelectionToNeighbours(int max_jumps = INT_MAX);
 	void completeResidues(bool stop_at_alpha = false);
-	void selectProbes(const OpSet<Probe *> &probes);
+	void selectProbes(const OpSet<Probe *> &probes, bool on = true);
 	void arrangeFigure();
 
 	void highlightCliques();
@@ -81,6 +81,7 @@ public:
 	void setActive(Clique *clique)
 	{
 		_activeClique = clique;
+		_analysing = true;
 	}
 private:
 
@@ -110,6 +111,7 @@ private:
 	Clique *_activeClique = nullptr;
 	
 	std::function<void()> _onClick{};
+	bool _analysing = false;
 };
 
 #endif
