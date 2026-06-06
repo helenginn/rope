@@ -16,11 +16,10 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#include <vagabond/utils/Eigen/Core>
 #include "ViewCorrelations.h"
+
+#include <vagabond/utils/Eigen/Core>
 #include <vagabond/utils/svd/PCA.h>
-#include <vagabond/utils/maths.h>
-#include <vagabond/utils/FileReader.h>
 #include <vagabond/utils/FloydWarshall.h>
 #include <vagabond/utils/DoJob.h>
 #include <fstream>
@@ -32,8 +31,6 @@
 #include <vagabond/gui/elements/TextButton.h>
 #include <vagabond/gui/MatrixPlot.h>
 #include <vagabond/gui/CommunicationChoice.h>
-#include <vagabond/gui/GraphView.h>
-#include <vagabond/gui/Graph.h>
 #include <vagabond/gui/CommunicationAnalysis.h>
 #include <vagabond/gui/elements/ScrollBox.h>
 #include <vagabond/gui/elements/Window.h>
@@ -51,11 +48,6 @@ void ViewCorrelations::setup()
 	addTitle("Sub-network correlations");
 
 	makeList();
-
-	TextButton *tb = new TextButton("Check occupancies");
-	tb->setReturnJob([this]() { occupancies(); });
-	tb->setCentre(0.55, 0.84);
-	addObject(tb);
 }
 
 void ViewCorrelations::makeList()
@@ -93,151 +85,13 @@ void ViewCorrelations::makeList()
 	sb->addSliderIfNeeded();
 }
 
-OpSet<ProbeTypePair> probeTypePairs(const std::list<Clique> &cliques,
-                                    float &all_ave)
-{
-	OpSet<ProbeTypePair> all;
-	float all_sum = 0;
-	float all_count = 0;
-	for (const Clique &clique : cliques)
-	{
-		if (!clique.states()) continue;
-
-		const CertainStates &states = *clique.states();
-		float sum = states.average_score() * states.state_count();
-		if (sum != sum)
-		{
-			continue;
-		}
-		all_sum += sum;
-		all_count += states.state_count();
-		all += states.ptps();
-	}
-
-	all_ave = all_sum / all_count;
-	return all;
-}
-
-void ViewCorrelations::occupancies()
-{
-	struct OccupancyEstimate
-	{
-		std::map<int, float> results{};
-		float sum = 0;
-	};
-	
-	std::map<ProbeTypePair, std::vector<OccupancyEstimate>> occupancies;
-	
-	auto process_clique = [&occupancies](const Clique &clique)
-	{
-		if (!clique.states()) return;
-		const CertainStates &states = *clique.states();
-		float ave = states.average_score();
-
-		for (const ProbeTypePair &ptp : states.ptps())
-		{
-			float sum = 0;
-			std::map<int, float> occs = states.proportions(ptp, sum, ave);
-			occupancies[ptp].push_back({occs, sum});
-		}
-	};
-	
-	for (Clique &clique : _clique->subdivisions())
-	{
-		process_clique(clique);
-	}
-	
-	CorrelData cd = empty_CD();
-	
-	Graph *graph = new Graph();
-	graph->style = Graph::StyleScatter;
-	graph->setRange('x', 0, 1);
-	graph->setRange('y', 0, 1);
-	graph->setAxisLabel('x', "Calculated occupancy");
-	graph->setAxisLabel('y', "Observed occupancy");
-	
-	std::cout << "observed, calculated, total_prob, atom" <<  std::endl;
-
-	for (const auto &occs : occupancies)
-	{
-		const ProbeTypePair &ptp = occs.first;
-		if (ptp.second != hnet::Types::ExistenceType)
-		{
-			continue; // skip for now
-		}
-
-		std::string desc = ptp.first->desc();
-		desc += (ptp.second == hnet::Types::BondType ?  " bonding" : " exists");
-
-		const std::vector<OccupancyEstimate> &estimates = occs.second;
-		std::map<int, float> sums;
-		float grand_sum = 0;
-
-		for (const int &state : {1, 2})
-		{
-			float sum = 0; float weights = 0;
-			for (const OccupancyEstimate &est : estimates)
-			{
-				if (est.results.count(state) == 0)
-				{
-					continue;
-				}
-
-				float weight = est.sum;
-				float quantity = est.results.at(state);
-				sum += quantity * weight;
-				weights += weight;
-			}
-			if (sum != sum)
-			{
-				sum = 0;
-			}
-			sum /= weights;
-			sums[state] = sum;
-			grand_sum += sum;
-		}
-		
-		for (auto &s : sums)
-		{
-			s.second /= grand_sum;
-		}
-
-		if (!ptp.first->atom())
-		{
-			continue;
-		}
-
-		Atom *atom = ptp.first->atom();
-		if (atom->elementSymbol() == "C" || atom->elementSymbol() == "H")
-		{
-			continue;
-		}
-		
-
-		float sum = sums[2];
-		float calculated = sums[2] / (sums[1] + sums[2]);
-		float actual = ptp.first->atomConf().occupancy();
-		graph->addPoint(0, calculated, actual);
-		add_to_CD(&cd, calculated, actual);
-
-		std::cout << actual << " " << sum << " " << grand_sum << " " <<
-		ptp.first->atomConf() << std::endl;
-	}
-	
-	float cc = evaluate_CD(cd);
-	
-	GraphView *gv = new GraphView(this, graph);
-	gv->show();
-	gv->setInformation("Correlation: " + f_to_str(cc, 3));
-}
-
 void ViewCorrelations::viewAll()
 {
 	float all_ave = 0;
-	OpSet<ProbeTypePair> all = probeTypePairs(_clique->subdivisions(), 
-	                                          all_ave);
-	std::cout << "All: " << all.size() << std::endl;
-	_correlative = new Correlative(all, all_ave);
+	OpSet<ProbeTypePair> all = 
+	Correlative::probeTypePairs(_clique->subdivisions(), all_ave);
+
+	_correlative = new Correlative(all, all_ave, true);
 	Correlative &correl = *_correlative;
 
 	auto process_clique = [&correl](const Clique &clique)

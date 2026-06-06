@@ -17,6 +17,7 @@
 // Please email: vagabond @ hginn.co.uk for more details.
 
 #include "VagWindow.h"
+#include "OccupanciesView.h"
 #include "ViewCorrelations.h"
 #include "HBondAnalysisControl.h"
 #include "CommunicationChoice.h"
@@ -204,6 +205,12 @@ void HBondAnalysisControl::setup()
 			vc->show();
 		};
 
+		auto view_occs = [this]()
+		{
+			OccupanciesView *ov = new OccupanciesView(this, _clique);
+			ov->show();
+		};
+
 		auto enable_with_divisions = [this, tb]()
 		{
 			const std::list<Clique> &subs = _clique->subdivisions();
@@ -219,7 +226,7 @@ void HBondAnalysisControl::setup()
 		
 		_refreshes.push_back(enable_with_divisions);
 
-		auto show_view_results = [this, view_correlations, right]()
+		auto show_view_results = [this, view_correlations, view_occs, right]()
 		{
 			const std::list<Clique> &subs = _clique->subdivisions();
 			bool has_results = false;
@@ -233,10 +240,19 @@ void HBondAnalysisControl::setup()
 
 			if (has_results)
 			{
+				{
 				TextButton *tb = new TextButton("View correlations", this);
 				tb->setRight(right, 0.5);
 				tb->setReturnJob(view_correlations);
 				addTempObject(tb);
+				}
+				
+				{
+				TextButton *tb = new TextButton("Occupancies", this);
+				tb->setRight(right, 0.6);
+				tb->setReturnJob(view_occs);
+				addTempObject(tb);
+				}
 			}
 		};
 		

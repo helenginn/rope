@@ -123,6 +123,8 @@ guifiles = [
 'ProjectMenu.cpp',
 'ProtonNetworkView.cpp',
 'ProtonNetworkView.h',
+'OccupanciesView.cpp',
+'OccupanciesView.h',
 'RegionMenu.h',
 'RegionMenu.cpp',
 'RegionRuleView.h',

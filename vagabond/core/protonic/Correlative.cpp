@@ -16,14 +16,41 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
+#include "Clique.h"
 #include "Correlative.h"
 #include "ProbeResult.h"
 #include "CertainStates.h"
 
 using namespace Eigen;
 
-Correlative::Correlative(const OpSet<ProbeTypePair> &all, float ave_score) 
-: _probes(all), _ave_score(ave_score)
+OpSet<ProbeTypePair> Correlative::probeTypePairs
+(const std::list<Clique> &cliques, float &all_ave)
+{
+	OpSet<ProbeTypePair> all;
+	float all_sum = 0;
+	float all_count = 0;
+	for (const Clique &clique : cliques)
+	{
+		if (!clique.states()) continue;
+
+		const CertainStates &states = *clique.states();
+		float sum = states.average_score() * states.state_count();
+		if (sum != sum)
+		{
+			continue;
+		}
+		all_sum += sum;
+		all_count += states.state_count();
+		all += states.ptps();
+	}
+
+	all_ave = all_sum / all_count;
+	return all;
+}
+
+Correlative::Correlative(const OpSet<ProbeTypePair> &all, float ave_score,
+                         bool relative) 
+: _probes(all), _ave_score(ave_score), _relative(relative)
 {
 	size_t accumulative = 0;
 	for (const ProbeTypePair &ptp : all)
@@ -79,7 +106,15 @@ void Correlative::addStates(const CertainStates &states)
 			int y = _insertions[right].first;
 			int n = _insertions[right].second;
 			float ave = states.average_score();
-			ProbeCorrelation c = states.correlate(left, right, _ave_score);
+			ProbeCorrelation c = states.correlate(left, right, _ave_score,
+			                                      _relative);
+
+			if (!_relative)
+			{
+				_overall(seqN(x, m), seqN(y, n)) += c.mat;
+				_overall(seqN(y, n), seqN(x, m)) += c.mat.transpose();
+				continue;
+			}
 
 			float w = states.state_count();
 			Eigen::MatrixXf cc = c.mat * w;
@@ -105,16 +140,38 @@ void Correlative::addStates(const CertainStates &states)
 
 Eigen::MatrixXf Correlative::acquireMatrix()
 {
-	for (int i = 0; i < _overall.rows(); i++)
+	Eigen::MatrixXf ret = _overall;
+
+	// get rid of nans
+	for (int i = 0; i < ret.rows(); i++)
 	{
-		for (int j = 0; j < _overall.cols(); j++)
+		for (int j = 0; j < ret.cols(); j++)
 		{
-			if (_written(i, j) > 1e-6)
+			if (ret(i, j) != ret(i, j))
 			{
-				_overall(i, j) /= _written(i, j);
+				ret(i, j) = 0;
 			}
 		}
 	}
+
+	for (int i = 0; i < ret.rows(); i++)
+	{
+		if (_relative)
+		{
+			for (int j = 0; j < ret.cols(); j++)
+			{
+				if (_written(i, j) > 1e-6)
+				{
+					ret(i, j) /= _written(i, j);
+				}
+			}
+		}
+		
+		if (!_relative)
+		{
+			ret.row(i) /= ret(i, i);
+		}
+	}
 	
-	return _overall;
+	return ret;
 }

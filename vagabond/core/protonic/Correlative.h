@@ -30,7 +30,11 @@ struct ProbeTypePair;
 class Correlative
 {
 public:
-	Correlative(const OpSet<ProbeTypePair> &all, float ave_score);
+	Correlative(const OpSet<ProbeTypePair> &all, float ave_score,
+	            bool relative = true);
+
+	static OpSet<ProbeTypePair> probeTypePairs(const std::list<Clique> &cliques,
+	                                           float &all_ave);
 
 	const std::function<std::string(float, float)> &matrixLookup() const
 	{
@@ -63,6 +67,7 @@ private:
 	
 	size_t _size = 0;
 	float _ave_score = 0;
+	bool _relative = true;
 };
 
 #endif
