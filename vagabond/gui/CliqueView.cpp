@@ -106,11 +106,18 @@ void CliqueView::insertClique(Clique *clique)
 			}
 			if (left && !_combine)
 			{
-				if (!_scene->shiftPressed())
+				if (_scene->controlPressed())
+				{
+					scene->selectProbes(clique->probes(), false);
+				}
+				else if (!_scene->shiftPressed())
 				{
 					scene->deselect();
 				}
-				scene->selectProbes(clique->probes());
+				if (!_scene->controlPressed())
+				{
+					scene->selectProbes(clique->probes());
+				}
 				if (!_scene->shiftPressed())
 				{
 					scene->shiftToCentre(clique->centroid(), 0);
