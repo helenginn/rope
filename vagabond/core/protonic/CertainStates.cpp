@@ -87,7 +87,7 @@ float CertainStates::average_score() const
 
 ProbeCorrelation CertainStates::correlate(const ProbeTypePair &left,
                                           const ProbeTypePair &right, 
-                                          float ave, bool norm) const
+                                          float ave, bool relative) const
 {
 	if (state_count() == 0 || probe_count() == 0)
 	{
@@ -154,7 +154,7 @@ ProbeCorrelation CertainStates::correlate(const ProbeTypePair &left,
 		float row_total = corr.mat.row(j).sum();
 		int col_count = corr.mat.cols();
 		
-		if (row_total > 1e-6 && norm)
+		if (row_total > 1e-6 && relative)
 		{
 			corr.mat.row(j) /= row_total;
 			
@@ -163,7 +163,10 @@ ProbeCorrelation CertainStates::correlate(const ProbeTypePair &left,
 				corr.mat.row(j)(i) -= 1.f / (float)col_count;
 			}
 		}
-
+		else if (!relative)
+		{
+			corr.mat.row(j) /= total_probs;
+		}
 	}
 
 	return corr;
@@ -181,6 +184,7 @@ std::map<int, float> CertainStates::proportions(ProbeTypePair ptp,
 
 	float rt = 2.57;
 	std::map<int, float> totals;
+	std::map<int, int> counts;
 	sum = 0;
 
 	for (int i = 0; i < state_count(); i++)
@@ -189,7 +193,20 @@ std::map<int, float> CertainStates::proportions(ProbeTypePair ptp,
 		float sc = score(i);
 		float contrib = exp((ave - sc) / rt);
 		totals[nv] += contrib;
+		counts[nv]++;
 		sum += contrib;
+		
+	}
+	if (ptp.first->desc() == "A-GLY198:N,A")
+	{
+		for (const ProbeTypePair &other : _headers)
+		{
+			std::cout << other << " ";
+		}
+		std::cout << std::endl;
+		std::cout << "Totals: " << totals[1] << " (" << counts[1] << 
+		", absent) " << totals[2] << " (" << counts[2] << 
+		", present)" << std::endl;
 	}
 	
 	return totals;

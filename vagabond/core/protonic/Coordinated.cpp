@@ -1484,3 +1484,65 @@ void Coordinated::prepareCoordinated(const Count::Values &n_charge,
 	CountProbe &probe = _network.add_probe(new CountProbe(*_charge, atom()));
 }
 
+ABPair Coordinated::bondedSymmetricAtom(::Atom *asymmetric)
+{
+	for (const ABPair &bond : _bonds)
+	{
+		std::cout << bond << " ";
+		if (bond.first.ptr->symmetryCopyOf() == asymmetric)
+		{
+			std::cout << std::endl;
+			return bond;
+		}
+	}
+
+	std::cout << std::endl;
+	return ABPair{};
+}
+
+void Coordinated::findSymmetricallyRelatedBonds()
+{
+	::Atom *asym_atom = atom()->symmetryCopyOf();
+	if (asym_atom)
+	{
+		AtomConf asym_other = {asym_atom, atomConf().conf};
+
+		Coordinated *other = atomMap()[asym_other];
+		add_constraint(new MutualExistence(*existence(), *other->existence()));
+	}
+
+	// make sure bonds which are related by symmetry are constrained to
+	// be equal
+	for (const ABPair &bond : _bonds)
+	{
+		if (!bond.first.ptr->symmetryCopyOf())
+		{
+			// within asymmetric unit - we can safely ignore
+			continue;
+		}
+
+		// get the asymmetric version of our symmetry mate
+		::Atom *asym_atom = bond.first.ptr->symmetryCopyOf();
+		AtomConf asym_other = {asym_atom, bond.first.conf};
+
+		Coordinated *other = atomMap()[asym_other];
+
+		// ask the asymmetric version for the symmetry mate of my own atom
+		const ABPair &corresponding = other->bondedSymmetricAtom(atom());
+
+		if (corresponding.second)
+		{
+			hnet::BondConnector &left = *bond.second;
+			hnet::BondConnector &right = *corresponding.second;
+
+            add_constraint(new EqualBonds(left, right));
+		}
+		else
+		{
+			_failedCheck = true;
+		}
+	}
+
+}
+
+

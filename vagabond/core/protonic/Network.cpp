@@ -660,6 +660,12 @@ Network::Network(AtomGroup *group, const std::string &spg_name,
 	{
 		_atomMap[{a, conf}]->attachAdderConstraints();
 	};
+	
+	// make sure bonds in the next crystal contact are the same as this asu
+	donors->do_op(on_each_conf([this](::Atom *a, char conf)
+	{
+		_atomMap[{a, conf}]->findSymmetricallyRelatedBonds();
+	}));
 
 	donors->do_op(on_each_conf(job));
 	

@@ -206,39 +206,124 @@ void Subdivide::one()
 	_clique->setSubdivisions({Clique(expanded)});
 }
 
+
+void expand_to_bonded(OpSet<Probe *> &chunk, bool same_residue = false,
+                      const OpSet<Probe *> &reference = {})
+{
+	OpSet<Probe *> last = chunk;
+	OpSet<ResidueId> ids;
+	for (Probe *const &probe : reference)
+	{
+		if (probe->is_atom())
+		{
+			ids += probe->atom()->residueId();
+		}
+	}
+
+	while (true)
+	{
+		OpSet<Probe *> add = {};
+		for (Probe *const &current : last)
+		{
+			for (Probe *const &other : current->others())
+			{
+				if (!(other->is_atom() || other->is_covalent()))
+				{
+					continue;
+				}
+
+				if (same_residue && other->is_atom() &&
+				    ids.count(other->atom()->residueId()) == 0)
+				{
+					continue;
+				}
+				
+				if (other->is_atom() && other->atom()->symmetryCopyOf())
+				{
+					continue;
+				}
+				
+				if (other->is_certain())
+				{
+					continue;
+				}
+
+				if (chunk.count(other) == 0)
+				{
+					add += other;
+				}
+			}
+		}
+		
+		if (add.size() == 0)
+		{
+			break;
+		}
+
+		chunk += add;
+		last = add;
+	}
+}
+
+OpSet<Probe *> covalentProbes(const OpSet<Probe *> &check)
+{
+	OpSet<Probe *> covalents = check;
+	std::cout << "Checking " << check.size() << " in clique" << std::endl;
+	expand_to_bonded(covalents, true, check);
+	std::cout << "Expanded to " << covalents.size() << std::endl;
+
+	covalents.filter
+	([](Probe *probe)
+	 {
+		return probe->is_covalent() && !probe->is_certain();
+	});
+	std::cout << "Removed to leave " << covalents.size() << std::endl;
+
+	return covalents;
+}
+
 void Subdivide::subdivide()
 {
-	OpSet<Probe *> to_chunk = _clique->probes();
-	OpSet<OpSet<Probe *>> chunks;
-	OpSet<Clique> cliques;
-	
-	auto grow_clique = [this]<class Grow>(Probe *start, Grow &grow)
+	auto grow_clique = [this]<class Grow>(Probe *start, Grow &grow,
+	                                      Search method)
 	{
 		OpSet<Probe *> chunk = {start};
-		grow(chunk);
+		grow(chunk, method);
 		while (finish_ends(chunk)) {}
 
 		prune(chunk);
 		return chunk;
 	};
 	
-	auto grow = [this](OpSet<Probe *> &chunk)
+	auto grow = [this](OpSet<Probe *> &chunk, Search method)
 	{
-		if (search == Depth)
+		if (method == Depth)
 		{
 			return shoot(chunk);
 		}
-		else
+		else if (method == Breadth)
 		{
 			return spread(chunk);
 		}
 	};
 
+	OpSet<Probe *> to_chunk = _clique->probes();
+	OpSet<OpSet<Probe *>> chunks;
+	OpSet<Clique> cliques;
+
 	for (Probe *probe : to_chunk)
 	{
-		for (int i = 0; i < 5; i++)
+		for (int i = 0; i < 3 && (search & Breadth); i++)
 		{
-			OpSet<Probe *> chunk = grow_clique(probe, grow);
+			OpSet<Probe *> chunk = grow_clique(probe, grow, Breadth);
+			if (chunk.size() > 0 && has_non_water(chunk))
+			{
+				chunks += chunk;
+			}
+		}
+		for (int i = 0; i < 3 && (search & Depth); i++)
+		{
+			OpSet<Probe *> chunk = grow_clique(probe, grow, Depth);
 			if (chunk.size() > 0 && has_non_water(chunk))
 			{
 				chunks += chunk;
@@ -246,9 +331,31 @@ void Subdivide::subdivide()
 		}
 	}
 	
+	if (search & Covalent)
+	{
+		OpSet<Probe *> covalents = covalentProbes(to_chunk);
+		OpSet<Probe *> remaining = covalents;
+		while (remaining.size())
+		{
+			OpSet<Probe *> chunk;
+			chunk += *remaining.begin();
+			expand_to_bonded(chunk, true, to_chunk);
+			remaining -= chunk;
+			
+			chunk = to_chunk.common_to_both(chunk);
+			if (chunk.size() >= 2)
+			{
+				cliques.insert(Clique(chunk));
+			}
+		}
+	}
+	
 	for (const OpSet<Probe *> &chunk : chunks)
 	{
-		cliques.insert(Clique(chunk));
+		if (chunk.size() >= 2)
+		{
+			cliques.insert(Clique(chunk));
+		}
 	}
 
 	std::cout << "Found " << cliques.size() << std::endl;

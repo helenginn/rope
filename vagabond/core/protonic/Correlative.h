@@ -45,6 +45,8 @@ public:
 	{
 		return _insertions;
 	}
+	
+	Eigen::MatrixXf rowsFor(const ProbeTypePair &ptp);
 
 	void addStates(const CertainStates &states);
 
@@ -64,6 +66,8 @@ private:
 
 	Eigen::MatrixXf _overall{};
 	Eigen::MatrixXf _written{};
+
+	Eigen::MatrixXf _cache{};
 	
 	size_t _size = 0;
 	float _ave_score = 0;

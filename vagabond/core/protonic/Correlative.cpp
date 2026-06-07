@@ -98,42 +98,73 @@ void Correlative::addStates(const CertainStates &states)
 {
 	for (const ProbeTypePair &left : states.ptps())
 	{
+		if (_probes.count(left) == 0)
+		{
+			continue;
+		}
 		int x = _insertions[left].first;
 		int m = _insertions[left].second;
 
 		for (const ProbeTypePair &right : states.ptps())
 		{
+			if (_probes.count(right) == 0)
+			{
+				continue;
+			}
 			int y = _insertions[right].first;
 			int n = _insertions[right].second;
 			float ave = states.average_score();
 			ProbeCorrelation c = states.correlate(left, right, _ave_score,
 			                                      _relative);
-
+			c.mat *= (float)states.state_count();
+			
 			if (!_relative)
 			{
+				auto copy_c = c.mat;
+				for (int i = 0; i < c.mat.rows(); i++)
+				{
+					for (int j = 0; j < c.mat.cols(); j++)
+					{
+						c.mat(i, j) = log(c.mat(i, j));
+						float &f = c.mat(i, j);
+
+						if (f != f || !std::isfinite(f))
+						{
+							f = -10;
+						}
+					}
+				}
+
 				_overall(seqN(x, m), seqN(y, n)) += c.mat;
 				_overall(seqN(y, n), seqN(x, m)) += c.mat.transpose();
-				continue;
+				
+				Eigen::MatrixXf copy = c.mat; copy.setOnes();
+				copy *= states.state_count();
+
+				_written(seqN(x, m), seqN(y, n)) += copy;
+				_written(seqN(y, n), seqN(x, m)) += copy.transpose();
 			}
-
-			float w = states.state_count();
-			Eigen::MatrixXf cc = c.mat * w;
-			Eigen::MatrixXf csq = c.mat;
-
-			for (int j = 0; j < cc.cols(); j++)
+			else
 			{
-				for (int i = 0; i < cc.rows(); i++)
+				float w = states.state_count();
+				Eigen::MatrixXf cc = c.mat * w;
+				Eigen::MatrixXf csq = c.mat;
+
+				for (int j = 0; j < cc.cols(); j++)
 				{
-					cc(i, j) = cc(i, j);
-					csq(i, j) = w;
+					for (int i = 0; i < cc.rows(); i++)
+					{
+						cc(i, j) = cc(i, j);
+						csq(i, j) = w;
+					}
 				}
+
+				_overall(seqN(x, m), seqN(y, n)) += cc;
+				_written(seqN(x, m), seqN(y, n)) += csq;
+
+				_overall(seqN(y, n), seqN(x, m)) += cc.transpose();
+				_written(seqN(y, n), seqN(x, m)) += csq.transpose();
 			}
-
-			_overall(seqN(x, m), seqN(y, n)) += cc;
-			_written(seqN(x, m), seqN(y, n)) += csq;
-
-			_overall(seqN(y, n), seqN(x, m)) += cc.transpose();
-			_written(seqN(y, n), seqN(x, m)) += csq.transpose();
 		}
 	}
 }
@@ -169,9 +200,42 @@ Eigen::MatrixXf Correlative::acquireMatrix()
 		
 		if (!_relative)
 		{
-			ret.row(i) /= ret(i, i);
+			for (int j = 0; j < ret.cols(); j++)
+			{
+				ret(i, j) /= _written(i, j);
+				ret(i, j) = exp(ret(i, j));
+				if (ret(i, j) != ret(i, j))
+				{
+					ret(i, j) = 0;
+				}
+			}
 		}
+	}
+
+	for (int i = 0; i < ret.rows(); i++)
+	{
+		ret.row(i) /= ret(i, i);
 	}
 	
 	return ret;
+}
+
+Eigen::MatrixXf Correlative::rowsFor(const ProbeTypePair &ptp)
+{
+	int x = _insertions[ptp].first;
+	int m = _insertions[ptp].second;
+	
+	Eigen::MatrixXf everything;
+	if (_cache.rows() > 0)
+	{
+		everything = _cache;
+	}
+	else
+	{
+		everything = acquireMatrix();
+		_cache = everything;
+	}
+
+	Eigen::MatrixXf cut = everything(seqN(x, m), Eigen::all);
+	return cut;
 }

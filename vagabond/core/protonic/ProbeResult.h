@@ -49,6 +49,14 @@ struct ProbeTypePair : public std::pair<Probe *, hnet::Types>
 	}
 };
 
+inline std::ostream &operator<<(std::ostream &ss, const ProbeTypePair &ptp)
+{
+	if (ptp.first) ss << ptp.first->desc()
+	<< (ptp.second == hnet::BondType ? " bonding" : " existence");
+	return ss;
+}
+
+
 struct OneProbe
 {
 	Probe *probe;

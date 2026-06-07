@@ -71,6 +71,7 @@ public:
 	void mutualExclusions(AtomGroup *clashCheck);
 	void attachAdderConstraints();
 	void clashLogic(OpSet<AtomConf> &clash_check);
+	void findSymmetricallyRelatedBonds();
 
 	void probeAtom();
 	
@@ -191,6 +192,7 @@ private:
 	OpSet<AcceptableGroup> expandAllSeeds(OpSet<AtomConf> &clashCheck,
 	                                      const PairSet &uninvolved_group,
 	                                      PairSet &all_used, int coord_num);
+	ABPair bondedSymmetricAtom(::Atom *asymmetric);
 	void applyRestrictionsToUnbrokenBonds
 	(const std::map<int, std::vector<int>> &coord_state_broken_bond_counts);
 	

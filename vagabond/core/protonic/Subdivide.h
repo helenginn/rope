@@ -31,8 +31,10 @@ public:
 	
 	enum Search
 	{
-		Breadth,
-		Depth,
+		None = 0,
+		Breadth = 1,
+		Depth = 2,
+		Covalent = 4,
 	};
 	Search search;
 
