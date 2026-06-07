@@ -17,12 +17,14 @@
 // Please email: vagabond @ hginn.co.uk for more details.
 
 #include "OccupanciesView.h"
+#include "MatrixPlot.h"
 #include <vagabond/utils/maths.h>
 #include <vagabond/utils/FileReader.h>
 #include <vagabond/gui/GraphView.h>
 #include <vagabond/gui/Graph.h>
 #include <vagabond/core/protonic/Clique.h>
 #include <vagabond/core/protonic/Correlative.h>
+#include <vagabond/core/protonic/ProbeResult.h>
 #include <vagabond/core/protonic/CertainStates.h>
 #include <vagabond/gui/elements/TextButton.h>
 
@@ -37,11 +39,24 @@ void OccupanciesView::setup()
 {
 	addTitle("Occupancy prediction");
 
+	TextButton *tb = new TextButton("Check occupancies");
+	tb->setReturnJob([this]() { occupancies(); });
+	tb->setCentre(0.50, 0.84);
+	addObject(tb);
+
+	std::map<ProbeTypePair, OccData> pass = estimates();
+	OpSet<ProbeTypePair> active;
+	for (auto &pair : pass)
+	{
+		active += pair.first;
+	}
+	std::cout << "Active: " << active.size() << std::endl;
+
 	float all_ave = 0;
 	OpSet<ProbeTypePair> all = 
 	Correlative::probeTypePairs(_clique->subdivisions(), all_ave);
 
-	_correlative = new Correlative(all, all_ave, false);
+	_correlative = new Correlative(active, all_ave, false);
 
 	auto process_clique = [this](const Clique &clique)
 	{
@@ -56,22 +71,31 @@ void OccupanciesView::setup()
 	}
 
 	Eigen::MatrixXf overall = _correlative->acquireMatrix();
+	PCA::Matrix tmp(overall);
+	MatrixPlot *mp = new MatrixPlot(tmp);
+	mp->setCentre(0.25, 0.5);
+	addObject(mp);
 
-	TextButton *tb = new TextButton("Check occupancies");
-	tb->setReturnJob([this]() { occupancies(); });
-	tb->setCentre(0.55, 0.84);
-	addObject(tb);
+	auto lookup = _correlative->matrixLookup();
+	auto display_lookup = [this, lookup](float x, float y)
+	{
+		std::string info = _correlative->matrixLookup()(x, y);
+		setInformation(info);
+	};
+	mp->setHoverJob(display_lookup);
 }
 
-void OccupanciesView::occupancies()
+std::map<ProbeTypePair, OccupanciesView::OccData> OccupanciesView::estimates()
 {
 	struct OccupancyEstimate
 	{
 		std::map<int, float> results{};
 		float sum = 0;
+		size_t samples = 0;
 	};
 	
 	std::map<ProbeTypePair, std::vector<OccupancyEstimate>> occupancies;
+	std::map<ProbeTypePair, OccData> ret;
 	
 	auto process_clique = [&occupancies](const Clique &clique)
 	{
@@ -83,7 +107,7 @@ void OccupanciesView::occupancies()
 		{
 			float sum = 0;
 			std::map<int, float> occs = states.proportions(ptp, sum, ave);
-			occupancies[ptp].push_back({occs, sum});
+			occupancies[ptp].push_back({occs, sum, states.state_count()});
 		}
 	};
 	
@@ -91,17 +115,6 @@ void OccupanciesView::occupancies()
 	{
 		process_clique(clique);
 	}
-	
-	CorrelData cd = empty_CD();
-	
-	Graph *graph = new Graph();
-	graph->style = Graph::StyleScatter;
-	graph->setRange('x', 0, 1);
-	graph->setRange('y', 0, 1);
-	graph->setAxisLabel('x', "Calculated occupancy");
-	graph->setAxisLabel('y', "Observed occupancy");
-	
-	std::cout << "observed, calculated, total_prob, atom" <<  std::endl;
 
 	for (const auto &occs : occupancies)
 	{
@@ -116,7 +129,8 @@ void OccupanciesView::occupancies()
 
 		const std::vector<OccupancyEstimate> &estimates = occs.second;
 		std::map<int, float> sums;
-		float grand_sum = 0;
+		float grand_sum = 0; 
+		size_t sample_count = 0;
 
 		for (const int &state : {1, 2})
 		{
@@ -130,6 +144,7 @@ void OccupanciesView::occupancies()
 
 				float weight = est.sum;
 				float quantity = est.results.at(state);
+				sample_count += est.samples;
 				sum += quantity * weight;
 				weights += weight;
 			}
@@ -147,7 +162,7 @@ void OccupanciesView::occupancies()
 			s.second /= grand_sum;
 		}
 
-		if (!ptp.first->atom())
+		if (!ptp.first->atom() || ptp.first->atom()->symmetryCopyOf())
 		{
 			continue;
 		}
@@ -157,22 +172,120 @@ void OccupanciesView::occupancies()
 		{
 			continue;
 		}
-		
 
-		float sum = sums[2];
 		float calculated = sums[2] / (sums[1] + sums[2]);
-		float actual = ptp.first->atomConf().occupancy();
-		graph->addPoint(0, calculated, actual);
-		add_to_CD(&cd, calculated, actual);
+		float observed = ptp.first->atomConf().occupancy();
+		
+		if (fabs(calculated - 0.5) < 1e-6)
+		{
+			continue;
+		}
+		
+		ret[ptp] = {calculated, observed, grand_sum, sample_count};
+	}
+	
+	return ret;
+}
 
-		std::cout << actual << " " << sum << " " << grand_sum << " " <<
+void OccupanciesView::updateEstimates(std::map<ProbeTypePair, OccData> &ests)
+{
+	auto current = ests;
+	
+	auto fraction_for = [](std::map<ProbeTypePair, 
+	                       OccData> &ests,
+	                       const ProbeTypePair &ptp, int state)
+	{
+		float calculated = ests.at(ptp).calculated;
+		if (state == 2) return calculated;
+		if (state == 1) return 1 - calculated;
+		return 0.f;
+	};
+
+	for (auto &pair : ests)
+	{
+		const ProbeTypePair &left = pair.first;
+		Eigen::MatrixXf rows = _correlative->rowsFor(left);
+		
+		float frax[2] = {0, 0};
+		for (const int &state : {1, 2})
+		{
+			float my_frac = fraction_for(_first, left, state);
+			float curr_frac = fraction_for(ests, left, state);
+
+			int idx = state - 1;
+			Eigen::VectorXf ccs = rows(idx, Eigen::all);
+			
+			int n = 0;
+			for (auto &next : ests)
+			{
+				for (const int &other_state : {1, 2})
+				{
+					const ProbeTypePair &right = next.first;
+					float cc = ccs[n];
+					float other_frac = fraction_for(_first, right, 
+					                                other_state); // urgh
+
+					float same = (1 - cc) * sqrt(my_frac * curr_frac);
+					float updated = (cc) * sqrt(my_frac * other_frac);
+
+					frax[state - 1] += (same + updated) * cc;
+					n++;
+				}
+			}
+		}
+		
+		ests[left].calculated = frax[1] / (frax[0] + frax[1]);
+	}
+}
+
+void OccupanciesView::occupancies()
+{
+	std::map<ProbeTypePair, OccData> pass;
+	if (_estimates.size() == 0)
+	{
+		pass = estimates();
+		_first = pass;
+	}
+	else
+	{
+		pass = _estimates;
+		updateEstimates(pass);
+	}
+
+	std::map<ProbeTypePair, OccData> copy = pass;
+	_estimates = pass;
+
+	CorrelData cd = empty_CD();
+	
+	Graph *graph = new Graph();
+	graph->style = Graph::StyleScatter;
+	graph->setRange('x', 0, 1);
+	graph->setRange('y', 0, 1);
+	graph->setAxisLabel('x', "Calculated occupancy");
+	graph->setAxisLabel('y', "Observed occupancy");
+	
+	std::cout << "observed, calculated, samples, atom" <<  std::endl;
+	for (auto &pair : pass)
+	{
+		const ProbeTypePair &ptp = pair.first;
+		float &observed = pair.second.observed;
+		float &calculated = pair.second.calculated;
+		size_t &samples = pair.second.samples;
+
+		graph->addPoint(0, calculated, observed);
+		add_to_CD(&cd, calculated, observed);
+
+		std::cout << observed << " " << calculated << " " << samples << " " <<
 		ptp.first->atomConf() << std::endl;
 	}
 	
 	float cc = evaluate_CD(cd);
 	
-	GraphView *gv = new GraphView(this, graph);
-	gv->show();
-	gv->setInformation("Correlation: " + f_to_str(cc, 3));
+	deleteTemps();
+	setInformation("Correlation: " + f_to_str(cc, 3));
+	graph->setup(0.4, 0.5);
+	graph->addToGraphPosition(0.75, 0.5);
+	addTempObject(graph);
+
 }
 

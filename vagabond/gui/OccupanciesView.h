@@ -20,9 +20,11 @@
 #define __vagabond__OccupanciesView__
 
 #include <vagabond/gui/elements/Scene.h>
+#include <map>
 
 class Clique;
 class Correlative;
+struct ProbeTypePair;
 
 class OccupanciesView : public Scene
 {
@@ -31,10 +33,23 @@ public:
 
 	virtual void setup();
 	void occupancies();
+	
+	struct OccData
+	{
+		float calculated{};
+		float observed{};
+		float probs{};
+		size_t samples{};
+	};
+
 private:
+	void updateEstimates(std::map<ProbeTypePair, OccData> &ests);
+	std::map<ProbeTypePair, OccData> estimates();
 	Clique *_clique{};
 	Correlative *_correlative{};
 
+	std::map<ProbeTypePair, OccData> _estimates;
+	std::map<ProbeTypePair, OccData> _first;
 };
 
 #endif

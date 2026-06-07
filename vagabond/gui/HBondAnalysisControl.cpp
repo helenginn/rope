@@ -72,12 +72,12 @@ void HBondAnalysisControl::setup()
 		addObject(tb);
 	}
 	
-	auto subdivide_with_values = [this](int min, int max, bool depth)
+	auto subdivide_with_values = [this](int min, int max, Subdivide::Search s)
 	{
-		return [this, min, max, depth]()
+		return [this, min, max, s]()
 		{
 			Subdivide sd(_clique, min, max);
-			sd.search = (depth ? Subdivide::Depth : Subdivide::Breadth);
+			sd.search = s;
 			sd.subdivide();
 			refresh();
 		};
@@ -93,14 +93,26 @@ void HBondAnalysisControl::setup()
 	auto ask_for_min_max = [this, subdivide_with_values]()
 	{
 		TickBoxes *tb = new TickBoxes(this, this);
+		tb->setOneOnly(false);
 		tb->addOption("depth", "depth", true);
 		tb->addOption("breadth", "breadth");
-		tb->arrange(0.4, 0.35, 0.8, 0.45);
+		tb->addOption("covalent", "covalent");
+		tb->arrange(0.3, 0.35, 0.7, 0.55);
 
 		auto convert = [subdivide_with_values, tb](float min, float max)
 		{
 			bool depth = (tb->isTicked("depth"));
-			subdivide_with_values(min, max, depth)();
+			bool spread = (tb->isTicked("breadth"));
+			bool cov = (tb->isTicked("covalent"));
+			Subdivide::Search s1 = (depth ? Subdivide::Depth : 
+			                        Subdivide::None);
+			Subdivide::Search s2 = (spread ? Subdivide::Breadth :
+			                        Subdivide::None);
+			Subdivide::Search s3 = (spread ? Subdivide::Covalent :
+			                        Subdivide::None);
+
+			Subdivide::Search s = Subdivide::Search(s1 | s2 | s3);
+			subdivide_with_values(min, max, s)();
 		};
 
 		ChooseRange *cr = new ChooseRange(this, "Set search size for "\
@@ -125,7 +137,7 @@ void HBondAnalysisControl::setup()
 	auto ask_to_subdivide = [this, ask_to_brute_force, subdivide_with_values]()
 	{
 		AskYesNo *ayn = new AskYesNo(this, "Subdivide network using defaults?");
-		ayn->addJob("yes", subdivide_with_values(10, 28, true));
+		ayn->addJob("yes", subdivide_with_values(10, 28, Subdivide::Depth));
 		ayn->addJob("no", ask_to_brute_force);
 		setModal(ayn);
 	};
