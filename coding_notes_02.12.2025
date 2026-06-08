@@ -571,49 +571,956 @@ Column (Constraint ID): 0 | Deviation: -4.146576e-03
 WHY?  
 -----------------------------------------------------------------------------------------------------------------------
 
+============================
+ROPE code notes - 19.02.2026
+============================
+
+
+* run a test for crystallin
+	* need to verify the code so i can save for the e.g 4 samples from the last modes and 4 for the first and for form the middle modes 
+* if that seems promising, and i mostly changing this by how close to zero is the variation in the last modes 
+* then if that is verifyid, start adding constraints back to the mix
+
+
 
 ============================
-ROPE code notes - 17.02.2026
+ROPE code notes - 19.03.2026
+============================
+
+* re-run for small example
+	* verify resutls 
+* run for crystallin 
+* start adding constraints 
+
+
+* Here's what I tried today an what i got: 
+
+-- In bond_rotation_on_distnace_gradient: 
+* there is this line currenlty: 
+
+	/* derivative of q.x with respect to alpha */
+	
+	// standard derivative 
+	float dQx_by_dA = y * q.z - z * q.y;
+	float dQy_by_dA = z * q.x - x * q.z;
+	float dQz_by_dA = x * q.y - y * q.x;
+	
+	// non-standard
+	float dQx_by_dA = q.z * (y - x * z) - q.y * (x * y + z);
+	float dQy_by_dA = q.x * (z - y * x) - q.z * (y * z + x);
+	float dQz_by_dA = q.y * (x - z * y) - q.x * (z * x + y);
+
+ At the moment, the frist three lines are commented:
+
+\\	float dQx_by_dA = y * q.z - z * q.y;
+\\	float dQy_by_dA = z * q.x - x * q.z;
+\\	float dQz_by_dA = x * q.y - y * q.x;
+
+these looks like the standard formula for the derivative dQx_by_dA, y, z
+
+So I made a experiment: I swap the commented formulas the non-standerd and 
+run on the small exmaple. WHat I notice was what I originally expected for the 
+system: mode_0 > 0 and all the other modes = 0. Great! That means that the 
+nullspace is correct now.
+
+But when I tried to see how this perfoms in my crystallin example, I was constantly 
+bumping into the clashes: no structure could was saved, because it was clashing 
+(this is activated in FlexSample). 
+So, as an experiment I remove the clashes check and I plotted the 
+the modes vs hydrogen distances. Not really sure what i expected to see, but there was
+definately not an obvious pattern. 
+
+I will first attmept to change the randomweight in FlexSample form 1 to 0.05: 1 is two big 
+for an actual protein --> it works as expected for weight 0.05 for the crystallin!
+
+
+============================
+ROPE code notes - 20.03.2026
+============================
+
+* moving on with angle contraint D-H-A
+What I am expecting to see if everything is working well:
+1.
+2.
+
+
+* I chang ethe python script and the flexSample in order to save the deviation in the angle constraitn 
+and to plot them. I found the following:
+
+1. distance deviation as expected (good, inticates that the bug there is fixed)
+2. The angle constraint column in J is not correctly reducing the null space: large deviation on the first mode AND
+on the last mode. That doesn't make sense. 
+
+
+* I think we need to explore the theory again: i haven't yet consider the two diff contributions to the angle 
+cosntraitn, depending on where the petrubation is coming form the left or right side o the tree (h-bond side/a-bond side)
+This might tbe hte key 
+
+
+============================
+ROPE code notes - 26.03.2026
 ============================
 
 
+* I recalculate the AlphaAngleDist and so that it is comparable to the final angle for each new structure, 
+so I can calcualte the deviation. It was before calculated using the parent, but since we added the actual 
+H-atom, we can change that to be consistent.
+
+* I am slo using the cos of the angle: i think that is the correct way, cause the constraint encoded in the
+Jacobian corresponds to the the cos(D-H-A).
+
+----->> to do: tidy up the alphaAngleDistnace and the betaAngleDistance 
+
+* ok, I can obviously see that somethings going concerning with the angle constraint: it stays almost the same for all modes, always around 4. can you help me debug why is this? the distance constraint it comes out as expected: high for mode 0 and amlost 0 for all the other modes. here is the results for the Jacobin and the null space I am cacluateing: "[debug] Jacobian  transpose=    -0.811555      1.65125      1.76562      1.99947      2.08829      0.59268
+
+-2.98023e-08  5.96046e-08  2.38419e-07  1.19209e-07  5.96046e-08 -5.96046e-08, [debug] --- Matrix V (Right Singular Vectors / Null Space) ---
+
+-0.208072  0.0921313   0.679123    0.53124   0.452475 0.00772393
+
+  0.423358  -0.193169   0.555635  -0.120971  -0.449238  -0.508208
+
+  0.452683   0.759104   0.202965  -0.243636  0.0291662   0.342688
+
+  0.512638  0.0261023  -0.332754    0.77091   -0.17568  0.0251124
+
+   0.53541  -0.331504  -0.102268  -0.219118   0.726685  -0.129995
+
+  0.151955   -0.51709   0.260159 -0.0384311  -0.183486    0.77891" and the structure deviation: "SampleIdx,ModeIdx,Weight,BondIdx,ConstraintType,StartVal,FinalVal,Diff
+
+0,0,0.05,0,distance,2.26197,2.26539,0.00341368
+
+0,0,0.05,0,angle_DHA,-0.956111,7.87362,8.82973
+
+1,1,0.05,0,distance,2.26197,2.26199,1.16825e-05
+
+1,1,0.05,0,angle_DHA,-0.956111,7.8735,8.82961
+
+2,2,0.05,0,distance,2.26197,2.26199,1.07288e-05
+
+2,2,0.05,0,angle_DHA,-0.956111,7.87204,8.82815
+
+3,3,0.05,0,distance,2.26197,2.26197,-9.53674e-07
+
+3,3,0.05,0,angle_DHA,-0.956111,7.87267,8.82878
+
+4,4,0.05,0,distance,2.26197,2.26199,1.69277e-05
+
+4,4,0.05,0,angle_DHA,-0.956111,7.87299,8.8291
+
+5,5,0.05,0,distance,2.26197,2.26197,-6.19888e-06
+
+5,5,0.05,0,angle_DHA,-0.956111,7.87382,8.82993
+
+6,6,0.05,0,distance,2.26197,2.26197,0
+
+6,6,0.05,0,angle_DHA,-0.956111,7.87351,8.82962
+
+"
+
+============================
+ROPE code notes - 30.03.2026
+============================
+
+* I fixed the angle constraint (the second one). I am now calcualating the derivative depending on which side of the bond I'm moving; the H or the A. 
+> Still need beofer the meeting on Wednesday to sit down and write the theory so we can discuss with Helen (TOP Priority)
+> Now next stop is to also fix the: dAngle2
+	> should it be the same? at least this is how i was using it till now
+> Add the dihedral contraints and the VdW.
+
+> Food for thought: if i see that Hbond side thing is nessecary everywhere, should it be a shared functions for all the angles? why each one of them needs special treatment? 
+	that doesn't feel right 
+> Make sure that you are consistent with the nameing: rename them as alpha and beta angles, but be consistent. 
+
+
+============================
+ROPE code notes - 31.03.2026
+============================
+
+* Ok, let's start with some math (hand written)
+
+
+============================
+ROPE code notes - 01.04.2026
+============================
+
+* Direct bonds!
+
+
+============================
+ROPE code notes - 02.04.2026
+============================
+
+* Find out id D-H and A-AA are direct bonds
+	> what happens then?
+* Does the distnace between D and H change after entering the angled constraints? (yes, and that's ok)
+
+* So here's when things seem to go wrong: The 
+
+* sigma_cut (from KGS paper): it's a threshold that separate the range from null space. Because sinle precision arithmetic, when sigma is 
+very small, SDV loses accuracy. This is why it's better to choose a sigma_cut, so that we can better separate the range to null space
+
+============================
+ROPE code notes - 07.04.2026
+============================
+
+* direct bonds
+* VdW 
+	> atom type filter (already existed): only include C,S atoms 
+	> cycle DoF filter: only include pairs that chare cycle DoFs, i.e. TorsionVec is not empty. Why? If two hydrophobic atoms are int he same rigid body subtree,
+	rotating any torsion cannot hcange their distance, so they contribute only zeros to the Jacobian:
+	                vdw.TorsionVec = lastCommonAncestorIdx(block_i, block_j);
+                if (vdw.TorsionVec.empty()) continue; // no cycle DoFs -> skip
+    > Distance filter: currently cutoffD = 0.25 
+    	Change to -0.25
+    > sequence separation? 
+    	two hydrophobic atoms that are close in sequence (fewer than 4 residues apart) are likely connected by covalent bonds and already excluded by the rigis body model. 
+    	But atoms that are neighbors in sequence but separated by rotatable bonds can still form VdW constraints. I am adding a minimum sequence separation check: 
+
+    	// skip pairs on the same residue or adjacent residues
+		if (std::abs((int)i - (int)j) < 4) continue;
+
+TO DO: 
+
+ * somethign seems off with the signs 
+ * implement the cutoff applie on the singular values 
+ 	> how large is the nullspace aftre the cutoof? 
+ * review the way we save currently the modes: it look to me that for the moment i am saving the initial modes, and not from the end to the start
+ * implement the tool that will allow us to first review the -1 mode (last one)
 
 
 
 
+============================
+ROPE code notes - 08.04.2026
+============================
+
+* changed in FlexSample: 
+	> from: int pickIdx = saved; // debug
+	> to: int pickIdx = N -1 - saved; 
+* Ok, I need to increase the range on the colorbars to actually see something 
 
 
 
 
+============================
+ROPE code notes - 09.04.2026
+============================
+
+* increase the range of colour bar --> still didn't find exaclty how 
+* Some notes from yesterday's meeting with Helen: 
+	> one of the things that Helen foudn interesting is being able to "translate" the 
+	distnace matrix in a 1D graph that could show potentially the flexible "loops" in each 
+	sample. 
+		> the suggestion is to create a sum of the absolute vlaues of each row and get an 1D plot 
+		with this values. 
+		> for example, for sample -4, we will have a plot with the x-axis:#residue and 
+		y-axis:sum of matrix row. It will also have to include error bars. 
+		> weights being the chance + the variance --> not suret this refers to, ask Helen to clarify
+	> a complimentary idea is to be able to colour plot on protien highlighting isolated loop motions
+	only.
+	> Other: 
+		> In Flexibility view, after adding the hbonds, the sample that you are working on each time
+		in the title.
+		> in the code, replace the parent of the donor atome with DD instead of C
+		> in hbe, torsioVector instead o TorsionVector 
+	> Future outlook: 
+		> add the constraints from the waters in the Jacobian 
+		> for every atom-explorer plot, can i highlight the one loop that moves the most?
+		> network of hydrogen bonds 
+* need to understand better the normalisation that kgs is doign on the weights 
+
+
+>> Tomorrow: 
+	> figure out the weights
+		> what effect they have? 
+		> should i adopt the normalisation approach of the KGS? 
+	> start building the plot that Helen has asked for
+		> how can i plot the absolute values? what makes sense? 
+		> read the papers again, but now with a focus on H-bonds netwroks: 
+			> what kidn of analysis they did? 
+			> can you examine it as graph? 
+
+
+============================
+ROPE code notes - 10.04.2026
+============================
+
+> make statistical output that is compareable with the KGS
+> ok, i have started re-writitng saveSampledStructures. needs further edititng, start from here. 
+> the continue with how to better represent the moving loops
+
+
+============================
+ROPE code notes - 13.04.2026
+============================
+
+* Starting from saveSampledStructures
+	> should i add a control were i check if the torsion is part of the closing cycle? 
+
+	                bool foundInCycle = false;
+                for (auto& [tIdx, side] : hbe.TorsionVec)
+                {
+                    if (tIdx == torsionID) 
+                    { 
+                        isHSide = side; 
+                        foundInCycle = true;
+                        break; 
+                    }
+                }
+                if (!foundInCycle) continue; // this torsion does not affect this H-bond
+
+============================
+ROPE code notes - 16.04.2026
+============================
+
+* Check other examples 
+* commit
+
+============================
+ROPE code notes - 20.04.2026
+============================
+
+At the moment I am running on: /Users/vapostolop/Desktop/ROPE/build/virginia on debug veriosn. 
+I name this excutable vrop.gui and it is the one i am currently builign, so it should be in principle in the debugging version. Now i want to have a "quick version" with excutablel rope.gui. the meson.build in the /Users/vapostolop/Desktop/ROPE/build/virginia and the build.ninja is in directory: 
+
+/Users/vapostolop/Desktop/ROPE/build
+
+
+in this instance:
+
+/usr/local/include/vagabond/utils/Canonical.h:23:10: fatal error: 'svd/PCA.h' file not found
+   23 | #include "svd/PCA.h"
+      |          ^~~~~~~~~~~
+1 error generated.
+
+
+I need to open Canonical and and add: <vagabond/utils/svd/PCA.h>
+
+* tomorrow: 
+> start wiht DJ-1 model (wiht weight 2.3 )
+> run kgs for this first 
+> then explore ADK
+> come up with ideas of how to explore more ways to analyse hbonds 
+
+
+
+============================
+ROPE code notes - 21.04.2026
+============================
+
+> /Users/vapostolop/Desktop/rope_examples/pyrophosphate/kgs_examples/eskos_1i74/output_10
+> /Users/vapostolop/Desktop/rope_examples/3mg3_p74102
+
+source /Applications/phenix-1.20.1-4487/phenix_env.sh
+
+Ok, summing up what what have i tried: 
+
+> 1BB5_p61626
+	- this is also used in the paper
+	- getting an error when trying to add the hbonds:
+		Error: Donor atom 'A-TYR54:HH' not found in the AtomGroup. Total missing donors: 29
+		Validation failed: One or both atoms not found. Skipping HBond addition.
+		zsh: illegal hardware instruction  vrope.gui
+	* running kgs:
+
+
+* make a list with all the exmaples that you have tried, why and what did they restult
+
+* for some reason, the 1i74.h.kgs_A is similar to 1i74.h_B: i don't know if i made a mistake, but it's something weird with it
+
+* OK, KGS give much better results than my code for pyro :(
+	> need to exam again crystallin 
+
+
+TO DO for tomorrow: 
+* exam crystalin: re-run an example from scrath 
+* neccessary small fixes that will make my life much easier: 
+	> add the weight on the sampled pdf file 
+	> add title in the "Explore axes" so i can take more meaningful screenshots 
+* apparently, kgs is calculating distances, i calculate derivatives, couldn't be a mistake there? 
+	> how does KGS calcuate these? 
 
 
 
 
+* Ideas for the future: 
+
+
+> FIRST/pebble game identifies rigid clusters but provides no ranking within the rigid regions — every H-bond inside a rigid cluster is equally "important." It also gives no information about the relative motion of the flexible regions.
+
+> KFA (Budday 2018) provides modes and a spectral gap but focuses on the V matrix (torsion space) and conformational sampling. The U matrix and per-H-bond importance ranking are not explored in that paper.
+
+> The gap I see: Nobody has, to my knowledge, used the full SVD decomposition of the KFA Jacobian to build a weighted H-bond importance graph and connected its community structure to experimentally observable block patterns in distance-distance matrices. This would bridge rigidity analysis (topology) with spectral analysis (dynamics) in a way that produces testable predictions at the individual H-bond level
+
+
+>>>> WHY when I am using a weight of 10, i get a lot of rejections because of classes, but when KGS is using it it's fine? Should i normalise something there? 
+
+============================
+ROPE code notes - 22.04.2026
+============================
+
+> 
+
+============================
+ROPE code notes - 23.04.2026
+============================
+
+> Rerun KGS just with one chain! For crystallin
+> create a pipeline to run adn confrim the following:
+1. Are the H-bonds identical between your KGS run and your ROPE run? Did you export the KGS H-bond list and use that same list in ROPE?
+2. How many cycle DoFs does KGS report for this crystallin, and how many does your ROPE report? You showed 504 for ROPE — what does KGS give?
+
+
+> Start forming the idea for the paper? what is the story? 
+	> timeline
+	> figures
+	> results: how many proteins we want?
+
+
+============================
+ROPE code notes - 24.04.2026
+============================
+
+Things I have done this week:
+-----------------------------
+> fix some bugs on the code
+> added some minor features like titles
+> run both KGS and the Flexibility to a number of test proteins: this actually takes some time
+	* 
+
+In progress:
+------------
+> I am trying to fix some scripts that will "automate" this process but haven't test yet
+
+List of things I want to do next:
+---------------------------------
+> rerun the crystallin, but in KGS i wil use only one chain: i have done this before, a long time ago 
+> KGS is not excluding clashes from the final smapling. I wonder if my average results could be better if I don't either
+
+Future percectives: 
+-------------------
+> what would the paper story will be about? 
+> what the most important things still to be done? 
+> set a timeline
+
+> FIRST/pebble game identifies rigid clusters but provides no ranking within the rigid regions — every H-bond inside a rigid cluster is equally "important." It also gives no information about the relative motion of the flexible regions.
+
+> KFA (Budday 2018) provides modes and a spectral gap but focuses on the V matrix (torsion space) and conformational sampling. The U matrix and per-H-bond importance ranking are not explored in that paper.
+
+> The gap I see: Nobody has, to my knowledge, used the full SVD decomposition of the KFA Jacobian to build a weighted H-bond importance graph and connected its  structure to experimentally observable block patterns in distance-distance matrices. This would bridge rigidity analysis (topology) with spectral analysis (dynamics) in a way that produces testable predictions at the individual H-bond level
+
+
+============================
+ROPE code notes - 27.04.2026
+============================
+
+> trying to add the ticks: 
+	> Using ForceAnalysisView as an example, but struggling to understand how the toggle-works. 
+	> i have all what i need for access to the hbonds for now, but i stuggle to activate the tick box correclty
+
+> nect stop: add colours and make it show on the gui stuctures
+
+
+============================
+ROPE code notes - 28.04.2026
+============================
+
+> vattenfal, meettings and mostly discussing 
+
+
+============================
+ROPE code notes - 29.04.2026
+============================
+
+> GuiBalls::setPosition() it's a private function, so in ordet to use it I had to expose the funciton in the GuiBalls.h file. 
+
+
+
+============================
+ROPE code notes - 30.04.2026
+============================
+
+> Dirty version of showHBonds:
+
+void FlexibilityView::showHBondSelector()
+{
+    const auto& hbonds = _controller->handleHBondTicks();
+    
+    if (hbonds.empty())
+    {
+        return;
+    }
+    
+    Menu *m = new Menu(this);
+    
+    // Add each H-bond as a menu option
+    for (size_t i = 0; i < hbonds.size(); i++)
+    {
+        const auto &hbe = hbonds[i];
+        std::string label = hbe.Hydrogen->desc() + " → " + hbe.Acceptor->desc();
+        std::string tag = "select_hbond_" + std::to_string(i);
+        
+        auto toggle_this_bond = [this, i, hbe]()
+        {
+            // Toggle this specific H-bond
+            if (_selectedHBondIndices.count(i))
+            {
+                _selectedHBondIndices.erase(i);
+                // Can't unhighlight individual atoms easily here...
+            }
+            else
+            {
+                _selectedHBondIndices.insert(i);
+                _unit->balls()->highlightAtom(hbe.Hydrogen);
+                _unit->balls()->highlightAtom(hbe.Acceptor);
+            }
+        };
+        
+        m->addOption(label, toggle_this_bond);
+    }
+    
+    float x, y;
+    getFractionalPos(x, y);
+    m->setup(x, y);
+    setModal(m);
+}
+
+
+> changes: 
+
+1. The vuew of the hbonds is gettign adjusting according to how many hbonds are there. That's means that onc you have too many hbonds, the letter become tiny and you can nto really seen them. It general it doesn't mean that they have to be one the same page. I would rather implement a something like the Hbond table (but not nessecarily) but that it can go to the next page easilty (see listView class)
+2. i need an apply all button in the HBondSelectorVIew 
+3. remove the tick frm the Flexibilityhview page 
+4. at the momement it selects everything, it doesn't not just higlights the ones that are picked. 
+
+
+============================
+ROPE code notes - 05.05.2026
+============================
+
+> still to be done in GUI: 
+	-put it at the midpoint of a Van der Waals interaction which is also being used to constrain the model
+	and to tell them apart, you can also use setColour(...) to pass in different colours for each
+	- to tell them apart, you can also use setColour(...) to pass in different colours for each
+	so those colours are usually between 0 - 1
+	but if you put a number above 1 then the colour should 'glow'
+	and expand to the pixels next to it
+
+> moving on form the gui implementatoion, back to running some examples
+
+Examples:
+> crystallin 
+> lysozyme 1B88
+> pyrosphorate (1i74 but maybe i could also find a structure with better resolution)
+> 3MG3
+
+> There was also a rewind block hang, when runnign one of the examples, I think 3MG3, that might need debugging
+> Show the icosahedra for hbond and VdW
+
+
+============================
+ROPE code notes - 07.05.2026
+============================
+
+> I have been having issues with adding the HBonds in two different examples: 1B88 and 3MG3.
+	- In 1B88, it adds the hbonds up to some point, and then the software crushes: "zsh: illegal hardware instruction  vrope.gui" 
+	- In 3MG3, it get stuck in the certain hbond, and the it doesn't move forward. 
+	I need to debug this. I think the probelm lies in the fact that that the folder contains the Hbond for both the B-chain and A-chain. 
+	If you have asked to calculate the Jacobian for the A-chain, it doesn't have any information of the atoms that are in the B-chain, so if 
+	there is a bond between A and B chain, the program rejects this bond cause it doens't recognise one of the two atoms. This works for two of the examples
+	that i have, but it doesn't work for two of the examples, and i need to figure out why. 
+	- On top of just finding the bug and make it work for every example I woudl like to understnad hte effect of the excluding these bonds from the Jacobinan. 
+	- Maybe it's a better practise instead of having a error message coming up, to just filter the hbonds before hand and only add the ones where both atoms are in the same chain
+
+	example of output currectly: 
+	"Hydrogen bonds and associated data cleared in Flexibility.
+	Error: Donor atom 'C-NAG1:HN2' not found in the AtomGroup. Total missing donors: 1
+	Validation failed: One or both atoms not found. Skipping HBond addition.
+	Error: Donor atom 'B-THR40:H' not found in the AtomGroup. Total missing donors: 2
+	Validation failed: One or both atoms not found. Skipping HBond addition.
+	Error: Donor atom 'B-LYS1:H1' not found in the AtomGroup. Total missing donors: 3
+	Validation failed: One or both atoms not found. Skipping HBond addition.
+	Error: Donor atom 'B-LYS1:H3' not found in the AtomGroup. Total missing donors: 4
+	Validation failed: One or both atoms not found. Skipping HBond addition.
+	Error: Donor atom 'B-LYS1:HZ1' not found in the AtomGroup. Total missing donors: 5
+	Validation failed: One or both atoms not found. Skipping HBond addition.
+	Error: Donor atom 'B-PHE3:H' not found in the AtomGroup. Total missing donors: 6
+	Validation failed: One or both atoms not found. Skipping HBond addition.
+	Error: Donor atom 'B-LEU8:H' not found in the AtomGroup. Total missing donors: 7
+	Validation failed: One or both atoms not found. Skipping HBond addition.
+	Error: Donor atom 'B-GLU4:H' not found in the AtomGroup. Total missing donors: 8
+	Validation failed: One or both atoms not found. Skipping HBond addition."
+
+	- Is there a "smart" way to deal with the bonds that are in different chains? 
+	- How much do they affect the result? 
+	- How many are they?
+
+
+============================
+ROPE code notes - 08.05.2025
+============================
+
+> Debugging hbond addition for 3MG3
+	- Originally it getting stuck in these lines: 
+
+	Startign from chain A
+	---> 138	A	229	ARG	NH2	3466	HH21	A	6	ASP	OD1	33	3.274	129.713
+	139	B	90	ALA	N	6155	H	B	85	ASP	O	6079	2.977	160.745
+
+	Starting from chain B
+	---> 120	B	172	ILE	N	7318	H	B	100	SER	O	6307	2.811	167.627
+	121	B	96	ARG	N	6235	H	B	92	THR	O	6180	2.88	153.540
+
+
+============================
+ROPE code notes - 11.05.2025
+============================
+
+> Checking pdb file for chain break and ligands:
+	- grep "^ATOM" your_protein.pdb | awk '{print $5, $6}' | uniq | awk 'NR>1{if($2-prev>1) print "GAP between residue " prev " and " $2} {prev=$2}'
+	- grep "^TER" your_protein.pdb
+
+
+>> grep "^ATOM" 3MG3.h.pdb | awk '{print $5, $6}' | head -20
+
+>>  grep "^TER" 3MG3.h.pdb      
+TER    4818      LEU A 312
+TER    8582      GLU B 311
+
+
+
+> Working on the 3MG3 and 5UI2 protein made me understand somethign important: i need to 
+find a way to deal with ligands the correct way. 
+> This requires changes in both the hbonds in flexibility and the hbondpipe part
+
+Wokring on other examples, i have come across three different issues:
+> unknown ligands and how to deal with them (5ui2)
+	- This became apparent when i was running hbondpipe and it wasn't produceing the hbondfile 
+	- quick fix for now:  
+	alertign the hbondpipe scrict to stripping HETATM records for H-bond detection: in creates a pdb 
+	just with the porotein and then run phenix.hbonds on that
+	- Note: phenix.reduce was running normally, didn't seem to be afftected from the unknown ligand
+	- But for this particular protein  the ligand is EQ3, from what i learn it is a hydrophobic ligand, so it 
+	more possible ot intereact with the VdW. But this is now the general case of course, so at some points the ligands need to be addressed. 
+> Gap in the chain (3mg3)
+	- the code was hanging indefinitely when processing H-bonds for 3MG3.
+	- 3MG3 has a gap in its sequence between residues 164 and 170 (confirmed by manual PDB inspection and grep "^TER"). 
+	- This gap causes ROPE to build two separate kinematic trees within chain A:
+		> Tree 1: residues 1–164 (root at block 1)
+		> Tree 2: residues 170–end (root at block 2408, A-LYS170:N)
+		> When lastCommonAncestorIdx() tried to find a common ancestor for an H-bond spanning these two trees, it got stuck in an infinite loop because:
+			- Block 2408 has parent_idx = 0 and depth = 0 — it's a root with no parent
+			- The while(true) loop had no exit condition for this case
+		The Fix:
+			1. Exit condition in lastCommonAncestorIdx(): detect when either block reaches a root (parent_idx == 0 and depth == 0) without finding a common ancestor, return empty vector and log a warning
+			2.  Track and report how many H-bonds were skipped due to no common ancestor, alongside the existing inter-chain and missing atom counters
+		Still open: 
+			-  the gap at residues 165–169 means H-bonds crossing that region are excluded from the Jacobian, likely overestimating flexibility around that loop. Need to discuss whether this is acceptable or whether the gap needs to be modelled.
+			- same problem will appear on ligands, need more permanent solution
+> 1bb5: 
+	- hydrogens were reportred with names that ROPE couldn't foudn: replace them with H
+
+to-do tommorow:
+
+- prepare my suggestion for ligands
+- minor fixes on the gui: 
+	> change the shape of the atom? 
+
+
+============================
+ROPE code notes - 12.05.2025
+============================
+
+- When you have ligands binding in the protein, is this bond covalent or non-covalent usually?
+- RewindBlock debugging
+
+Changes that I made for lastCommonAncestor and rewind to work in the cases disgussed above: 
+
+1. In lastCommonAnestor:
+
+        if (donorBlock_idx < 0 || acceptorBlock_idx < 0) // is this correct? 
+        {
+           std::cerr << "[ERROR] lastCommonAncestorIdx: no common ancestor found" << std::endl;
+           return {};  // return empty vector, addHBond should skip this bond
+        }
+
+> not sure if htis right. Is there any case that the donorBlock_idx or acceptorBlock_idx can be -1?
+
+
+
+Rewind:
+> moves up the kinetic tree by folloing parent_idx. Because parent_idx is slifghtly offset (negative)
+what i do is: block_idx += blockParent_idx (e.g. 1414 + (-6) = 1408)
+
+It stops and return -1 when parent_idx == 0, meaning it hit a root with no parent --> is that correct
+
+LastCommonAnsestors:
+> it moves both donor and acceptor up their respective trees simltaneously, equilising depths, 
+until they meet at a common ancestor
+> the exit condition that i added: donorBlock_idx < 0 || acceptorBlock_idx < 0
+catches when rewindBlock and returns -1, meaning one side hit a root without finding the common ancestor.
+
+
+
+for pyro, look here: /Users/vapostolop/Desktop/rope_examples/pyrophosphate/eskos_1i74/flex_rope
+
+
+> For tomorrow:
+
+> It is very important to make a new class that the user can chose a a residue number and name and adds a mark
+in the distance-distance matrix. 
+> This is very imporant cause otherwsie i can't compare even same protein, wich might be different residue proteins. 
+> redo the pyro protein
+	> check again the new structure tha ti have
+	> remove the ligands 
+	> it's really weird to me: for pyro 1m38, the samples look more than the oesko pyro than the source 
+	structure. 
+	> probbaly it has somehting to do with the fact that i removed the ligands 
+
+
+
+============================
+ROPE code notes - 18.05.2025
+============================
+
+
+Preparation for meeting:
+> gather all the proteins again, rerun some resutlsl 
+
+> ok, i tried to set up the new view, as follow: 
+	1. Create a FlexReuquest, mimicking the way that AxisRequests works, but in the end instead of Atom2AtomExplore it will open FlexMatrixView
+		>> Why? so I can have the option in the Menu of explore axis (but it doesn't work)
+	2. FlexMatrixView: will be basically Atom1AtomEplore, but the view will also contain HBondSelector and VdWSelector. 
+
+Issues: 
+1. "explore_bonds" option does not appear on the menu
+2. atom2atomExplorer shows CA atoms. That creates a problem: i have H atoms and N atoms. One way will be to find the closest CA Atoms of that residue and go on from there. How? 
+
+
+============================
+ROPE code notes - 18.05.2025
+============================
+
+> Idea: "save matrix and python"
+	> i want to be able to save the matrix in Atom2AtomExplorer (effectively same will be for FlexMatrixView), and then make a python script that recreated the matrix from these data. 
+	Plan:
+		> In C++: write a CSV or simple text file with:
+			Header row: atom descriptors (e.g. A-THR5:CA, A-GLY6:CA, ...)
+			Then the matrix values row by row
+
+
+		> In Python: read the CSV, reconstruct the matrix with numpy, plot with matplotlib or seaborn
+			> I coudl even make it interactive with dash library 
+
+	> this should be implementated in MatrixPLot: 
+
+	> matrixplot inherets form imag, which inherates form box.
+	i need to hange the inheretange, so that matricplot inherets form imagbutton, which inheretes from button. 
+
+	if there a issue with imagebutton (the view becomes weird),  then i might have to do the follwoing:
+	> remove the highlighting behavior (if an issue)
+
+	> overide  Button::click(bool left) to bring up a meny whne left=false  
+	virtual void click(bool left = true);
+
+	> i will to need to save _matrix which is a binary 
+	> i will need to make MAtrixPLot::setRowLabels(std::vector of screings)
+	setColLabels --> think general case
+
+
+
+============================
+ROPE code notes - 21.05.2025
+============================
+
+> Two main tasks:
+	> add the hbond overlay to atom2atom distnace 
+	> need to figure outow many redisdue i need to count forward to get to residue 60 (eg) na dhow many redisdue are there in total 
+	I shoudl return that as a fraction and map it on th the matrix coordinates
+
+> I am goign to remove every metions of FlexMatrixView and just implement changes in atom2atomExplorer
+
+
+============================
+ROPE code notes - 27.05.2025
+============================
+
+> What does prepare_atom_list does?
+
+	> once Atom2AtomExplorer is created, it builds a prepare_atom_list which filters atoms to only CA atoms and stores them in order.
+		index 0 -> CA of residue 5 -> A-GLY5:CA
+		index 1 -> CA of residue 7 -> A-TYS7:CA
+		index N -> CA of residue N+5
+
+		This is the matrix. 
+
+		> When you clich on the matrix at screen positions (x,y), it converts to a matrix index: 
+			int x_idx = v.x * positions.size()
+			int y_idx = v.y * positions.size()
+			Atom *a = positions[x_idx].atom
+			Atom *b = positions[y_idx].atom
+
+
+			> I need to do the reverse: 
+				I have from the HbondEntity.Hydrogen the number of the residueId
+					e.g. A-ASP23 
+				Then I need to find which index in poitions has residueID == 32 
+				
+
+
+============================
+ROPE code notes - 01.06.2025
+============================
+
+> Starting with adding waters in the Jacobian 
+	> have the kgs people discuss this at all? waters? 
+	> what is in the bibliography about waters? 
+
+============================
+ROPE code notes - 02.06.2025
+============================
+
+
+============================
+ROPE code notes - 04.06.2025
+============================
+
+> Adding waters
+
+Ok, let's phrase the main issue that i want to formulate at this point. 
+
+So far I am following a quite close implementation of the KFA methods, suggested by Bunday et al. 
+This is based on presenting the protien as kinematic graph. The intersteing thing about this method
+is that the vertices of the graph are not the atoms, but the "rigid body". The rigid body is 
+collection of atoms in the protein that create a kinematic tree that is conected with covalent bonds. 
+Hbonds work (non-covalent) are workign as loop closing contraraints on this tree. This representation allow to 
+consider the torsion are the DoFs andn the Hbonds as the constraits. Each hydrogen bond add 5 constraints. 
+
+So to summarise what's confirmed:
+
+> Rigid bodies as vertices (not individual atoms)
+> Torsions as DoF
+> H-bonds as loop-closing constraints
+> Each H-bond = 5 holonomic constraints (distance + 2 angles + 2 dihedrals, allowing only rotation about bond axis)
+
+Now, from a coding percective, what i am doing to implement this is I am creating a Jacobian matrix which have in the columns 
+the constraints (hbods and vdW bonds) and in the rows the DoF (torsions). Let's break down the implementationof the construction of the Jcaobian: 
+
+The function builds a matrix J with:
+
+Rows = torsion DoF (from _globalTorsionSet)
+Columns = constraints (5 per H-bond + 1 per VdW bond)
+
+For each torsion i and each H-bond j, it computes 5 partial derivatives:
+
+1. ∂(distance H–A)/∂qᵢ
+2. ∂(angle D–H–A)/∂qᵢ
+3. ∂(angle H–A–AA)/∂qᵢ
+4. ∂(dihedral C–D–H–A)/∂qᵢ
+5. ∂(dihedral D–H–A–AA)/∂qᵢ
+
+For each VdW bond, it computes 1 partial derivative:
+
+1. ∂(distance atom1–atom2)/∂qᵢ
+
+The isHSide flag determines which side of the constraint the torsion acts on.
+
+>> What happens if you add a hbond that it's not in the chain? 
+
+For a protein-protein H-bond, both sides are in the kinematic tree:
+
+Donor side: torsion DoF → isHSide = true
+Acceptor side: torsion DoF → isHSide = false
+lastCommonAncestorIdx finds which torsions affect the constraint → populates TorsionVec → Jacobian rows are well defined
+
+For a protein-water H-bond:
+
+Donor side: torsion DoF → same as above 
+Acceptor side (water oxygen): 6 Cartesian DoF (3 translation + 3 rotation) → not in your torsion space 
+
+So your current Jacobian has no columns for the water DoF, meaning the water-side of the constraint has no representation in J.
+
+>> Extened Jacobian
+
+If you add water Cartesian DoF to Q:
+
+Q = (q₁...qₙ, x_w, y_w, z_w, a_w, b_w, c_w)
+     torsions    translation    rotation
+
+
+Current J^T:
+rows = torsion DoF (n rows)
+cols = constraints (5*hbonds + vdw)
+
+Extended J^T:
+rows = torsion DoF + water Cartesian DoF (n + 6*num_waters rows)
+cols = constraints (same)
+
+>> For the new rows (water Cartesian DoF), the entries J^T[water_dof_k, constraint_j] = ∂f_j/∂x_k where x_k is a water Cartesian coordinate
+>> For a distance constraint between protein atom A and water oxygen W:
+
+f = ||p_A(q) - p_W(x_w)|| - d = 0
+
+∂f/∂x_w = -(p_A - p_W) / ||p_A - p_W||   (unit vector)
+∂f/∂y_w = same for y component
+∂f/∂z_w = same for z component
+
+!!!! This is only valid if the water DoF are independent, i.e. the water is truly free to translate/rotate
+
+Water oxygen DoF and constraints
+Water always has 6 DoF (3 translation + 3 rotation).
+
+H-bonds to proteinConstraintsRemaining free DoF
+
+For each torsion i and each H-bond j, it computes 5 partial derivatives
+And for each vdW bond it computes the partial derivative of the distance
+
+| H-bonds to protein | Constraints | Remaining free DoF |
+---------------------------------------------------------
+		0            |		 0     |		6           
+		1 			 |		 5     |		1
+		2 			 |		10     | 	over-constr 4
+		3            |		15     |	over-constr 9
+		4            |		20     |    over-constr 14
 
 
 
 
+			constraints
+         (5*hbonds + vdw)
+        ┌─────────────────┐
+torsion │                 │  n rows
+DoF     │   current J^T   │
+        │                 │
+        ├─────────────────┤
+water   │   new block     │  6 * num_waters rows
+Cart    │                 │
+DoF     │                 │
+        └─────────────────┘
 
 
+The new block entries are:
+
+> ∂f_j/∂x_w, ∂f_j/∂y_w, ∂f_j/∂z_w — translation components (unit vector)
+> ∂f_j/∂a_w, ∂f_j/∂b_w, ∂f_j/∂c_w — rotation components
 
 
+For each water oxygen W with axis-angle rotational DoF (a, b, c):
+
+- Translational rows (straightforward):
+∂f_j/∂x_w = (p_A - p_W)_x / ||p_A - p_W||
+∂f_j/∂y_w = (p_A - p_W)_y / ||p_A - p_W||
+∂f_j/∂z_w = (p_A - p_W)_z / ||p_A - p_W||
+
+- Rotational rows (axis-angle):
+∂f_j/∂a_w = (∂p_W/∂a_w) · ∇_pW f_j
+∂f_j/∂b_w = (∂p_W/∂b_w) · ∇_pW f_j
+∂f_j/∂c_w = (∂p_W/∂c_w) · ∇_pW f_j
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+============================
+ROPE code notes - 05.06.2025
+============================
 
 
 

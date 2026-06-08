@@ -12,6 +12,7 @@
 #include "HBondManager.h"
 
 class ClusterSVD;
+class Model;
 
 struct SVDResult {
     Eigen::MatrixXf U;
@@ -92,6 +93,7 @@ public:
     void printHBonds() const;
     void clearHBonds();
     bool validateHBondPair(const HBondManager::HBondPair &hbondPair);
+    AtomGroup* currentChainAtoms();
     bool checkAndGetAtom(AtomGroup* atomGroup, const std::string& atomDesc, Atom*& atom);
 
 
@@ -187,6 +189,7 @@ public:
 private:
     bool _gui = false;
     std::mutex _mutex;
+    Model *_model = nullptr;
     bool _setup = false;
     bool _displayTargets = false;
     std::map<Atom*, int> _atom2Block;
@@ -196,6 +199,7 @@ private:
     std::set<int> _globalTorsionSet;
     std::vector<std::vector<float>> _allTorsions;
     std::string _flexTag;
+    AtomGroup *_chainAtoms = nullptr;
 
     Eigen::MatrixXf _jacobMtx;
     Eigen::MatrixXf _V;

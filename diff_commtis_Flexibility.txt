@@ -1,0 +1,243 @@
+diff --git a/vagabond/core/FlexSample.cpp b/vagabond/core/FlexSample.cpp
+index b6936e7c..ea3bdb82 100644
+--- a/vagabond/core/FlexSample.cpp
++++ b/vagabond/core/FlexSample.cpp
+@@ -157,6 +157,8 @@ void FlexSample::saveSampledStructures(int numSamples, const std::string& baseFi
+     _flex->submitJob(0);
+     Result *rInitial = _flex->getResult();
+     rInitial->transplantPositions(false, true);
++
++
+     
+     
+     // backwards iteration
+diff --git a/vagabond/core/Flexibility.cpp b/vagabond/core/Flexibility.cpp
+index 12c9fe8e..2af37321 100644
+--- a/vagabond/core/Flexibility.cpp
++++ b/vagabond/core/Flexibility.cpp
+@@ -82,12 +82,6 @@ void Flexibility::calculateTorsionFlexibility()
+                       << _allTorsions.size() << std::endl;
+             return 0.0f;
+         }
+-
+-        if (idx != 30)
+-        {
+-            return 0.0f;
+-        } 
+-
+         // Start editing from here
+         float rawTorsion = _allTorsions[_colIdx][idx];
+         float val = _allTorsions[_colIdx][idx] * jobWeight;
+@@ -417,21 +411,17 @@ std::vector<int> Flexibility::lastCommonAncestorIdx(int donorBlock_idx, int acce
+ {
+     std::vector<int> torsionVector;
+     const std::vector<AtomBlock>& blocks = _resources.sequences->sequence()->blocks();
+-    std::cout << "[DEBUG] donorBlock_idx = " << donorBlock_idx << std::endl;
+-    std::cout << "[DEBUG] acceptorBlock_idx = " << acceptorBlock_idx << std::endl;
+     while (true)
+     {
+         // CASE 1: Donor is deeper -> Move Donor up
+         if (blocks[donorBlock_idx].depth > blocks[acceptorBlock_idx].depth)
+         {
+             donorBlock_idx = rewindBlock(donorBlock_idx, torsionVector);
+-            std::cout << "[DEBUG] rewind donorBlock_idx = " << donorBlock_idx << std::endl;
+         }
+         // CASE 2: Acceptor is deeper -> Move Acceptor up
+         else if (blocks[donorBlock_idx].depth < blocks[acceptorBlock_idx].depth)
+         {
+             acceptorBlock_idx = rewindBlock(acceptorBlock_idx, torsionVector); 
+-            std::cout << "[DEBUG] rewind acceptorBlock_idx = " << acceptorBlock_idx << std::endl; 
+         }
+         else // equal depth 
+         {
+@@ -443,7 +433,7 @@ std::vector<int> Flexibility::lastCommonAncestorIdx(int donorBlock_idx, int acce
+             // rewind at the same time
+             acceptorBlock_idx = rewindBlock(acceptorBlock_idx, torsionVector);
+             donorBlock_idx = rewindBlock(donorBlock_idx, torsionVector);
+-            std::cout << "[DEBUG] rewind both = " << acceptorBlock_idx << donorBlock_idx << std::endl; 
++            std::cout << "[DEBUG] rewind both = " << acceptorBlock_idx << ", " << donorBlock_idx << std::endl; 
+         }
+ 
+     }
+@@ -453,21 +443,23 @@ int Flexibility::rewindBlock(int &block_idx, std::vector<int> &torsionVector)
+ {
+     const std::vector<AtomBlock>& blocks = _resources.sequences->sequence()->blocks();
+     TorsionBasis *basis = _resources.sequences->sequence()->torsionBasis();
+-    int blockParent_idx = blocks[block_idx].parent_idx;
+-    block_idx += blockParent_idx;
+ 
+     // check for peptide bonds   
+     // If the block has torsion larger than -1, add them to the torsion vector
+     if (blocks[block_idx].torsion_idx >= 0) 
+     {
+         Parameter *p = basis->parameter(blocks[block_idx].torsion_idx);
+-        if (p->isPeptideBond())
++        if (!p->isPeptideBond())
+         {
+-            return block_idx; // Do NOT push on torsionVector, but update block_idx
+-        }
+-        torsionVector.push_back(blocks[block_idx].torsion_idx); // if the hbond is between two molecules htat are 
+-                                                                //not conected with a common ancestor: this case                                                                // need to be handle this case
++            torsionVector.push_back(blocks[block_idx].torsion_idx);// if the hbond is between two molecules htat are 
++                                                                //not conected with a common ancestor: this case           
++    
++        }                                                                                                // need to be handle this case
+     }
++    
++    int blockParent_idx = blocks[block_idx].parent_idx;
++    block_idx += blockParent_idx;
++    
+     return block_idx;
+ }
+ 
+@@ -485,77 +477,98 @@ void Flexibility::buildJacobianMatrix()
+     // Ignore VdW to isolate the specific gradient function
+     // int numCol = 5 * _hbonds.size() + _VdWBonds.size();
+     int numCol = 1 * _hbonds.size();
+-
+     std::vector<int> torsionVector = getGlobalTorsionVector();
+     int numRow = _globalTorsionSet.size();
+ 
+-
+     // set up the JacobianMatrix
+     Eigen::MatrixXf jacobianMatrix(numRow, numCol);
+     jacobianMatrix.setZero();
+ 
+     const std::vector<AtomBlock>& blocks = _resources.sequences->sequence()->blocks();
+ 
+-
+     // --- Hydrogen bonds ---
+     for (int i = 0; i < numRow; ++i) 
+     {
+-        int torsionIdx = torsionVector[i];
+-        // NEW =================================================
+-        // convertign trison idx to block idx
+-        const AtomBlock& child = blocks[torsionIdx];
+-        int meIdx = torsionIdx + child.parent_idx;
+-        const AtomBlock& me = blocks[meIdx];
+-        int grandParentIdx = meIdx + me.parent_idx;
+-        const AtomBlock& grandParent = blocks[grandParentIdx];
+-        std::cout << "[DEBUG] torsionIdx = " << torsionIdx << std::endl;
+-        child.printBlock();
+-        //=======================================================
+-        // int colBase = 0;
+-        for (int j = 0; j < _hbonds.size(); ++j) 
++        int torsionID = torsionVector[i];
++        OpSet<int> pivotSet = _resources.sequences->sequence()->blocksForTorsionIdx(torsionID);
++        std::vector<int> pivotIndices = pivotSet.toVector();
++        for (int pivotBlockIdx : pivotIndices)
+         {
+-            HBondEntity& hbe = _hbonds[j];
+-            // int colBase = j * 5; // 5 constraints per Hbond
+-            int colBase = j * 1; // [DEBUG 2] 
+-
+-            glm::vec3 APos = blocks[meIdx].my_position(); 
+-            glm::vec3 BPos = blocks[grandParentIdx].my_position();
+-            // glm::vec3 BPos = blocks[meIdx].inherit; 
+-            
+-            glm::vec3 CPos = blocks[hbe.acceptorIdx].my_position(); 
+-            glm::vec3 DPos = blocks[hbe.donorIdx].my_position(); 
+-            glm::vec3 HPos = blocks[hbe.hydrogenIdx].my_position();
+-
+-            int parentDonor_idx = blocks[hbe.donorIdx].parent_idx;
+-            int parentAcceptor_idx = blocks[hbe.acceptorIdx].parent_idx;
+-
+-            glm::vec3 parentDonor = blocks[hbe.donorIdx + parentDonor_idx].my_position();
+-            glm::vec3 parentAcceptor = blocks[hbe.acceptorIdx + parentAcceptor_idx].my_position();
+-
++            std::cout << "[DEBUG] pivotBlockIdx = " << pivotBlockIdx << std::endl;
++        }
+ 
+-            // 1) Distance H–A
+-            // float dDist = bond_rotation_on_distance_gradient(APos, BPos, CPos, DPos);
+-            float dDist = bond_rotation_on_distance_gradient(APos, BPos, CPos, HPos);
+-            jacobianMatrix(i,colBase + 0) = dDist;
+ 
+-            // [DEBUG 3] Comment out all angle and dihedral calculations
+-            // // 2) Angle D-H-A
+-            // float dAngle1 = bond_rotation_on_angle_gradient(APos, BPos, DPos, HPos, CPos);
+-            // jacobianMatrix(i,colBase + 1) = dAngle1;
++        // NEW =================================================
++        for (int pivotBlockIdx : pivotIndices)
++        {
+ 
+-            // // 3) Angle H-A-B
+-            // float dAngle2 = bond_rotation_on_angle_gradient(APos, BPos,
+-            //                                     HPos, CPos, parentAcceptor);
+-            // jacobianMatrix(i,colBase + 2) = dAngle2;
++            // const AtomBlock& child = blocks[pivotBlockIdx];
++            // int meIdx = pivotBlockIdx + child.parent_idx;
++            // const AtomBlock& me = blocks[meIdx];
++            // int grandParentIdx = meIdx + me.parent_idx;
++            // const AtomBlock& grandParent = blocks[grandParentIdx];
++            // child.printBlock();
+ 
+-            // // 4) Dihedral C-D-H-A
+-            // float dDihedral1 = bond_rotation_on_torsion_gradient(APos, BPos, parentDonor, DPos, HPos, CPos);
+-            // jacobianMatrix(i, colBase + 3) = dDihedral1;
++            //=======================================================
++            for (int j = 0; j < _hbonds.size(); ++j) 
++            {
+ 
+-            // // 4) Dihedral D-H-A-B
+-            // float dDihedral2 = bond_rotation_on_torsion_gradient(APos, BPos, DPos, HPos, CPos, parentAcceptor);
+-            // jacobianMatrix(i, colBase + 4) = dDihedral2;
++                HBondEntity& hbe = _hbonds[j];
++                // int colBase = j * 5; // 5 constraints per Hbond
++                int colBase = j * 1; // [DEBUG 2] 
++
++                const AtomBlock& me = blocks[pivotBlockIdx];
++                glm::vec3 APos = me.my_position();
++                int parentIdx = pivotBlockIdx + me.parent_idx;
++                const AtomBlock& parent = blocks[parentIdx];
++                glm::vec3 BPos = parent.my_position();
++                me.printBlock();
++
++                glm::vec3 CPos = blocks[hbe.acceptorIdx].my_position(); 
++                glm::vec3 DPos = blocks[hbe.donorIdx].my_position(); 
++                glm::vec3 HPos = blocks[hbe.hydrogenIdx].my_position();
++
++
++                int parentDonor_idx = blocks[hbe.donorIdx].parent_idx;
++                int parentAcceptor_idx = blocks[hbe.acceptorIdx].parent_idx;
++
++                glm::vec3 parentDonor = blocks[hbe.donorIdx + parentDonor_idx].my_position();
++                glm::vec3 parentAcceptor = blocks[hbe.acceptorIdx + parentAcceptor_idx].my_position();
++
++                // [DEBUG] Verify the correct mapping for the first element
++                // if (i == 0 && j == 0)
++                // {
++                    std::cout << "   > Axis-A atom:  " << me.atom->desc() << std::endl;
++                    std::cout << "   > Axis-B atom:  " << parent.atom->desc() << std::endl;
++                    std::cout << "   > Accept atom:  " << blocks[hbe.acceptorIdx].atom->desc() << std::endl;
++                    std::cout << "   > Donor atom:  " << blocks[hbe.donorIdx].atom->desc() << std::endl;
++                    std::cout << "   > Hydrogen atom:  " << blocks[hbe.hydrogenIdx].atom->desc() << std::endl;
++                // }
++
++                // 1) Distance H–A
++                // float dDist = bond_rotation_on_distance_gradient(APos, BPos, CPos, DPos);
++                float dDist = bond_rotation_on_distance_gradient(APos, BPos, CPos, HPos);
++                jacobianMatrix(i,colBase + 0) = dDist;
++
++                // [DEBUG 3] Comment out all angle and dihedral calculations
++                // // 2) Angle D-H-A
++                // float dAngle1 = bond_rotation_on_angle_gradient(APos, BPos, DPos, HPos, CPos);
++                // jacobianMatrix(i,colBase + 1) = dAngle1;
++
++                // // 3) Angle H-A-B
++                // float dAngle2 = bond_rotation_on_angle_gradient(APos, BPos,
++                //                                     HPos, CPos, parentAcceptor);
++                // jacobianMatrix(i,colBase + 2) = dAngle2;
++
++                // // 4) Dihedral C-D-H-A
++                // float dDihedral1 = bond_rotation_on_torsion_gradient(APos, BPos, parentDonor, DPos, HPos, CPos);
++                // jacobianMatrix(i, colBase + 3) = dDihedral1;
++
++                // // 4) Dihedral D-H-A-B
++                // float dDihedral2 = bond_rotation_on_torsion_gradient(APos, BPos, DPos, HPos, CPos, parentAcceptor);
++                // jacobianMatrix(i, colBase + 4) = dDihedral2;
+ 
++            }
+         }
+     }
+ 

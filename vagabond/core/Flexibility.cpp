@@ -13,6 +13,7 @@
 #include <vagabond/core/BondCalculator.h>
 #include <vagabond/utils/svd/PCA.h>
 #include <vagabond/utils/Eigen/Dense>
+#include <vagabond/core/Model.h>
 #include "Torsion2Atomic.h"
 
 using Eigen::MatrixXf;
@@ -22,14 +23,18 @@ using Eigen::Vector3f;
 using Eigen::BDCSVD;
 
 // Initializes the Flexibility object with an instance pointer
-Flexibility::Flexibility(Instance *i) 
+Flexibility::Flexibility(Instance *i)
+: _model(i->model())
 {
-    setInstance(i); 
+    setInstance(i);
 }
+
+
 
 Flexibility::~Flexibility() 
 {
     // stopGui();
+    delete _chainAtoms;
     _instance->unload();
 }
 
@@ -53,7 +58,9 @@ void Flexibility::prepareResources()
 {
     _resources.allocateMinimum(_threads); // Allocates minimum resources
 
-    AtomGroup *group = _instance->currentAtoms(); // Gets the current atom group
+    // AtomGroup *group = _model->currentAtoms(); // Gets the current atom grou
+    // AtomGroup *group = _instance->currentAtoms();
+    AtomGroup* group = currentChainAtoms();
     std::vector<AtomGroup *> subsets = group->connectedGroups(); // Gets connected groups
     for (AtomGroup *subset : subsets) 
     {
@@ -128,7 +135,8 @@ bool Flexibility::validateHBondPair(const HBondManager::HBondPair &hbondPair) {
     static int successfulValidations = 0;
 
     // Retrieve the current AtomGroup
-    AtomGroup* atomGroup = _instance->currentAtoms();
+    // AtomGroup* atomGroup = _model->currentAtoms();
+    AtomGroup* atomGroup = currentChainAtoms();
 
     if (!atomGroup) {
         std::cerr << "Error: currentAtoms() returned a null pointer." << std::endl;
@@ -187,6 +195,32 @@ bool Flexibility::validateHBondPair(const HBondManager::HBondPair &hbondPair) {
     return true;
 }
 
+AtomGroup* Flexibility::currentChainAtoms()
+{
+    if (_chainAtoms) 
+        { return _chainAtoms; }
+
+
+    if (_targetChain.empty())
+    {
+        std::cout << "[DEBUG] I'm setting the chain from instance... " << std::endl;  
+        AtomGroup *instGroup = _instance->currentAtoms();
+        _targetChain = instGroup->atomVector()[0]->chain();
+    }
+
+    _chainAtoms = _model->currentAtoms()->new_subset([this](Atom *const &a)
+    {
+        return a->chain() == _targetChain;
+    });
+
+    std::cout << "[DEBUG currentChainAtoms] Target chain: " << _targetChain << std::endl;
+    std::cout << "[DEBUG currentChainAtoms] Total atoms in model: " 
+              << _model->currentAtoms()->atomVector().size() << std::endl;
+    std::cout << "[DEBUG currentChainAtoms] Atoms in target chain: " 
+              << _chainAtoms->atomVector().size() << std::endl;
+    return _chainAtoms;
+}
+
 bool Flexibility::checkAndGetAtom(AtomGroup* atomGroup, const std::string& atomDesc, Atom*& atom) 
 {
     atom = atomGroup->atomByDesc(atomDesc);
@@ -219,7 +253,8 @@ void Flexibility::addHBond(const HBondManager::HBondPair &hbondPair)
         return;
     }
 
-    AtomGroup* atomGroup = _instance->currentAtoms();
+    // AtomGroup* atomGroup = _model->currentAtoms();
+    AtomGroup* atomGroup = currentChainAtoms();
     Atom* acceptorAtom = atomGroup->atomByDesc(hbondPair.acceptor);
     Atom* hydrogenAtom = atomGroup->atomByDesc(hbondPair.hydrogen);
 
@@ -347,7 +382,9 @@ void Flexibility::addVnWBond()
     // not sure yet if cutoff distanc is correct maybe this should change
     double cutoffD = 0.25; // from KGS: Cutoff distance for hydrophobic interactions, sum of vdW + cutoffD
 
-    const AtomVector &atoms = _instance->currentAtoms()->atomVector();
+    // const AtomVector &atoms = _model->currentAtoms()->atomVector();
+    AtomGroup* atomGroup = currentChainAtoms();
+    const AtomVector &atoms = atomGroup->atomVector();
     const std::vector<AtomBlock>& blocks = _resources.sequences->sequence()->blocks();
 
     for (size_t i = 0; i < atoms.size()-1; i++)
@@ -511,9 +548,18 @@ int Flexibility::rewindBlock(int &block_idx, std::vector<std::pair<int,bool>> &t
     
     int blockParent_idx = blocks[block_idx].parent_idx;
     // prevent infinite loop
-    if (blockParent_idx == 0)
+    if (blockParent_idx == 0 && blocks[block_idx].depth == 0)
     {
-        std::cerr << "[ERROR] rewindBlock: parent_idx block is 0 at block " << block_idx << "-- no common ancestor found" << std::endl;
+        std::cerr << "[ERROR] rewindBlock: reached root at block " << block_idx;
+        if (blocks[block_idx].atom)
+        {
+            std::cerr << " atom: " << blocks[block_idx].atom->desc();
+        }
+        else
+        {
+            std::cerr << " atom: NULL";
+        }
+        std::cerr << " -- no common ancestor found" << std::endl;
         return -1;
     }
 
@@ -699,8 +745,6 @@ float Flexibility::dihedral2GradientASide(const glm::vec3 &axisA, const glm::vec
     return deriv;
 
 }
-
-
 
 void Flexibility::buildJacobianMatrix()
 {
