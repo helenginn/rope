@@ -38,7 +38,8 @@ public:
 	                                           const OpSet<Probe *> &all = {},
 	                                           int max_jumps = INT_MAX);
 	
-	typedef std::function<void(const OpSet<Probe *> &)> HandleClique;
+	typedef std::function<void(const OpSet<Probe *> &,
+	                           const std::string &)> HandleClique;
 	
 	void completeAndChop(const OpSet<Probe *> &done,
 	                     const HandleClique &handle_clique = {});

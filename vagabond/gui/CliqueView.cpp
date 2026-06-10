@@ -240,9 +240,13 @@ CliqueView::CliqueView(ProtonNetworkView *scene, Network &network,
 	};
 
 	auto handle_clique = [this, add_clique]
-	(const OpSet<Probe *> &probes)
+	(const OpSet<Probe *> &probes, const std::string &suggested_name)
 	{
 		Clique *clique = _network.newClique(probes);
+		if (suggested_name.length())
+		{
+			clique->setDisplayName(suggested_name);
+		}
 		addMainThreadJob(add_clique(clique));
 	};
 

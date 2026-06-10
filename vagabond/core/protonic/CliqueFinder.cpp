@@ -139,9 +139,19 @@ void CliqueFinder::completeAndChop(const OpSet<Probe *> &done,
 
 		if (handle_clique)
 		{
-			handle_clique(clique);
+			handle_clique(clique, "");
 		}
 	}
 	
-	handle_clique(all);
+	handle_clique(all, "all");
+	
+	OpSet<Probe *> protein = all;
+	protein.filter([](Probe *const &probe)
+	{
+		return (probe->is_atom() && probe->atom()->bondLengthCount() > 0
+		        && probe->atom()->elementSymbol() != "H"
+		        && probe->atom()->elementSymbol() != "C");
+	});
+	
+	handle_clique(protein, "protein");
 }

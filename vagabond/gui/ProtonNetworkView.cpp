@@ -74,6 +74,11 @@ void ProtonNetworkView::findAtomProbes()
 {
 	for (AtomProbe *const &probe : _network.atomProbes())
 	{
+		if (probe->is_bulk())
+		{
+			continue;
+		}
+
 		ProbeAtom *text = new ProbeAtom(this, probe);
 		addObject((FloatingText *)text);
 		linkSymmetricAtomProbes(probe->atomConf());

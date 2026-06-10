@@ -29,7 +29,7 @@
 #include <vagabond/gui/elements/TextButton.h>
 
 OccupanciesView::OccupanciesView(Scene *prev, Clique *clique)
-: Scene(prev), _clique(clique)
+: Scene(prev), IndexResponseView(prev), _clique(clique)
 {
 
 }
@@ -83,6 +83,8 @@ void OccupanciesView::setup()
 		setInformation(info);
 	};
 	mp->setHoverJob(display_lookup);
+	
+	IndexResponseView::setup();
 }
 
 std::map<ProbeTypePair, OccupanciesView::OccData> OccupanciesView::estimates()
@@ -162,12 +164,19 @@ std::map<ProbeTypePair, OccupanciesView::OccData> OccupanciesView::estimates()
 			s.second /= grand_sum;
 		}
 
-		if (!ptp.first->atom() || ptp.first->atom()->symmetryCopyOf())
+		if (!ptp.first->atom() || ptp.first->atom()->symmetryCopyOf()
+		    || ptp.first->is_bulk())
 		{
 			continue;
 		}
 
 		Atom *atom = ptp.first->atom();
+		
+		if (atom->bondLengthCount() && atom->occupancy_sum() < 0.9)
+		{
+			continue;
+		}
+
 		if (atom->elementSymbol() == "C" || atom->elementSymbol() == "H")
 		{
 			continue;
@@ -255,6 +264,7 @@ void OccupanciesView::occupancies()
 	std::map<ProbeTypePair, OccData> copy = pass;
 	_estimates = pass;
 
+	deleteTemps();
 	CorrelData cd = empty_CD();
 	
 	Graph *graph = new Graph();
@@ -272,7 +282,7 @@ void OccupanciesView::occupancies()
 		float &calculated = pair.second.calculated;
 		size_t &samples = pair.second.samples;
 
-		graph->addPoint(0, calculated, observed);
+		graph->addPoint(0, calculated, observed, ptp.first->desc());
 		add_to_CD(&cd, calculated, observed);
 
 		std::cout << observed << " " << calculated << " " << samples << " " <<
@@ -281,11 +291,19 @@ void OccupanciesView::occupancies()
 	
 	float cc = evaluate_CD(cd);
 	
-	deleteTemps();
 	setInformation("Correlation: " + f_to_str(cc, 3));
 	graph->setup(0.4, 0.5);
 	graph->addToGraphPosition(0.75, 0.5);
+	graph->setIndexResponder(this);
+	_graph = graph;
 	addTempObject(graph);
 
 }
 
+void OccupanciesView::interactedWithNothing(bool left, bool hover)
+{
+	if (_graph)
+	{
+		_graph->clearLabels();
+	}
+}

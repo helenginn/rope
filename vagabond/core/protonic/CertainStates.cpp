@@ -197,7 +197,7 @@ std::map<int, float> CertainStates::proportions(ProbeTypePair ptp,
 		sum += contrib;
 		
 	}
-	if (ptp.first->desc() == "A-GLY198:N,A")
+	if (ptp.first->desc() == "A-SER200:OG,A")
 	{
 		for (const ProbeTypePair &other : _headers)
 		{

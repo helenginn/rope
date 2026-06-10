@@ -328,6 +328,11 @@ AtomConf Coordinated::findPlanarAtom()
 				planar = other;
 			}
 
+			if (code == "TYR" && other->atomName() == "CE2")
+			{
+				planar = other;
+			}
+
 			if (code == "ARG" && other->atomName() == "NE")
 			{
 				planar = other;
@@ -1535,7 +1540,9 @@ void Coordinated::findSymmetricallyRelatedBonds()
 			hnet::BondConnector &left = *bond.second;
 			hnet::BondConnector &right = *corresponding.second;
 
-            add_constraint(new EqualBonds(left, right));
+			add_constraint(new EqualBonds(left, right, 
+			                              *_bond2Exist[&left], 
+									      *other->_bond2Exist[&right]));
 		}
 		else
 		{

@@ -556,6 +556,41 @@ void Network::establishAtom(::Atom *atom)
 		add_constraint(new ExistenceConstant(*coord->existence(), 
 		                                     hnet::Existence::Present));
 	}
+	
+	// if a water is partially occupied then it can be liberated and this comes
+	// with an entropic amplification of all associated protonation states
+	if (atom->code() == "HOH" && total_occ < 0.995)
+	{
+		ExistenceConnector *bulkExist = &(add(new ExistenceConnector()));
+		AtomConnector *bulkAtom = &(add(new AtomConnector()));
+		::Atom *bulk = new ::Atom();
+		bulk->setChain(atom->chain());
+		bulk->setResidueId(atom->residueId());
+		bulk->setCode("HOH");
+		bulk->setAtomName("BULK");
+		bulk->conformerPositions()[""] = {};
+		
+		if (atom->symmetryCopyOf())
+		{
+			bulk->setSymmetryCopyOf(atom->symmetryCopyOf(), atom->symNote());
+		}
+
+		AtomProbe *probe = &(add_probe(new AtomProbe(*bulkAtom, *bulkExist,
+		                                             bulk)));
+		probe->setBulk(true);
+		std::cout << "CREATING BULK SOLVENT: " << probe << " " << 
+		probe->desc() << std::endl;
+		
+		for (Coordinated *coord : these_coords)
+		{
+			AtomProbe *other = coord->probe();
+			probe->register_probe(other);
+			other->register_probe(probe);
+		}
+
+		connections.push_back(bulkExist);
+		add_constraint(new OnlyOne(connections));
+	}
 }
 
 void Network::updateModelCliques()

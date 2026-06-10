@@ -31,9 +31,9 @@ Graph::Graph()
 
 }
 
-void Graph::addPoint(int series, float x, float y)
+void Graph::addPoint(int series, float x, float y, const std::string &label)
 {
-	_data[series].push_back({x, y});
+	_data[series].push_back({{x, y}, label});
 }
 
 void Graph::setRange(char axis, float min, float max)
@@ -232,12 +232,12 @@ void Graph::determineLimits()
 
 		for (auto it = _data.begin(); it != _data.end(); it++)
 		{
-			const std::vector<glm::vec2> &vals = it->second;
+			const std::vector<DataPoint> &vals = it->second;
 			
-			for (const glm::vec2 &val : vals)
+			for (const DataPoint &dp : vals)
 			{
-				if (val[i] < min) min = val[i];
-				if (val[i] > max) max = val[i];
+				if (dp.point[i] < min) min = dp.point[i];
+				if (dp.point[i] > max) max = dp.point[i];
 			}
 		}
 		
@@ -246,7 +246,7 @@ void Graph::determineLimits()
 }
 
 void Graph::addLine(float width, float height, int series, 
-                    std::vector<glm::vec2> &line)
+                    std::vector<DataPoint> &line)
 {
 	glm::vec2 start = {-width / 2.f, +height / 2.f};
 	glm::vec2 stride = {width, -height};
@@ -261,8 +261,9 @@ void Graph::addLine(float width, float height, int series,
 	
 	bool first = true;
 	glm::vec3 last{};
-	for (const glm::vec2 &point : line)
+	for (const DataPoint &dp : line)
 	{
+		const glm::vec2 &point = dp.point;
 		glm::vec2 scaled = glm::vec2((point.x - xmin) / diff.x, 
 		                             (point.y - ymin) / diff.y);
 		glm::vec2 offset = glm::vec2(stride.x * scaled.x, stride.y * scaled.y);
@@ -304,13 +305,13 @@ void Graph::addLines(float width, float height)
 {
 	for (auto it = _data.begin(); it != _data.end(); it++)
 	{
-		std::vector<glm::vec2> &line = it->second;
+		std::vector<DataPoint> &line = it->second;
 		addLine(width, height, it->first, line);
 	}
 }
 
 void Graph::addPoints(float width, float height, int series,
-                     std::vector<glm::vec2> &line)
+                     std::vector<DataPoint> &line)
 {
 	glm::vec2 start = {-width / 2.f, +height / 2.f};
 	glm::vec2 stride = {width, -height};
@@ -320,10 +321,12 @@ void Graph::addPoints(float width, float height, int series,
 	const float &ymax  = _axisRanges[1][1];
 
 	glm::vec2 diff = {xmax - xmin, ymax - ymin};
-	Scatter *sc = new Scatter();
+	Scatter *sc = new Scatter(this, _scatters.size());
+	_scatters.push_back(sc);
 
-	for (const glm::vec2 &point : line)
+	for (const DataPoint &dp : line)
 	{
+		const glm::vec2 &point = dp.point;
 		glm::vec2 scaled = glm::vec2((point.x - xmin) / diff.x, 
 		                             (point.y - ymin) / diff.y);
 		glm::vec2 offset = glm::vec2(stride.x * scaled.x, stride.y * scaled.y);
@@ -344,15 +347,15 @@ void Graph::addScatters(float width, float height)
 {
 	for (auto it = _data.begin(); it != _data.end(); it++)
 	{
-		std::vector<glm::vec2> &line = it->second;
+		std::vector<DataPoint> &line = it->second;
 		addPoints(width, height, it->first, line);
 	}
-
 }
 
 void Graph::clear()
 {
 	clearObjects();
+	_scatters.clear();
 }
 
 void Graph::setup(float width, float height)
@@ -383,4 +386,22 @@ void Graph::setAxisLabel(char axis, std::string name)
 void Graph::setSeriesColour(int series, glm::vec3 colour)
 {
 	_colours[series] = colour;
+}
+
+void Graph::setIndexResponder(IndexResponseView *irv)
+{
+	for (Scatter *sc : _scatters)
+	{
+		irv->addIndexResponder(sc);
+	}
+
+}
+
+void Graph::clearLabels()
+{
+	for (Scatter *sc : _scatters)
+	{
+		sc->deleteTemps();
+	}
+
 }

@@ -159,6 +159,10 @@ void Subdivide::spread(OpSet<Probe *> &chunk, bool force)
 
 				if (chunk.count(other) == 0)
 				{
+					if (other->desc() == "W-HOH222:BULK")
+					{
+						std::cout << other->desc() << " " << other << std::endl;
+					}
 					add += other;
 				}
 			}
@@ -313,7 +317,7 @@ void Subdivide::subdivide()
 
 	for (Probe *probe : to_chunk)
 	{
-		for (int i = 0; i < 3 && (search & Breadth); i++)
+		for (int i = 0; i < 1 && (search & Breadth); i++)
 		{
 			OpSet<Probe *> chunk = grow_clique(probe, grow, Breadth);
 			if (chunk.size() > 0 && has_non_water(chunk))
@@ -321,7 +325,7 @@ void Subdivide::subdivide()
 				chunks += chunk;
 			}
 		}
-		for (int i = 0; i < 3 && (search & Depth); i++)
+		for (int i = 0; i < 1 && (search & Depth); i++)
 		{
 			OpSet<Probe *> chunk = grow_clique(probe, grow, Depth);
 			if (chunk.size() > 0 && has_non_water(chunk))

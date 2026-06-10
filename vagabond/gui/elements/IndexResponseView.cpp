@@ -46,6 +46,7 @@ IndexResponder *IndexResponseView::getResponderForIndex(int &val)
 		return nullptr;
 	}
 
+
 	for (size_t i = 0; i < _responders.size(); i++)
 	{
 		size_t total = _responders[i]->requestedIndices();

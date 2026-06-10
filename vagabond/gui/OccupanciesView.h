@@ -19,14 +19,15 @@
 #ifndef __vagabond__OccupanciesView__
 #define __vagabond__OccupanciesView__
 
-#include <vagabond/gui/elements/Scene.h>
+#include <vagabond/gui/elements/IndexResponseView.h>
 #include <map>
 
+class Graph;
 class Clique;
 class Correlative;
 struct ProbeTypePair;
 
-class OccupanciesView : public Scene
+class OccupanciesView : public IndexResponseView
 {
 public:
 	OccupanciesView(Scene *prev, Clique *clique);
@@ -42,6 +43,8 @@ public:
 		size_t samples{};
 	};
 
+protected:
+	virtual void interactedWithNothing(bool left, bool hover = false);
 private:
 	void updateEstimates(std::map<ProbeTypePair, OccData> &ests);
 	std::map<ProbeTypePair, OccData> estimates();
@@ -50,6 +53,7 @@ private:
 
 	std::map<ProbeTypePair, OccData> _estimates;
 	std::map<ProbeTypePair, OccData> _first;
+	Graph *_graph{};
 };
 
 #endif

@@ -47,6 +47,11 @@ public:
 		return _glow;
 	}
 	
+	void setBulk(const bool &bulk)
+	{
+		_bulk = bulk;
+	}
+
 	void setColour(const glm::vec3 &colour)
 	{
 		_colour = colour;
@@ -70,6 +75,11 @@ public:
 	virtual bool is_bond()
 	{
 		return false;
+	}
+
+	virtual bool is_bulk()
+	{
+		return _bulk;
 	}
 
 	virtual bool is_definitely_not_present()
@@ -173,6 +183,7 @@ public:
 	glm::vec3 _colour = {};
 	float _mult = 25;
 	float _hide = 0.f;
+	bool _bulk = false;
 };
 
 class AtomProbe : public Probe

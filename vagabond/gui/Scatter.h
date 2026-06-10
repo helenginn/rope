@@ -19,16 +19,30 @@
 #ifndef __vagabond__Scatter__
 #define __vagabond__Scatter__
 
-#include <vagabond/gui/elements/SimplePolygon.h>
+#include <vagabond/gui/elements/IndexResponder.h>
 
-class Scatter : public SimplePolygon
+class Graph;
+
+class Scatter : public IndexResponder
 {
 public:
-	Scatter();
+	Scatter(Graph *graph, int index);
+	
+	virtual ~Scatter();
+
+	virtual size_t requestedIndices()
+	{
+		return vertexCount();
+	}
+
+	virtual void reindex();
 
 	void addPoint(glm::vec3 vec, glm::vec3 colour, int pointType);
+	virtual void interacted(int idx, bool hover, bool left);
 	virtual void extraUniforms();
 private:
+	Graph *_graph{};
+	int _index{};
 	float _size = 40;
 
 };

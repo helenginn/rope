@@ -27,7 +27,7 @@ ExhaustiveSearch::ExhaustiveSearch(const OpSet<Probe *> &interesting,
                                    const OpSet<Probe *> &wider)
 : _all(interesting), _wider(wider)
 {
-
+	_wider += interesting;
 }
 
 void ExhaustiveSearch::setup()
@@ -147,6 +147,7 @@ void ExhaustiveSearch::search()
 float ExhaustiveSearch::score_wider_clique()
 {
 	float score = 0;
+	float energy = 1.5; // kcal/mol
 	for (Probe *const &probe : _wider)
 	{
 		if (probe->is_bond() && !probe->is_covalent())
@@ -166,8 +167,24 @@ float ExhaustiveSearch::score_wider_clique()
 				float dist = bp->_distance;
 				float mod = 1 - (dist - 2.f) * (dist - 2.f) / 2.f;
 
-				score -= 1.5 * mod * 4.18; // kcal -> mol
+				float contrib = energy * mod * 4.18;
+				score -= contrib; // kcal -> mol
 			}
+		}
+		
+		if (probe->is_bulk())
+		{
+			AtomProbe *ap = static_cast<AtomProbe *>(probe);
+			hnet::Existence::Values ex = ap->_exist.value();
+
+			if (ex == hnet::Existence::Absent)
+			{
+				continue;
+			}
+
+			// bulk solvent will provide 3.6 hydrogen bonds on average
+			float contrib = energy * 1.0 * 4.18;
+			score -= contrib; // kcal -> mol
 		}
 	}
 

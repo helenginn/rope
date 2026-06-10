@@ -22,7 +22,9 @@
 #include <vagabond/gui/elements/Box.h>
 #include <map>
 
+class Scatter;
 class ThickLine;
+class IndexResponseView;
 
 class Graph : public Box
 {
@@ -35,9 +37,16 @@ public:
 		StyleScatter,
 	};
 	
+	void setIndexResponder(IndexResponseView *irv);
+	
+	std::string data_label(int i, int j)
+	{
+		return _data[i][j].label;
+	}
+	
 	Style style = StyleLine;
 
-	void addPoint(int series, float x, float y);
+	void addPoint(int series, float x, float y, const std::string &label = "");
 	void setRange(char axis, float min, float max);
 	
 	// width and height of box contents.
@@ -48,26 +57,35 @@ public:
 	
 	void setAxisLabel(char axis, std::string name);
 	void plotData(float width, float height);
+	void clearLabels();
 	void clear();
 private:
+	struct DataPoint
+	{
+		glm::vec2 point;
+		std::string label;
+	};
+
 	void addAxes(float width, float height);
 	void addAxisTicks(int axis, float width, float height);
 	void addAxisLabels(int axis, float width, float height);
 	void addPoints(float width, float height, int series,
-	               std::vector<glm::vec2> &line);
+	               std::vector<DataPoint> &line);
 	void addScatters(float width, float height);
 	void addLines(float width, float height);
 	void addLine(float width, float height, int series, 
-	             std::vector<glm::vec2> &line);
+	             std::vector<DataPoint> &line);
 	void determineLimits();
 	void loadLine(ThickLine *tl, glm::vec3 &start, const glm::vec3 &move,
 	              glm::vec3 colour = {0.2, 0.2, 0.2});
-
-	std::map<int, std::vector<glm::vec2>> _data;
+	
+	std::map<int, std::vector<DataPoint>> _data;
 	std::map<int, glm::vec2> _axisRanges;
 	
 	std::map<int, std::string> _labels;
 	std::map<int, glm::vec3> _colours;
+	
+	std::vector<Scatter *> _scatters;
 };
 
 #endif
