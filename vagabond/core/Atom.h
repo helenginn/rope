@@ -197,6 +197,9 @@ public:
 		return _occupancy;
 	}
 
+	/** @returns sum of occupancies of all alternate conformers */
+	float occupancy_sum() const;
+
 	/** sets element symbol; forces upper case. 
 	 * 	@param ele Element symbol e.g. K. Throws exception if not alphabetical
 	 *	or empty. */
@@ -362,6 +365,11 @@ public:
 	{
 		_symAtom = other;
 		_symNote = note;
+	}
+	
+	const std::string &symNote() const
+	{
+		return _symNote;
 	}
 	
 	float charge();

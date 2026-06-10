@@ -593,3 +593,14 @@ OpSet<std::string> Atom::conformerList()
 
 	return set;
 }
+
+float Atom::occupancy_sum() const
+{
+	float sum = 0;
+	for (auto &pair : _conformers)
+	{
+		sum += pair.second.occ;
+	}
+
+	return sum;
+}
