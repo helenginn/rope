@@ -111,10 +111,15 @@ void HeatMapView::redrawHeatMap(double num)
 	printMatrix(&_displayMatrix);
 
     _plot = new MatrixPlot(_displayMatrix);
-    _plot->legend()->setScheme(Heat);
+    _plot->setColourScheme(ZScore);
 
-    MatrixBox *matBox = new MatrixBox(_plot, _entropy->rowNames(_entropyData->start), _entropy->colNames(_entropyData->end), true);
+    std::vector<std::string> rowNames = _entropy->startNames();
+    std::vector<std::string> colNames = _entropy->endNames();
 
+    std::reverse(rowNames.begin(), rowNames.end());
+
+    MatrixBox *matBox = new MatrixBox(_plot, colNames, rowNames, true);
+    matBox->setCentre(0.5, 0.5);
     addTempObject(matBox);
 }
 
@@ -197,10 +202,11 @@ void HeatMapView::sumHeatMap()
 	printMatrix(&_displayMatrix);
 
     _plot = new MatrixPlot(_displayMatrix);
-    _plot->legend()->setScheme(Heat);
     std::vector<std::string> rowNames = _entropy->startNames();
+    std::vector<std::string> colNames = _entropy->endNames();
 
-    MatrixBox *matBox = new MatrixBox(_plot, _entropy->rowNames(_entropyData->start), _entropy->colNames(_entropyData->end), true);
+    std::reverse(rowNames.begin(), rowNames.end());
+
     MatrixBox *matBox = new MatrixBox(_plot, _entropy->startNames(), _entropy->endNames(), true);
 
     addTempObject(matBox);
