@@ -71,6 +71,7 @@ void HeatMapView::redrawHeatMap(double num)
         }
     }
 
+    std::vector<double> entropyVals(_entropyData->total.size());
     for (int i = 0; i < rows; i++)
     {
         for (int j = 0; j < cols; j++)
@@ -79,6 +80,8 @@ void HeatMapView::redrawHeatMap(double num)
             {
 			    matrix(i, j) = maxEntVal - _entropyData->dataMatrix[t](i, j);
                 matrix(i, j) = matrix(i, j)/(maxEntVal - minEntVal);
+			    matrix(i, j) = _entropyData->dataMatrix[t](i, j) - meanEntropy;
+                matrix(i, j) = matrix(i, j)/(stdEntropy);
             }
         }
     }
@@ -113,6 +116,7 @@ void HeatMapView::sumHeatMap()
         matrix += _entropyData->dataMatrix[t];
     }
 
+    for (int i = 0; i < rows; i++)
     std::vector<double> entropyVals(_entropyData->total.size());
 
     for (int i = 0; i < _entropyData->total.size(); i++)
@@ -123,8 +127,9 @@ void HeatMapView::sumHeatMap()
             
             std::cout << i << ": " << entropyVals[i] << std::endl;
         }
+
     }
-   
+ 
     double meanEntropy = mean(entropyVals);
     double stdEntropy = standard_deviation(entropyVals);
  
@@ -143,8 +148,17 @@ void HeatMapView::sumHeatMap()
         }
     }
 
-    matrix = Eigen::MatrixXf::Ones(rows, cols) * maxEntVal - matrix;
-    matrix = matrix/(maxEntVal - minEntVal);
+    for (int i = 0; i < rows; i++)
+    {
+        for (int j = 0; j < cols; j++)
+        {
+            if(!(isnan(_entropyData->dataMatrix[0](i,j))))
+            {
+			    matrix(i, j) = matrix(i, j) - meanEntropy;
+                matrix(i, j) = matrix(i, j)/(stdEntropy);
+            }
+        }
+    }
 
     _displayMatrix = PCA::Matrix(matrix);
 	printMatrix(&_displayMatrix);
