@@ -136,3 +136,4 @@ std::pair<std::string, std::string> Entropy::names(int l, int r)
 	
 	return {st_name, end_name};
 }
+

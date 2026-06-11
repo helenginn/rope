@@ -151,8 +151,10 @@ void HeatMapView::sumHeatMap()
 
     _plot = new MatrixPlot(_displayMatrix);
     _plot->legend()->setScheme(Heat);
+    std::vector<std::string> rowNames = _entropy->startNames();
 
     MatrixBox *matBox = new MatrixBox(_plot, _entropy->rowNames(_entropyData->start), _entropy->colNames(_entropyData->end), true);
+    MatrixBox *matBox = new MatrixBox(_plot, _entropy->startNames(), _entropy->endNames(), true);
 
     addTempObject(matBox);
 }
