@@ -117,9 +117,9 @@ void PathThermodynamics::buttonPressed(std::string tag, Button *button)
 		{
 			_numPaths = lrint(min);
 			
-			std::vector<TorsRes4NN*> torsRes = _pathEntropy->getAtomsAndResidues(_numPaths, _paths, 10);
+			std::vector<TorsRes4NN*> torsRes = _pathEntropy->getAtomsAndResidues(_numPaths, _paths, 15);
 
-			struct EntropyForMatrix entropy4Mat = _pathEntropy->calculateEntropyIndependent(_numPaths, flagPar, torsRes,10);
+			struct EntropyForMatrix entropy4Mat = _pathEntropy->calculateEntropyIndependent(_numPaths, flagPar, torsRes,15);
 
             std::vector<double> entropyVec = entropy4Mat.totalEntropy;
 
