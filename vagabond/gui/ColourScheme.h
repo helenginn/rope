@@ -43,7 +43,10 @@ public:
     void setScheme(Scheme scheme)
     {
         _scheme = scheme;
+		setupScheme();
     }
+
+    void setupScheme();
 	
 	/* create vertices/indices to display colour scheme */
 	void setup();
