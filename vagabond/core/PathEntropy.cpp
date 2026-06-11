@@ -141,7 +141,6 @@ std::vector<TorsRes4NN*> PathEntropy::getAtomsAndResidues(int numPaths, const st
 	}
 
 	delete workingPath;
-
 	model->unload();
 
 	return torsRes;
@@ -950,9 +949,7 @@ void PathEntropy::allocVariables(int nf, std::vector<double> &entk, std::vector<
         flagParameters.n = K - 1;
     }
 
-    std::cout << "K: " << K << std::endl;
 	entk.resize(K-1);
-    std::cout << "entk size:" << entk.size() << std::endl;
     entkTotal.resize(K-1);
     entk2.resize(K-1);
     entkTotal2.resize(K-1);
