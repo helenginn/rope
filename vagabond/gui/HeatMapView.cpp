@@ -1,6 +1,7 @@
 #include <vagabond/gui/TableView.h>
 #include <vagabond/gui/elements/TextButton.h>
 #include <vagabond/gui/elements/Slider.h>
+#include <vagabond/gui/VagWindow.h>
 #include <vagabond/utils/Eigen/Dense>
 #include <vagabond/utils/svd/PCA.h>
 #include <vagabond/utils/maths.h>
@@ -48,6 +49,9 @@ void HeatMapView::setup()
 	auto do_heat_map = [this, gui_setup]()
 	{
 		std::cout << "Running do heat map..." << std::endl;
+
+        VagWindow::window()->requestProgressBar(_entropy->ticks(), "Generating heatmap");
+
 		_entropy->populateHeatMap(_entropyData);
 		std::cout << "Now preparing to set up GUI elements" << std::endl;
 		addMainThreadJob(gui_setup);

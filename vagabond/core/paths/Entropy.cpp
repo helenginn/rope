@@ -14,7 +14,7 @@ Entropy::Entropy(const std::vector<PathGroup> &paths, const struct FlagParameter
     {
         _starts.insert(group[0]->startInstance());
         _ends.insert(group[0]->endInstance());
-        _ticks += group.size();
+        _ticks ++;
     }
 }
 
@@ -43,8 +43,11 @@ void Entropy::populateHeatMap(struct EntropyForHeatMap *entropyData)
 				//entropyData.dataMatrix[t](idxs.second, idxs.first) = entropy[t];
 			}
         }
-     
+
+        clickTicker();     
     }
+  
+    finishTicker();
 }
 
 std::vector<double> Entropy::pathEntropyInstancePair(int numPaths, std::vector<Path *> paths, int numDivisions, bool mist)
