@@ -26,23 +26,37 @@ void HeatMapView::setup()
 {
     addTitle("Heat Map");    
 
-    std::cout << "Populating data matrix..." << std::endl;
-    _entropy->populateHeatMap(_entropyData);
+    std::cout << "Setting up heat map..." << std::endl;
+	auto gui_setup = [this]()
+	{
+		if (_flagPar.timeDivisions > 1)
+		{   
+			std::cout << "adding slider..." << std::endl;
+			setupSlider(_flagPar.timeDivisions);
+		}
 
-    if (_flagPar.timeDivisions > 1)
-    {   
-        std::cout << "adding slider..." << std::endl;
-        setupSlider(_flagPar.timeDivisions);
-    }
+		{
+			TextButton *t = new TextButton("Sum entropy", this);
+			t->setRight(0.9, 0.1);
+			t->setReturnTag("sum");
+			addObject(t);
+		}  
 
-    {
-        TextButton *t = new TextButton("Sum entropy", this);
-        t->setRight(0.9, 0.1);
-        t->setReturnTag("sum");
-        addObject(t);
-    }  
-	
-	redrawHeatMap(+0.1f);
+		redrawHeatMap(+0.1f);
+	};
+
+	auto do_heat_map = [this, gui_setup]()
+	{
+		std::cout << "Running do heat map..." << std::endl;
+		_entropy->populateHeatMap(_entropyData);
+		std::cout << "Now preparing to set up GUI elements" << std::endl;
+		addMainThreadJob(gui_setup);
+	};
+
+	addMainThreadJob([this, do_heat_map]()
+			{
+				DoJob job(do_heat_map);
+			});
 }
 
 void HeatMapView::redrawHeatMap(double num)
@@ -72,14 +86,21 @@ void HeatMapView::redrawHeatMap(double num)
     }
 
     std::vector<double> entropyVals(_entropyData->total.size());
+
+    for (int i = 0; i < _entropyData->total.size(); i++)
+    {
+        entropyVals[i] += _entropyData->total[i][t];
+    }
+   
+    double meanEntropy = mean(entropyVals);
+    double stdEntropy = standard_deviation(entropyVals);
+ 
     for (int i = 0; i < rows; i++)
     {
         for (int j = 0; j < cols; j++)
         {
             if(!(isnan(_entropyData->dataMatrix[t](i,j))))
             {
-			    matrix(i, j) = maxEntVal - _entropyData->dataMatrix[t](i, j);
-                matrix(i, j) = matrix(i, j)/(maxEntVal - minEntVal);
 			    matrix(i, j) = _entropyData->dataMatrix[t](i, j) - meanEntropy;
                 matrix(i, j) = matrix(i, j)/(stdEntropy);
             }
@@ -117,6 +138,17 @@ void HeatMapView::sumHeatMap()
     }
 
     for (int i = 0; i < rows; i++)
+    {
+        for (int j = 0; j < cols; j++)
+        {
+            if(!(isnan(_entropyData->dataMatrix[0](i,j))))
+            {
+                matrix(i, j) /= _entropyData->numDivisions;
+            }
+        }
+    }
+
+
     std::vector<double> entropyVals(_entropyData->total.size());
 
     for (int i = 0; i < _entropyData->total.size(); i++)
@@ -128,6 +160,7 @@ void HeatMapView::sumHeatMap()
             std::cout << i << ": " << entropyVals[i] << std::endl;
         }
 
+        entropyVals[i] /= _entropyData->numDivisions;
     }
  
     double meanEntropy = mean(entropyVals);
