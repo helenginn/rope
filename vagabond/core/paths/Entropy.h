@@ -64,30 +64,30 @@ public:
         return _ends.size();
     }
 
-    std::vector<std::string> rowNames(std::vector<Instance*> startInstances)
-    {
-        std::vector<std::string> rowNames;
+	std::vector<std::string> startNames()
+	{
+		std::vector<std::string> startNames;
 
-        for(int i = 0; i < startInstances.size(); i++)
-        {
-            rowNames.push_back(startInstances[i]->model_id());
-        }
+		for (Instance* inst : _starts)
+		{
+			startNames.push_back(inst->model_id());
+		}
 
-        return rowNames;
+		return startNames;
+	}
+
+	std::vector<std::string> endNames()
+	{
+		std::vector<std::string> endNames;
+
+		for (Instance* inst : _ends)
+		{
+			endNames.push_back(inst->model_id());
+		}
+
+		return endNames;
     }
-
-    std::vector<std::string> colNames(std::vector<Instance*> endInstances)
-    {
-        std::vector<std::string> colNames;
-
-        for(int i = 0; i < endInstances.size(); i++)
-        {
-            colNames.push_back(endInstances[i]->model_id());
-        }
-
-        return colNames;
-    }
-
+   
     std::pair<std::string, std::string> names(int l, int r);
 
     std::mutex &mutex()
