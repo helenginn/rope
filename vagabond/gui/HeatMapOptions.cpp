@@ -102,7 +102,7 @@ void HeatMapOptions::loadOptions()
         Slider *sTime = new Slider();
         sTime->setDragResponder(this);
         sTime->resize(0.5);
-        sTime->setup("Number of time divisions", 1, 10, 1);
+        sTime->setup("Number of time divisions", 1, 20, 1);
         sTime->setReturnTag("timepoints");
 	    sTime->setCentre(0.7, 0.65);
         addTempObject(sTime);
@@ -126,6 +126,7 @@ void HeatMapOptions::buttonPressed(std::string tag, Button *button)
     {
 		HeatMapView *view = new HeatMapView(this, _paths, _flagPar);
         view->show();
+		std::cout << "Wrapping up showing heatmapview now" << std::endl;
     }
 
     Scene::buttonPressed(tag, button);
