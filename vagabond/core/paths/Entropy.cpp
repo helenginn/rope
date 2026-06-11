@@ -150,6 +150,7 @@ std::pair<std::string, std::string> Entropy::names(int l, int r)
 	
 	return {st_name, end_name};
 }
+
     auto fix_value = [](const Entropy::InstanceSet &insts, Instance *inst, int &idx)
     {
         idx = -1;
