@@ -26,40 +26,50 @@ ColourScheme::ColourScheme(Scheme scheme, bool vert)
 	clearVertices();
 	setFragmentShaderFile("assets/shaders/multiply.fsh");
 	_vert = vert;
+	setScheme(scheme);
+}
 
-	if (scheme == BlueOrange)
+void ColourScheme::setupScheme()
+{
+	_points.clear();
+	
+	if (_scheme == BlueOrange)
 	{
 		addFixedPoint(0.0, glm::vec4(0.32, 0.52, 0.92, 1.0));
 		addFixedPoint(0.5, glm::vec4(0.6, 0.0, 0.09, 1.0));
 		addFixedPoint(1.0, glm::vec4(0.86, 0.63, 0.13, 1.0));
-		setScheme(BlueOrange);
 	}
-	else if (scheme == OrangeWhitePurple)
+	else if (_scheme == OrangeWhitePurple)
 	{
 		addFixedPoint(0.0, glm::vec4(0.73, 0.44, 0.09, 1.0));
 		addFixedPoint(0.5, glm::vec4(1.0, 1.0, 1.0, 1.0));
 		addFixedPoint(1.0, glm::vec4(0.44, 0.18, 0.53, 1.0));
-		setScheme(OrangeWhitePurple);
 	}
-	else if (scheme == Heat)
+	else if (_scheme == Heat)
 	{
 		addFixedPoint(0.0, glm::vec4(0.0, 0.0, 0.0, 1.0));
 		addFixedPoint(0.1, glm::vec4(0.05, 0.05, 0.05, 1.0), 0.3);
 		addFixedPoint(0.4, glm::vec4(1.0, 0.05, 0.05, 1.0), 1.2);
 		addFixedPoint(0.7, glm::vec4(1.0, 1.0, 0.05, 1.0), 2.1);
 		addFixedPoint(1.0, glm::vec4(1.0, 1.0, 1.0, 1.0), 3.0);
-		setScheme(Heat);
 	}
-	else if (scheme == Cluster4x)
+	else if (_scheme == Cluster4x)
 	{
 		addFixedPoint(-1.0, glm::vec4(0.0, 0.0, 0.0, 1.0));
 		addFixedPoint(0.0, glm::vec4(0.0, 0.0, 1.0, 1.0));
 		addFixedPoint(0.5, glm::vec4(1.0, 1.0, 1.0, 1.0));
 		addFixedPoint(1.0, glm::vec4(1.0, 0.0, 0.0, 1.0));
 		addFixedPoint(2.0, glm::vec4(1.0, 1.0, 0.0, 1.0));
-		setScheme(Cluster4x);
 	}
 
+    else if (_scheme == ZScore)
+    {	
+        addFixedPoint(-2.0, glm::vec4(0.0, 0.0, 1.0, 1.0));
+		addFixedPoint(-1.0, glm::vec4(0.5, 0.5, 1.0, 1.0));
+		addFixedPoint(0.0, glm::vec4(1.0, 1.0, 1.0, 1.0));
+		addFixedPoint(1.0, glm::vec4(1.0, 0.5, 0.5, 1.0));
+		addFixedPoint(2.0, glm::vec4(1.0, 0.0, 0.0, 1.0));
+    }
 	setup();
 }
 
