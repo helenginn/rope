@@ -35,7 +35,6 @@ enum Scheme
 	Cluster4x,
 	BlackYellow,
         ZScore,
-
 	Nothing = 0,
 };
 
