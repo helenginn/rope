@@ -39,6 +39,7 @@ struct InstancePair
 	Instance *end = nullptr;
 };
 
+class Path;
 class Grapher;
 class Selection;
 class Separation;
@@ -205,7 +206,7 @@ public:
 	
 	int indexOfParameter(Parameter *t);
 
-    void transplantFromOtherRoute(Route *other);
+    void transplantFromOtherRoute(Path *other);
 	
 	BestGuessTorsions &bestGuessTorsions()
 	{

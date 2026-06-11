@@ -20,6 +20,7 @@
 #include <algorithm>
 #include <stdlib.h>
 
+#include "Path.h"
 #include "paths/Route.h"
 #include "SubmissionHelp.h"
 #include "Polymer.h"
@@ -625,8 +626,10 @@ int Route::paramIdxForAtom(Atom *const &atom)
 	return -1;
 }
 
-void Route::transplantFromOtherRoute(Route *other)
+void Route::transplantFromOtherRoute(Path *other)
 {
+	setMotions(other->motions());
+/*
     if (this->wayPointCount() == other->wayPointCount())
     {
         for (int i = 0; i < other->wayPointCount(); i++)
@@ -645,5 +648,6 @@ void Route::transplantFromOtherRoute(Route *other)
         std::cout << "Routes are different sizes" << std::endl;
         return;
     }
+*/
 }
 
