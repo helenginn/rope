@@ -13,7 +13,7 @@ c4xfiles = [
 ]
 
 cluster4x = static_library('cluster4x', c4xfiles, 
-	cpp_args: [compile_args],
+  cpp_args: [compile_args],
 	link_args: [links],
 	link_with: vagutils,
 	include_directories: ['../..'],

@@ -392,7 +392,7 @@ install_headers([
 ],
 subdir : 'vagabond/core')
 
-core = static_library('vag', vagafiles, 
+core = static_library('vag', vagafiles,
 	cpp_args: [compile_args],
 	link_args: [links],
 	link_with: [vagutils, cluster4x],
