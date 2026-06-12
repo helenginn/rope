@@ -247,6 +247,10 @@ void HeatMapView::redrawHeatMap(double num)
 
     Eigen::MatrixXf matrix = _entropyData->dataMatrix[t];
     
+    std::cout << "Matrix loaded from entropyData..." << std::endl;   
+    _displayMatrix = PCA::Matrix(matrix);
+	printMatrix(&_displayMatrix);
+
     std::vector<double> entropyVals(_entropyData->total.size());
 
     for (int i = 0; i < _entropyData->total.size(); i++)
@@ -255,6 +259,11 @@ void HeatMapView::redrawHeatMap(double num)
     }
    
     scaleMatrix(matrix, entropyVals);
+   
+    std::cout << "Matrix after scaling..." << std::endl;   
+    _displayMatrix = PCA::Matrix(matrix);
+	printMatrix(&_displayMatrix);
+
     showMatBox(matrix);
 }
 
@@ -301,7 +310,7 @@ void HeatMapView::sumHeatMap()
     showMatBox(matrix);
 }
 
-void HeatMapView::scaleMatrix(Eigen::MatrixXf matrix, std::vector<double> entropyVals)
+void HeatMapView::scaleMatrix(Eigen::MatrixXf &matrix, std::vector<double> entropyVals)
 {
     double meanEntropy = mean(entropyVals);
     double stdEntropy = standard_deviation(entropyVals);
