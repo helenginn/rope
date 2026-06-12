@@ -72,23 +72,8 @@ void HeatMapView::redrawHeatMap(double num)
     int rows = _entropy->rows();
     int cols = _entropy->cols();
 
-    Eigen::MatrixXf matrix = Eigen::MatrixXf::Constant(rows, cols, NAN);
+    Eigen::MatrixXf matrix = _entropyData->dataMatrix[t];
     
-    double maxEntVal = _entropyData->total[t].front();
-    double minEntVal = _entropyData->total[t].front();
-
-    for(int i = 0; i < _entropyData->total.size(); i++)
-    {
-        if(_entropyData->total[i][t] > maxEntVal)
-        {
-            maxEntVal = _entropyData->total[i][t];
-        }
-        if(_entropyData->total[i][t] < minEntVal)
-        {
-            minEntVal = _entropyData->total[i][t];
-        }
-    }
-
     std::vector<double> entropyVals(_entropyData->total.size());
 
     for (int i = 0; i < _entropyData->total.size(); i++)
@@ -96,21 +81,73 @@ void HeatMapView::redrawHeatMap(double num)
         entropyVals[i] += _entropyData->total[i][t];
     }
    
-    double meanEntropy = mean(entropyVals);
-    double stdEntropy = standard_deviation(entropyVals);
- 
-    for (int i = 0; i < rows; i++)
+    scaleMatrix(matrix, entropyVals);
+    showMatBox(matrix);
+}
+
+void HeatMapView::sumHeatMap()
+{
+    deleteTemps();
+
+    if(_rangeSlider)
     {
-        for (int j = 0; j < cols; j++)
+        removeObject(_rangeSlider);
+    }
+
+    Eigen::MatrixXf matrix = Eigen::MatrixXf::Zero(_entropy->rows(), _entropy->cols());
+    
+    for (int t = 0; t < _entropyData->numDivisions; t++)
+    {
+        matrix += _entropyData->dataMatrix[t];
+    }
+
+    for (int i = 0; i < _entropy->rows(); i++)
+    {
+        for (int j = 0; j < _entropy->cols(); j++)
         {
-            if(!(isnan(_entropyData->dataMatrix[t](i,j))))
+            if(!(isnan(_entropyData->dataMatrix[0](i,j))))
             {
-			    matrix(i, j) = _entropyData->dataMatrix[t](i, j) - meanEntropy;
-                matrix(i, j) = matrix(i, j)/(stdEntropy);
+                matrix(i, j) /= _entropyData->numDivisions;
             }
         }
     }
 
+    std::vector<double> entropyVals(_entropyData->total.size());
+
+    for (int i = 0; i < _entropyData->total.size(); i++)
+    {
+        for(int t = 0; t < _entropyData->numDivisions; t++) 
+        {
+            entropyVals[i] += _entropyData->total[i][t];
+        }
+
+        entropyVals[i] /= _entropyData->numDivisions;
+    }
+ 
+    scaleMatrix(matrix, entropyVals);
+    showMatBox(matrix);
+}
+
+void HeatMapView::scaleMatrix(Eigen::MatrixXf matrix, std::vector<double> entropyVals)
+{
+    double meanEntropy = mean(entropyVals);
+    double stdEntropy = standard_deviation(entropyVals);
+ 
+    for (int i = 0; i < _entropy->rows(); i++)
+    {
+        for (int j = 0; j < _entropy->cols(); j++)
+        {
+            if(!(isnan(_entropyData->dataMatrix[0](i,j))))
+            {
+			    matrix(i, j) = matrix(i, j) - meanEntropy;
+                matrix(i, j) = matrix(i, j)/(stdEntropy);
+            }
+        }
+    }
+}
+
+void HeatMapView::showMatBox(Eigen::MatrixXf matrix)
+{
     _displayMatrix = PCA::Matrix(matrix);
 	printMatrix(&_displayMatrix);
 
@@ -124,95 +161,6 @@ void HeatMapView::redrawHeatMap(double num)
 
     MatrixBox *matBox = new MatrixBox(_plot, colNames, rowNames, true);
     matBox->setCentre(0.5, 0.5);
-    addTempObject(matBox);
-}
-
-void HeatMapView::sumHeatMap()
-{
-    deleteTemps();
-
-    if(_rangeSlider)
-    {
-        removeObject(_rangeSlider);
-    }
-
-    int rows = _entropy->rows();
-    int cols = _entropy->cols();
-
-    Eigen::MatrixXf matrix = Eigen::MatrixXf::Zero(rows, cols);
-    
-    for (int t = 0; t < _entropyData->numDivisions; t++)
-    {
-        matrix += _entropyData->dataMatrix[t];
-    }
-
-    for (int i = 0; i < rows; i++)
-    {
-        for (int j = 0; j < cols; j++)
-        {
-            if(!(isnan(_entropyData->dataMatrix[0](i,j))))
-            {
-                matrix(i, j) /= _entropyData->numDivisions;
-            }
-        }
-    }
-
-
-    std::vector<double> entropyVals(_entropyData->total.size());
-
-    for (int i = 0; i < _entropyData->total.size(); i++)
-    {
-        for(int t = 0; t < _entropyData->numDivisions; t++) 
-        {
-            entropyVals[i] += _entropyData->total[i][t];
-            
-            std::cout << i << ": " << entropyVals[i] << std::endl;
-        }
-
-        entropyVals[i] /= _entropyData->numDivisions;
-    }
- 
-    double meanEntropy = mean(entropyVals);
-    double stdEntropy = standard_deviation(entropyVals);
- 
-    double maxEntVal = entropyVals[0];
-    double minEntVal = entropyVals[0];
-
-    for(int i = 0; i < entropyVals.size(); i++)
-    {
-        if(entropyVals[i] > maxEntVal)
-        {
-            maxEntVal = entropyVals[i];
-        }
-        if(entropyVals[i] < minEntVal)
-        {
-            minEntVal = entropyVals[i];
-        }
-    }
-
-    for (int i = 0; i < rows; i++)
-    {
-        for (int j = 0; j < cols; j++)
-        {
-            if(!(isnan(_entropyData->dataMatrix[0](i,j))))
-            {
-			    matrix(i, j) = matrix(i, j) - meanEntropy;
-                matrix(i, j) = matrix(i, j)/(stdEntropy);
-            }
-        }
-    }
-
-    _displayMatrix = PCA::Matrix(matrix);
-	printMatrix(&_displayMatrix);
-
-    _plot = new MatrixPlot(_displayMatrix);
-    std::vector<std::string> rowNames = _entropy->startNames();
-    std::vector<std::string> colNames = _entropy->endNames();
-
-    std::reverse(rowNames.begin(), rowNames.end());
-
-    MatrixBox *matBox = new MatrixBox(_plot, _entropy->startNames(), _entropy->endNames(), true);
-
     addTempObject(matBox);
 }
 
