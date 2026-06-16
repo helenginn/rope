@@ -268,7 +268,7 @@ if $USE_CONAN; then
     warn "conan profile already exists. Please verify manually."
   fi
   "${CONAN_COMMAND[@]}" create recipes/gemmi -b="$CONAN_BUILD_FLAG"
-  "${CONAN_COMMAND[@]}" install . -of="${BUILDDIR}" -b="$CONAN_BUILD_FLAG"
+  "${CONAN_COMMAND[@]}" install . -of="${BUILDDIR}" -b="$CONAN_BUILD_FLAG" -s compiler.cppstd=gnu20
   source "./${BUILDDIR}/conanbuild.sh"
   meson setup "$BUILDDIR" --native-file="${BUILDDIR}"/conan_meson_native.ini --buildtype="$BUILD_TYPE" $EXTRA_MESON_ARGS --reconfigure --clearcache
 else

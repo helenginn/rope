@@ -207,7 +207,7 @@ Invoke-Conan profile detect 2>&1 | Out-Null
 if ($LASTEXITCODE -ne 0) {Warn "conan profile already exists. Please verify manually."}
 Invoke-Conan create .\recipes\gemmi "-b=$ConanBuildFlag"
 if ($LASTEXITCODE -ne 0) {Die "conan create gemmi failed"}
-Invoke-Conan install . "-of=${BUILDDIR}" "-b=$ConanBuildFlag"
+Invoke-Conan install . "-of=${BUILDDIR}" "-b=$ConanBuildFlag" -s compiler.cppstd=20
 if ($LASTEXITCODE -ne 0) {Die "conan install failed"}
 
 meson setup $BUILDDIR "--native-file=${BUILDDIR}\conan_meson_native.ini" "--buildtype=${BUILD_TYPE}" @EXTRA_MESON_ARGS --reconfigure --clearcache
