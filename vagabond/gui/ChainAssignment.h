@@ -45,6 +45,7 @@ private:
 	ModelManager *_manager;
 	const bool &_existing;
 	DisplayUnit _displayUnit = nullptr;
+	std::string _firstChain {" "};
 	//void viewModel(std::string name,Chain *chain);   //old function I will keep here yet
 };
 

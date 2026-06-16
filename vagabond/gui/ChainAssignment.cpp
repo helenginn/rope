@@ -27,6 +27,7 @@
 #include <vagabond/gui/elements/Menu.h>
 #include <vagabond/gui/RotamerMenu.h>
 
+#include <vagabond/core/Instance.h>
 #include <vagabond/core/files/File.h>
 #include <vagabond/core/Chain.h>
 #include <vagabond/core/Polymer.h>
@@ -169,6 +170,8 @@ void ChainAssignment::buttonPressed(std::string tag, Button *button)
 		auto rotamerView = [this, tag]() // submenu to send to a view of the selected chain
 		{
 			Polymer *polymer = _model.polymerForChain(tag.substr(6, std::string::npos));
+			if (_firstChain != " ")
+				polymer->addChain(_firstChain);
 			RotamerView *rv = new RotamerView(this, _model.name(), polymer);
 			rv->show();
 			rv->viewModel();
@@ -178,7 +181,8 @@ void ChainAssignment::buttonPressed(std::string tag, Button *button)
 		};
 		auto rotamerSetup = [this, tag]()
 		{
-
+			_firstChain = tag.substr(6, std::string::npos);
+			std::cout << "Stored chain : \"" << _firstChain << "\" "<<std::endl;
 		};
 		m->addOption("Setup Rotamers", rotamerSetup);//replacing tag by function (jobs)
 		m->addOption("View Rotamers", rotamerView);
