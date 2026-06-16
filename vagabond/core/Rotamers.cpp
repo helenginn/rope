@@ -6,6 +6,7 @@
 #include <nlohmann/json.hpp>
 #include <fstream>
 #include <iostream>
+#include "config/config.h"
 
 RotamerLibrary::RotamerLibrary()
 {
@@ -16,7 +17,8 @@ RotamerLibrary::RotamerLibrary()
 std::map<std::string,std::vector<Rotamer>> RotamerLibrary::loadRotamersFromJson(std::string const &filepath)
 {
     std::ifstream f;
-    f.open(filepath);
+    std::cout << std::string(DATA_DIRECTORY) + "/" + filepath << " test " << std::endl;
+    f.open( std::string(DATA_DIRECTORY) + "/" + filepath);
 
     //std::ifstream file(filepath);
     if (!f.is_open())

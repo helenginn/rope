@@ -30,7 +30,7 @@ public:
 
 
 private:
-    std::string const _filepath = "../assets/geometry/penultimate_lib.json";
+    std::string const _filepath = "assets/geometry/penultimate_lib.json";
 };
 
 #endif
