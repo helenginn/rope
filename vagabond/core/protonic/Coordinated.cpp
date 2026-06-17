@@ -17,7 +17,8 @@
 // Please email: vagabond @ hginn.co.uk for more details.
 
 #define HYDROGEN_BONDING_TOLERANCE (45.0f)
-#define PLANAR_TOLERANCE (30.0f)
+#define HYDROGEN_MAX_DISTANCE (3.5f)
+#define PLANAR_TOLERANCE (45.0f)
 
 #include <iostream>
 
@@ -1087,7 +1088,7 @@ void Coordinated::attachToNeighbours(AtomGroup *searchGroup)
 {
 	OpSet<AtomConf> searchSet = expandGroupToSet(searchGroup);
 	OpSet<AtomConf> rough = findNeighbours(searchSet, atomic_position(),
-	                                        3.2, true);
+	                                        HYDROGEN_MAX_DISTANCE, true);
 	_neighbours = rough;
 
 	if (_connector->value() == hnet::Atom::Inactive)
