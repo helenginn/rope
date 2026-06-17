@@ -824,16 +824,19 @@ Clique *Network::newClique(const OpSet<Probe *> &probes)
 
 void Network::firstOrderLogic()
 {
-	ConnectBase::_silent = true;
+	ConnectBase::_silent = false;
 
 	auto check_and_or_revert = []<class Connector, typename Value>
 	(Connector &connect, const Value &test, GuiltVersion &v, int &found,
 	 bool reverse)
 	{
 		Value opposite = (Value)(~test);
+		std::cout << "\t**" << std::endl;
 		if (connect.value() & test && 
 		    connect.value() != test) // more than just test
 		{
+			std::cout << "Testing elimination of " << test << " from options for "
+			<< connect.desc() << std::endl;
 			bool ok = connect.assign_value_and_check(test, v);
 			if (!ok)
 			{
@@ -867,18 +870,30 @@ void Network::firstOrderLogic()
 			BondConnector &obj = bp->_obj;
 			ExistenceConnector &exist = bp->_exist;
 
+			bool taken = false;
+			GuiltVersion curr = Guilt::guilt().issueNext();
 			GuiltVersion v = Guilt::issueNext();
-			bool taken = check_and_or_revert(exist, Existence::Present, 
-			                                 v, found, false);
-			if (!taken)
+			if (exist.value() == Existence::Unassigned)
+			{
+				taken = check_and_or_revert(exist, Existence::Present, 
+				                                 v, found, true);
+				if (!taken)
+				{
+					continue;
+				}
+			}
+			
+			if (exist.value() != Existence::Present)
 			{
 				continue;
 			}
 
+			/*
 			taken = check_and_or_revert(obj, Bond::Weak, v, found, true);
 			taken = check_and_or_revert(obj, Bond::LonePair, v, found, true);
 			taken = check_and_or_revert(obj, Bond::Donor, v, found, true);
 			taken = check_and_or_revert(obj, Bond::Broken, v, found, true);
+			*/
 		}
 
 		return found;
