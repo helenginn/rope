@@ -17,6 +17,7 @@
 // Please email: vagabond @ hginn.co.uk for more details.
 
 #include "FloydWarshall.h"
+#include <iostream>
 
 FloydWarshall::FloydWarshall(Eigen::MatrixXf &sqMat, const CombineWeight &cw, 
                              bool maximise) 
@@ -29,7 +30,11 @@ FloydWarshall::FloydWarshall(Eigen::MatrixXf &sqMat, const CombineWeight &cw,
 void FloydWarshall::run() // symmetric matrix
 {
 	int size = _sqMat.rows();
-	int update = size / 10.f;
+	int update = (size / 10.f);
+	if (update <= 10)
+	{
+		update = 10;
+	}
 
 	for (int k = 0; k < size; k++)
 	{
@@ -56,7 +61,7 @@ void FloydWarshall::run() // symmetric matrix
 			}
 		}
 		
-		if (_update && k % update == 0)
+		if (_update && (k % update == 0))
 		{
 			_update();
 		}
