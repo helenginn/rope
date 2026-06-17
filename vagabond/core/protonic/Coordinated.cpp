@@ -343,6 +343,11 @@ AtomConf Coordinated::findPlanarAtom()
 				planar = other;
 			}
 
+			if (code == "TRP" && other->atomName() == "CG")
+			{
+				planar = other;
+			}
+
 			if (name == "O" && other->atomName() == "N")
 			{
 				planar = other;
