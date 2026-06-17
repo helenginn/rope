@@ -129,8 +129,14 @@ void BreakMatrix::setup(const OpSet<AcceptableGroup> &groups)
 		insertGroupIntoMatrix(group);
 	}
 
+	std::vector<BondConnector *> all;
+	for (auto &pair : _indexing)
+	{
+		all.push_back(pair.first);
+	}
+
 	std::cout << "Coordination's (" << _ac.desc() << ") break matrix: " << std::endl;
-	std::cout << _matrix << std::endl;
+	print_current(all);
 	
 	checks_forgets();
 }
@@ -176,6 +182,7 @@ Eigen::MatrixXi BreakMatrix::partialMatrix(const std::vector<BondConnector *>
 
 void BreakMatrix::print_current(const std::vector<BondConnector *> &in_game)
 {
+	return;
 	if (ConnectBase::_silent)
 	{
 		return;
@@ -283,10 +290,10 @@ bool BreakMatrix::evaluate(hnet::make_assign_and_say<BreakMatrix> &assign)
 	int lower_limit = options[0];
 	if (!ConnectBase::_silent)
 	{
-		ConnectBase::out() << "Lower limit: " << lower_limit << std::endl;
+		ConnectBase::out() << "Lower limit for " << _ac.desc() << ": " << lower_limit << std::endl;
+		print_current(in_game);
 	}
 
-//	print_current(in_game);
 	Eigen::MatrixXi tmp = partialMatrix(in_game);
 
 	int max_sum = 0;
@@ -348,91 +355,6 @@ bool BreakMatrix::evaluate(hnet::make_assign_and_say<BreakMatrix> &assign)
 	}
 	
 	return false;
-
-	/* next we check for hydrogen bonds to non-existent partners. These
-	 * are sometimes geometrically necessary even if the partner isn't there
-	 * and isn't involved. However, if there is an equivalent row in the matrix
-	 * for a partner which does exist instead, then that will always be a
-	 * preferred hydrogen bond. Therefore we break the hydrogen bond 
-	 * in question */
-	/*
-	for (int i = 0; i < in_game.size(); i++)
-	{
-		int l_idx = _indexing[in_game[i]];
-		if (_entries[l_idx].partner->value() != Existence::Absent)
-		{
-			continue;
-		}
-		// isolated a bond where the partner's definitely not there
-
-		Eigen::VectorXi ref = tmp.row(i);
-		for (int j = 0; j < in_game.size(); j++)
-		{
-			if (i == j) continue;
-			int r_idx = _indexing[in_game[j]];
-			
-			// don't consider ourselves a second time!
-			if (_entries[r_idx].partner == &_myExist)
-			{
-				continue;
-			}
-
-			// if we've found another not-surely-present partner, no better
-			if (_entries[r_idx].partner->value() != Existence::Present)
-			{
-				continue;
-			}
-
-			Eigen::VectorXi compare = tmp.row(j);
-			compare -= ref;
-			float result = 0;
-			for (float f : compare)
-			{
-				result += f * f;
-			}
-
-			if (result < 1e-6)
-			{
-				continue; // ignore this entire section
-				if (assertAbsence(assign, _entries[l_idx], 
-				                  wrap("there was an equivalent "\
-				                  "hydrogen-bonding pattern with an existent"\
-				                  " partner")))
-				{
-					return true;
-				}
-			}
-		}
-	}
-	*/
-
-	Eigen::MatrixXi unfake = partialMatrix(nonfake_in);
-//	std::cout << "Working on non-fake matrix: " << std::endl << 
-//	unfake << std::endl;
-//	std::cout << "We are currently: " << assign.okay() << std::endl;
-	
-	// the non-fake set works, without having to consider fake entries
-	if (unfake.rows() == lower_limit && options.size() == 1 &&
-	    unfake.array().sum() == lower_limit * lower_limit)
-	{
-//		std::cout << "Throwing out fakes." << std::endl;
-		for (int i = 0; i < in_game.size(); i++)
-		{
-			int idx = _indexing[in_game[i]];
-			if (_entries[idx].fake)
-			{
-				if (assertAbsence(assign, _entries[idx], 
-				                  wrap("the entirety of the "\
-				"remaining non-fake coordination perfectly matches, so fake Hs"\
-				"are now to be broken")))
-				{
-					return true;
-				}
-			}
-		}
-	}
-	
-	return false;
 }
 
 bool BreakMatrix::assertAbsence(make_assign_and_say<BreakMatrix> &assign, 
@@ -453,12 +375,9 @@ bool BreakMatrix::check(const GuiltVersion &gv, CheckList &list)
 {
 	bool changed = false;
 
-//	std::cout << std::endl;
-//	std::cout << "Checking break matrix for " << _ac.desc() << std::endl;
-
 	auto assign = make_assign_and_say(this, gv, list);
 
-	// don't check anything if we are non-existent
+	// don't check anything if we may be non-existent
 	if (_myExist.value() == Existence::Absent)
 	{
 		return assign.okay();
@@ -467,11 +386,8 @@ bool BreakMatrix::check(const GuiltVersion &gv, CheckList &list)
 	do
 	{
 		changed = evaluate(assign);
-//		std::cout << "Changed " << changed << ", okay " << assign.okay() 
-//		<< std::endl;
 		if (!assign.okay())
 		{
-//			std::cout << "We have a contradiction; abort early." << std::endl;
 			return false;
 		}
 	}
