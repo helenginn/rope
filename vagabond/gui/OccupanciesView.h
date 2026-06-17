@@ -20,6 +20,7 @@
 #define __vagabond__OccupanciesView__
 
 #include <vagabond/gui/elements/IndexResponseView.h>
+#include <vagabond/utils/Eigen/Dense>
 #include <map>
 
 class Graph;
@@ -54,6 +55,7 @@ private:
 	std::map<ProbeTypePair, OccData> _estimates;
 	std::map<ProbeTypePair, OccData> _first;
 	Graph *_graph{};
+	Eigen::MatrixXf _overall;
 };
 
 #endif

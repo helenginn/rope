@@ -91,7 +91,7 @@ void ViewCorrelations::viewAll()
 	OpSet<ProbeTypePair> all = 
 	Correlative::probeTypePairs(_clique->subdivisions(), all_ave);
 
-	_correlative = new Correlative(all, all_ave, false);
+	_correlative = new Correlative(all, all_ave, true);
 	Correlative &correl = *_correlative;
 
 	auto process_clique = [&correl](const Clique &clique)
@@ -106,10 +106,10 @@ void ViewCorrelations::viewAll()
 		process_clique(clique);
 	}
 
-	Eigen::MatrixXf overall = correl.acquireMatrix();
+	_result = correl.acquireMatrix();
 	
 	deleteTemps();
-	_matrix = PCA::Matrix(overall);
+	_matrix = PCA::Matrix(_result);
 	MatrixPlot *mp = new MatrixPlot(_matrix, _mutex);
 	
 	auto lookup = correl.matrixLookup();
@@ -134,7 +134,7 @@ void ViewCorrelations::viewAll()
 		cc->show();
 	};
 	
-	auto comm_analysis = [this, choose_groups, overall]()
+	auto comm_analysis = [this, choose_groups]()
 	{
 		int num = _clique->allCommsNames().size();
 		if (num <= 1)
@@ -149,13 +149,13 @@ void ViewCorrelations::viewAll()
 		else
 		{
 			CommunicationAnalysis *ca = 
-			new CommunicationAnalysis(this, _clique, 
-			                          overall, _correlative->insertions());
+			new CommunicationAnalysis(this, _clique, _result, 
+			                          _correlative->insertions());
 			ca->show();
 		}
 	};
 	
-	auto fill_gaps = [this, mp, &overall]()
+	auto fill_gaps = [this, mp]()
 	{
 		auto combine = [](float x, float y)
 		{
@@ -164,7 +164,7 @@ void ViewCorrelations::viewAll()
 		
 		setInformation("Deriving intermediate correlations");
 
-		FloydWarshall fw(overall, combine, true);
+		FloydWarshall fw(_result, combine, true);
 		fw.addDisplayMatrix(_matrix, _mutex, [mp]() { mp->update(); });
 		fw.run();
 		setInformation("Finished deriving intermediates");

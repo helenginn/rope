@@ -44,6 +44,7 @@ private:
 
 	PCA::Matrix _matrix{};
 	std::mutex _mutex{};
+	Eigen::MatrixXf _result{};
 };
 
 #endif

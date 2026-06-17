@@ -20,6 +20,7 @@
 #include "MatrixPlot.h"
 #include <vagabond/utils/maths.h>
 #include <vagabond/utils/FileReader.h>
+#include <vagabond/utils/FloydWarshall.h>
 #include <vagabond/gui/GraphView.h>
 #include <vagabond/gui/Graph.h>
 #include <vagabond/core/protonic/Clique.h>
@@ -70,8 +71,17 @@ void OccupanciesView::setup()
 		process_clique(clique);
 	}
 
-	Eigen::MatrixXf overall = _correlative->acquireMatrix();
-	PCA::Matrix tmp(overall);
+	_overall = _correlative->acquireMatrix();
+
+	auto combine = [](float x, float y)
+	{
+		return x * y;
+	};
+
+	FloydWarshall fw(_overall, combine, true);
+	fw.run();
+
+	PCA::Matrix tmp(_overall);
 	MatrixPlot *mp = new MatrixPlot(tmp);
 	mp->setCentre(0.25, 0.5);
 	addObject(mp);
@@ -183,6 +193,12 @@ std::map<ProbeTypePair, OccupanciesView::OccData> OccupanciesView::estimates()
 		}
 
 		float calculated = sums[2] / (sums[1] + sums[2]);
+		if (calculated != calculated)
+		{
+			calculated = 0;
+			ret.erase(ptp);
+			continue;
+		}
 		float observed = ptp.first->atomConf().occupancy();
 		
 		if (fabs(calculated - 0.5) < 1e-6)
