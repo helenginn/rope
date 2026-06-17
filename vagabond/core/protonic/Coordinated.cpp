@@ -1318,6 +1318,11 @@ void Coordinated::clashLogic(OpSet<AtomConf> &clash_check)
 			continue;
 		}
 		
+		if (hit.ptr->elementSymbol() == "NA") // not a proper handling of metals
+		{
+			continue;
+		}
+		
 		// we do not care about two symmetry-related atoms
 		if (hit.ptr->symmetryCopyOf() && _atomConf.ptr->symmetryCopyOf())
 		{
