@@ -114,12 +114,16 @@ void Correlative::addStates(const CertainStates &states)
 			int y = _insertions[right].first;
 			int n = _insertions[right].second;
 			float ave = states.average_score();
+			if (!_relative)
+			{
+				ave = _ave_score;
+			}
 			ProbeCorrelation c = states.correlate(left, right, _ave_score,
 			                                      _relative);
-			c.mat *= (float)states.state_count();
 			
 			if (!_relative)
 			{
+				c.mat *= (float)states.state_count();
 				auto copy_c = c.mat;
 				for (int i = 0; i < c.mat.rows(); i++)
 				{
@@ -154,7 +158,7 @@ void Correlative::addStates(const CertainStates &states)
 				{
 					for (int i = 0; i < cc.rows(); i++)
 					{
-						cc(i, j) = cc(i, j);
+						cc(i, j) = fabs(cc(i, j));
 						csq(i, j) = w;
 					}
 				}
@@ -212,9 +216,17 @@ Eigen::MatrixXf Correlative::acquireMatrix()
 		}
 	}
 
-	for (int i = 0; i < ret.rows(); i++)
+	for (int i = 0; i < ret.rows() && !_relative; i++)
 	{
 		ret.row(i) /= ret(i, i);
+
+		for (int j = 0; j < ret.cols(); j++)
+		{
+			if (ret(i, j) > 1)
+			{
+				ret(i, j) = 1;
+			}
+		}
 	}
 	
 	return ret;
