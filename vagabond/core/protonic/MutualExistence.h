@@ -27,9 +27,10 @@ namespace hnet
 /* logic for determining hydrogen bonding patterns between two heavier atoms */
 struct MutualExistence : public ConstraintBase
 {
+	//directional: right depends on existence of left
 	MutualExistence(ExistenceConnector &left, ExistenceConnector &right,
-	                bool strong = true, std::string desc = "")
-	: _left(left), _right(right), _desc(desc), _strong(strong)
+	                std::string desc = "")
+	: _left(left), _right(right), _desc(desc)
 	{
 		prep_constraints_and_forgets(this, {&left, &right});
 	}
@@ -45,7 +46,7 @@ struct MutualExistence : public ConstraintBase
 	{
 		auto assign = make_assign_and_say(this, gv, list);
 
-		if (_left.value() == Existence::Present && _strong)
+		if (_left.value() == Existence::Present)
 		{
 			assign(_right, Existence::Present);
 		}
@@ -60,7 +61,6 @@ struct MutualExistence : public ConstraintBase
 	ExistenceConnector &_left;
 	ExistenceConnector &_right;
 	std::string _desc{};
-	bool _strong{};
 };
 };
 

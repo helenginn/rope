@@ -1143,9 +1143,9 @@ void Coordinated::attachToNeighbours(AtomGroup *searchGroup)
 		ExistenceConnector &eRef = ref->existence();
 		ExistenceConnector &eOther = other->existence();
 		
-		add_constraint(new MutualExistence(le, eRef, true)); 
+		add_constraint(new MutualExistence(le, eRef)); 
 		add_constraint(new SubExistence(le, hExist, re, true));
-		add_constraint(new MutualExistence(re, eOther, true));
+		add_constraint(new MutualExistence(re, eOther));
 		
 		auto unpaired_right = [&le, &re]()
 		{
