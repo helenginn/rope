@@ -1489,14 +1489,12 @@ void Coordinated::prepareCoordinated(const Count::Values &n_charge,
 	CountProbe &probe = _network.add_probe(new CountProbe(*_charge, atom()));
 }
 
-ABPair Coordinated::bondedSymmetricAtom(::Atom *asymmetric)
+ABPair Coordinated::bondForAtom(const AtomConf &asymmetric)
 {
 	for (const ABPair &bond : _bonds)
 	{
-		std::cout << bond << " ";
-		if (bond.first.ptr->symmetryCopyOf() == asymmetric)
+		if (bond.first == asymmetric)
 		{
-			std::cout << std::endl;
 			return bond;
 		}
 	}
@@ -1507,49 +1505,60 @@ ABPair Coordinated::bondedSymmetricAtom(::Atom *asymmetric)
 
 void Coordinated::findSymmetricallyRelatedBonds()
 {
-	::Atom *asym_atom = atom()->symmetryCopyOf();
-	if (asym_atom)
+	::Atom *mother_atom = atom()->symmetryCopyOf();
+	if (!mother_atom)
 	{
-		AtomConf asym_other = {asym_atom, atomConf().conf};
-
-		Coordinated *other = atomMap()[asym_other];
-		add_constraint(new MutualExistence(*existence(), *other->existence()));
+		return;
 	}
+
+	AtomConf mother_conf = {mother_atom, atomConf().conf};
+	Coordinated *mother = atomMap()[mother_conf];
+	// existence must be the same
+	add_constraint(new MutualExistence(*existence(), *mother->existence()));
+
+	std::cout << "Adding symmetries for " << atomConf() << std::endl;
 
 	// make sure bonds which are related by symmetry are constrained to
 	// be equal
 	for (const ABPair &bond : _bonds)
 	{
-		if (!bond.first.ptr->symmetryCopyOf())
-		{
-			// within asymmetric unit - we can safely ignore
-			continue;
-		}
-
 		// get the asymmetric version of our symmetry mate
-		::Atom *asym_atom = bond.first.ptr->symmetryCopyOf();
-		AtomConf asym_other = {asym_atom, bond.first.conf};
+		AtomConf other_conf = bond.first;
+		Coordinated *other = atomMap()[other_conf];
 
-		Coordinated *other = atomMap()[asym_other];
+		::Atom *otherRoot = other_conf.ptr->symmetryCopyOf();
+		if (!otherRoot) otherRoot = other_conf.ptr;
 
-		// ask the asymmetric version for the symmetry mate of my own atom
-		const ABPair &corresponding = other->bondedSymmetricAtom(atom());
-
-		if (corresponding.second)
+		for (const ABPair &mBond : mother->bonds())
 		{
-			hnet::BondConnector &left = *bond.second;
-			hnet::BondConnector &right = *corresponding.second;
+			::Atom *symRoot = mBond.first.ptr->symmetryCopyOf();
+			if (!symRoot) symRoot = mBond.first.ptr;
 
-			add_constraint(new EqualBonds(left, right, 
-			                              *_bond2Exist[&left], 
-									      *other->_bond2Exist[&right]));
-		}
-		else
-		{
-			_failedCheck = true;
+			std::cout << "Is " << symRoot->desc() << " same as " << otherRoot->desc() << "?" << std::endl;
+			if (symRoot != otherRoot)
+			{
+				// wrong bond from mother
+				continue;
+			}
+
+			AtomConf sym_other_conf = {mBond.first.ptr, other_conf.conf};
+
+			// ask the asymmetric version for the symmetry mate of my own atom
+			const ABPair &corresponding = mother->bondForAtom(sym_other_conf);
+
+			if (corresponding.second)
+			{
+				hnet::BondConnector &left = *bond.second;
+				hnet::BondConnector &right = *corresponding.second;
+				
+				std::cout << "Propose that " << left << " and " << right << " should be equal " << std::endl;
+
+				add_constraint(new EqualBonds(left, right, 
+				                              *_bond2Exist[&left], 
+				                              *mother->_bond2Exist[&right]));
+			}
 		}
 	}
-
 }
 
 

@@ -704,7 +704,7 @@ Network::Network(AtomGroup *group, const std::string &spg_name,
 	};
 	
 	// make sure bonds in the next crystal contact are the same as this asu
-	donors->do_op(on_each_conf([this](::Atom *a, char conf)
+	symDonors->do_op(on_each_conf([this](::Atom *a, char conf)
 	{
 		_atomMap[{a, conf}]->findSymmetricallyRelatedBonds();
 	}));
