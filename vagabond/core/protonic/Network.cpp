@@ -371,10 +371,17 @@ void Network::setupInactiveAtom(AtomConf atom)
 		
 		std::cout << "Making certain bond between " << ss.str() << std::endl;
 		
-		bool double_bond = false;
-		double_bond |= either_are_named_couple("C", "O")(connected, atom);
+		bool dbond = false;
+		dbond |= either_are_named_couple("C", "O")(connected, atom);
+		
+		if (atom.ptr->code() == "ASN" || atom.ptr->code() == "GLN")
+		{
+			dbond |= either_are_named_couple("CG", "OD1")(connected, atom);
+			dbond |= either_are_named_couple("CD", "OE1")(connected, atom);
+		}
+
 		BondProbe &cov = add_probe(new CovalentProbe(*probe, *other, 
-		                                             covalent, double_bond));
+		                                             covalent, dbond));
 
 		if (atom.ptr->elementSymbol() == "H" || 
 		    connected.ptr->elementSymbol() == "H")
