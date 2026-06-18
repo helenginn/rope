@@ -95,6 +95,12 @@ OS=$(uname -s)
 ARCH=$(uname -m)
 ok "Platform: $OS / $ARCH"
 
+if command -v ccache &>/dev/null; then
+  ok "ccache: $(ccache --version | head -1)"
+else
+  warn "ccache not found - optional compilation caching"
+fi
+
 USE_CONAN=false
 if command -v conan &>/dev/null; then
   ok "conan: $(conan --version)"
@@ -270,6 +276,11 @@ if $USE_CONAN; then
   "${CONAN_COMMAND[@]}" create recipes/gemmi -b="$CONAN_BUILD_FLAG"
   "${CONAN_COMMAND[@]}" install . -of="${BUILDDIR}" -b="$CONAN_BUILD_FLAG" -s compiler.cppstd=gnu20
   source "./${BUILDDIR}/conanbuild.sh"
+
+  if command -v ccache &>/dev/null; then
+    info "inserting ccache into conan-meson-toolchain..."
+    sed -E "s|^c[[:space:]]*=[[:space:]]*['\"](.*)['\"]|c = ['ccache', '\1']|g; s|^cpp[[:space:]]*=[[:space:]]*['\"](.*)['\"]|cpp = ['ccache', '\1']|g" "${BUILDDIR}/conan_meson_native.ini" > "${BUILDDIR}/conan_meson_native.ini.tmp" && mv "${BUILDDIR}/conan_meson_native.ini.tmp" "${BUILDDIR}/conan_meson_native.ini"
+  fi
   meson setup "$BUILDDIR" --native-file="${BUILDDIR}"/conan_meson_native.ini --buildtype="$BUILD_TYPE" $EXTRA_MESON_ARGS --reconfigure --clearcache
 else
   meson setup "$BUILDDIR" --buildtype="$BUILD_TYPE" $EXTRA_MESON_ARGS --reconfigure --clearcache

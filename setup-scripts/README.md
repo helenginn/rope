@@ -12,6 +12,7 @@ This directory contains automated build configuration scripts for **RoPE**. They
   * **Windows:** Enforces **Conan** as the mandatory package manager to orchestrate all dependencies.
 * **Build Configuration:** Interactively prompts for build types (Release, Debug, or DebugOptimized) and gives the option to generate a `.clangd` file for LSP support.
 * **Compilation:** Automates environment sourcing, runs `meson setup` with the correct native/conan files, and triggers `meson compile`.
+* **Caching:** If `ccache` is detected, it is injected into the compilation pipeline
 
 ---
 
