@@ -89,7 +89,7 @@ jobs:
 
       - name: Run setup script
         shell: pwsh
-        run: setup-scripts\setup.ps1 -Yesman -Build=build\ci_build -Prefix="$((Get-Location).Path)\install"
+        run: setup-scripts\setup.ps1 -Yesman -Build build\ci_build -Prefix "$((Get-Location).Path)\install"
 
       - name: Install RoPE
         shell: pwsh
