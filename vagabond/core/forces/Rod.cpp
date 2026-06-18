@@ -191,8 +191,8 @@ TEST_CASE("Test Inline CORRECT")
 {
   CHECK(2+2==4);
 }
-TEST_CASE("Test Inline WRONG")
-{
-  CHECK(2+2==5);
-}
+// TEST_CASE("Test Inline WRONG")
+// {
+//   CHECK(2+2==5);
+// }
 #endif

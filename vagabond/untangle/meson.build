@@ -25,6 +25,7 @@ untanglefiles = [
 executable('untangle', untanglefiles,
     link_with : [gui, core],
     link_args: [links],
+    cpp_args: [compile_args],
 	include_directories: ['../..'],
     dependencies : gui_deps,
     install: false)

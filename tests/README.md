@@ -47,6 +47,8 @@ TEST_CASE("rod applies correct force") {
   CHECK(v.back() == 5);
   WARN(v.capacity() <= 16); // not wrong
 }
+
+#endif
 ```
 
 ## Running 
