@@ -71,14 +71,14 @@ Once completed successfully, the application binary (`rope.gui`) will be located
 > To use the exact versions of `meson` and `ninja` provided by the Conan toolchain (especially for manual rebuilding), you must source the environment script after setup via:
 >
 > macOS / Linux
-```bash
-source <your-build-dir>/conanbuild.sh
-```
+>```bash
+>source <your-build-dir>/conanbuild.sh
+>```
 >
 > Windows
-```powershell
-. <your-build-dir>\conanbuild.ps1
-```
+>```powershell
+>. <your-build-dir>\conanbuild.ps1
+>```
 
 * **Run Locally:** Run the executable path shown at the end of the script (e.g., `build/.../rope.gui`).
 * **Install Globally:** To install RoPE system-wide, run:
