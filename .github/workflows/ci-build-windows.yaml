@@ -101,7 +101,7 @@ jobs:
         working-directory: build/ci_build
         shell: pwsh
         run: |
-          . conanbuild.ps1
+          . .\conanbuild.ps1
           ninja -t cleandead
 
       - name: Clean stale Conan packages
