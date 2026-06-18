@@ -9,7 +9,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [windows-2025]
+        os: [windows-2022]
     env:
       CACHE_V: v0
     steps:
