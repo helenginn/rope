@@ -475,7 +475,11 @@ void Window::reloadScene(Scene *scene)
 
 std::string Window::dataDirectory()
 {
+#ifdef __EMSCRIPTEN__
+	std::string data = "./";
+#else
 	std::string data = std::string(DATA_DIRECTORY) + "/";
+#endif
 	char *override_data = getenv("ROPE_DATA_DIRECTORY");
 	if (override_data != nullptr)
 	{
