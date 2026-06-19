@@ -1,4 +1,4 @@
-project('rope', 'cpp', 'c', version: '0.1.7',
+project('rope', 'cpp', 'c', version: '0.1.8',
         default_options: ['cpp_std=c++20'],  # C++ version
         meson_version: '>=1.1.0')
 build_dir = meson.current_build_dir()
