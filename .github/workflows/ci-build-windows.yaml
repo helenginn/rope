@@ -12,35 +12,28 @@ jobs:
         os: [windows-2022]
     env:
       CACHE_V: v0
+      CCACHE_DIR: ${{ github.workspace }}/.ccache
+      CCACHE_COMPRESS: "true"
+      CCACHE_COMPRESSLEVEL: "6"
+      CCACHE_MAXSIZE: "500M" # Reicht völlig für die ~350 Objektdateien und schont das 10GB-Limit
     steps:
 
       - name: Checkout code
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Restore source file timestamps for meson caching
-        shell: pwsh
-        run: |
-          git ls-files | ForEach-Object {
-            $f = $_
-            if (-not (Test-Path $f)) { return }
-            $t = git log -1 --format="%ct" -- $f
-            $dt = [System.DateTimeOffset]::FromUnixTimeSeconds([long]$t).LocalDateTime
-            (Get-Item $f).LastWriteTime = $dt
-          }
 
       - name: Install uv
         uses: astral-sh/setup-uv@v7
+
+      - name: Install ccache
+        shell: pwsh
+        run: choco install ccache -y --no-progress
 
       - name: Generate cache keys
         id: get-key
         shell: pwsh
         run: |
           $conanHash = "${{ hashFiles('conanfile.py', 'recipes/**') }}"
-          $mesonHash = "${{ hashFiles('vagabond/**/*.cpp', 'vagabond/**/*.h', '**/meson.build') }}"
           echo "CONAN_KEY=conan-${{ matrix.os }}-${{ env.CACHE_V }}-$conanHash" >> $env:GITHUB_OUTPUT
-          echo "MESON_KEY=meson-${{ matrix.os }}-${{ env.CACHE_V }}-$mesonHash" >> $env:GITHUB_OUTPUT
 
       - name: Restore Conan cache
         id: conan-cache-restore
@@ -51,14 +44,15 @@ jobs:
           restore-keys: |
             conan-${{ matrix.os }}-${{ env.CACHE_V }}-
 
-      - name: Restore Meson build cache
-        id: meson-cache-restore
-        uses: actions/cache/restore@v4
+      - name: Restore ccache
+        uses: actions/cache@v4
         with:
-          path: build/ci_build
-          key: ${{ steps.get-key.outputs.MESON_KEY }}
+          path: ${{ env.CCACHE_DIR }}
+          key: ccache-${{ matrix.os }}-${{ env.CACHE_V }}-${{ github.ref_name }}-${{ github.sha }}
           restore-keys: |
-            meson-${{ matrix.os }}-${{ env.CACHE_V }}-
+            ccache-${{ matrix.os }}-${{ env.CACHE_V }}-${{ github.ref_name }}-
+            ccache-${{ matrix.os }}-${{ env.CACHE_V }}-main-
+            ccache-${{ matrix.os }}-${{ env.CACHE_V }}-
 
       - name: Classify cache result
         shell: pwsh
@@ -75,18 +69,6 @@ jobs:
             Write-Host "→ full miss"
           }
 
-          Write-Host "Meson caches"
-          Write-Host "primary: ${{ steps.meson-cache-restore.outputs.cache-primary-key }}"
-          Write-Host "matched: ${{ steps.meson-cache-restore.outputs.cache-matched-key }}"
-
-          if ("${{ steps.meson-cache-restore.outputs.cache-hit }}" -eq "true") {
-            Write-Host "→ exact hit"
-          } elseif ("${{ steps.meson-cache-restore.outputs.cache-matched-key }}" -ne "") {
-            Write-Host "→ restore-key hit"
-          } else {
-            Write-Host "→ full miss"
-          }
-
       - name: Run setup script
         shell: pwsh
         run: setup-scripts\setup.ps1 -Yesman -Build build\ci_build -Prefix "$((Get-Location).Path)\install"
@@ -97,12 +79,9 @@ jobs:
           . build/ci_build/conanbuild.ps1
           meson install -C build/ci_build
 
-      - name: Clean build dir
-        working-directory: build/ci_build
+      - name: ccache statistics
         shell: pwsh
-        run: |
-          . .\conanbuild.ps1
-          ninja -t cleandead
+        run: ccache -s
 
       - name: Clean stale Conan packages
         shell: pwsh
@@ -114,13 +93,6 @@ jobs:
         with:
           path: ~/.conan2/p
           key: ${{ steps.get-key.outputs.CONAN_KEY }}
-
-      - name: Save Meson build cache
-        if: ${{ steps.meson-cache-restore.outputs.cache-hit != 'true' }}
-        uses: actions/cache/save@v4
-        with:
-          path: build/ci_build
-          key: ${{ steps.get-key.outputs.MESON_KEY }}
 
       - name: Upload binaries
         uses: actions/upload-artifact@v4
