@@ -13,20 +13,14 @@ jobs:
     env:
       # change cache version here to reset cache (if corrupted, e.g.)
       CACHE_V: v0
+      CCACHE_DIR: ${{ github.workspace }}/.ccache
+      CCACHE_COMPRESS: "true"
+      CCACHE_COMPRESSLEVEL: "6"
+      CCACHE_MAXSIZE: "500M"
     steps:
 
       - name: Checkout code
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Restore source file timestamps for meson caching
-        run: |
-          git ls-files | while read f; do
-            [ -f "$f" ] || continue
-            t=$(git log -1 --format="%ct" -- "$f")
-            touch -t $(date -d @$t +%Y%m%d%H%M.%S) "$f"
-          done
 
       - name: Install uv
         uses: astral-sh/setup-uv@v7
@@ -34,7 +28,7 @@ jobs:
       - name: Install build dependencies
         run: |
           sudo apt-get update
-          sudo apt-get -y install git build-essential gdb pkg-config
+          sudo apt-get -y install git build-essential gdb pkg-config ccache
 
       - name: Install system dependencies (SDL2)
         run: |
@@ -45,7 +39,6 @@ jobs:
         run: |
 
           echo "CONAN_KEY=conan-${{ matrix.os }}-${{ env.CACHE_V }}-${{ hashFiles('conanfile.py', 'recipes/**') }}" >> $GITHUB_OUTPUT
-          echo "MESON_KEY=meson-${{ matrix.os }}-${{ env.CACHE_V }}-${{ hashFiles('vagabond/**/*.cpp', 'vagabond/**/*.h', '**/meson.build') }}" >> $GITHUB_OUTPUT
 
       - name: Restore Conan cache
         id: conan-cache-restore
@@ -56,14 +49,15 @@ jobs:
           restore-keys: |
             conan-${{ matrix.os }}-${{ env.CACHE_V }}-
 
-      - name: Restore Meson build cache
-        id: meson-cache-restore
-        uses: actions/cache/restore@v4
+      - name: Restore ccache
+        uses: actions/cache@v4
         with:
-          path: build/ci_build
-          key: ${{ steps.get-key.outputs.MESON_KEY }}
+          path: ${{ env.CCACHE_DIR }}
+          key: ccache-${{ matrix.os }}-${{ env.CACHE_V }}-${{ github.ref_name }}-${{ github.sha }}
           restore-keys: |
-            meson-${{ matrix.os }}-${{ env.CACHE_V }}-
+            ccache-${{ matrix.os }}-${{ env.CACHE_V }}-${{ github.ref_name }}-
+            ccache-${{ matrix.os }}-${{ env.CACHE_V }}-main-
+            ccache-${{ matrix.os }}-${{ env.CACHE_V }}-
 
       - name: Classify cache result
         run: |
@@ -79,18 +73,6 @@ jobs:
           echo "→ full miss"
           fi
 
-          echo "Meson caches"
-          echo "primary: ${{ steps.meson-cache-restore.outputs.cache-primary-key }}"
-          echo "matched: ${{ steps.meson-cache-restore.outputs.cache-matched-key }}"
-
-          if [ "${{ steps.meson-cache-restore.outputs.cache-hit }}" = "true" ]; then
-          echo "→ exact hit"
-          elif [ "${{ steps.meson-cache-restore.outputs.cache-matched-key }}" != "" ]; then
-          echo "→ restore-key hit"
-          else
-          echo "→ full miss"
-          fi
-
       - name: Run setup script
         run: setup-scripts/setup.sh --yesman --build=build/ci_build --prefix=$(pwd)/install
 
@@ -99,11 +81,8 @@ jobs:
           source build/ci_build/conanbuild.sh
           meson install -C build/ci_build
 
-      - name: Clean build dir
-        working-directory: build/ci_build
-        run: |
-          source conanbuild.sh
-          ninja -t cleandead
+      - name: ccache statistics
+        run: ccache -s
 
       - name: Clean stale Conan packages
         run: uvx conan remove "*" --lru=1h -c
@@ -115,17 +94,9 @@ jobs:
           path: ~/.conan2/p
           key: ${{ steps.get-key.outputs.CONAN_KEY }}
 
-      - name: Save Meson build cache
-        if: ${{ steps.meson-cache-restore.outputs.cache-hit != 'true' }}
-        uses: actions/cache/save@v4
-        with:
-          path: build/ci_build
-          key: ${{ steps.get-key.outputs.MESON_KEY }}
-
       - name: Upload binaries
         uses: actions/upload-artifact@v4
         with:
           name: rope_conan_${{ matrix.os }}_${{ github.sha }}
           path: install/bin/*
           if-no-files-found: error
-
