@@ -120,6 +120,13 @@ $OS   = "Windows"
 $ARCH = $env:PROCESSOR_ARCHITECTURE   # AMD64, ARM64, x86
 Ok "Platform: $OS / $ARCH"
 
+if (Get-Command ccache -ErrorAction SilentlyContinue) {
+  $ccacheVer = & ccache --version 2>&1 | Select-Object -First 1
+  Ok "ccache: $ccacheVer"
+} else {
+  Warn "ccache not found - optional compilation caching"
+}
+
 $CXX = $null
 foreach ($candidate in @("cl", "clang-cl", "g++")) {
   if (Get-Command $candidate -ErrorAction SilentlyContinue) {
@@ -224,6 +231,16 @@ Invoke-Conan install . "-of=${BUILDDIR}" "-b=$ConanBuildFlag" -s compiler.cppstd
 if ($LASTEXITCODE -ne 0) {Die "conan install failed"}
 
 . "$BUILDDIR\conanbuild.ps1"
+
+if (Get-Command ccache -ErrorAction SilentlyContinue) {
+  Info "inserting ccache into conan-meson-toolchain..."
+  $niPath = Join-Path $BUILDDIR "conan_meson_native.ini"
+  $niContent = Get-Content -Raw $niPath
+  $niContent = $niContent -replace '(?m)^c\s*=\s*[''"](.*)[''"]', 'c = [''ccache'', ''$1'']'
+  $niContent = $niContent -replace '(?m)^cpp\s*=\s*[''"](.*)[''"]', 'cpp = [''ccache'', ''$1'']'
+  Set-Content -NoNewline -Path $niPath -Value $niContent
+}
+
 meson setup $BUILDDIR "--native-file=${BUILDDIR}\conan_meson_native.ini" "--buildtype=${BUILD_TYPE}" @EXTRA_MESON_ARGS --reconfigure --clearcache
 if ($LASTEXITCODE -ne 0) {Die "meson setup failed"}
 meson compile -C $BUILDDIR
@@ -247,4 +264,3 @@ Print "${BOLD}${YELLOW}$BUILDDIR\rope.gui${RESET} from the terminal"
 Info "Install RoPE globally by running"
 Print "${BOLD}${YELLOW}meson install -C $BUILDDIR${RESET}"
 Print ""
-
