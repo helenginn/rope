@@ -17,7 +17,6 @@
 
 #ifndef __vagabond__AtomGroup__
 #define __vagabond__AtomGroup__
-
 #include "Atom.h"
 #include "HasBondstraints.h"
 #include "Responder.h"
@@ -128,6 +127,7 @@ public:
 	void recalculate();
 	
 	glm::vec3 initialCentre();
+	glm::vec3 derivedCentre();
 	
 	void setLastResidual(double last)
 	{
