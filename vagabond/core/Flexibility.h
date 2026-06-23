@@ -59,6 +59,19 @@ public:
         std::vector<std::pair<int,bool>> TorsionVec;  // torsions influencing this pair
     };
 
+    struct ExternalHBondEntity
+    {
+        Atom* Donor; 
+        int donorIdx;
+        Atom* Acceptor;
+        int acceptorIdx;
+        Atom* Hydrogen;     
+        int hydrogenIdx;  
+        float startDist;
+        Atom* ParentDonor;
+        Atom* ParentAcceptor;
+        std::vector<std::pair<int,bool>> TorsionVec; // (torsionIdx. isHSide)
+    };
 
     // === GUI-INTERFACED FUNCTIONS ===
     float submitJobAndRetrieve(float weight);
@@ -93,6 +106,13 @@ public:
     void printHBonds() const;
     void clearHBonds();
     bool validateHBondPair(const HBondManager::HBondPair &hbondPair);
+    bool isExternalHBond(const HBondManager::HBondPair &hbondPair)
+    {
+        return (hbondPair.hydrogenChain == _targetChain) != 
+               (hbondPair.acceptorChain == _targetChain);
+    }
+    void addInternalHBond(const HBondManager::HBondPair &hbondPair);
+    void addExternalHbond(const HBondManager::HBondPair &hbondPair);
     AtomGroup* currentChainAtoms();
     bool checkAndGetAtom(AtomGroup* atomGroup, const std::string& atomDesc, Atom*& atom);
 
@@ -140,6 +160,10 @@ public:
     { 
         return _VdWBonds; 
     }
+    const std::vector<ExternalHBondEntity>& getExtHBonds() const 
+    { 
+        return _extBodyHBonds; 
+    }
     
     int accessAtomBlock(Atom* atom);
     float calculateDistance(const glm::vec3& vector1, const glm::vec3& vector2)
@@ -149,7 +173,7 @@ public:
     float calculateAngle(const glm::vec3& vector1, const glm::vec3& vector2);
     float calculateAngleDistance(const glm::vec3 &vector1, const glm::vec3 &vector2, const glm::vec3 &vector3);
     std::vector<std::pair<int,bool>> lastCommonAncestorIdx(int donorBlock_idx, int donorAcceptor_idx);
-    bool isAncestor(int torsionBlockIdx, int atomBlockIdx);
+    std::vector<std::pair<int, bool>> oneSidedTorsionVector(int chainBlock_idx);
     int rewindBlock(int &block_idx, std::vector<std::pair<int,bool>> &torsionVector, bool isHSide);
     float alphaGradientHSide(const glm::vec3 &axisA, const glm::vec3 &axisB,
                           const glm::vec3 &D, const glm::vec3 &H, const glm::vec3 &A, bool isDHBond);
@@ -185,6 +209,14 @@ public:
                               const std::vector<Atom*> &orderedAtoms,
                               int i, int j,
                               const std::vector<float> &radii);
+    void checkIfAtomsExist(Atom *atom1, Atom *atom2)
+    {
+        if (!atom1 || !atom2)
+        {   std::cerr << "[ExternalHBond] Could not find atoms: "
+                  << atom1 << " -> " << atom2 << std::endl;
+            return;
+        }
+    }
 
 private:
     bool _gui = false;
@@ -196,6 +228,7 @@ private:
 
     std::vector<HBondEntity> _hbonds;
     std::vector<VdWBondEntity> _VdWBonds;
+    std::vector<ExternalHBondEntity> _extBodyHBonds;
     std::set<int> _globalTorsionSet;
     std::vector<std::vector<float>> _allTorsions;
     std::string _flexTag;

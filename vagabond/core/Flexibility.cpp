@@ -52,25 +52,71 @@ float Flexibility::submitJobAndRetrieve(float weight)
     return weight; 
 }
 
-
-// Prepares resources for flexibility calculations
 void Flexibility::prepareResources() 
 {
-    _resources.allocateMinimum(_threads); // Allocates minimum resources
+    _resources.allocateMinimum(_threads);
 
-    // AtomGroup *group = _model->currentAtoms(); // Gets the current atom grou
-    // AtomGroup *group = _instance->currentAtoms();
-    AtomGroup* group = currentChainAtoms();
-    std::vector<AtomGroup *> subsets = group->connectedGroups(); // Gets connected groups
-    for (AtomGroup *subset : subsets) 
+    AtomGroup* group = _model->currentAtoms();
+    std::vector<AtomGroup *> subsets = group->connectedGroups();
+    
+    std::cout << "[DEBUG prepareResources] Total connected groups: " 
+              << subsets.size() << std::endl;
+    
+    for (int s = 0; s < subsets.size(); s++)
     {
-        Atom *anchor = subset->chosenAnchor(); // Gets the anchor atom
-        _resources.sequences->addAnchorExtension(anchor); // Adds anchor extension to sequences
+        Atom *anchor = subsets[s]->chosenAnchor();
+        std::cout << "[DEBUG prepareResources] Group " << s 
+                  << " size: " << subsets[s]->size()
+                  << " anchor: " << (anchor ? anchor->desc() : "NULL")
+                  << " chain: " << (anchor ? anchor->chain() : "?")
+                  << std::endl;
+        _resources.sequences->addAnchorExtension(anchor);
     }
 
-    _resources.sequences->setup(); // Sets up sequences
-    _resources.sequences->prepareSequences(); // Prepares sequences
-}
+    _resources.sequences->setup();
+    _resources.sequences->prepareSequences();
+
+    std::cout << "[DEBUG prepareResources] Total blocks: " 
+              << _resources.sequences->sequence()->blocks().size() << std::endl;
+
+    std::cout << "[DEBUG prepareResources] Total torsion basis parameters: " 
+              << _resources.sequences->torsionBasis()->parameterCount() << std::endl;
+
+    // count torsions per chain
+    std::map<std::string, int> torsionsPerChain;
+    const std::vector<AtomBlock>& blocks = _resources.sequences->sequence()->blocks();
+
+    for (int i = 0; i < (int)blocks.size(); i++)
+    {
+        if (blocks[i].torsion_idx < 0) continue;
+        if (blocks[i].atom == nullptr) continue;
+        
+        std::string chain = blocks[i].atom->chain();
+        torsionsPerChain[chain]++;
+    }
+
+    for (auto& [chain, count] : torsionsPerChain)
+    {
+        std::cout << "[DEBUG prepareResources] Chain " << chain 
+                  << " torsions: " << count << std::endl;
+    }
+
+    int noChain = 0;
+    for (int i = 0; i < (int)blocks.size(); i++)
+    {
+        if (blocks[i].torsion_idx < 0) continue;
+        if (blocks[i].atom == nullptr) continue;
+        
+        std::string chain = blocks[i].atom->chain();
+        if (chain.empty())
+        {
+            noChain++;
+            std::cout << "[DEBUG] Unassigned torsion at block " << i 
+                      << " atom: " << blocks[i].atom->desc() << std::endl;
+        }
+    }
+    std::cout << "[DEBUG] Torsions with no chain: " << noChain << std::endl;
+    }
 
 
 void Flexibility::calculateTorsionFlexibility() 
@@ -131,62 +177,34 @@ bool Flexibility::validateHBondPair(const HBondManager::HBondPair &hbondPair) {
     // Initialize static counters
     static int missingDonorCount = 0;
     static int missingHydrogenCount = 0;
-    static int interChainCount = 0; 
     static int successfulValidations = 0;
 
     // Retrieve the current AtomGroup
-    // AtomGroup* atomGroup = _model->currentAtoms();
-    AtomGroup* atomGroup = currentChainAtoms();
+    AtomGroup* atomGroup = _model->currentAtoms();
+    // AtomGroup* atomGroup = currentChainAtoms();
 
     if (!atomGroup) {
         std::cerr << "Error: currentAtoms() returned a null pointer." << std::endl;
         return false;
     }
 
-    if (_targetChain.empty())
+    // check hydrogen exists
+    Atom* hydrogenAtom = atomGroup->atomByDesc(hbondPair.hydrogen);
+    if (!hydrogenAtom)
     {
-        Atom* firstAtom = atomGroup->atomVector()[0];
-        _targetChain = firstAtom->chain();
-        std::cout << "Target chain for H-bond filtering: " << _targetChain << std::endl;
-    }
-
-    // Filter: reject inter-chain bonds
-    if (hbondPair.acceptorChain != _targetChain && hbondPair.hydrogen != _targetChain)
-    {
-        ++interChainCount;
-        // only printing frist few.. 
-        if (interChainCount <= 5)
-        {
-            std::cerr << "Skipping inter-chain H-bond: " 
-                      << hbondPair.hydrogen << " (chain " << hbondPair.hydrogenChain 
-                      << ") -> " << hbondPair.acceptor << " (chain " << hbondPair.acceptorChain 
-                      << ")" << std::endl;
-        }
-        else if (interChainCount == 6)
-        {
-            std::cerr << "... (suppressing further inter-chain warnings)" << std::endl;
-        }
-        return false;
-
-    }
-
-    // Check if donor exists
-    Atom* donorAtom = atomGroup->atomByDesc(hbondPair.hydrogen);
-    if (!donorAtom) {
         ++missingDonorCount;
-        std::cerr << "Error: Donor atom '" << hbondPair.hydrogen 
-                  << "' not found in the AtomGroup. Total missing donors: " 
-                  << missingDonorCount << std::endl;
+        std::cerr << "Error: Hydrogen atom '" << hbondPair.hydrogen
+                  << "' not found. Total missing: " << missingDonorCount << std::endl;
         return false;
     }
 
-    // Check if acceptor (hydrogen) exists
-    Atom* hydrogenAtom = atomGroup->atomByDesc(hbondPair.acceptor);
-    if (!hydrogenAtom) {
+    // check acceptor exists
+    Atom* acceptorAtom = atomGroup->atomByDesc(hbondPair.acceptor);
+    if (!acceptorAtom)
+    {
         ++missingHydrogenCount;
-        std::cerr << "Error: Acceptor (hydrogen) atom '" << hbondPair.acceptor 
-                  << "' not found in the AtomGroup. Total missing hydrogens: " 
-                  << missingHydrogenCount << std::endl;
+        std::cerr << "Error: Acceptor atom '" << hbondPair.acceptor
+                  << "' not found. Total missing: " << missingHydrogenCount << std::endl;
         return false;
     }
 
@@ -213,11 +231,6 @@ AtomGroup* Flexibility::currentChainAtoms()
         return a->chain() == _targetChain;
     });
 
-    std::cout << "[DEBUG currentChainAtoms] Target chain: " << _targetChain << std::endl;
-    std::cout << "[DEBUG currentChainAtoms] Total atoms in model: " 
-              << _model->currentAtoms()->atomVector().size() << std::endl;
-    std::cout << "[DEBUG currentChainAtoms] Atoms in target chain: " 
-              << _chainAtoms->atomVector().size() << std::endl;
     return _chainAtoms;
 }
 
@@ -234,36 +247,32 @@ bool Flexibility::checkAndGetAtom(AtomGroup* atomGroup, const std::string& atomD
 
 void Flexibility::addHBond(const HBondManager::HBondPair &hbondPair) 
 {
-/**
- * @brief Adds a hydrogen bond (HBond) to the internal list while ensuring validity.
- *
- * This function first validates the given HBondPair to ensure that both the donor
- * and acceptor atoms exist. It then retrieves the corresponding Atom objects,
- * performs necessary error handling, and determines the relevant atom blocks.
- *
- * The function computes key hydrogen bond properties, including distances and angles,
- * and stores them in an HBondEntity. The computed torsion vector is added to the 
- * global torsion set.
- *
- * @param hbondPair The hydrogen bond pair containing donor and acceptor atom descriptors.
- */
     // Validate the HBondPair atoms
-    if (!validateHBondPair(hbondPair)) {
-        std::cerr << "Validation failed: One or both atoms not found. Skipping HBond addition." << std::endl;
-        return;
-    }
+    if (!validateHBondPair(hbondPair)) return;
 
-    // AtomGroup* atomGroup = _model->currentAtoms();
-    AtomGroup* atomGroup = currentChainAtoms();
+    // bool hydrogenIsInTarget = (hbondPair.hydrogenChain == _targetChain);
+    // bool acceptorIsInTarget = (hbondPair.acceptorChain == _targetChain);
+
+    // if (!hydrogenIsInTarget && !acceptorIsInTarget)
+    // {
+    //     return;
+    // }
+    // else if (hydrogenIsInTarget && acceptorIsInTarget)
+    // {
+    addInternalHBond(hbondPair);
+    // }
+}
+
+void Flexibility::addInternalHBond(const HBondManager::HBondPair &hbondPair) 
+{
+    // AtomGroup* atomGroup = currentChainAtoms();
+    AtomGroup *atomGroup = _model->currentAtoms();
     Atom* acceptorAtom = atomGroup->atomByDesc(hbondPair.acceptor);
     Atom* hydrogenAtom = atomGroup->atomByDesc(hbondPair.hydrogen);
 
-
-    // Error handling for acceptor
     if (!checkAndGetAtom(atomGroup, hbondPair.acceptor, acceptorAtom) || 
-        !checkAndGetAtom(atomGroup, hbondPair.hydrogen, hydrogenAtom)) {
-        return;
-    }
+        !checkAndGetAtom(atomGroup, hbondPair.hydrogen, hydrogenAtom)) 
+        { return; }
 
     Atom* donorAtom = hydrogenAtom->connectedAtom(0); // Assuming bonded atom is donor
     if (!donorAtom) {
@@ -271,37 +280,19 @@ void Flexibility::addHBond(const HBondManager::HBondPair &hbondPair)
         return;
     }
 
-    // Access donor and acceptor positions
     int donorBlock_idx = accessAtomBlock(donorAtom);
     int acceptorBlock_idx = accessAtomBlock(acceptorAtom);
     int hydrogenBlock_idx = accessAtomBlock(hydrogenAtom);
 
-
-
-    // Access the donor and acceptor AtomBlock objects
     const std::vector<AtomBlock>& blocks = _resources.sequences->sequence()->blocks();
-    const AtomBlock& donorBlock = blocks[donorBlock_idx];
-    const AtomBlock& acceptorBlock = blocks[acceptorBlock_idx];
-    const AtomBlock& hydrogenBlock = blocks[hydrogenBlock_idx];
-    int parentDonor_idx = blocks[donorBlock_idx].parent_idx;
-    int parentAcceptor_idx = blocks[acceptorBlock_idx].parent_idx;
 
-    std::cout << "[DEBUG] Donor block " << donorBlock_idx 
-              << " atom: " << (blocks[donorBlock_idx].atom ? 
-                 blocks[donorBlock_idx].atom->desc() : "NULL")
-              << " depth: " << blocks[donorBlock_idx].depth
-              << " parent_idx: " << blocks[donorBlock_idx].parent_idx << std::endl;
-
-    std::cout << "[DEBUG] Acceptor block " << acceptorBlock_idx 
-              << " atom: " << (blocks[acceptorBlock_idx].atom ? 
-                 blocks[acceptorBlock_idx].atom->desc() : "NULL")
-              << " depth: " << blocks[acceptorBlock_idx].depth
-              << " parent_idx: " << blocks[acceptorBlock_idx].parent_idx << std::endl;
-
-    // Compute positions, distances, and angles
     glm::vec3 donorPos = blocks[donorBlock_idx].my_position();
     glm::vec3 acceptorPos = blocks[acceptorBlock_idx].my_position();
     glm::vec3 hydroPos = blocks[hydrogenBlock_idx].my_position();
+
+    int parentDonor_idx = blocks[donorBlock_idx].parent_idx;
+    int parentAcceptor_idx = blocks[acceptorBlock_idx].parent_idx;
+
     glm::vec3 parentDonorPos = blocks[donorBlock_idx + parentDonor_idx].my_position();
     glm::vec3 parentAcceptorPos = blocks[acceptorBlock_idx + parentAcceptor_idx].my_position();
 
@@ -315,7 +306,7 @@ void Flexibility::addHBond(const HBondManager::HBondPair &hbondPair)
     glm::vec3 wb = glm::normalize(parentAcceptorPos - acceptorPos); // AA - A
     float betaAngleDistance = glm::dot(ub, wb); // cos(H-A-AA)
 
-   auto torsionAngle = [](const glm::vec3& p1, const glm::vec3& p2,
+    auto torsionAngle = [](const glm::vec3& p1, const glm::vec3& p2,
                        const glm::vec3& p3, const glm::vec3& p4)
     {
         glm::vec3 b1 = p2 - p1;
@@ -334,11 +325,7 @@ void Flexibility::addHBond(const HBondManager::HBondPair &hbondPair)
 
     // torsion(D, H, A, AA) — AA is parent of acceptor
     float dihedral2 = torsionAngle(donorPos, hydroPos, acceptorPos, parentAcceptorPos);
-
-
-
-
-    // Create HBondEntity and store values
+        // Create HBondEntity and store values
     HBondEntity hbe;
     hbe.Donor = donorAtom;
     hbe.donorIdx = donorBlock_idx;
@@ -355,6 +342,16 @@ void Flexibility::addHBond(const HBondManager::HBondPair &hbondPair)
     hbe.Dihedral2 = dihedral2;
 
     std::vector<std::pair<int,bool>> lca_idx = lastCommonAncestorIdx(donorBlock_idx, acceptorBlock_idx);
+    // debug: flag inter-chain H-bonds
+    if (hydrogenAtom->chain() != acceptorAtom->chain())
+    {
+        std::cout << "[DEBUG inter-chain HBond] " 
+                  << hbondPair.hydrogen << " (chain " << hydrogenAtom->chain() << ")"
+                  << " -> " 
+                  << hbondPair.acceptor << " (chain " << acceptorAtom->chain() << ")"
+                  << " TorsionVec size: " << lca_idx.size() << std::endl;
+    }
+
     // Insert torsion vector to _hbe 
     hbe.TorsionVec = lca_idx;
     _hbonds.push_back(hbe);
@@ -363,6 +360,70 @@ void Flexibility::addHBond(const HBondManager::HBondPair &hbondPair)
         _globalTorsionSet.insert(torsionIdx);
 
     std::cout << "[DEBUG addHBond] END: successfully added" << std::endl;
+}
+
+void Flexibility::addExternalHbond(const HBondManager::HBondPair &hbondPair)
+{
+    AtomGroup *allAtoms = _model->currentAtoms(); 
+    Atom *hydrogenAtom = allAtoms->atomByDesc(hbondPair.hydrogen);
+    Atom *acceptorAtom = allAtoms->atomByDesc(hbondPair.acceptor);
+
+    checkIfAtomsExist(hydrogenAtom, acceptorAtom);
+    const std::vector<AtomBlock>& blocks = _resources.sequences->sequence()->blocks();
+
+    int hydrogenBlock_idx = accessAtomBlock(hydrogenAtom);
+    int donorBlock_idx = accessAtomBlock(hydrogenAtom->connectedAtom(0));
+    int acceptorBlock_idx = accessAtomBlock(acceptorAtom);
+
+    Atom *parentDonorAtom = hydrogenAtom->connectedAtom(0)->connectedAtom(0);
+    Atom *parentAcceptorAtom = acceptorAtom->connectedAtom(0);
+
+    glm::vec3 acceptorPos = acceptorAtom->derivedPosition();
+    glm::vec3 hydroPos = hydrogenAtom->derivedPosition();
+    glm::vec3 donorPos = hydrogenAtom->connectedAtom(0)->derivedPosition();
+    float distance = calculateDistance(hydroPos, acceptorPos);
+
+    ExternalHBondEntity ehe;
+    ehe.Hydrogen = hydrogenAtom;
+    ehe.hydrogenIdx = hydrogenBlock_idx;
+    ehe.Donor = hydrogenAtom->connectedAtom(0);
+    ehe.donorIdx = donorBlock_idx;
+    ehe.Acceptor = acceptorAtom;
+    ehe.acceptorIdx = acceptorBlock_idx;
+    ehe.startDist = distance;
+    ehe.ParentDonor = parentDonorAtom;
+    ehe.ParentAcceptor = parentAcceptorAtom;
+
+    _extBodyHBonds.push_back(ehe);
+    std::cout << "[DEBUG ExternalHBond] Added: "
+              << hbondPair.hydrogen << " -> " << hbondPair.acceptor << std::endl;
+    std::cout << "  Hydrogen: " << (ehe.Hydrogen ? ehe.Hydrogen->desc() : "NULL")
+              << " idx: " << ehe.hydrogenIdx << std::endl;
+    std::cout << "  Donor: " << (ehe.Donor ? ehe.Donor->desc() : "NULL")
+              << " idx: " << ehe.donorIdx << std::endl;
+    std::cout << "  Acceptor: " << (ehe.Acceptor ? ehe.Acceptor->desc() : "NULL")
+              << " idx: " << ehe.acceptorIdx << std::endl;
+    std::cout << "  ParentDonor: " << (ehe.ParentDonor ? ehe.ParentDonor->desc() : "NULL") << std::endl;
+    std::cout << "  ParentAcceptor: " << (ehe.ParentAcceptor ? ehe.ParentAcceptor->desc() : "NULL") << std::endl;
+    std::cout << "  Distance: " << ehe.startDist << std::endl;
+
+    std::vector<std::pair<int,bool>> torsionVec;
+    if (donorBlock_idx > 0 )
+    { 
+        torsionVec = oneSidedTorsionVector(donorBlock_idx);
+    } else {
+        torsionVec = oneSidedTorsionVector(acceptorBlock_idx);
+    }
+    if (torsionVec.empty())
+    {
+        std::cout << "[DEBUG ExternalHBond] Empty torsion vector - skipping" << std::endl;
+        return;
+    }
+    ehe.TorsionVec = torsionVec;
+    for (auto &[torsionIdx, isHSide] : ehe.TorsionVec)
+        _globalTorsionSet.insert(torsionIdx);
+
+
 }
 
 double getVdWRadius(const Atom* atom) 
@@ -379,29 +440,31 @@ double getVdWRadius(const Atom* atom)
 
 void Flexibility::addVnWBond()
 {
-    // not sure yet if cutoff distanc is correct maybe this should change
-    double cutoffD = 0.25; // from KGS: Cutoff distance for hydrophobic interactions, sum of vdW + cutoffD
-
-    // const AtomVector &atoms = _model->currentAtoms()->atomVector();
-    AtomGroup* atomGroup = currentChainAtoms();
+    double cutoffD = 0.25;
+    // AtomGroup* atomGroup = currentChainAtoms();
+    AtomGroup *atomGroup = _model->currentAtoms();
     const AtomVector &atoms = atomGroup->atomVector();
     const std::vector<AtomBlock>& blocks = _resources.sequences->sequence()->blocks();
+
+    int skipped_commonBondstraint = 0;  // counter for hasCommonBondstraintWithAtom
 
     for (size_t i = 0; i < atoms.size()-1; i++)
     {
         Atom *atom_i = atoms[i];
         int block_i = accessAtomBlock(atom_i);
         double r_i = getVdWRadius(atom_i);
-        if (r_i <= 0.0) continue; // skip non-hydrophobic atoms
+        if (r_i <= 0.0) continue;
         glm::vec3 pos_i = blocks[block_i].my_position();
         
-
         for (size_t j = i+1; j < atoms.size(); j++)
         {
-            // sequence separation
             if (j - i < 4) continue;
             Atom *atom_j = atoms[j];
-            if (atom_i->hasCommonBondstraintWithAtom(atom_j)) continue;
+            if (atom_i->hasCommonBondstraintWithAtom(atom_j))
+            {
+                skipped_commonBondstraint++;  // count here
+                continue;
+            }
             int block_j = accessAtomBlock(atom_j);
             double r_j = getVdWRadius(atom_j);
             if (r_j <= 0.0) continue;
@@ -409,7 +472,6 @@ void Flexibility::addVnWBond()
             
             glm::vec3 diff = pos_i - pos_j;
             float dist_sq = glm::dot(diff, diff);
-
             double threshold = r_i + r_j + cutoffD;
             if (dist_sq >= threshold*threshold) continue;
 
@@ -419,16 +481,17 @@ void Flexibility::addVnWBond()
             vdw.Atom2 = atom_j;
             vdw.atomIdx2 = block_j;
             vdw.startDist = glm::length(diff);
-            vdw.contactDist =  threshold;
+            vdw.contactDist = threshold;
             vdw.TorsionVec = lastCommonAncestorIdx(block_i, block_j);
             if (vdw.TorsionVec.empty()) continue;
             _VdWBonds.push_back(vdw);
-            
         }
     }
+
+    std::cout << "[DEBUG] Skipped (hasCommonBondstraint): " 
+              << skipped_commonBondstraint << std::endl;
     std::cout << "[DEBUG] VdW bonds after filtering: " 
               << _VdWBonds.size() << std::endl;
-
 }
 
 
@@ -566,6 +629,18 @@ int Flexibility::rewindBlock(int &block_idx, std::vector<std::pair<int,bool>> &t
     block_idx += blockParent_idx;
     return block_idx;
 }
+
+std::vector<std::pair<int, bool>> Flexibility::oneSidedTorsionVector(int chainBlock_idx)
+{
+    std::vector<std::pair<int, bool>> torsionVector;
+    int current_idx = chainBlock_idx;
+    while (current_idx >= 0)
+    {
+        current_idx = rewindBlock(current_idx, torsionVector, true);
+    }
+    return torsionVector;
+}
+
 
 float Flexibility::alphaGradientHSide(const glm::vec3 &axisA, const glm::vec3 &axisB,
                                        const glm::vec3 &D, const glm::vec3 &H,
@@ -758,7 +833,7 @@ void Flexibility::buildJacobianMatrix()
     }
     // [DEBUG 1] Set columns to 1 per H-bond (Distance only)
     // Ignore VdW to isolate the specific gradient function
-    int numCol = 5 * _hbonds.size() + _VdWBonds.size();
+    int numCol = 5 * _hbonds.size() + _VdWBonds.size() + _extBodyHBonds.size();
 
     std::vector<int> torsionVector = getGlobalTorsionVector();
     int numRow = _globalTorsionSet.size();
@@ -810,16 +885,6 @@ void Flexibility::buildJacobianMatrix()
                 glm::vec3 parentDonor = blocks[hbe.donorIdx + parentDonor_idx].my_position();
                 glm::vec3 parentAcceptor = blocks[hbe.acceptorIdx + parentAcceptor_idx].my_position();
 
-                // [DEBUG] Verify the correct mapping for the first element
-                // if (i == 0 && j == 0)
-                // {
-                    // std::cout << "   > Axis-A atom:  " << me.atom->desc() << std::endl;
-                    // std::cout << "   > Axis-B atom:  " << parent.atom->desc() << std::endl;
-                    // std::cout << "   > Accept atom:  " << blocks[hbe.acceptorIdx].atom->desc() << std::endl;
-                    // std::cout << "   > Donor atom:  " << blocks[hbe.donorIdx].atom->desc() << std::endl;
-                    // std::cout << "   > Hydrogen atom:  " << blocks[hbe.hydrogenIdx].atom->desc() << std::endl;
-                // }
-
                 bool isHSide = true;
                 for (auto& [tIdx, side] : hbe.TorsionVec)
                     if (tIdx == torsionID) { isHSide = side; break; }
@@ -856,7 +921,6 @@ void Flexibility::buildJacobianMatrix()
                     : dihedral2GradientASide(APos, BPos, DPos, HPos, CPos, parentAcceptor, isAABond);
                 jacobianMatrix(i, colBase + 4) = dDihedral2;
 
-
             }
         }
     }
@@ -892,6 +956,49 @@ void Flexibility::buildJacobianMatrix()
             }
         }
     }
+    // --- Externa Hydrogen bonds ---
+    // int extColBase = 5 * _hbonds.size() + _VdWBonds.size();
+    // for (int i = 0; i < numRow; ++i) 
+    // {
+    //     int torsionID = torsionVector[i];
+    //     OpSet<int> pivotSet = _resources.sequences->sequence()->blocksForTorsionIdx(torsionID);
+    //     std::vector<int> pivotIndices = pivotSet.toVector();
+
+    //     for (int pivotBlockIdx : pivotIndices) 
+    //     {
+    //         const AtomBlock& me = blocks[pivotBlockIdx];
+    //         glm::vec3 APos = me.my_position();
+    //         int parentIdx = pivotBlockIdx + me.parent_idx;
+    //         glm::vec3 BPos = blocks[parentIdx].my_position();
+            
+    //         for (int j = 0; j <_extBodyHBonds.size(); ++j)
+    //         {
+    //             ExternalHBondEntity& ehe = _extBodyHBonds[j];
+    //             bool torsionAffectsBond = false;
+    //             for (auto& [tIdx, side] : ehe.TorsionVec)
+    //             {
+    //                 if (tIdx == torsionID)
+    //                 {
+    //                     torsionAffectsBond = true;
+    //                     break;
+    //                 }
+    //             }
+    //             if (!torsionAffectsBond) continue;
+
+    //             bool hydrogenIsInternal = (ehe.hydrogenIdx >= 0);
+
+    //             glm::vec3 movingPos = hydrogenIsInternal ? 
+    //                 ehe.Hydrogen->derivedPosition() : ehe.Acceptor->derivedPosition();
+    //             glm::vec3 fixedPos = hydrogenIsInternal ? 
+    //                 ehe.Acceptor->derivedPosition() : ehe.Hydrogen->derivedPosition();
+
+    //             float derivative = bond_rotation_on_distance_gradient(
+    //                 APos, BPos, fixedPos, movingPos);
+                
+    //             jacobianMatrix(i, extColBase + j) = derivative;
+    //         }
+    //     }
+    // }
     _jacobMtx = jacobianMatrix;
     std::cout << "[debug] Jacobian (transpose) J_T.rows = " << _jacobMtx.rows() << std::endl;
     std::cout << "[debug] Jacobian (transpose) J_T.cols = " << _jacobMtx.cols() << std::endl;
@@ -1036,12 +1143,16 @@ std::vector<float> Flexibility::assignWeightsToTorsions(const std::vector<float>
 
 void Flexibility::clearHBonds()
 {
-    std::lock_guard<std::mutex> lock(_mutex); // Ensure thread safety
+    std::lock_guard<std::mutex> lock(_mutex);
     _hbonds.clear();
-    _globalTorsionSet.clear();  // Clear the global torsion set
-    _jacobMtx = Eigen::MatrixXf(); // Reset the Jacobian matrix to an empty state
+    _extBodyHBonds.clear();  // NEW
+    _VdWBonds.clear();       // NEW
+    _globalTorsionSet.clear();
+    _atom2Block.clear();     // NEW
+    _jacobMtx = Eigen::MatrixXf();
     std::cout << "Hydrogen bonds and associated data cleared in Flexibility." << std::endl;
 }
+
 
 
 void Flexibility::printHBonds() const

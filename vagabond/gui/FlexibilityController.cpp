@@ -273,6 +273,10 @@ void FlexibilityController::callAddHBonds(const std::vector<HBondManager::HBondP
     	_flex->addHBond(pair);
     }
     _flex->addVnWBond();
+    // at the end of callAddHBonds(), after addVnWBond():
+	std::cout << "[DEBUG] _hbonds size: " << _flex->getHBonds().size() << std::endl;
+	std::cout << "[DEBUG] _extBodyHBonds size: " << _flex->getExtHBonds().size() << std::endl;
+	std::cout << "[DEBUG] _VdWBonds size: " << _flex->getVdWBonds().size() << std::endl;
     FlexibilityCache::instance().store(_instance, _flex);
 
 

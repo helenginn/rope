@@ -1519,8 +1519,134 @@ For each water oxygen W with axis-angle rotational DoF (a, b, c):
 
 
 ============================
-ROPE code notes - 05.06.2025
+ROPE code notes - 12.06.2025
 ============================
+
+
+> was the PeptideBond to keep static a good idea? 
+> for figuring out whihc chain an atom belong: hekc if the two atoms have same lastcommonancestor
+
+
+when i am addHBonds
+	- need chec if the atoms in the pair have the same commoAncestor. 
+
+
+- In flexibilty View: 
+	> load the entire protein in PDB  
+	> calculate the hbonds interaction matrix -> this stores the Hbond information --> HbondEntry info, adn in which chain
+	> hbonds will feed into conatraint s
+	> and the parameters will feed into the DoF 
+		> make a list of all the paramters int he system 
+	> fixing one chain in space, so it can't move 
+		> every of the moeleucl is able to move aroudn that chain
+		> whenever you add a rigid body motion, we can add 6 rigid body motions: xyz, abc
+		> which groups parameters do i need to worry about for whihc hbonds? q
+
+
+============================
+ROPE code notes - 15.06.2025
+============================
+
+                    intra-A    intra-X    A↔X     
+                  5·M_A cols 5·M_X cols  5 cols   
+                ┌──────────┬──────────┬──────────┬
+chain A torsions│ non-zero │    0     │ non-zero │
+                ├──────────┼──────────┼──────────┼
+chain X torsions│    0     │ non-zero │ non-zero │
+                ├──────────┼──────────┼──────────┼
+
+
+
+
+                intra-A    intra-X    A↔X       W1(A-X)   W2(A-X)   W3(A)    W4(X)
+                  5·M_A cols 5·M_X cols 5·M_AX cols 5 cols   5 cols   5 cols   5 cols
+                ┌──────────┬──────────┬──────────┬─────────┬─────────┬────────┬────────┐
+chain A torsions│ non-zero │    0     │ non-zero │ non-zero│ non-zero│non-zero│   0    │
+                ├──────────┼──────────┼──────────┼─────────┼─────────┼────────┼────────┤
+chain X torsions│    0     │ non-zero │ non-zero │ non-zero│ non-zero│   0    │non-zero│
+                ├──────────┼──────────┼──────────┼─────────┼─────────┼────────┼────────┤
+water W1 (6 DoF)│    0     │    0     │    0     │ non-zero│   0     │   0    │   0    │
+                ├──────────┼──────────┼──────────┼─────────┼─────────┼────────┼────────┤
+water W2 (6 DoF)│    0     │    0     │    0     │   0     │ non-zero│   0    │   0    │
+                ├──────────┼──────────┼──────────┼─────────┼─────────┼────────┼────────┤
+water W3 (6 DoF)│    0     │    0     │    0     │   0     │   0     │non-zero│   0    │
+                ├──────────┼──────────┼──────────┼─────────┼─────────┼────────┼────────┤
+water W4 (6 DoF)│    0     │    0     │    0     │   0     │   0     │   0    │non-zero│
+                └──────────┴──────────┴──────────┴─────────┴─────────┴────────┴────────┘
+
+
+
+> i am currently getting this output: 
+
+[DEBUG prepareResources] Total connected groups: 8
+[DEBUG prepareResources] Group 0 size: 2773 anchor: X-GLY1:N chain: X
+[DEBUG prepareResources] Group 1 size: 2790 anchor: A-GLN0:N chain: A
+[DEBUG prepareResources] Group 2 size: 1 anchor: X-GLY1:H1 chain: X
+[DEBUG prepareResources] Group 3 size: 1 anchor: X-GLY1:H2 chain: X
+[DEBUG prepareResources] Group 4 size: 1 anchor: X-GLY1:H3 chain: X
+[DEBUG prepareResources] Group 5 size: 1 anchor: A-GLN0:H1 chain: A
+[DEBUG prepareResources] Group 6 size: 1 anchor: A-GLN0:H2 chain: A
+[DEBUG prepareResources] Group 7 size: 1 anchor: A-GLN0:H3 chain: A
+[DEBUG prepareResources] Total blocks: 5577
+[DEBUG prepareResources] Total torsion basis parameters: 2433
+[DEBUG prepareResources] Chain A torsions: 1195
+[DEBUG prepareResources] Chain X torsions: 1188
+[DEBUG] Torsions with no chain: 0
+
+> find out what are those one-sized groups. 
+	> maybe remove them for now, because are probably artifacts of the pdb (i am using the kgs pdb, whihc can be worng, so in general will be a good idea to change it)
+
+> build Jacobian with separate row blocks for each chain
+> why it fails?
+
+
+============================
+ROPE code notes - 16.06.2025
+============================
+
+> GOAL: build a Jacobian matrix for the full protien assemply (both chain A and chain X), where: 
+	> both chains can move relatively to the other. 
+	? but only on of them can move in space
+	> Intra-chain Hbonds constrain each chaing's own torisons 
+	> Inter-chain Hbonds couple the torsions of both chains
+	> The null space of the Jacobian described the couple flexbiligy of the whole assembly
+
+> METHODS
+	> _hbondsA: intra-chain A bonds, only chain A torsions in TorsionVec
+	> _hbondsX: intra-chain X bonds, only chain X
+	? _interChainHBonds:  A to X bond, torsion form both chains in TorsionVec 
+
+Jacobian will have: 
+Rows = chain A torsions + chain X torsions (globally unique indices from unified basis)
+Cols = 5·M_A + 5·M_X + 5·M_AX
+
+============================
+ROPE code notes - 17.06.2025
+============================
+
+> today focus on the Murray book and theory of rigid bodies
+> tomorrow: start writing the Jacobian matrix for the rigid body.
+	> make plan of for the coding part
+
+
+============================
+ROPE code notes - 18.06.2025
+============================
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
