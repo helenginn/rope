@@ -81,7 +81,7 @@ void FlexSample::saveHierarchySamples(int numSamples, const std::string& baseFil
 
         std::ostringstream oss; 
         std::string chain = _flex->getChain();
-        oss << baseFileName << "_" << saved << "_mode_" << pickIdx << "_" << chain << ".pdb"; 
+        oss << baseFileName << "_" << saved << "_mode_" << pickIdx << "_" << chain << "_instance"<< ".pdb"; 
         _instance->currentAtoms()->writeToFile(oss.str()); 
         
         std::cout << "[FlexSample] Saved hierarchy sample: " << oss.str() 
