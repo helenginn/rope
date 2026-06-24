@@ -120,6 +120,8 @@ guifiles = [
 'ProbeAtom.h',
 'ProbeBond.cpp',
 'ProbeBond.h',
+'ProblemReviewView.cpp',
+'ProblemReviewView.h',
 'ProjectMenu.cpp',
 'ProtonNetworkView.cpp',
 'ProtonNetworkView.h',

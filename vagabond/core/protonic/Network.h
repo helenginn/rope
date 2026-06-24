@@ -116,6 +116,16 @@ public:
 		return nullptr;
 	}
 	
+	void addImpromptuCollapse(const std::string &message)
+	{
+		_impromptuCollapses.push_back(message);
+	}
+	
+	const std::vector<std::string> &impromptuCollapses() const
+	{
+		return _impromptuCollapses;
+	}
+	
 	Clique *newClique(const OpSet<Probe *> &probes);
 	
 	std::list<Clique> &cliques()
@@ -164,6 +174,8 @@ private:
 	
 	std::list<Clique> _cliques;
 	Model *_model{};
+
+	std::vector<std::string> _impromptuCollapses;
 
 	std::map<hnet::AtomConf, hnet::Coordinated *> _atomMap;
 	std::map<hnet::AtomConf, AtomProbe *> _atom2Probe;

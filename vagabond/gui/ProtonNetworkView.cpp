@@ -29,8 +29,11 @@
 #include <vagabond/core/Environment.h>
 #include <vagabond/utils/DoJob.h>
 #include <vagabond/gui/CliqueView.h>
+#include <vagabond/gui/ProblemReviewView.h>
 #include <vagabond/gui/HBondAnalysisControl.h>
 #include <vagabond/gui/elements/AskYesNo.h>
+#include <vagabond/gui/elements/BadChoice.h>
+#include <vagabond/gui/elements/ImageButton.h>
 #include <vagabond/gui/elements/FloatingText.h>
 #include <vagabond/gui/elements/TextButton.h>
 #include <vagabond/gui/elements/Menu.h>
@@ -120,32 +123,76 @@ void ProtonNetworkView::findAtomProbes()
 	IndexResponseView::setup();
 //	preparePingPongBuffers();
 
-	auto reclique_request = [this]()
+	auto check_for_collapses = [this]()
 	{
-		if (!_network._reclique) return;
-
-		auto recalculate_cliques = [this]()
+		std::vector<std::string> messages = _network.impromptuCollapses();
+		
+		if (!messages.size())
 		{
-			_network.cliques().clear();
+			return;
+		}
+
+		std::string text = "Clashes prematurely collapsed "
+		+ std::to_string(messages.size()) + " alternate conformers.\n"\
+		"These will need editing of the PDB file to resolve.\n"\
+		"Please click the lemon for a complete list.";
+		
+		auto clicked_lemon = [this, messages]()
+		{
+			ProblemReviewView *view = new ProblemReviewView(this, messages);
+			view->show();
 		};
-
-		std::string text = "Cliques saved in rope environment appear to be\n"\
-		"out of date. Delete to allow recalculation?\n"\
-		"This will delete any customisations.";
-
-		AskYesNo *ayn = new AskYesNo(this, text);
-		ayn->addJob("yes", recalculate_cliques);
 		
+		BadChoice *bc = new BadChoice(this, text);
 		addMainThreadJob
-		([this, ayn]()
-		{
-			setModal(ayn);
+		([this, bc, clicked_lemon]()
+		 {
+			ImageButton *b = new ImageButton("assets/images/lemon.png", this);
+			b->setReturnJob(clicked_lemon);
+			b->resize(0.06);
+			b->setRight(0.95, 0.15);
+			addObject(b);
+
+
+			setModal(bc);
 		});
-		
-		_network._reclique = false;
+	};
+
+	auto reclique_request = [this]<class NextJob>(NextJob job)
+	{
+		return [this, job] ()
+		{
+			if (!_network._reclique)
+			{
+				job();
+				return;
+			}
+
+			auto recalculate_cliques = [this, job]()
+			{
+				_network.cliques().clear();
+				job();
+			};
+
+			std::string text = "Cliques saved in rope environment appear to be\n"\
+			"out of date. Delete to allow recalculation?\n"\
+			"This will delete any customisations.";
+
+			AskYesNo *ayn = new AskYesNo(this, text);
+			ayn->addJob("yes", recalculate_cliques);
+			ayn->addJob("no", job);
+
+			addMainThreadJob
+			([this, ayn]()
+			 {
+				setModal(ayn);
+			});
+
+			_network._reclique = false;
+		};
 	};
 	
-	addMainThreadJob(reclique_request);
+	addMainThreadJob(reclique_request(check_for_collapses));
 }
 
 template <class Container>
