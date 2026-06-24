@@ -1311,12 +1311,6 @@ void Coordinated::clashLogic(OpSet<AtomConf> &clash_check)
 	for (const AtomConf &hit : hits)
 	{
 		ExistenceConnector *right = atomMap()[hit]->existence();
-
-		// assume freely rotatable hydrogens will find a way not to clash
-		if (is_twirling_hydrogen(hit.ptr) || is_twirling_hydrogen(_atomConf.ptr))
-		{
-			continue;
-		}
 		
 		if (hit.ptr->elementSymbol() == "NA") // not a proper handling of metals
 		{
@@ -1330,17 +1324,59 @@ void Coordinated::clashLogic(OpSet<AtomConf> &clash_check)
 		}
 
 		float l = glm::length(_atomConf.position() - hit.position());
+
+		// assume freely rotatable hydrogens will find a way not to clash
+		if ((is_twirling_hydrogen(hit.ptr) || 
+		     is_twirling_hydrogen(_atomConf.ptr)) && l > 1.0)
+		{
+			continue;
+		}
 		
 		if (_atomConf.ptr->elementSymbol() == "H" &&
 		    hit.ptr->elementSymbol() == "H" && l > 1.5)
 		{
 			continue;
 		}
+		
+		// problem - could be deprotonated...
+		Existence::Values left_before = left->value();
+		Existence::Values right_before = right->value();
 
 		std::cout << "Organising a clash between " << *left << " and "
 		<< *right << " due to length " << l << std::endl;
 
 		add_constraint(new OnlyOne({left, right}, false));
+
+		std::ostringstream result;
+		result << "Clash between " << *left << " and "
+		<< *right << " prematurely collapsed alternate conformer of ";
+
+		Existence::Values left_after = left->value();
+		Existence::Values right_after = right->value();
+		
+		bool lChange = left_before != left_after;
+		bool rChange = right_before != right_after;
+		
+		if (lChange)
+		{
+			result << "the former";
+		}
+		if (lChange && rChange)
+		{
+			result << " and ";
+		}
+		if (rChange)
+		{
+			result << "the latter";
+		}
+		
+		std::cout << left_before << " -> " << left_after << std::endl;
+		std::cout << right_before << " -> " << right_after << std::endl;
+
+		if (lChange || rChange)
+		{
+			_network.addImpromptuCollapse(result.str());
+		}
 	}
 }
 
