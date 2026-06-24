@@ -53,6 +53,8 @@ void Atom::setInitialPosition(glm::vec3 pos, float b, glm::mat3x3 tensor,
 		_derived.tensor = tensor;
 		_setupInitial = true;
 	}
+
+	setOccupancy(occupancy);
 	
 	changedPosition();
 }

@@ -550,7 +550,7 @@ void Network::establishAtom(::Atom *atom)
 	
 	// only one is allowed to exist at the same time
 	
-	if (connections.size() > 1)
+	if (connections.size() > 1 && total_occ > 0.995)
 	{
 		add_constraint(new OnlyOne(connections));
 	}
@@ -777,7 +777,9 @@ void Network::addNewHydrogen(hnet::AtomConf hydrogen, hnet::Coordinated *coord)
 {
 	float max = 1.5;
 	float maxmax = max * max;
+	// WRONG!!
 	glm::vec3 pos = coord->probe()->atom()->initialPosition();
+
 	for (Coordinated *const &second : _hCoords)
 	{
 		Probe *other = second->probe();
@@ -795,6 +797,7 @@ void Network::addNewHydrogen(hnet::AtomConf hydrogen, hnet::Coordinated *coord)
 			break;
 		}
 
+		// WARNING!!
 		add_constraint(new OnlyOne({coord->existence(), 
 		                           second->existence()}));
 	}
