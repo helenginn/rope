@@ -33,6 +33,11 @@ graphics_deps = [gl, glew, sdl2, sdl2image]
 cli_deps = [header_deps, core_deps]
 gui_deps = [header_deps, core_deps, graphics_deps]
 
+# Windows wiring
+if host_machine.system() == 'windows'
+  compile_args += ['-DNOMINMAX']
+endif
+
 # Test-mode wiring
 if is_native and get_option('enable_tests')
   doctest_dep = dependency('doctest', required: true)
