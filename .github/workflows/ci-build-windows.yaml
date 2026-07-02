@@ -15,7 +15,7 @@ jobs:
       CCACHE_DIR: ${{ github.workspace }}/.ccache
       CCACHE_COMPRESS: "true"
       CCACHE_COMPRESSLEVEL: "6"
-      CCACHE_MAXSIZE: "500M" # Reicht völlig für die ~350 Objektdateien und schont das 10GB-Limit
+      CCACHE_MAXSIZE: "500M"
     steps:
 
       - name: Checkout code

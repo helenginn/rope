@@ -19,8 +19,14 @@ $SRCBASENAME  = Split-Path -Leaf $SRCDIR
 $SCRPTBASENAME = Split-Path -Leaf $SCRPTDIR
 
 $EXTRA_MESON_ARGS = @()
-if ($Prefix -ne "") { $EXTRA_MESON_ARGS += "--prefix=$Prefix" }
-if ($Datadir -ne "") { $EXTRA_MESON_ARGS += "--datadir=$Datadir" }
+if ($Prefix -ne "") {
+    $EXTRA_MESON_ARGS += "--prefix"
+    $EXTRA_MESON_ARGS += $Prefix
+}
+if ($Datadir -ne "") {
+    $EXTRA_MESON_ARGS += "--datadir"
+    $EXTRA_MESON_ARGS += $Datadir
+}
 
 # -- COLOURS --
 $RED = "`e[0;31m"
