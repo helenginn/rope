@@ -592,33 +592,19 @@ float AtomGroup::rmsd() const
 	return sum;
 }
 
-glm::vec3 AtomGroup::initialCentre()
+glm::vec3 AtomGroup::setCentre(const std::function<glm::vec3(Atom *)> &getPos)
 {
 	glm::vec3 sum = glm::vec3(0.f);
 	double weight = 0;
 	for (Atom *a : _atoms)
 	{
-		sum += a->initialPosition();
+		sum += getPos(a);
 		weight++;
 	}
 
 	sum /= weight;
 	return sum;
 }
-
-glm::vec3 AtomGroup::derivedCentre()
-{
-	glm::vec3 sum = glm::vec3(0.f);
-	double weight = 0;
-	for (Atom *a : _atoms)
-	{
-		sum += a->derivedPosition();
-		weight++;
-	}
-	sum /= weight;
-	return sum;
-}
-
 
 void AtomGroup::finishedRefining()
 {

@@ -125,9 +125,17 @@ public:
 	rope::MonomerType monomerType(const ResidueId &id);
 	
 	void recalculate();
-	
-	glm::vec3 initialCentre();
-	glm::vec3 derivedCentre();
+
+	glm::vec3 setCentre(const std::function<glm::vec3(Atom *)> &getPos);
+	glm::vec3 initialCentre()
+	{
+		return setCentre([](Atom *a) {return a->initialPosition(); });
+	}
+	glm::vec3 derivedCentre()
+	{
+		return setCentre([](Atom *a) {return a->derivedPosition(); });
+	}
+
 	
 	void setLastResidual(double last)
 	{
