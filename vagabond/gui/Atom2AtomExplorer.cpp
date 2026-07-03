@@ -507,8 +507,8 @@ void Atom2AtomExplorer::showVdWSelector()
 	    for (int i : selected)
 	    {
 	        const auto &vdw = vdwBonds[i];
-	        int x = residueToMatrixIndex(vdw.Atom1->residueId());
-	        int y = residueToMatrixIndex(vdw.Atom2->residueId());
+	        int x = residueToMatrixIndex(vdw.Donor->residueId());
+	        int y = residueToMatrixIndex(vdw.Acceptor->residueId());
 	        if (x < 0 || y < 0) continue;
 	        placeMarker(x, y, VdWMarker);
 	    }

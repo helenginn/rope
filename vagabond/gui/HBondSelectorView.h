@@ -3,6 +3,7 @@
 
 #include <vagabond/core/Flexibility.h>
 #include <vagabond/gui/elements/ListView.h>
+#include <vagabond/core/FlexibilityTypes.h>
 #include <map>
 #include <functional>
 
@@ -13,7 +14,7 @@ class HBondSelectorView : public ListView
 {
 public:
     HBondSelectorView(Scene *prev, 
-                      const std::vector<Flexibility::HBondEntity> &hbonds,
+                      const std::vector<HBondEntity> &hbonds,
                       GuiBalls *balls);
     
     virtual void setup();
@@ -29,7 +30,7 @@ public:
     }
 private:
     ApplyCallback _applyCallback = nullptr;
-    const std::vector<Flexibility::HBondEntity> &_hbonds;
+    const std::vector<HBondEntity> &_hbonds;
     GuiBalls *_balls;
     TickBoxes *_allTickBoxes = nullptr;
     std::set<int> *_selectedIndices = nullptr;

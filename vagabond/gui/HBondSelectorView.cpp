@@ -6,7 +6,7 @@
 #include <vagabond/gui/elements/ImageButton.h>
 
 HBondSelectorView::HBondSelectorView(Scene *prev,
-                                     const std::vector<Flexibility::HBondEntity> &hbonds,
+                                     const std::vector<HBondEntity> &hbonds,
                                      GuiBalls *balls)
 : ListView(prev), _hbonds(hbonds), _balls(balls)
 {

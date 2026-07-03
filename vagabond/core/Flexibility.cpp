@@ -5,7 +5,9 @@
 #include <gemmi/elem.hpp>
 #include "Instance.h"
 #include "AtomGroup.h"
+#include "FlexibilityTypes.h"
 #include "BondSequence.h"
+#include "matrix_functions.h"
 #include "BondCalculator.h"
 #include "BondAngle.h"
 #include "BondSequenceHandler.h"
@@ -15,6 +17,9 @@
 #include <vagabond/utils/Eigen/Dense>
 #include <vagabond/core/Model.h>
 #include "Torsion2Atomic.h"
+
+
+
 
 using Eigen::MatrixXf;
 using Eigen::Matrix3f;
@@ -28,8 +33,6 @@ Flexibility::Flexibility(Instance *i)
 {
     setInstance(i);
 }
-
-
 
 Flexibility::~Flexibility() 
 {
@@ -55,69 +58,211 @@ float Flexibility::submitJobAndRetrieve(float weight)
 void Flexibility::prepareResources() 
 {
     _resources.allocateMinimum(_threads);
-
     AtomGroup* group = _model->currentAtoms();
     std::vector<AtomGroup *> subsets = group->connectedGroups();
-    
     std::cout << "[DEBUG prepareResources] Total connected groups: " 
               << subsets.size() << std::endl;
-    
+
+    setReferenceMolecule(subsets);
+
     for (int s = 0; s < subsets.size(); s++)
     {
         Atom *anchor = subsets[s]->chosenAnchor();
-        std::cout << "[DEBUG prepareResources] Group " << s 
-                  << " size: " << subsets[s]->size()
-                  << " anchor: " << (anchor ? anchor->desc() : "NULL")
-                  << " chain: " << (anchor ? anchor->chain() : "?")
-                  << std::endl;
+        if (!anchor) continue;
         _resources.sequences->addAnchorExtension(anchor);
     }
-
     _resources.sequences->setup();
     _resources.sequences->prepareSequences();
 
-    std::cout << "[DEBUG prepareResources] Total blocks: " 
-              << _resources.sequences->sequence()->blocks().size() << std::endl;
+    buildDoFMap();
+}
 
-    std::cout << "[DEBUG prepareResources] Total torsion basis parameters: " 
-              << _resources.sequences->torsionBasis()->parameterCount() << std::endl;
+void Flexibility::buildDoFMap()
+{
+    _dofMap.clear();
+    int row_counter = 0;
 
-    // count torsions per chain
-    std::map<std::string, int> torsionsPerChain;
     const std::vector<AtomBlock>& blocks = _resources.sequences->sequence()->blocks();
+    AtomGroup *group = _model->currentAtoms();
+    std::vector<AtomGroup*> subsets = group->connectedGroups();
 
-    for (int i = 0; i < (int)blocks.size(); i++)
+    for (int s = 0; s < subsets.size(); s++)
     {
-        if (blocks[i].torsion_idx < 0) continue;
-        if (blocks[i].atom == nullptr) continue;
-        
-        std::string chain = blocks[i].atom->chain();
-        torsionsPerChain[chain]++;
-    }
+        Atom *anchor = subsets[s]->chosenAnchor();
+        if (!anchor) continue;
 
-    for (auto& [chain, count] : torsionsPerChain)
-    {
-        std::cout << "[DEBUG prepareResources] Chain " << chain 
-                  << " torsions: " << count << std::endl;
-    }
+        std::string chain = anchor->chain();
+        bool isReference = (chain == _referenceChain);
+        bool isHetatm = anchor->hetatm(); // temp solution: will not work for all pdb files
 
-    int noChain = 0;
-    for (int i = 0; i < (int)blocks.size(); i++)
-    {
-        if (blocks[i].torsion_idx < 0) continue;
-        if (blocks[i].atom == nullptr) continue;
-        
-        std::string chain = blocks[i].atom->chain();
-        if (chain.empty())
+        std::vector<std::pair<int, DoF>> chainTorsions;
+        int start = -1; 
+        for (int i = 0; i < blocks.size(); i++) // run throught the block until you reach the anchor and hten continue goign until you reach the nullprt
+                                                    // each block is between two null pointers, what i am lookgin for is the first anchor 
         {
-            noChain++;
-            std::cout << "[DEBUG] Unassigned torsion at block " << i 
-                      << " atom: " << blocks[i].atom->desc() << std::endl;
+            if (blocks[i].atom == anchor)
+            {
+                start = i; 
+                break;
+            }
+        }
+        if (start < 0) continue;
+
+        if (!isHetatm)
+        {
+            for (int i = start; i < blocks.size(); i++)
+            {
+                if (blocks[i].atom == nullptr) break;  // end of this tree
+                if (blocks[i].torsion_idx < 0) continue;  // skip non-torsion blocks
+
+                DoF dof;
+                dof.atoms = subsets[s];
+                dof.type = Torsion; 
+                dof.idx = blocks[i].torsion_idx;
+                dof.chain = chain;
+                dof.isReference = isReference;
+
+                chainTorsions.push_back({row_counter, dof});
+                _dofMap[row_counter] = dof; 
+                row_counter++;
+                // exits when it reachs the end pointer of the block or nullpte
+            }
+        }
+        // rd DoFs
+        if (!isReference)
+        {
+            for (DoFType rbType : {TranslX, TranslY, TranslZ, 
+                                    RotX, RotY, RotZ})
+            {
+                DoF dof; 
+                dof.atoms = subsets[s];
+                dof.type = rbType; 
+                dof.idx = -1; 
+                dof.chain = chain; 
+                dof.isReference = false; 
+                _dofMap[row_counter] = dof; 
+                row_counter++;
+            }
+
+        }   
+    }
+    std::cout << "[DEBUG buildDoFMap] Total DoF rows: " << row_counter << std::endl;
+    std::map<std::string, int> torsionCount, rbCount;
+    for (auto& [row, dof] : _dofMap)
+    {
+        if (dof.type == Torsion) torsionCount[dof.chain]++;
+        else rbCount[dof.chain]++;
+    }
+    for (auto& [chain, count] : torsionCount)
+        std::cout << "  Chain " << chain << " torsions: " << count << std::endl;
+    for (auto& [chain, count] : rbCount)
+        std::cout << "  Chain " << chain << " rigid body: " << count << std::endl;
+}
+
+void Flexibility::buildConstraintMap()
+{
+    _constraintMap.clear();
+    int col_counter = 0;
+    AtomGroup *group = _model->currentAtoms();
+    std::vector<AtomGroup*> subsets = group->connectedGroups();
+
+    for (int i = 0; i < _hbonds.size(); i++)
+    {
+        HBondEntity &hbe = _hbonds[i];    
+        AtomGroup *donorGroup = nullptr; 
+        AtomGroup *acceptorGroup = nullptr;
+
+        for (AtomGroup *subset : subsets)
+        {
+            if (!donorGroup && subset->hasAtom(hbe.Donor))
+                donorGroup = subset;
+            if (!acceptorGroup && subset->hasAtom(hbe.Acceptor))
+                acceptorGroup = subset; 
+            if (donorGroup && acceptorGroup) break; 
+        }
+        if (!donorGroup || !acceptorGroup)
+        {
+            std::cerr << "[buildConstraintMap] Could not find groups for Hbonds" << i << std::endl;
+            continue; 
+        }
+
+        for (ConstraintType ctype : {Distance, AngleAlpha, AngleBeta, 
+                                    Dihedral_1, Dihedral_2})
+        {
+            HBondConstraint hbc;
+            hbc.hbond = &hbe;
+            hbc.type = ctype; 
+            hbc.donorGroup = donorGroup; 
+            hbc.acceptorGroup = acceptorGroup;
+            hbc.col_idx = col_counter; 
+
+            _constraintMap[col_counter] = hbc;
+            col_counter++;
         }
     }
-    std::cout << "[DEBUG] Torsions with no chain: " << noChain << std::endl;
+    writeConstraintMapToCSV("constraint_map.csv");
+}
+
+void Flexibility::writeConstraintMapToCSV(const std::string &filename)
+{
+    std::ofstream file(filename);
+    if (!file.is_open())
+    {
+        std::cerr << "[ERROR] Could not open file: " << filename << std::endl;
+        return;
     }
 
+    file << "col_idx,type,donorGroup_chain,donorGroup_size,"
+         << "acceptorGroup_chain,acceptorGroup_size,"
+         << "Donor,Hydrogen,Acceptor,TorsionVec_size\n";
+
+    for (auto& [col, hbc] : _constraintMap)
+    {
+        std::string typeName;
+        switch(hbc.type)
+        {
+            case Distance:   typeName = "Distance";   break;
+            case AngleAlpha: typeName = "AngleAlpha"; break;
+            case AngleBeta:  typeName = "AngleBeta";  break;
+            case Dihedral_1: typeName = "Dihedral_1"; break;
+            case Dihedral_2: typeName = "Dihedral_2"; break;
+            default:         typeName = "Unknown";    break;
+        }
+
+        file << hbc.col_idx << ","
+             << typeName << ","
+             << hbc.donorGroup->atomVector()[0]->chain() << ","
+             << hbc.donorGroup->size() << ","
+             << hbc.acceptorGroup->atomVector()[0]->chain() << ","
+             << hbc.acceptorGroup->size() << ","
+             << hbc.hbond->Donor->desc() << ","
+             << hbc.hbond->Hydrogen->desc() << ","
+             << hbc.hbond->Acceptor->desc() << ","
+             << hbc.hbond->TorsionVec.size() << "\n";
+    }
+
+    file.close();
+}
+
+
+void Flexibility::setReferenceMolecule(const std::vector<AtomGroup *> subsets)
+{
+    // reference chain determination (largest group)
+    int maxSize = 0;
+    for (int s = 0; s < subsets.size(); s++)
+    {
+        Atom *anchor = subsets[s]->chosenAnchor();
+        if (!anchor) continue;
+        if (subsets[s]->size() > maxSize)
+        {
+            maxSize = subsets[s]->size();
+            _referenceChain = anchor->chain();
+        }
+    }
+    std::cout << "[DEBUG] Reference chain: " 
+              << _referenceChain << " (" << maxSize << " atoms)" << std::endl;
+
+}
 
 void Flexibility::calculateTorsionFlexibility() 
 {
@@ -358,73 +503,9 @@ void Flexibility::addInternalHBond(const HBondManager::HBondPair &hbondPair)
     // _globalTorsionSet.insert(hbe.TorsionVec.begin(), hbe.TorsionVec.end());
     for (auto &[torsionIdx, isHSide] : hbe.TorsionVec)
         _globalTorsionSet.insert(torsionIdx);
-
-    std::cout << "[DEBUG addHBond] END: successfully added" << std::endl;
 }
 
-void Flexibility::addExternalHbond(const HBondManager::HBondPair &hbondPair)
-{
-    AtomGroup *allAtoms = _model->currentAtoms(); 
-    Atom *hydrogenAtom = allAtoms->atomByDesc(hbondPair.hydrogen);
-    Atom *acceptorAtom = allAtoms->atomByDesc(hbondPair.acceptor);
 
-    checkIfAtomsExist(hydrogenAtom, acceptorAtom);
-    const std::vector<AtomBlock>& blocks = _resources.sequences->sequence()->blocks();
-
-    int hydrogenBlock_idx = accessAtomBlock(hydrogenAtom);
-    int donorBlock_idx = accessAtomBlock(hydrogenAtom->connectedAtom(0));
-    int acceptorBlock_idx = accessAtomBlock(acceptorAtom);
-
-    Atom *parentDonorAtom = hydrogenAtom->connectedAtom(0)->connectedAtom(0);
-    Atom *parentAcceptorAtom = acceptorAtom->connectedAtom(0);
-
-    glm::vec3 acceptorPos = acceptorAtom->derivedPosition();
-    glm::vec3 hydroPos = hydrogenAtom->derivedPosition();
-    glm::vec3 donorPos = hydrogenAtom->connectedAtom(0)->derivedPosition();
-    float distance = calculateDistance(hydroPos, acceptorPos);
-
-    ExternalHBondEntity ehe;
-    ehe.Hydrogen = hydrogenAtom;
-    ehe.hydrogenIdx = hydrogenBlock_idx;
-    ehe.Donor = hydrogenAtom->connectedAtom(0);
-    ehe.donorIdx = donorBlock_idx;
-    ehe.Acceptor = acceptorAtom;
-    ehe.acceptorIdx = acceptorBlock_idx;
-    ehe.startDist = distance;
-    ehe.ParentDonor = parentDonorAtom;
-    ehe.ParentAcceptor = parentAcceptorAtom;
-
-    _extBodyHBonds.push_back(ehe);
-    std::cout << "[DEBUG ExternalHBond] Added: "
-              << hbondPair.hydrogen << " -> " << hbondPair.acceptor << std::endl;
-    std::cout << "  Hydrogen: " << (ehe.Hydrogen ? ehe.Hydrogen->desc() : "NULL")
-              << " idx: " << ehe.hydrogenIdx << std::endl;
-    std::cout << "  Donor: " << (ehe.Donor ? ehe.Donor->desc() : "NULL")
-              << " idx: " << ehe.donorIdx << std::endl;
-    std::cout << "  Acceptor: " << (ehe.Acceptor ? ehe.Acceptor->desc() : "NULL")
-              << " idx: " << ehe.acceptorIdx << std::endl;
-    std::cout << "  ParentDonor: " << (ehe.ParentDonor ? ehe.ParentDonor->desc() : "NULL") << std::endl;
-    std::cout << "  ParentAcceptor: " << (ehe.ParentAcceptor ? ehe.ParentAcceptor->desc() : "NULL") << std::endl;
-    std::cout << "  Distance: " << ehe.startDist << std::endl;
-
-    std::vector<std::pair<int,bool>> torsionVec;
-    if (donorBlock_idx > 0 )
-    { 
-        torsionVec = oneSidedTorsionVector(donorBlock_idx);
-    } else {
-        torsionVec = oneSidedTorsionVector(acceptorBlock_idx);
-    }
-    if (torsionVec.empty())
-    {
-        std::cout << "[DEBUG ExternalHBond] Empty torsion vector - skipping" << std::endl;
-        return;
-    }
-    ehe.TorsionVec = torsionVec;
-    for (auto &[torsionIdx, isHSide] : ehe.TorsionVec)
-        _globalTorsionSet.insert(torsionIdx);
-
-
-}
 
 double getVdWRadius(const Atom* atom) 
 {
@@ -476,10 +557,10 @@ void Flexibility::addVnWBond()
             if (dist_sq >= threshold*threshold) continue;
 
             VdWBondEntity vdw;
-            vdw.Atom1 = atom_i;
-            vdw.atomIdx1 = block_i;
-            vdw.Atom2 = atom_j;
-            vdw.atomIdx2 = block_j;
+            vdw.Donor = atom_i;
+            vdw.donorIdx = block_i;
+            vdw.Acceptor = atom_j;
+            vdw.acceptorIdx = block_j;
             vdw.startDist = glm::length(diff);
             vdw.contactDist = threshold;
             vdw.TorsionVec = lastCommonAncestorIdx(block_i, block_j);
@@ -641,186 +722,6 @@ std::vector<std::pair<int, bool>> Flexibility::oneSidedTorsionVector(int chainBl
     return torsionVector;
 }
 
-
-float Flexibility::alphaGradientHSide(const glm::vec3 &axisA, const glm::vec3 &axisB,
-                                       const glm::vec3 &D, const glm::vec3 &H,
-                                       const glm::vec3 &A, bool isDHBond)
-{
-    glm::vec3 axis = glm::normalize(axisB - axisA);
-    glm::vec3 u = D - H;
-    glm::vec3 w = A - H;
-    float u_len = glm::length(u);
-    float w_len = glm::length(w);
-    float dot_uw = glm::dot(u, w);
-
-    glm::vec3 dFdD = (w / (u_len * w_len)) - (dot_uw / (u_len*u_len*u_len*w_len)) * u;
-    glm::vec3 dFdA = (u / (u_len * w_len)) - (dot_uw / (u_len*w_len*w_len*w_len)) * w;
-    glm::vec3 dFdH = -(dFdD + dFdA);
-
-    float deriv = glm::dot(dFdH, glm::cross(axis, (H - axisA)));
-    if (!isDHBond)
-        deriv += glm::dot(dFdD, glm::cross(axis, (D - axisA)));
-
-    return deriv;
-}
-
-float Flexibility::alphaGradientASide(const glm::vec3 &axisA, const glm::vec3 &axisB,
-                                       const glm::vec3 &D, const glm::vec3 &H,
-                                       const glm::vec3 &A)
-{
-    glm::vec3 axis = glm::normalize(axisB - axisA);
-    glm::vec3 u = D - H;
-    glm::vec3 w = A - H;
-    float u_len = glm::length(u);
-    float w_len = glm::length(w);
-    float dot_uw = glm::dot(u, w);
-
-    glm::vec3 dFdA = (u / (u_len * w_len)) - (dot_uw / (u_len*w_len*w_len*w_len)) * w;
-    return glm::dot(dFdA, glm::cross(axis, (A - axisA)));
-}
-
-
-float Flexibility::betaGradientASide(const glm::vec3 &axisA, const glm::vec3 &axisB,
-                                      const glm::vec3 &H, const glm::vec3 &A,
-                                      const glm::vec3 &AA, bool isAABond)
-{
-    // A-side: A moves, H fixed, AA is direct bond so AA does NOT move
-    glm::vec3 axis = glm::normalize(axisB - axisA);
-    glm::vec3 p = H - A;
-    glm::vec3 r = AA - A;
-    float p_len = glm::length(p);
-    float r_len = glm::length(r);
-    float dot_pr = glm::dot(p, r);
-
-    glm::vec3 dFdH = (r / (p_len * r_len)) - (dot_pr / (p_len*p_len*p_len*r_len)) * p;
-    glm::vec3 dFdAA = (p / (p_len * r_len)) - (dot_pr / (p_len*r_len*r_len*r_len)) * r;
-    glm::vec3 dFdA =  -(dFdH + dFdAA);
-
-    float deriv = glm::dot(dFdA, glm::cross(axis, (A - axisA)));
-    if (!isAABond)
-        deriv += glm::dot(dFdAA, glm::cross(axis, (AA - axisA)));
-    return deriv; 
-}
-
-float Flexibility::betaGradientHSide(const glm::vec3 &axisA, const glm::vec3 &axisB,
-                                      const glm::vec3 &H, const glm::vec3 &A,
-                                      const glm::vec3 &AA)
-{
-    // Φ₃ = cos(H-A-AA), vertex at A
-    // H-side: only H moves, A and AA are fixed
-    glm::vec3 axis = glm::normalize(axisB - axisA);
-    glm::vec3 p = H - A;
-    glm::vec3 r = AA - A;
-    float p_len = glm::length(p);
-    float r_len = glm::length(r);
-    float dot_pr = glm::dot(p, r);
-
-    glm::vec3 dFdH  = (r / (p_len * r_len)) - (dot_pr / (p_len*p_len*p_len*r_len)) * p;
-
-    return glm::dot(dFdH, glm::cross(axis, (H - axisA)));
-}
-
-float Flexibility::dihedral1GradientHSide(const glm::vec3 &axisA, const glm::vec3 &axisB,
-                                           const glm::vec3 &C, const glm::vec3 &D,
-                                           const glm::vec3 &H, const glm::vec3 &A, bool isDHBond)
-{
-    // τ(C,D,H,A): H-side, direct bond assumption → only H moves
-    glm::vec3 axis = glm::normalize(axisB - axisA);
-    glm::vec3 b1 = D - C;
-    glm::vec3 b2 = H - D;
-    glm::vec3 b3 = A - H;
-    glm::vec3 n1 = glm::cross(b1, b2);
-    glm::vec3 n2 = glm::cross(b2, b3);
-    float n1_norm = glm::dot(n1, n1);
-    float n2_norm = glm::dot(n2, n2);
-    float b2_norm = glm::length(b2);
-    glm::vec3 dTau_dC = -(b2_norm / n1_norm) * n1;
-    glm::vec3 dTau_dA =  (b2_norm / n2_norm) * n2;
-    glm::vec3 dTau_dD = ((glm::dot(b1,b2)/n1_norm)*n1) - ((glm::dot(b3,b2)/n2_norm)*n2);
-    glm::vec3 dTau_dH = -dTau_dC - dTau_dD - dTau_dA;
-
-    // H always moves
-    float deriv = glm::dot(dTau_dH, glm::cross(axis, (H - axisA)));
-    // D and C move only if torsion is above D-H bond
-    if (!isDHBond)
-    {
-        deriv += glm::dot(dTau_dD, glm::cross(axis, (D - axisA)));
-        deriv += glm::dot(dTau_dC, glm::cross(axis, (C - axisA)));
-    }
-    return deriv;
-}
-
-float Flexibility::dihedral1GradientASide(const glm::vec3 &axisA, const glm::vec3 &axisB,
-                                           const glm::vec3 &C, const glm::vec3 &D,
-                                           const glm::vec3 &H, const glm::vec3 &A)
-{
-    // τ(C,D,H,A): A-side, only A moves
-    glm::vec3 axis = glm::normalize(axisB - axisA);
-    glm::vec3 b1 = D - C;
-    glm::vec3 b2 = H - D;
-    glm::vec3 b3 = A - H;
-    glm::vec3 n1 = glm::cross(b1, b2);
-    glm::vec3 n2 = glm::cross(b2, b3);
-    float n1_norm = glm::dot(n1, n1);
-    float n2_norm = glm::dot(n2, n2);
-    float b2_norm = glm::length(b2);
-    glm::vec3 dTau_dA = (b2_norm / n2_norm) * n2;
-
-    // only A moves
-    return glm::dot(dTau_dA, glm::cross(axis, (A - axisA)));
-}
-
-float Flexibility::dihedral2GradientHSide(const glm::vec3 &axisA, const glm::vec3 &axisB,
-                                           const glm::vec3 &D, const glm::vec3 &H,
-                                           const glm::vec3 &A, const glm::vec3 &AA)
-{
-    // τ(D,H,A,AA): H-side, direct bond assumption → only H moves
-    glm::vec3 axis = glm::normalize(axisB - axisA);
-    glm::vec3 b1 = H - D;
-    glm::vec3 b2 = A - H;
-    glm::vec3 b3 = AA - A;
-    glm::vec3 n1 = glm::cross(b1, b2);
-    glm::vec3 n2 = glm::cross(b2, b3);
-    float n1_norm = glm::dot(n1, n1);
-    float n2_norm = glm::dot(n2, n2);
-    float b2_norm = glm::length(b2);
-    glm::vec3 dTau_dD  = -(b2_norm / n1_norm) * n1;
-    glm::vec3 dTau_dAA =  (b2_norm / n2_norm) * n2;
-    glm::vec3 dTau_dH  = ((glm::dot(b1,b2)/n1_norm)*n1) - ((glm::dot(b3,b2)/n2_norm)*n2);
-    glm::vec3 dTau_dA  = -dTau_dD - dTau_dH - dTau_dAA;
-
-    // only H moves
-    return glm::dot(dTau_dH, glm::cross(axis, (H - axisA)));
-}
-
-float Flexibility::dihedral2GradientASide(const glm::vec3 &axisA, const glm::vec3 &axisB,
-                                           const glm::vec3 &D, const glm::vec3 &H,
-                                           const glm::vec3 &A, const glm::vec3 &AA, bool isAABond)
-{
-    // tau(D,H,A,AA): A-side, direct bond assumption → only A moves
-    glm::vec3 axis = glm::normalize(axisB - axisA);
-    glm::vec3 b1 = H - D;
-    glm::vec3 b2 = A - H;
-    glm::vec3 b3 = AA - A;
-    glm::vec3 n1 = glm::cross(b1, b2);
-    glm::vec3 n2 = glm::cross(b2, b3);
-    float n1_norm = glm::dot(n1, n1);
-    float n2_norm = glm::dot(n2, n2);
-    float b2_norm = glm::length(b2);
-    glm::vec3 dTau_dD  = -(b2_norm / n1_norm) * n1;
-    glm::vec3 dTau_dAA =  (b2_norm / n2_norm) * n2;
-    glm::vec3 dTau_dH  = ((glm::dot(b1,b2)/n1_norm)*n1) - ((glm::dot(b3,b2)/n2_norm)*n2);
-    glm::vec3 dTau_dA  = -dTau_dD - dTau_dH - dTau_dAA;
-
-    // A always moves
-    float deriv = glm::dot(dTau_dA, glm::cross(axis, (A - axisA)));
-    // AA moves only if torsion is above A-AA bond
-    if (!isAABond)
-        deriv += glm::dot(dTau_dAA, glm::cross(axis, (AA - axisA)));
-    return deriv;
-
-}
-
 void Flexibility::buildJacobianMatrix()
 {
 
@@ -831,9 +732,7 @@ void Flexibility::buildJacobianMatrix()
         std::cerr << "Error: No HBonds to add." << std::endl;
         return;
     }
-    // [DEBUG 1] Set columns to 1 per H-bond (Distance only)
-    // Ignore VdW to isolate the specific gradient function
-    int numCol = 5 * _hbonds.size() + _VdWBonds.size() + _extBodyHBonds.size();
+    int numCol = 5 * _hbonds.size() + _VdWBonds.size();
 
     std::vector<int> torsionVector = getGlobalTorsionVector();
     int numRow = _globalTorsionSet.size();
@@ -850,21 +749,11 @@ void Flexibility::buildJacobianMatrix()
         int torsionID = torsionVector[i];
         OpSet<int> pivotSet = _resources.sequences->sequence()->blocksForTorsionIdx(torsionID);
         std::vector<int> pivotIndices = pivotSet.toVector();
-        // NEW =================================================
+
         for (int pivotBlockIdx : pivotIndices)
         {
-
-            // const AtomBlock& child = blocks[pivotBlockIdx];
-            // int meIdx = pivotBlockIdx + child.parent_idx;
-            // const AtomBlock& me = blocks[meIdx];
-            // int grandParentIdx = meIdx + me.parent_idx;
-            // const AtomBlock& grandParent = blocks[grandParentIdx];
-            // child.printBlock();
-
-            //=======================================================
             for (int j = 0; j < _hbonds.size(); ++j) 
             {
-
                 HBondEntity& hbe = _hbonds[j];
                 int colBase = j * 5; // 5 constraints per Hbond
 
@@ -943,8 +832,8 @@ void Flexibility::buildJacobianMatrix()
             {
                 VdWBondEntity& vdw = _VdWBonds[j];
             
-                glm::vec3 atom1Pos = blocks[vdw.atomIdx1].my_position(); 
-                glm::vec3 atom2Pos = blocks[vdw.atomIdx2].my_position();
+                glm::vec3 atom1Pos = blocks[vdw.donorIdx].my_position(); 
+                glm::vec3 atom2Pos = blocks[vdw.acceptorIdx].my_position();
 
                 bool isHSide;
                 for (auto& [tIdx, side] : vdw.TorsionVec)
@@ -956,52 +845,7 @@ void Flexibility::buildJacobianMatrix()
             }
         }
     }
-    // --- Externa Hydrogen bonds ---
-    // int extColBase = 5 * _hbonds.size() + _VdWBonds.size();
-    // for (int i = 0; i < numRow; ++i) 
-    // {
-    //     int torsionID = torsionVector[i];
-    //     OpSet<int> pivotSet = _resources.sequences->sequence()->blocksForTorsionIdx(torsionID);
-    //     std::vector<int> pivotIndices = pivotSet.toVector();
-
-    //     for (int pivotBlockIdx : pivotIndices) 
-    //     {
-    //         const AtomBlock& me = blocks[pivotBlockIdx];
-    //         glm::vec3 APos = me.my_position();
-    //         int parentIdx = pivotBlockIdx + me.parent_idx;
-    //         glm::vec3 BPos = blocks[parentIdx].my_position();
-            
-    //         for (int j = 0; j <_extBodyHBonds.size(); ++j)
-    //         {
-    //             ExternalHBondEntity& ehe = _extBodyHBonds[j];
-    //             bool torsionAffectsBond = false;
-    //             for (auto& [tIdx, side] : ehe.TorsionVec)
-    //             {
-    //                 if (tIdx == torsionID)
-    //                 {
-    //                     torsionAffectsBond = true;
-    //                     break;
-    //                 }
-    //             }
-    //             if (!torsionAffectsBond) continue;
-
-    //             bool hydrogenIsInternal = (ehe.hydrogenIdx >= 0);
-
-    //             glm::vec3 movingPos = hydrogenIsInternal ? 
-    //                 ehe.Hydrogen->derivedPosition() : ehe.Acceptor->derivedPosition();
-    //             glm::vec3 fixedPos = hydrogenIsInternal ? 
-    //                 ehe.Acceptor->derivedPosition() : ehe.Hydrogen->derivedPosition();
-
-    //             float derivative = bond_rotation_on_distance_gradient(
-    //                 APos, BPos, fixedPos, movingPos);
-                
-    //             jacobianMatrix(i, extColBase + j) = derivative;
-    //         }
-    //     }
-    // }
     _jacobMtx = jacobianMatrix;
-    std::cout << "[debug] Jacobian (transpose) J_T.rows = " << _jacobMtx.rows() << std::endl;
-    std::cout << "[debug] Jacobian (transpose) J_T.cols = " << _jacobMtx.cols() << std::endl;
     std::cout << "Finished building Jacobian matrix! " << std::endl;
 }
 
@@ -1016,19 +860,6 @@ SVDResult Flexibility::calculateSVD() const
     std::cout << "[debug] _V size = " << svd.matrixV().size() << std::endl;
 
     int numCols = static_cast<int>(svd.matrixV().cols());
-    for (int colIdx = 0; colIdx < numCols; ++colIdx)
-    {
-        Eigen::VectorXf violation = jacobMtrT * svd.matrixV().col(colIdx);
-        std::cout << "[DEBUG] ||J*v_" << colIdx << "|| = " 
-                  << violation.norm() 
-                  << "  (sigma_" << colIdx << " = ";
-        if (colIdx < svd.singularValues().size())
-            std::cout << svd.singularValues()(colIdx);
-        else
-            std::cout << "0";
-        std::cout << ")" << std::endl;
-    }
-
     return {
         svd.matrixU(),
         svd.singularValues(),
@@ -1145,7 +976,6 @@ void Flexibility::clearHBonds()
 {
     std::lock_guard<std::mutex> lock(_mutex);
     _hbonds.clear();
-    _extBodyHBonds.clear();  // NEW
     _VdWBonds.clear();       // NEW
     _globalTorsionSet.clear();
     _atom2Block.clear();     // NEW
@@ -1417,3 +1247,24 @@ void Flexibility::listClashes(const std::string &filename,
 
     file.close();
 }
+
+
+float BondEntity::getDerivative(ConstraintType type,
+                                const DoF &dof,
+                                const glm::vec3 &axisA,
+                                const glm::vec3 &axisB,
+                                const std::vector<AtomBlock> &blocks) const
+{
+    return 0.0f;
+}
+
+float HBondEntity::getDerivative(ConstraintType type,
+                                 const DoF &dof,
+                                 const glm::vec3 &axisA,
+                                 const glm::vec3 &axisB,
+                                 const std::vector<AtomBlock> &blocks) const
+{
+    return 0.0f;
+}
+
+

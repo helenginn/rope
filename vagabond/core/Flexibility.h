@@ -10,6 +10,7 @@
 #include <map>
 #include "StructureModification.h"
 #include "HBondManager.h"
+#include "FlexibilityTypes.h"
 
 class ClusterSVD;
 class Model;
@@ -30,49 +31,6 @@ public:
     Flexibility(Instance *i);
     ~Flexibility();
 
-    struct HBondEntity
-    {
-        Atom* Donor; 
-        int donorIdx;
-        Atom* Acceptor;
-        int acceptorIdx;
-        Atom* Hydrogen;     
-        int hydrogenIdx;  
-        float startDist;
-        Atom* ParentDonor;
-        Atom* ParentAcceptor;
-        float AlphaAngleDist;
-        float BetaAngleDist;
-        float Dihedral1;     // torsion(C, D, H, A)
-        float Dihedral2;     // torsion(D, H, A, AA)
-        std::vector<std::pair<int,bool>> TorsionVec; // (torsionIdx. isHSide)
-    }; 
-
-    struct VdWBondEntity
-    {
-        Atom* Atom1;         // first atom
-        int atomIdx1;        // index in blocks
-        Atom* Atom2;         // second atom
-        int atomIdx2;        // index in blocks
-        float startDist;     // initial distance
-        float contactDist;   // sum of vdW radii + tolerance
-        std::vector<std::pair<int,bool>> TorsionVec;  // torsions influencing this pair
-    };
-
-    struct ExternalHBondEntity
-    {
-        Atom* Donor; 
-        int donorIdx;
-        Atom* Acceptor;
-        int acceptorIdx;
-        Atom* Hydrogen;     
-        int hydrogenIdx;  
-        float startDist;
-        Atom* ParentDonor;
-        Atom* ParentAcceptor;
-        std::vector<std::pair<int,bool>> TorsionVec; // (torsionIdx. isHSide)
-    };
-
     // === GUI-INTERFACED FUNCTIONS ===
     float submitJobAndRetrieve(float weight);
     // Getters for SVD components
@@ -80,6 +38,7 @@ public:
     const Eigen::VectorXf& getS() const { return _S; }
 
     void prepareResources();
+    void setReferenceMolecule(const std::vector<AtomGroup *> subsets);
     Result* getResult()
     {
         return _resources.calculator->acquireObject();
@@ -126,6 +85,9 @@ public:
     }
     void calculateTorsionFlexibility();
     void buildJacobianMatrix();
+    void buildDoFMap();
+    void buildConstraintMap();
+    void writeConstraintMapToCSV(const std::string &filename);
 
     SVDResult calculateSVD() const;
     std::vector<float> assignWeightsToTorsions(const std::vector<float>& v_i,
@@ -160,10 +122,6 @@ public:
     { 
         return _VdWBonds; 
     }
-    const std::vector<ExternalHBondEntity>& getExtHBonds() const 
-    { 
-        return _extBodyHBonds; 
-    }
     
     int accessAtomBlock(Atom* atom);
     float calculateDistance(const glm::vec3& vector1, const glm::vec3& vector2)
@@ -175,28 +133,28 @@ public:
     std::vector<std::pair<int,bool>> lastCommonAncestorIdx(int donorBlock_idx, int donorAcceptor_idx);
     std::vector<std::pair<int, bool>> oneSidedTorsionVector(int chainBlock_idx);
     int rewindBlock(int &block_idx, std::vector<std::pair<int,bool>> &torsionVector, bool isHSide);
-    float alphaGradientHSide(const glm::vec3 &axisA, const glm::vec3 &axisB,
-                          const glm::vec3 &D, const glm::vec3 &H, const glm::vec3 &A, bool isDHBond);
-    float alphaGradientASide(const glm::vec3 &axisA, const glm::vec3 &axisB,
-                          const glm::vec3 &D, const glm::vec3 &H, const glm::vec3 &A);
-    float betaGradientASide(const glm::vec3 &axisA, const glm::vec3 &axisB,
-                                      const glm::vec3 &H, const glm::vec3 &A,
-                                      const glm::vec3 &AA, bool isAABond);
-    float betaGradientHSide(const glm::vec3 &axisA, const glm::vec3 &axisB,
-                                      const glm::vec3 &H, const glm::vec3 &A,
-                                      const glm::vec3 &AA);
-    float dihedral1GradientHSide(const glm::vec3 &axisA, const glm::vec3 &axisB,
-                                           const glm::vec3 &C, const glm::vec3 &D,
-                                           const glm::vec3 &H, const glm::vec3 &A, bool isDHBond);
-    float dihedral1GradientASide(const glm::vec3 &axisA, const glm::vec3 &axisB,
-                                           const glm::vec3 &C, const glm::vec3 &D,
-                                           const glm::vec3 &H, const glm::vec3 &A);
-    float dihedral2GradientHSide(const glm::vec3 &axisA, const glm::vec3 &axisB,
-                                           const glm::vec3 &D, const glm::vec3 &H,
-                                           const glm::vec3 &A, const glm::vec3 &AA);
-    float dihedral2GradientASide(const glm::vec3 &axisA, const glm::vec3 &axisB,
-                                           const glm::vec3 &D, const glm::vec3 &H,
-                                           const glm::vec3 &A, const glm::vec3 &AA, bool isAABond);
+    // static float alphaGradientHSide(const glm::vec3 &axisA, const glm::vec3 &axisB,
+    //                       const glm::vec3 &D, const glm::vec3 &H, const glm::vec3 &A, bool isDHBond);
+    // static float alphaGradientASide(const glm::vec3 &axisA, const glm::vec3 &axisB,
+    //                       const glm::vec3 &D, const glm::vec3 &H, const glm::vec3 &A);
+    // static float betaGradientASide(const glm::vec3 &axisA, const glm::vec3 &axisB,
+    //                                   const glm::vec3 &H, const glm::vec3 &A,
+    //                                   const glm::vec3 &AA, bool isAABond);
+    // static float betaGradientHSide(const glm::vec3 &axisA, const glm::vec3 &axisB,
+    //                                   const glm::vec3 &H, const glm::vec3 &A,
+    //                                   const glm::vec3 &AA);
+    // static float dihedral1GradientHSide(const glm::vec3 &axisA, const glm::vec3 &axisB,
+    //                                        const glm::vec3 &C, const glm::vec3 &D,
+    //                                        const glm::vec3 &H, const glm::vec3 &A, bool isDHBond);
+    // static float dihedral1GradientASide(const glm::vec3 &axisA, const glm::vec3 &axisB,
+    //                                        const glm::vec3 &C, const glm::vec3 &D,
+    //                                        const glm::vec3 &H, const glm::vec3 &A);
+    // static float dihedral2GradientHSide(const glm::vec3 &axisA, const glm::vec3 &axisB,
+    //                                        const glm::vec3 &D, const glm::vec3 &H,
+    //                                        const glm::vec3 &A, const glm::vec3 &AA);
+    // static float dihedral2GradientASide(const glm::vec3 &axisA, const glm::vec3 &axisB,
+    //                                        const glm::vec3 &D, const glm::vec3 &H,
+    //                                        const glm::vec3 &A, const glm::vec3 &AA, bool isAABond);
     std::string getChain()
     {
         return _targetChain;
@@ -225,10 +183,13 @@ private:
     bool _setup = false;
     bool _displayTargets = false;
     std::map<Atom*, int> _atom2Block;
+    std::string _referenceChain = "";
+    std::map<int, DoF> _dofMap;
+    std::map<int, HBondConstraint> _constraintMap; 
+
 
     std::vector<HBondEntity> _hbonds;
     std::vector<VdWBondEntity> _VdWBonds;
-    std::vector<ExternalHBondEntity> _extBodyHBonds;
     std::set<int> _globalTorsionSet;
     std::vector<std::vector<float>> _allTorsions;
     std::string _flexTag;

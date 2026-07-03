@@ -6,7 +6,7 @@
 #include <vagabond/gui/elements/ImageButton.h>
 
 VdWSelectorView::VdWSelectorView(Scene *prev,
-                                     const std::vector<Flexibility::VdWBondEntity> &vdwbonds,
+                                     const std::vector<VdWBondEntity> &vdwbonds,
                                      GuiBalls *balls)
 : ListView(prev), _VdWBonds(vdwbonds), _balls(balls)
 {
@@ -59,7 +59,7 @@ Renderable *VdWSelectorView::getLine(int i)
 {
 
     const auto &vdw = _VdWBonds[i];
-    std::string label = vdw.Atom1->desc() + " -> " + vdw.Atom2->desc();
+    std::string label = vdw.Donor->desc() + " -> " + vdw.Acceptor->desc();
     
     Box *b = new Box();
     {
@@ -141,8 +141,8 @@ void VdWSelectorView::buttonPressed(std::string tag, Button *button)
             for (int i : selected)
             {
                 const auto &vdw = _VdWBonds[i];
-                _balls->highlightAtom(vdw.Atom1, GuiBalls::VdW);
-                _balls->highlightAtom(vdw.Atom2, GuiBalls::VdW);
+                _balls->highlightAtom(vdw.Donor, GuiBalls::VdW);
+                _balls->highlightAtom(vdw.Acceptor, GuiBalls::VdW);
             }
         }
         

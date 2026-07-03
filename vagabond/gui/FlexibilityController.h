@@ -23,6 +23,7 @@
 #include <vagabond/gui/Display.h>
 #include <vagabond/gui/elements/DragResponder.h>
 #include <vagabond/core/Flexibility.h>
+#include <vagabond/core/FlexibilityTypes.h>
 #include <memory>
 
 class Flexibility;
@@ -48,21 +49,21 @@ public:
         _flex->submitJobAndRetrieve(weight);
     }
     virtual void finishedDragging(std::string tag, double x, double y);
-    const std::vector<Flexibility::HBondEntity>& handleHBondTicks()
+    const std::vector<HBondEntity>& handleHBondTicks()
     {
         if (!_flex)
         {
-            static std::vector<Flexibility::HBondEntity> empty;
+            static std::vector<HBondEntity> empty;
             std::cerr << "[ERROR] Flexibility not initialized!\n";
             return empty;
         }
         return _flex->getHBonds();
     }
-    const std::vector<Flexibility::VdWBondEntity>& handleVdWTicks()
+    const std::vector<VdWBondEntity>& handleVdWTicks()
     {
         if (!_flex)
         {
-            static std::vector<Flexibility::VdWBondEntity> empty;
+            static std::vector<VdWBondEntity> empty;
             std::cerr << "[ERROR] Flexibility not initialized!\n";
             return empty;
         }

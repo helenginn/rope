@@ -272,11 +272,21 @@ void FlexibilityController::callAddHBonds(const std::vector<HBondManager::HBondP
 	{
     	_flex->addHBond(pair);
     }
+    _flex->buildConstraintMap();
     _flex->addVnWBond();
     // at the end of callAddHBonds(), after addVnWBond():
 	std::cout << "[DEBUG] _hbonds size: " << _flex->getHBonds().size() << std::endl;
-	std::cout << "[DEBUG] _extBodyHBonds size: " << _flex->getExtHBonds().size() << std::endl;
 	std::cout << "[DEBUG] _VdWBonds size: " << _flex->getVdWBonds().size() << std::endl;
+
+	// const std::vector<AtomBlock> &blocks = _flex->getResources().sequence()->blocks();
+	// if (!_flex->getConstraintMap().empty())
+	// {
+	// 	HBondConstraint &hbc = _flex->getConstraintMap().begin->second;
+	// 	glm::vec3 axisA = blocks[0].my_positions();
+	// 	glm::vec3 axisB = blocks[1].my_positions();
+	// 	hbc.hbonds->getDerivative(Distance, axisA, axisB, blocks, 0);
+	// }
+
     FlexibilityCache::instance().store(_instance, _flex);
 
 
