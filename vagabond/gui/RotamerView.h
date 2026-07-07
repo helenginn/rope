@@ -35,19 +35,22 @@ private:
     // double _min = 0;
     // double _max = 1;
     // double _step = 0.01;
-    double _min = -5;
-    double _max = 5;
+    double _min = -15;
+    double _max = 15;
     double _step = 0.5;
     Model *_model = nullptr;
     Instance *_inst = nullptr;
     std::string _modelName ={} ;
-    RotamerModifier *_modifier = {};
+    RotamerModifier *_modifier {};
     int _number {1};
     Line *_line = nullptr;
     Line *_line2 = nullptr;
     Line *_line3 = nullptr;
     Line *_line4 = nullptr;
     Line *_line5 = nullptr;
+    Line *_line6 = nullptr;
+    Line *_line7 = nullptr;
+    bool _collision {true};
 
 };
 #endif

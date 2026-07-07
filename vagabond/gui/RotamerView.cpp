@@ -30,15 +30,9 @@ void RotamerView::setup()
 {
     addTitle ("Rotamer View");
     {
-        TextButton *t = new TextButton("Initial rotamers", this);
-        t->setRight(0.8, 0.7);
-        t->setReturnTag("zero");
-        addObject(t);
-    }
-    {
-        TextButton *t = new TextButton("Save position to RTL4-" + std::to_string(_number) , this);
+        TextButton *t = new TextButton("hide/show collisionBoxes" , this);
         t->setRight(0.9, 0.9);
-        t->setReturnTag("save");
+        t->setReturnTag("collision");
         addObject(t);
     }
     {
@@ -48,23 +42,22 @@ void RotamerView::setup()
         addObject(n);
     }
     {
-        TextButton *n = new TextButton("axis", this);
-        n->setRight(0.2, 0.5);
-        n->setReturnTag("axis");
-        addObject(n);
-    }
-    {
         _line = new Line();
         _line2 = new Line();
         _line3 = new Line();
         _line4 = new Line();
         _line5 = new Line();
+        _line6 = new Line();
+        _line7 = new Line();
+
 
         addObject(_line);
         addObject(_line2);
         addObject(_line3);
         addObject(_line4);
         addObject(_line5);
+        addObject(_line6);
+        addObject(_line7);
     }
 }
 
@@ -74,16 +67,25 @@ void RotamerView::buttonPressed(std::string tag, Button *button)
     {
         _modifier->submitJobAndRetrieve(2.f, RotamerModifier::Reset);
     }
+    if (tag == "collision")
+    {
+        if (_collision)
+        {
+            _collision = false;
+            return;
+        }
+        _collision = true;
+    }
     if (tag == "save") // saving current structure
     {
-        // _line->clearVertices();
-        // _line2->clearVertices();
-        // _line->addPoint(_modifier->axisForChain(RotamerModifier::Start, "A"));
-        // _line->addPoint(_modifier->axisForChain(RotamerModifier::End, "A"));
-        // //_line->forceRender();
-        // _line2->addPoint(_modifier->axisForChain(RotamerModifier::Start, "B"));
-        // _line2->addPoint(_modifier->axisForChain(RotamerModifier::End, "B"));
-        // //_line2->forceRender();
+        _line4->clearVertices();
+        _line5->clearVertices();
+        _line4->addPoint(_modifier->axisForChain(RotamerModifier::Start, "A"));
+        _line4->addPoint(_modifier->axisForChain(RotamerModifier::End, "A"));
+        //_line4->forceRender();
+        _line5->addPoint(_modifier->axisForChain(RotamerModifier::Start, "B"));
+        _line5->addPoint(_modifier->axisForChain(RotamerModifier::End, "B"));
+        //_line5->forceRender();
 
 
     }
@@ -94,20 +96,11 @@ void RotamerView::buttonPressed(std::string tag, Button *button)
     }
     if (tag == "axis")
     {
-        std::vector<glm::vec3> axis = _modifier->makePlan();
-        glm::vec3 startingPoint =_modifier->axisForChain(RotamerModifier::Start, "A");
-        _line3->addPoint(startingPoint);
-        _line4->addPoint(startingPoint);
-        _line5->addPoint(startingPoint);
-        _line3->addPoint(startingPoint+axis[0]*glm::vec3(3.0));
-        _line4->addPoint(startingPoint+axis[1]*glm::vec3(3.0));
-        _line5->addPoint(startingPoint+axis[2]*glm::vec3(3.0));
+        std::vector<glm::vec3> points = _modifier->drawAxis();
+        _line3->clearVertices();
+        for (auto point : points)
+            _line3->addPoint(point);
         _line3->forceRender();
-        _line4->forceRender();
-        _line5->forceRender();
-
-
-       // _modifier->axisForChain(RotamerModifier::Start, "A")+_modifier->axisForChain(RotamerModifier::End, "A"))/glm::vec3(2.0)
     }
     Scene::buttonPressed(tag, button);
 }
@@ -137,11 +130,52 @@ void RotamerView::finishedDragging(std::string tag, double x, double y)
 {
     if (tag == "X")
     {
-        _modifier->submitJobAndRetrieve(x, RotamerModifier::MoveX);
+        _modifier->move(x,RotamerModifier::MoveX);
     }
     if (tag == "Y")
     {
-        _modifier->submitJobAndRetrieve(x, RotamerModifier::MoveY);
+        _modifier->move(x,RotamerModifier::MoveY);
+    }
+    std::vector<glm::vec3> points {};
+    _line->clearVertices();
+    _line2->clearVertices();
+    _line6->clearVertices();
+    _line7->clearVertices();
+
+    if (_collision)
+    {
+        points = _modifier->getVertices("A");
+        for (glm::vec3 point : points)
+            _line->addPoint(point);
+        _line->forceRender();
+        points = _modifier->getVertices("B");
+        for (glm::vec3 point : points)
+            _line2->addPoint(point);
+        _line2->forceRender();
+        points = _modifier->getSecondaryVertices("A");
+        for (glm::vec3 point : points)
+            _line6->addPoint(point);
+        _line6->forceRender();
+        points = _modifier->getSecondaryVertices("B");
+        for (glm::vec3 point : points)
+            _line7->addPoint(point);
+        _line7->forceRender();
+    }
+    _line4->clearVertices();
+    if (!_collision)
+    {
+        points = _modifier->intersectionBox();
+        for (glm::vec3 point : points)
+            _line4->addPoint(point);
+        _line4->forceRender();
+        points = _modifier->getSecondaryVertices("A", true);
+        for (glm::vec3 point : points)
+            _line6->addPoint(point);
+        _line6->forceRender();
+        points = _modifier->getSecondaryVertices("B", true);
+        for (glm::vec3 point : points)
+            _line7->addPoint(point);
+        _line7->forceRender();
     }
 }
 

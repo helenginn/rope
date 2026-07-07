@@ -26,15 +26,17 @@
 RotamerModifier::RotamerModifier(Instance *inst)
 {
     setInstance(inst);
+    setup();
+}
+
+void RotamerModifier::setup()
+{
     _instance->load();
-    _lib = new RotamerLibrary;
     prepareResources();
     prepareMemory();
-    //submitJobAndRetrieve(0,Map);
     unifiedTorsionFetcher();
-    //generateRotamerMapPosition();
-    //axisForChain();
-
+    _lib = new RotamerLibrary; // THIS was causing the issue in the first execution of the map (with missing atoms) when between instance->load() and prepareResources() and  no idea why though
+    makePlan();
 }
 RotamerModifier::~RotamerModifier()
 {
@@ -44,60 +46,46 @@ RotamerModifier::~RotamerModifier()
 float RotamerModifier::submitJobAndRetrieve(float weight, parameter a)
 {
     _mode = a;
-    if (_mode != MoveX && _mode != MoveY )
-    {
-        submitJob(weight);
-
-        Result *r = _resources.calculator->acquireObject();;
+    submitJob(weight);
+    Result *r = _resources.calculator->acquireObject();
 
         if (_mode == Map && !_map) //generating an AtomPosMap from the iteration of all the rotamers (to generate the multi-rotamers structure)
         {
             AtomPosList list = r->apl;
             for (auto const& atomWithPos : list)
             {
-
-                _testGroup->add(atomWithPos.atom);
-                // _allRotamer.atoms[atomWithPos.atom->code()].emplace_back(atomWithPos.atom);
-                // _allRotamer.positions[atomWithPos.atom].emplace_back(atomWithPos.wp.ave);>
                 bool isPresent {false};
-                if (!_allRotamer.positions[atomWithPos.atom].empty()/*&& !atomWithPos.atom->isMainChain()*/)
+                if (_allRotamer.positions[atomWithPos.atom].empty())
                 {
-                    int x = 0;
-                    while (x <= _allRotamer.positions[atomWithPos.atom].size())
-                    {
-
-                        if (_allRotamer.positions[atomWithPos.atom][x] == atomWithPos.wp.ave)
-                        {
-                            isPresent = true;
-                            break;
-                        }
-                        x++;
-                    }
+                    _allRotamer.positions[atomWithPos.atom].emplace_back(atomWithPos.wp.ave);
+                    _atomPosMap[atomWithPos.atom].samples.emplace_back(atomWithPos.wp.ave);
+                    continue;
                 }
+                int x = 0;
+                while (x <= _allRotamer.positions[atomWithPos.atom].size())
+                {
+                    if (_allRotamer.positions[atomWithPos.atom][x] == atomWithPos.wp.ave)
+                    {
+                        isPresent = true;
+                        //x++;
+                        break;
+                    }
+                    x++;
+                }
+
                 if (isPresent == false)
                 {
                     _allRotamer.positions[atomWithPos.atom].emplace_back(atomWithPos.wp.ave);
                 }
                 _atomPosMap[atomWithPos.atom].samples.emplace_back(atomWithPos.wp.ave);
-
-
             }
-
             r->transplantPositions(false);
-            r->destroy();
-
-            return weight;
         }
 
         r->transplantPositions(false);
 
         r->destroy();
         return weight;
-    }
-
-    move(weight, _mode);
-    return weight;
-
 }
 
 void RotamerModifier::move(float weight, parameter xy)
@@ -105,7 +93,6 @@ void RotamerModifier::move(float weight, parameter xy)
     Result *r = new Result;
     if (!_atomPosMap.empty())
     {
-        _atomPosMap2.clear();
         if (xy == MoveX)
         {
             _xTrans = _x*glm::vec3(weight*3);
@@ -116,31 +103,30 @@ void RotamerModifier::move(float weight, parameter xy)
         }
         for ( auto const& x : _atomPosMap)
         {
-            if (x.first->chain() == "B")
+            if (x.first->chain() == "A")
             {
                 for (auto &pos : x.second.samples)
                 {
-                    _atomPosMap2[x.first].samples.emplace_back(_xTrans+_yTrans+ pos);
                     r->aps[x.first].samples.emplace_back(_xTrans+_yTrans+ pos);
                 }
             }
-            else for (auto &pos : x.second.samples)
-                _atomPosMap2[x.first].samples.emplace_back(pos);
 
         }
-
         r->transplantPositions(false);
         r->destroy();
     }
-    primaryCollisionBoxes();
+     if (_allRotamer.primaryBoxes["A"].xMin)
+     {
+         if (isIntersection(_allRotamer.primaryBoxes["A"], _allRotamer.primaryBoxes["B"], (_xTrans+_yTrans))==true)
+         {
+             std::cout << "CONTACT"<< std::endl;
+             IntersectionList(_allRotamer.secondaryBoxes);
+             residueCollisions();
 
-    if (boxes["A"].xMin)
-    {
-        if (isIntersection(boxes["A"], boxes["B"])==true)
-            std::cout << "CONTACT"<< std::endl;
-        else
-            std::cout << "TOO FAR"<< std::endl;
-    }
+         }
+         else
+             std::cout << "TOO FAR"<< std::endl;
+     }
 }
 
 void RotamerModifier::submitJob(float weight)
@@ -269,19 +255,37 @@ void RotamerModifier::generateRotamerMapPosition() //iteration for all the rotam
         {
             submitJobAndRetrieve(x, Map);
         }
+        if (_referential == false &&!_atomPosMap.empty()) // Rotating the helices to be aligned with the main referential
+        {
+            const glm::mat3x3& R {_normal,_x,_y};
+            for (auto &atom : _atomPosMap)
+            {
+                for (auto &pos : atom.second.samples)
+                {
+                    pos = glm::inverse(R) * pos;
+                }
+            }
+            _normal = glm::inverse(R) * _normal;
+            _x = glm::inverse(R) * _x;
+            _y = glm::inverse(R) * _y;
+
+            std::cout << "position transplanted" << std::endl;
+            _referential = true;
+        }
+        primaryCollisionBoxes();
+        secondaryCollisionBoxes(_allRotamer.secondaryBoxes, "B");
+        secondaryCollisionBoxes(_allRotamer.individualBoxes, "A",true);
         Result *r = new Result;
         r->aps = _atomPosMap;
         r->transplantPositions();
         r->destroy();
         bouquetInitializer();
     }
-    //axisForChain();
     _map = true;
 }
 
 void RotamerModifier::bouquetInitializer()
 {
-
     for ( auto& [atom, pos] : _allRotamer.positions)
     {
         for (auto x : pos)
@@ -303,7 +307,6 @@ glm::vec3 RotamerModifier::axisForChain(points p, std::string chainName)
     glm::vec3 firstPosition {};
     glm::vec3 secondPosition {};
     bool firstFound = false;
-
     for (auto atom : _group->atomVector())
     {
         if (atom->chain() == chainName && atom->atomName() == "CA" && !firstFound)
@@ -315,58 +318,85 @@ glm::vec3 RotamerModifier::axisForChain(points p, std::string chainName)
         {
             secondPosition = atom->initialPosition();
         }
-        std::cout << "\tFirst atom position : " << firstPosition << " and second atom position : " << secondPosition << std::endl;
-
+        //std::cout << "\tFirst atom position : " << firstPosition
+        //<< " and second atom position : " << secondPosition << std::endl;
     }
-    std::cout << "First atom position : " << firstPosition << " and second atom position : " << secondPosition << std::endl;
+    std::cout << "First atom position : " << firstPosition
+    << " and second atom position : " << secondPosition << std::endl;
     _axis1 = secondPosition - firstPosition;
-    glm::vec3 firstPointLeft = firstPosition + glm::vec3(0,5,0)-_axis1;
-    glm::vec3 bigLine = firstPosition +_axis1*glm::vec3(1.1);
+    glm::vec3 endLine = firstPosition +_axis1*glm::vec3(1.1);
     std::cout << "axisForChain :" << std::endl << "\tVector _axis1 :  " << _axis1 << std::endl;
 
     if (p == Start)
         return firstPosition-_axis1*glm::vec3(0.3);
     if (p == End)
-        return bigLine;
-    //Line axis1 = new Line();
-    // Line axis2 = new Line(true);
-    // // axis1.addPoint(firstPosition);
-    // // axis1.addPoint(secondPosition);
-    // axis2.addPoint(bigLine);
-    // axis2.addPoint(firstPosition);
-    //Result *r = new Result;
-
-
+        return endLine;
 }
-bool RotamerModifier::isIntersection(CollisionBox a, CollisionBox b)
+bool RotamerModifier::isIntersection(CollisionBox &movingBox, CollisionBox &staticBox, glm::vec3 translation)
 {
-return (
-    a.xMin <= b.xMax &&
-    a.xMax >= b.xMin &&
-    a.yMin <= b.yMax &&
-    a.yMax >= b.yMin &&
-    a.zMin <= b.zMax &&
-    a.zMax >= b.zMin
+    return (
+    movingBox.xMin + translation.x <= staticBox.xMax &&
+    movingBox.xMax + translation.x >= staticBox.xMin &&
+    movingBox.yMin + translation.y <= staticBox.yMax &&
+    movingBox.yMax + translation.y >= staticBox.yMin &&
+    movingBox.zMin + translation.z <= staticBox.zMax &&
+    movingBox.zMax + translation.z >= staticBox.zMin
     );
 }
+std::vector<glm::vec3> RotamerModifier::intersectionBox()
+{
+    std::vector<glm::vec3> intersection {};
 
-std::vector<glm::vec3> RotamerModifier::makePlan()
+    if (isIntersection(_allRotamer.primaryBoxes["A"], _allRotamer.primaryBoxes["B"], (_xTrans+_yTrans))==false)
+    {
+        return intersection;
+    }
+    CollisionBox &movingBox = _allRotamer.primaryBoxes["A"];
+    CollisionBox &staticBox = _allRotamer.primaryBoxes["B"];
+    glm::vec3 translation {_xTrans + _yTrans};
+    glm::vec3 pMin {std::max(movingBox.xMin+ translation.x, staticBox.xMin),std::max(movingBox.yMin+ translation.y, staticBox.yMin),std::max(movingBox.zMin+ translation.z, staticBox.zMin)};
+    glm::vec3 pMax {std::min(movingBox.xMax+ translation.x, staticBox.xMax),std::min(movingBox.yMax+ translation.y, staticBox.yMax),std::min(movingBox.zMax+ translation.z, staticBox.zMax)};
+
+    intersection.emplace_back(pMin.x,pMin.y, pMin.z);
+    intersection.emplace_back(pMin.x,pMin.y, pMax.z);
+    intersection.emplace_back(pMin.x,pMax.y, pMax.z);
+    intersection.emplace_back(pMin.x,pMax.y, pMin.z);
+    intersection.emplace_back(pMin.x,pMin.y, pMin.z);
+    intersection.emplace_back(pMax.x,pMin.y, pMin.z);
+    intersection.emplace_back(pMax.x,pMin.y, pMax.z);
+    intersection.emplace_back(pMin.x,pMin.y, pMax.z);
+    intersection.emplace_back(pMax.x,pMin.y, pMax.z);
+    intersection.emplace_back(pMax.x,pMax.y, pMax.z);
+    intersection.emplace_back(pMin.x,pMax.y, pMax.z);
+    intersection.emplace_back(pMin.x,pMax.y, pMin.z);
+    intersection.emplace_back(pMax.x,pMax.y, pMin.z);
+    intersection.emplace_back(pMax.x,pMax.y, pMax.z);
+    intersection.emplace_back(pMax.x,pMax.y, pMin.z);
+    intersection.emplace_back(pMax.x,pMin.y, pMin.z);
+    return intersection;
+}
+void RotamerModifier::makePlan()
 /* Plan:
  * - take the reference helix (the one that will stay static)
  * - generate a plan perpendicular to this helix' axis
  * - create two vectors that will enable movement of the moving helix
  */
 {
-    std::vector<glm::vec3> axis;
-
     glm::vec3 p1 = axisForChain(Start, "A");
     glm::vec3 p2 = axisForChain(End, "A");
-    glm::vec3 normal = glm::normalize(p2 - p1);
-    glm::vec3 midPoint = (p1 + p2)/ glm::vec3(2.f);
-    _x = glm::normalize(cross(normal, vec3(1.0,0.0,0)));
-    _y = glm:: normalize(cross(normal, _x));
-    axis.emplace_back(normal);
+    _normal = glm::normalize(p2 - p1); //_normal == axis of the A chain
+    _x = glm::normalize(cross(_normal, vec3(1.0,0.0,0)));
+    _y = glm:: normalize(cross(_normal, _x));
+}
+std::vector<glm::vec3> RotamerModifier::drawAxis()
+{
+    glm::vec3 startingPoint = {0,0,0};
+    std::vector<glm::vec3> axis;
+    axis.emplace_back(startingPoint);
+    axis.emplace_back(_normal);
+    axis.emplace_back(startingPoint);
     axis.emplace_back(_x);
+    axis.emplace_back(startingPoint);
     axis.emplace_back(_y);
     return axis;
 }
@@ -374,57 +404,222 @@ std::vector<glm::vec3> RotamerModifier::makePlan()
 
 void RotamerModifier::primaryCollisionBoxes()
 {
-    boxes.clear();
-    for (auto &atom : _atomPosMap2)
+    _allRotamer.primaryBoxes.clear();
+    for (auto &atom : _atomPosMap)
     {
         std::string chainName = atom.first->chain();
         for (auto &pos : atom.second.samples)
         {
-            if (!boxes[chainName].xMin)
+            if (!_allRotamer.primaryBoxes[chainName].xMin)
             {
-                boxes[chainName].xMin = pos.x;
-                boxes[chainName].xMax = pos.x;
+                _allRotamer.primaryBoxes[chainName].xMin = pos.x;
+                _allRotamer.primaryBoxes[chainName].xMax = pos.x;
             }
-            else if (pos.x < boxes[chainName].xMin)
+            else if (pos.x < _allRotamer.primaryBoxes[chainName].xMin)
             {
-                boxes[chainName].xMin = pos.x;
+                _allRotamer.primaryBoxes[chainName].xMin = pos.x;
             }
-            else if (pos.x > boxes[chainName].xMax)
+            else if (pos.x > _allRotamer.primaryBoxes[chainName].xMax)
             {
-                boxes[chainName].xMax = pos.x;
+                _allRotamer.primaryBoxes[chainName].xMax = pos.x;
             }
-
-            if (!boxes[chainName].yMin)
+            if (!_allRotamer.primaryBoxes[chainName].yMin)
             {
-                boxes[chainName].yMin = pos.y;
-                boxes[chainName].yMax = pos.y;
-
+                _allRotamer.primaryBoxes[chainName].yMin = pos.y;
+                _allRotamer.primaryBoxes[chainName].yMax = pos.y;
             }
-            else if (pos.y < boxes[chainName].yMin)
+            else if (pos.y < _allRotamer.primaryBoxes[chainName].yMin)
             {
-                boxes[chainName].yMin = pos.y;
+                _allRotamer.primaryBoxes[chainName].yMin = pos.y;
             }
-            else if (pos.y > boxes[chainName].yMax)
+            else if (pos.y > _allRotamer.primaryBoxes[chainName].yMax)
             {
-                boxes[chainName].yMax = pos.y;
+                _allRotamer.primaryBoxes[chainName].yMax = pos.y;
             }
-
-            if (!boxes[chainName].zMin)
+            if (!_allRotamer.primaryBoxes[chainName].zMin)
             {
-                boxes[chainName].zMin = pos.z;
-                boxes[chainName].zMax = pos.z;
-
+                _allRotamer.primaryBoxes[chainName].zMin = pos.z;
+                _allRotamer.primaryBoxes[chainName].zMax = pos.z;
             }
 
-            if (pos.z < boxes[chainName].zMin)
+            if (pos.z < _allRotamer.primaryBoxes[chainName].zMin)
             {
-                boxes[chainName].zMin = pos.z;
+                _allRotamer.primaryBoxes[chainName].zMin = pos.z;
             }
-            else if (pos.z > boxes[chainName].zMax)
+            else if (pos.z > _allRotamer.primaryBoxes[chainName].zMax)
             {
-                boxes[chainName].zMax = pos.z;
+                _allRotamer.primaryBoxes[chainName].zMax = pos.z;
             }
         }
     }
-//std::cout << "Collision boxes made" << std::endl << '\t' << boxes["B"].xMin << std::endl;
+    for (auto &box : _allRotamer.primaryBoxes)
+    {
+        _allRotamer.primaryBoxes[box.first].vertices.clear();
+        _allRotamer.primaryBoxes[box.first].vertices.emplace_back(box.second.xMin,box.second.yMin, box.second.zMin);
+        _allRotamer.primaryBoxes[box.first].vertices.emplace_back(box.second.xMin,box.second.yMin, box.second.zMax);
+        _allRotamer.primaryBoxes[box.first].vertices.emplace_back(box.second.xMin,box.second.yMax, box.second.zMax);
+        _allRotamer.primaryBoxes[box.first].vertices.emplace_back(box.second.xMin,box.second.yMax, box.second.zMin);
+        _allRotamer.primaryBoxes[box.first].vertices.emplace_back(box.second.xMin,box.second.yMin, box.second.zMin);
+        _allRotamer.primaryBoxes[box.first].vertices.emplace_back(box.second.xMax,box.second.yMin, box.second.zMin);
+        _allRotamer.primaryBoxes[box.first].vertices.emplace_back(box.second.xMax,box.second.yMin, box.second.zMax);
+        _allRotamer.primaryBoxes[box.first].vertices.emplace_back(box.second.xMin,box.second.yMin, box.second.zMax);
+        _allRotamer.primaryBoxes[box.first].vertices.emplace_back(box.second.xMax,box.second.yMin, box.second.zMax);
+        _allRotamer.primaryBoxes[box.first].vertices.emplace_back(box.second.xMax,box.second.yMax, box.second.zMax);
+        _allRotamer.primaryBoxes[box.first].vertices.emplace_back(box.second.xMin,box.second.yMax, box.second.zMax);
+        _allRotamer.primaryBoxes[box.first].vertices.emplace_back(box.second.xMin,box.second.yMax, box.second.zMin);
+        _allRotamer.primaryBoxes[box.first].vertices.emplace_back(box.second.xMax,box.second.yMax, box.second.zMin);
+        _allRotamer.primaryBoxes[box.first].vertices.emplace_back(box.second.xMax,box.second.yMax, box.second.zMax);
+        _allRotamer.primaryBoxes[box.first].vertices.emplace_back(box.second.xMax,box.second.yMax, box.second.zMin);
+        _allRotamer.primaryBoxes[box.first].vertices.emplace_back(box.second.xMax,box.second.yMin, box.second.zMin);
+    }
+    std::cout << "boxes done" << std::endl;
 }
+
+void RotamerModifier::secondaryCollisionBoxes(std::map<ResidueId,CollisionBox> &secondaryBoxes, std::string chain, bool individual)
+{
+    secondaryBoxes.clear();
+
+    for (auto &atomPair : _atomPosMap)
+    {
+        std::string resName = atomPair.first->chain() + std::to_string(atomPair.first->residueNumber());
+        std::string resName1 {resName};
+
+        int counter = 0;
+        for (auto &pos : atomPair.second.samples)
+        {
+            if (secondaryBoxes[resName].name == "")
+                secondaryBoxes[resName].name = resName;
+            if (individual)
+                resName = resName1 + std::to_string(counter);
+            if (!secondaryBoxes[resName].xMin)
+            {
+                secondaryBoxes[resName].xMin = pos.x;
+                secondaryBoxes[resName].xMax = pos.x;
+            }
+            else if (pos.x < secondaryBoxes[resName].xMin)
+            {
+                secondaryBoxes[resName].xMin = pos.x;
+            }
+            else if (pos.x > secondaryBoxes[resName].xMax)
+            {
+                secondaryBoxes[resName].xMax = pos.x;
+            }
+            if (!secondaryBoxes[resName].yMin)
+            {
+                secondaryBoxes[resName].yMin = pos.y;
+                secondaryBoxes[resName].yMax = pos.y;
+            }
+            else if (pos.y < secondaryBoxes[resName].yMin)
+            {
+                secondaryBoxes[resName].yMin = pos.y;
+            }
+            else if (pos.y > secondaryBoxes[resName].yMax)
+            {
+                secondaryBoxes[resName].yMax = pos.y;
+            }
+            if (!secondaryBoxes[resName].zMin)
+            {
+                secondaryBoxes[resName].zMin = pos.z;
+                secondaryBoxes[resName].zMax = pos.z;
+            }
+
+            if (pos.z < secondaryBoxes[resName].zMin)
+            {
+                secondaryBoxes[resName].zMin = pos.z;
+            }
+            else if (pos.z > secondaryBoxes[resName].zMax)
+            {
+                secondaryBoxes[resName].zMax = pos.z;
+            }
+            ++counter;
+        }
+    }
+    for (auto &box : secondaryBoxes)
+    {
+        secondaryBoxes[box.first].vertices.clear();
+        secondaryBoxes[box.first].vertices.emplace_back(secondaryBoxes[box.first].xMin,secondaryBoxes[box.first].yMin, secondaryBoxes[box.first].zMin);
+        secondaryBoxes[box.first].vertices.emplace_back(secondaryBoxes[box.first].xMin,secondaryBoxes[box.first].yMin, secondaryBoxes[box.first].zMax);
+        secondaryBoxes[box.first].vertices.emplace_back(secondaryBoxes[box.first].xMin,secondaryBoxes[box.first].yMax, secondaryBoxes[box.first].zMax);
+        secondaryBoxes[box.first].vertices.emplace_back(secondaryBoxes[box.first].xMin,secondaryBoxes[box.first].yMax, secondaryBoxes[box.first].zMin);
+        secondaryBoxes[box.first].vertices.emplace_back(secondaryBoxes[box.first].xMin,secondaryBoxes[box.first].yMin, secondaryBoxes[box.first].zMin);
+        secondaryBoxes[box.first].vertices.emplace_back(secondaryBoxes[box.first].xMax,secondaryBoxes[box.first].yMin, secondaryBoxes[box.first].zMin);
+        secondaryBoxes[box.first].vertices.emplace_back(secondaryBoxes[box.first].xMax,secondaryBoxes[box.first].yMin, secondaryBoxes[box.first].zMax);
+        secondaryBoxes[box.first].vertices.emplace_back(secondaryBoxes[box.first].xMin,secondaryBoxes[box.first].yMin, secondaryBoxes[box.first].zMax);
+        secondaryBoxes[box.first].vertices.emplace_back(secondaryBoxes[box.first].xMax,secondaryBoxes[box.first].yMin, secondaryBoxes[box.first].zMax);
+        secondaryBoxes[box.first].vertices.emplace_back(secondaryBoxes[box.first].xMax,secondaryBoxes[box.first].yMax, secondaryBoxes[box.first].zMax);
+        secondaryBoxes[box.first].vertices.emplace_back(secondaryBoxes[box.first].xMin,secondaryBoxes[box.first].yMax, secondaryBoxes[box.first].zMax);
+        secondaryBoxes[box.first].vertices.emplace_back(secondaryBoxes[box.first].xMin,secondaryBoxes[box.first].yMax, secondaryBoxes[box.first].zMin);
+        secondaryBoxes[box.first].vertices.emplace_back(secondaryBoxes[box.first].xMax,secondaryBoxes[box.first].yMax, secondaryBoxes[box.first].zMin);
+        secondaryBoxes[box.first].vertices.emplace_back(secondaryBoxes[box.first].xMax,secondaryBoxes[box.first].yMax, secondaryBoxes[box.first].zMax);
+        secondaryBoxes[box.first].vertices.emplace_back(secondaryBoxes[box.first].xMax,secondaryBoxes[box.first].yMax, secondaryBoxes[box.first].zMin);
+        secondaryBoxes[box.first].vertices.emplace_back(secondaryBoxes[box.first].xMax,secondaryBoxes[box.first].yMin, secondaryBoxes[box.first].zMin);
+    }
+    std::cout << "boxes done" << std::endl;
+}
+void RotamerModifier::IntersectionList(std::map<ResidueId, CollisionBox> &collisionBoxList)
+{
+    std::vector<glm::vec3> collision = intersectionBox();
+    CollisionBox instantCollision {};
+    _allRotamer.collisions.clear();
+    for (auto vector : collision)
+    {
+        if (!instantCollision.xMin)
+        {
+            instantCollision.xMin = vector.x;
+            instantCollision.xMax = vector.x;
+        }
+        else if (vector.x <= instantCollision.xMin)
+            instantCollision.xMin = vector.x;
+        else if (vector.x >= instantCollision.xMax)
+            instantCollision.xMax = vector.x;
+
+        if (!instantCollision.yMin)
+        {
+            instantCollision.yMin = vector.y;
+            instantCollision.yMax = vector.y;
+        }
+        else if (vector.y <= instantCollision.yMin)
+            instantCollision.yMin = vector.y;
+        else if (vector.y >= instantCollision.yMax)
+            instantCollision.yMax = vector.y;
+
+        if (!instantCollision.zMin)
+        {
+            instantCollision.zMin = vector.z;
+            instantCollision.zMax = vector.z;
+        }
+        else if (vector.z <= instantCollision.zMin)
+            instantCollision.zMin = vector.z;
+        else if (vector.z >= instantCollision.zMax)
+            instantCollision.zMax = vector.z;
+    }
+    for (auto rotamerBouquetPair : collisionBoxList)
+    {
+    if (isIntersection(rotamerBouquetPair.second, instantCollision,(rotamerBouquetPair.first.insert[0] == 'A' ? _xTrans+ _yTrans :  glm::vec3 {0,0,0} )))
+        {
+            //collisionBoxList[rotamerBouquetPair.first].collision = true;
+            _allRotamer.collisions[(rotamerBouquetPair.first.insert[0] == 'A' ? "A" : "B")].emplace_back(rotamerBouquetPair.second);
+        //std::cout << "Residue " << rotamerBouquetPair.first << "\tis colliding"<< std::endl;
+        }
+    else
+        collisionBoxList[rotamerBouquetPair.first].collision = false;
+    }
+}
+
+void RotamerModifier::residueCollisions()
+{
+    for (auto collisionA : _allRotamer.collisions["A"])
+    {
+        for (auto collisionB : _allRotamer.collisions["B"])
+            if (isIntersection(collisionA,collisionB, _xTrans+ _yTrans))
+            {
+                std::cout << "Collision between :\t" << collisionA.name << "\tand\t" << collisionB.name << std::endl;
+            }
+    }
+}
+
+/*Monday's work Implementation of dynamic labelling of interacting secondary boxes, working towards a working third boxes collision test.
+ *
+ * Should I not stay on AABB and work with boxes adapted to each amino acids?
+ * 
+ */
