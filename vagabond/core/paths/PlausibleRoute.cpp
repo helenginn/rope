@@ -346,7 +346,7 @@ bool PlausibleRoute::sideChainGradients(int order)
 		const ResidueId &local = rt.local_id();
 		WayPoints &wps = wayPoints(i);
 
-		for (int j = 0; j <= order; j++)
+		for (int j = 0; j < order; j++)
 		{
 			addFloatParameter(&wps._amps[j], step);
 			map[local].push_back(n);
