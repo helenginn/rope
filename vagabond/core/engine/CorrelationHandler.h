@@ -20,8 +20,8 @@
 #define __vagabond__CorrelationHandler__
 
 #include <thread>
-#include "engine/Handler.h"
-#include "engine/ElementTypes.h"
+#include "Handler.h"
+#include "ElementTypes.h"
 
 class BondCalculator;
 class MapSumHandler;

@@ -26,8 +26,8 @@
 #include <vector>
 #include <set>
 #include <cstddef>
-#include "function_typedefs.h"
-#include "paths/Contacts.h"
+#include "vagabond/core/function_typedefs.h"
+#include "Contacts.h"
 
 class Atom;
 class BondSequence;

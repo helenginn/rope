@@ -16,8 +16,8 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#include "engine/workers/ThreadWorksOnObject.h"
-#include "RopeJob.h"
+#include "ThreadWorksOnObject.h"
+#include "vagabond/core/RopeJob.h"
 
 class Model;
 

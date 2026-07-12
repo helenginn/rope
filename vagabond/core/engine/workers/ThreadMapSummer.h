@@ -19,7 +19,7 @@
 #ifndef __vagabond__ThreadMapSummer__
 #define __vagabond__ThreadMapSummer__
 
-#include "engine/workers/ThreadWorker.h"
+#include "ThreadWorker.h"
 
 class MapSumHandler;
 class MapTransferHandler;

@@ -20,8 +20,8 @@
 #define __vagabond__ElementTypes__
 
 #include <vector>
-#include "grids/QuickSegment.h"
-#include "AtomPosMap.h"
+#include "vagabond/core/grids/QuickSegment.h"
+#include "vagabond/core/AtomPosMap.h"
 
 namespace Flag
 {

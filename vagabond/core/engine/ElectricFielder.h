@@ -21,7 +21,7 @@
 
 #include "ElementTypes.h"
 #include "TransferHandler.h"
-#include "AtomPosMap.h"
+#include "vagabond/core/AtomPosMap.h"
 
 class CoulombSegment;
 class BondSequence;

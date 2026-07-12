@@ -19,10 +19,10 @@
 #ifndef __vagabond__PlausibleRoute__
 #define __vagabond__PlausibleRoute__
 
-#include "paths/Route.h"
-#include "Progressor.h"
-#include "MultiEngine.h"
-#include "SimplexEngine.h"
+#include "Route.h"
+#include "vagabond/core/Progressor.h"
+#include "vagabond/core/MultiEngine.h"
+#include "vagabond/core/SimplexEngine.h"
 #include "GradientTerm.h"
 #include <vagabond/c4x/Angular.h>
 #include <functional>

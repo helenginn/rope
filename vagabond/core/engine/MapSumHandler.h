@@ -19,8 +19,8 @@
 #ifndef __vagabond__MapSumHandler__
 #define __vagabond__MapSumHandler__
 
-#include "engine/Handler.h"
-#include "engine/ElementTypes.h"
+#include "Handler.h"
+#include "ElementTypes.h"
 
 class MiniJobMap;
 class ElementSegment;

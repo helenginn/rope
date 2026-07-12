@@ -20,7 +20,7 @@
 #define __vagabond__ContactSheet__
 
 #include <set>
-#include "Atom.h"
+#include "vagabond/core/Atom.h"
 
 /** \class ContactSheet
  * \brief class to pre-calculate and then query inter-atomic contacts

@@ -19,7 +19,7 @@
 #ifndef __vagabond__MultiEngineBase__
 #define __vagabond__MultiEngineBase__
 
-#include <engine/Task.h>
+#include "engine/Task.h"
 
 class Engine;
 class Tasks;

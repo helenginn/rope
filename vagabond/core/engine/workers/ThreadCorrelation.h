@@ -19,7 +19,7 @@
 #ifndef __vagabond__ThreadCorrelation__
 #define __vagabond__ThreadCorrelation__
 
-#include "engine/workers/ThreadWorker.h"
+#include "ThreadWorker.h"
 
 class CorrelationHandler;
 class MapSumHandler;

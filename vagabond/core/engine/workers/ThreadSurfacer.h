@@ -19,7 +19,7 @@
 #ifndef __vagabond__ThreadSurfacer__
 #define __vagabond__ThreadSurfacer__
 
-#include "engine/workers/ThreadWorker.h"
+#include "ThreadWorker.h"
 
 class SurfaceAreaHandler;
 class AreaMeasurer;

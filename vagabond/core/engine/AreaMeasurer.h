@@ -19,7 +19,7 @@
 #ifndef __vagabond__AreaMeasurer__
 #define __vagabond__AreaMeasurer__
 
-#include "AtomPosMap.h"
+#include "vagabond/core/AtomPosMap.h"
 
 class SurfaceAreaHandler;
 class ContactSheet;

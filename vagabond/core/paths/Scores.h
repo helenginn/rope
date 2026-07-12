@@ -19,7 +19,7 @@
 #ifndef __vagabond__Scores__
 #define __vagabond__Scores__
 
-#include "ResidueId.h"
+#include "vagabond/core/ResidueId.h"
 #include "../engine/ElementTypes.h"
 #include <mutex>
 

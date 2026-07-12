@@ -19,8 +19,8 @@
 #ifndef __vagabond__ThreadWorksOnObject__
 #define __vagabond__ThreadWorksOnObject__
 
-#include "engine/workers/ThreadWorker.h"
-#include "RopeJob.h"
+#include "ThreadWorker.h"
+#include "vagabond/core/RopeJob.h"
 
 class Model;
 

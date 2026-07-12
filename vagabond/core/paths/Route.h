@@ -20,18 +20,18 @@
 #define __vagabond__Route__
 
 #include <atomic>
-#include "StructureModification.h"
-#include "engine/CoordManager.h"
-#include "function_typedefs.h"
+#include "vagabond/core/StructureModification.h"
+#include "vagabond/core/engine/CoordManager.h"
+#include "vagabond/core/function_typedefs.h"
 #include "BestGuessTorsions.h"
 #include "SubmissionHelp.h"
-#include "NonCovalents.h"
+#include "vagabond/core/NonCovalents.h"
 #include "Selection.h"
 #include "Resource.h"
-#include "Responder.h"
+#include "vagabond/core/Responder.h"
 #include "RTMotion.h"
-#include "paths/Scores.h"
-#include "Bin.h"
+#include "Scores.h"
+#include "vagabond/core/Bin.h"
 
 struct InstancePair
 {
@@ -72,6 +72,16 @@ public:
 	void setNonCovalents(NonCovalents *noncovs)
 	{
 		_noncovs = noncovs;
+	}
+
+	NonCovalents *nonCovalents()
+	{
+		return _noncovs;
+	}
+
+	const NonCovalents *nonCovalents() const
+	{
+		return _noncovs;
 	}
 
 	void colourHiddenHinges(float frac); // need to clear the colour yourself

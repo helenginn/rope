@@ -20,10 +20,10 @@
 #define __vagabond__Blame__
 
 #include <vagabond/utils/OpSet.h>
-#include "PathGroup.h"
-#include "Progressor.h"
+#include "vagabond/core/PathGroup.h"
+#include "vagabond/core/Progressor.h"
 #include "Scores.h"
-#include "Instance.h"
+#include "vagabond/core/Instance.h"
 #include <map>
 #include <mutex>
 

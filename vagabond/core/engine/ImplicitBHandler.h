@@ -20,7 +20,7 @@
 #define __vagabond__ImplicitBHandler__
 
 #include <thread>
-#include "engine/Handler.h"
+#include "Handler.h"
 //#include "engine/ElementTypes.h"
 
 class AtomMap;

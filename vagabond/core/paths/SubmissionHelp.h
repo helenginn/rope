@@ -20,12 +20,12 @@
 #define __vagabond__SubmissionHelp__
 
 #include <iostream>
-#include "engine/ElementTypes.h"
-#include "engine/Task.h"
-#include "paths/EnergyTorsions.h"
-#include "paths/BundleBonds.h"
-#include "paths/Scores.h"
-#include "Bin.h"
+#include "vagabond/core/engine/ElementTypes.h"
+#include "vagabond/core/engine/Task.h"
+#include "EnergyTorsions.h"
+#include "BundleBonds.h"
+#include "Scores.h"
+#include "vagabond/core/Bin.h"
 
 class BondSequenceHandler;
 class PairwiseDeviations;

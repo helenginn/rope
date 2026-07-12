@@ -20,9 +20,9 @@
 #define __vagabond__RTMotion__
 
 #include <vagabond/c4x/DataFloat.h>
-#include "RTVector.h"
-#include "WayPoint.h"
-#include "Atom.h"
+#include "vagabond/core/RTVector.h"
+#include "vagabond/core/WayPoint.h"
+#include "vagabond/core/Atom.h"
 
 struct Motion
 {

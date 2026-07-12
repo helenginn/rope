@@ -20,7 +20,7 @@
 #define __vagabond__MapTransferHandler__
 
 #include "TransferHandler.h"
-#include "BondSequence.h"
+#include "vagabond/core/BondSequence.h"
 
 class AtomGroup;
 class MapSumHandler;
