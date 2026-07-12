@@ -38,7 +38,7 @@
 using namespace hnet;
 
 Coordinated::Coordinated(Network &network, ::Atom *atom, char conf)
-: _network(network), _atomConf{atom, conf}
+: _network(network), _atomConf{atom, conf}, _options(network)
 {
 	probeAtom();
 	_network.atomMap()[_atomConf] = this;
@@ -497,36 +497,40 @@ OpSet<ACPair> Coordinated::uninvolvedCoordinators()
 
 	std::map<::Atom *, std::vector<char>> atom_to_confs;
 	std::map<::Atom *, int> perm;
-	if (_uninvolved.size() == 0)
+	if (_calculatedCov)
 	{
-		std::vector<CovalentProbe *> covalents = 
-		_network.covalentsForAtom(_atomConf);
-		
-		_uninvolved = turn_into_set(covalents);
-		std::map<AtomConf, hnet::CovalentConnector *> covMap
-		(_uninvolved.begin(), _uninvolved.end());
-		
-		for (const ACPair &bond : _uninvolved)
-		{
-			atom_to_confs[bond.first.ptr].push_back(bond.first.conf);
-			perm[bond.first.ptr] = 0;
-		}
-
-		do
-		{
-			OpSet<ACPair> group;
-			for (auto it = perm.begin(); it != perm.end(); it++)
-			{
-				char conf = atom_to_confs[it->first][it->second];
-				AtomConf picked = {it->first, conf};
-				group.insert({picked, covMap[picked]});
-			}
-			_uninvolved_groups.insert(group);
-		}
-		while (next_permutation(perm, atom_to_confs));
-		
+		return _uninvolved;
 	}
-	
+
+	std::cout << "Calculating covalent connections to " << atomConf()
+	<< std::endl;
+
+	std::vector<CovalentProbe *> covalents = 
+	_network.covalentsForAtom(_atomConf);
+
+	_uninvolved = turn_into_set(covalents);
+	std::map<AtomConf, hnet::CovalentConnector *> covMap
+	(_uninvolved.begin(), _uninvolved.end());
+
+	for (const ACPair &bond : _uninvolved)
+	{
+		atom_to_confs[bond.first.ptr].push_back(bond.first.conf);
+		perm[bond.first.ptr] = 0;
+	}
+
+	do
+	{
+		OpSet<ACPair> group;
+		for (auto it = perm.begin(); it != perm.end(); it++)
+		{
+			char conf = atom_to_confs[it->first][it->second];
+			AtomConf picked = {it->first, conf};
+			group.insert({picked, covMap[picked]});
+		}
+		_uninvolved_groups.insert(group);
+	}
+	while (next_permutation(perm, atom_to_confs));
+
 	auto does_not_include_this_atom = [this](CovalentProbe *cov)
 	{
 		Probe *const &p = _probe;
@@ -534,13 +538,16 @@ OpSet<ACPair> Coordinated::uninvolvedCoordinators()
 		Probe *r = &cov->right();
 		return (p != r && p != l);
 	};
-	
-	CountConnector *total_sum = nullptr;
-	
+
+	CountConnector *last_sum = nullptr;
+	std::vector<int> totals;
+
 	// for each atom, at least ONE bond will be 
 	for (const auto &pair : atom_to_confs)
 	{
 		CountConnector &accumulate = add(new CountConnector());
+		accumulate.setDesc("interim sum of covalent bonds for " 
+		                   + atomConf().desc());
 		std::vector<CountConnector *> individuals;
 
 		for (const char &conf : pair.second)
@@ -562,37 +569,39 @@ OpSet<ACPair> Coordinated::uninvolvedCoordinators()
 			}
 		}
 
+		totals.push_back(individuals.size());
+
 		OrCount &orCount = add_constraint(new OrCount(individuals, accumulate));
-		if (!total_sum)
+		if (!last_sum)
 		{
-			total_sum = &accumulate;
+			last_sum = &accumulate;
 		}
 		else
 		{
 			CountConnector &interim = add(new CountConnector());
-			add_constraint(new CountAdder(accumulate, interim, 
-			                              *total_sum));
-			total_sum = &interim;
+			add_constraint(new CountAdder(accumulate, *last_sum, interim));
+			last_sum = &interim;
 		}
 	}
 
 	std::cout << "Uninvolved: " << _uninvolved.size() << std::endl;
-	
-	/*
-	std::set<::Atom *> atoms;
-	for (const ACPair &pair : _uninvolved)
-	{
-		atoms.insert(pair.first.ptr);
-	}
-	
+	_calculatedCov = true;
 
-	std::vector<int> num = {(int)atoms.size()};
-	Count::Values number = values_as_count(num);
-	std::cout << "Number of covalent bonds for " << 
-	_atomConf << ": " << number << std::endl;
-	std::cout << _uninvolved_count << std::endl;
-	*/
-	_uninvolved_count = total_sum;
+	Count::Values single_only = values_as_count(totals);
+	if (totals.size() == 0)
+	{
+		single_only = Count::Zero;
+	}
+	add_constraint(new CountConstant(*_cov_single, single_only));
+
+	if (last_sum)
+	{
+		add_constraint(new EqualCount(*_covalent, *last_sum));
+	}
+	else
+	{
+		add_constraint(new CountConstant(*_covalent, Count::Zero));
+	}
 
 	findPlanarAtom();
 	return _uninvolved;
@@ -600,8 +609,8 @@ OpSet<ACPair> Coordinated::uninvolvedCoordinators()
 
 bool Coordinated::acceptableHydrogenAngle(const glm::vec3 &hydrogen)
 {
-	if (!_coord_num) return true;
-	std::vector<int> coord_nums = possible_values(_coord_num->value());
+	if (!_geometries) return true;
+	std::vector<int> coord_nums = possible_values(_geometries->value());
 	
 	for (const int &coordNum : coord_nums)
 	{
@@ -671,7 +680,8 @@ bool Coordinated::acceptableHydrogenAngle(const glm::vec3 &hydrogen,
 OpSet<PairSet> Coordinated::findSeeds(int coordNum)
 {
 	float target_angle = expected_angle_for_coordination(coordNum);
-	std::cout << "Target: " << target_angle << " for " << coordNum << std::endl;
+	std::cout << "Target: " << target_angle << "º for coordination number: " 
+	<< coordNum << std::endl;
 	uninvolvedCoordinators();
 	
 	OpSet<PairSet> results;
@@ -1048,6 +1058,12 @@ Coordinated::expandAllSeeds(OpSet<AtomConf> &clashCheck,
 
 	OpSet<PairSet> seeds = findSeeds(coord_num);
 	PairSet all = bonds();
+	std::cout << "All: ";
+	for (const auto &p : all)
+	{
+		std::cout << p << " ";
+	}
+	std::cout << std::endl;
 
 	// the above process may have ruled out some potential coordinators
 	// based on their own coordination geometry requirements, so we must
@@ -1065,8 +1081,8 @@ Coordinated::expandAllSeeds(OpSet<AtomConf> &clashCheck,
 		return false;
 	};
 
-	all.filter(filter_in);
 	all_used = all;
+	all_used.filter(filter_in);
 
 	all += uninvolved_group;
 
@@ -1130,7 +1146,7 @@ OpSet<PairSet> convert_pair_set_to_all_relationships(const PairSet &start)
 
 void Coordinated::mutualExclusions(AtomGroup *toClashCheck)
 {
-	if (!_expl_bonds)
+	if (!_unbroken_bonds)
 	{
 		return;
 	}
@@ -1181,8 +1197,13 @@ void Coordinated::mutualExclusions(AtomGroup *toClashCheck)
 		coord_state_to_unbroken_bonds[coord_num].push_back(extra_bonds_in_group);
 	};
 
-	std::vector<int> coord_nums = possible_values(_coord_num->value());
-
+	std::vector<int> coord_nums = possible_values(_geometries->value());
+	std::cout << "Possible coordination numbers: ";
+	for (const int &i : coord_nums)
+	{
+		std::cout << i << " ";
+	}
+	std::cout << std::endl;
 
 	for (const CovPairSet &uninvolved : _uninvolved_groups)
 	{
@@ -1276,12 +1297,13 @@ void Coordinated::mutualExclusions(AtomGroup *toClashCheck)
 	applyRestrictionsToUnbrokenBonds(coord_state_to_unbroken_bonds);
 	
 	add_constraint(new BreakMatrix(this, _bond2Exist, totalGroups, 
-	                               *_expl_bonds));
+	                               *_unbroken_bonds));
 }
 
 void Coordinated::applyRestrictionsToUnbrokenBonds
 (const std::map<int, std::vector<int>> &coord_state_to_unbroken_bonds)
 {
+	return;
 	if (coord_state_to_unbroken_bonds.size() == 0)
 	{
 		return;
@@ -1294,7 +1316,7 @@ void Coordinated::applyRestrictionsToUnbrokenBonds
 	std::cout << "Number of attached bonds: " << bondCount() << std::endl;
 	std::cout << "Count constraint: " << nb << std::endl;
 	std::cout << std::endl;
-	add_constraint(new CountConstant(*_expl_bonds, nb));
+	add_constraint(new CountConstant(*_unbroken_bonds, nb));
 	
 	
 	// we can use the total number of broken bonds to pin down the coordination
@@ -1482,6 +1504,37 @@ void Coordinated::attachToNeighbours(AtomGroup *searchGroup)
 		               ({&right, &re, &hExist},
 		               lone_pair_cannot_brace_hydrogen(right, re, hExist), 
 		               h, Existence::Absent));
+
+		auto hydrogen_cannot_brace_lonepair = [](ExistenceConnector &proton,
+		                                         ExistenceConnector &bExist,
+		                                         ExistenceConnector &hExist)
+		{
+			return [&bExist, &hExist, &proton]()
+			{
+				bool interesting = (bExist.value() == Existence::Present && 
+				                    hExist.value() == Existence::Present && 
+				                    proton.value() == Existence::Present);
+				return interesting;
+			};
+		};
+
+		add_constraint(new Stricter<Bond::Values>
+		               ({&left, &le, &h},
+		               lone_pair_cannot_brace_hydrogen(left, le, h), 
+		               left, Bond::NotLonePair));
+		add_constraint(new Stricter<Bond::Values>
+		               ({&right, &re, &h},
+		               lone_pair_cannot_brace_hydrogen(right, re, h), 
+		               right, Bond::NotLonePair));
+
+		add_constraint(new Stricter<Bond::Values>
+		               ({&h, &le, &hExist},
+		               hydrogen_cannot_brace_lonepair(h, le, hExist), 
+		               left, Bond::NotLonePair));
+		add_constraint(new Stricter<Bond::Values>
+		               ({&h, &re, &hExist},
+		               hydrogen_cannot_brace_lonepair(h, re, hExist), 
+		               right, Bond::NotLonePair));
 		
 		auto both_ends_exist = [&eRef, &eOther]()
 		{
@@ -1781,18 +1834,18 @@ void Coordinated::setupRealignment()
 		    (!bond || bond->value() & Bond::NotBroken) &&
 		    (!bond || !(bond->value() & Bond::Broken)))
 		{
-			HBondType is_free = Other;
+			HBondType type = Other;
 			
 			if (bond && bond->_placeholder)
 			{
-				is_free = Placeholder;
+				type = Placeholder;
 			}
-			else if (bond && (bond->value() != Bond::Donor))
+			else if (bond && (bond->value() == Bond::Donor))
 			{
-				is_free = Donor;
+				type = Donor;
 			}
 
-			collected.insert({ac, is_free});
+			collected.insert({ac, type});
 		}
 	};
 	
@@ -1893,6 +1946,12 @@ void Coordinated::setupRealignment()
 				it++;
 			}
 		};
+		
+		if (align_set.size() >= 5)
+		{
+			std::cout << "Warning! align_set is >= 5 for " << atomConf() << std::endl;
+			return;
+		}
 
 		transplant_positions(align_set);
 //		transplant_positions(align_free);
@@ -1912,8 +1971,10 @@ void trappedAdder(Coordinated *me, hnet::CountConnector *adder,
 
 	try
 	{
-		me->add_constraint(new Adder(me->bond2Exist(), *adder, 
-		                             me->existence(), me->atomConf().desc()));
+		auto result = me->add_constraint(new Adder(me->bond2Exist(), *adder, 
+		                                          me->existence(), 
+		                                          me->atomConf().desc()));
+		std::cout << "Added " << result.desc() << " successfully." << std::endl;
 	}
 	catch (const std::runtime_error &err)
 	{
@@ -1931,13 +1992,13 @@ void Coordinated::attachAdderConstraints()
 	std::cout << std::endl;
 	std::cout << "Adding adder constraints to " << atomConf().desc() 
 	<< std::endl;
+
 	try
 	{
 		trappedAdder<StrongAdder>(this, _donors, "donor adder");
 		trappedAdder<WeakAdder>(this, _acceptors, "acceptor adder");
-		trappedAdder<LonePairAdder>(this, _absent, "lone pair adder");
-//		trappedAdder<BondedAdder>(this, _present, "present adder");
-		trappedAdder<NotBrokenAdder>(this, _expl_bonds, "not broken adder");
+		trappedAdder<LonePairAdder>(this, _lonepair, "lone pair adder");
+		trappedAdder<NotBrokenAdder>(this, _unbroken_bonds, "not broken adder");
 	}
 	catch (const std::runtime_error &err)
 	{
@@ -1949,104 +2010,163 @@ void Coordinated::attachAdderConstraints()
 	}
 }
 
-void Coordinated::prepareCoordinated(const Count::Values &n_charge,
-                                 const Count::Values &n_coord_num,
-                                 const Count::Values &remaining_valency,
-                                     bool show_charge)
+void Coordinated::addCoordinationState(const Count::Values &n_geometry,
+                                     const Count::Values &n_charge,
+                                     const Count::Values &n_coord_num,
+                                     const Count::Values &neutral_bonds)
 {
-	std::cout << "Preparing coordinated for " << _atomConf << std::endl;
-	CountConnector &expl_donors = add_zero_or_positive_connector();
-	CountConnector &twirling_strong = add_zero_or_positive_connector();
-	CountConnector &all_strong = add_zero_or_positive_connector();
-	twirling_strong.setDesc("Twirling bonds of " + _atomConf.desc());
-	all_strong.setDesc("All donor bonds of " + _atomConf.desc());
-	CountConnector &expl_acceptors = add_zero_or_positive_connector();
-	CountConnector &expl_absent = add_zero_or_positive_connector();
-	CountConnector &expl_vacancies = add_zero_or_positive_connector();
-	expl_vacancies.setDesc("Explicit vacancies of " + _atomConf.desc());
-//	CountConnector &expl_present = add_zero_or_positive_connector();
-	CountConnector &expl_bonds = add_zero_or_positive_connector();
+	_options.addState({n_geometry, n_charge, n_coord_num, neutral_bonds});
+}
+
+void Coordinated::finishOptions()
+{
+	CountConnector &cov = add_zero_or_positive_connector();
+	cov.setDesc("Covalent bonds of " + _atomConf.desc());
+	_covalent = &cov;
+
+	CountConnector &single = add_zero_or_positive_connector();
+	single.setDesc("Covalent bonds (counted singly) of " + _atomConf.desc());
+	_cov_single = &single;
+
+	// the four variable things:
+	CountConnector &geometries = add_zero_or_positive_connector();
+	geometries.setDesc("geometric arrangement of " + _atomConf.desc());
+	_geometries = &geometries;
 
 	CountConnector &charge = add(new CountConnector());
-	charge.setDesc("Charge on " + _atomConf.desc());
+	charge.setDesc("charge on " + _atomConf.desc());
+	_charge = &charge;
 
 	CountConnector &coord_num = add(new CountConnector());
-	coord_num.setDesc("Coordination number for " + _atomConf.desc());
+	coord_num.setDesc("coordination number for " + _atomConf.desc());
+	_coord_num = &coord_num;
 
-	CountConnector &stated_valency = add(new CountConnector());
-	stated_valency.setDesc("Stated valency of " + _atomConf.desc());
-
-	CountConnector &uninvolved = add_zero_or_positive_connector();
-	uninvolved.setDesc("Covalent bonds of " + _atomConf.desc());
-
-	CountConnector &valency = add(new CountConnector());
-	valency.setDesc("Valency of " + _atomConf.desc());
+	CountConnector &neutral_bonds = add(new CountConnector());
+	neutral_bonds.setDesc("neutral bonds made by " + _atomConf.desc());
+	_neutral_bonds = &neutral_bonds;
 	
-	CountConnector &cov_plus_expl = add(new CountConnector());
-	cov_plus_expl.setDesc("Covalent + unbroken for " + _atomConf.desc());
+	if (_options.stateCount() > 0)
+	{
+		_options.setOptions({_geometries, _charge, _coord_num, _neutral_bonds});
+		_options.initialConstants();
+		_options.deriveConstraints();
+	}
+
+	std::cout << "Geometries: " << _geometries->value() << std::endl;
+}
+
+void Coordinated::prepareCoordination()
+{
+	std::cout << "Preparing coordinated for " << _atomConf << std::endl;
+	
+	// finish off added coordination states
+	finishOptions();
+
+	// next up: interim calculations
+
+	CountConnector &expl_donors = add_zero_or_positive_connector();
+	expl_donors.setDesc("explicit donors of " + _atomConf.desc());
+	CountConnector &twirling_donors = add_zero_or_positive_connector();
+	twirling_donors.setDesc("twirling donors of " + _atomConf.desc());
+	CountConnector &all_donors = add_zero_or_positive_connector();
+	all_donors.setDesc("all donor bonds of " + _atomConf.desc());
+
+	CountConnector &twirling_lp = add_zero_or_positive_connector();
+	CountConnector &all_lp = add_zero_or_positive_connector();
+	twirling_lp.setDesc("twirling lone pairs of " + _atomConf.desc());
+	all_lp.setDesc("all lone pairs of " + _atomConf.desc());
+
+	CountConnector &expl_acceptors = add_zero_or_positive_connector();
+	expl_acceptors.setDesc("acceptor bonds of " + _atomConf.desc());
+	CountConnector &expl_lonepair = add_zero_or_positive_connector();
+	expl_lonepair.setDesc("lone pair bonds of " + _atomConf.desc());
+	CountConnector &expl_vacancies = add_zero_or_positive_connector();
+	expl_vacancies.setDesc("explicit vacancies of " + _atomConf.desc());
+	CountConnector &all_vacancies = add_zero_or_positive_connector();
+	all_vacancies.setDesc("all vacancies of " + _atomConf.desc());
+	CountConnector &unbroken_bonds = add_zero_or_positive_connector();
+	unbroken_bonds.setDesc("unbroken bonds of " + _atomConf.desc());
+	CountConnector &proper_bonds = add_zero_or_positive_connector();
+	proper_bonds.setDesc("actual proper bonds of " + _atomConf.desc());
+
+	CountConnector &cov_plus_expl = add_zero_or_positive_connector();
+	cov_plus_expl.setDesc("all singly covalent + unbroken bonds for " 
+	                      + _atomConf.desc());
 	
 	/* CountAdder format: arg0 + arg1 = arg2 */
 
-	/* ensure all hidden bonds are unable to fall below zero */
-	add_constraint(new CountConstant(charge, n_charge));
-	add_constraint(new CountConstant(coord_num, n_coord_num));
-	add_constraint(new CountConstant(stated_valency, remaining_valency));
+	/* neutral occupied  + covalent bonds = neutral bonds */
+//	add_constraint(new CountAdder(*_covalent, neutral_donors,
+//	                              *_neutral_bonds));
 
-	/* remaining valency = stated valency - covalent bonds */
-	add_constraint(new CountAdder(uninvolved, valency, stated_valency));
+	/* working number of proper bonds = neutral bonds + charge */
+	add_constraint(new CountAdder(*_neutral_bonds, *_charge, proper_bonds));
 
-	/* all strong bonds are explicit + freely rotating bonds */
-	add_constraint(new CountAdder(expl_donors, twirling_strong, all_strong));
-	
-	/* present bonds are the sum of weak and strong */
-//	add_constraint(new CountAdder(expl_donors, expl_acceptors, expl_present));
+	/* total donor bonds is determined by neutral occupied and charge */
+	add_constraint(new CountAdder(*_covalent, all_donors, proper_bonds));
 
-	/* vacancies are the sum of weak bonds and absent (lone pair) bonds */
-	add_constraint(new CountAdder(expl_absent, expl_acceptors, expl_vacancies));
+	/* all donor bonds also comprise explicit + freely rotating bonds */
+	add_constraint(new CountAdder(expl_donors, twirling_donors, all_donors));
 
-	/* coordination number is accounted for by all strong and all lone pairs */
-	add_constraint(new CountAdder(expl_donors, expl_vacancies, expl_bonds));
+	/* vacancies are the sum of weak bonds and lonepair (lone pair) bonds */
+	add_constraint(new CountAdder(expl_lonepair, twirling_lp, all_lp));
 
-	/* total strong bonds is determined by remaining valency and charge */
-	add_constraint(new CountAdder(valency, charge, all_strong));
+	/* vacancies are the sum of weak bonds and lonepair (lone pair) bonds */
+	add_constraint(new CountAdder(expl_lonepair, expl_acceptors, expl_vacancies));
+
+	/* vacancies are the sum of weak bonds and lonepair (lone pair) bonds */
+	add_constraint(new CountAdder(all_lp, expl_acceptors, all_vacancies));
+
+	/* coord number is accounted for by expl. donor, acceptor and lone pairs */
+	add_constraint(new CountAdder(expl_donors, expl_vacancies, unbroken_bonds));
+
+	/* adding up proper bonds + vacancies to get coordination number */
+	add_constraint(new CountAdder(all_vacancies, proper_bonds, *_coord_num));
 
 	/* explicit bonds + uninvolved bonds : for determining twirling allowance */
-	add_constraint(new CountAdder(expl_bonds, uninvolved, cov_plus_expl));
-	
+	add_constraint(new CountAdder(unbroken_bonds, *_cov_single,
+	                              cov_plus_expl));
+
 	auto cov_plus_expl_more_than_one = [&cov_plus_expl]()
 	{
-		return ((cov_plus_expl.value() & Count::MoreThanOne &&
-		         !(cov_plus_expl.value() & Count::OneOrZero)));
+		bool result = ((cov_plus_expl.value() & Count::MoreThanOne &&
+		                !(cov_plus_expl.value() & Count::OneOrZero)));
+		return result;
+
 	};
 
 	add_constraint(new StrictCount({&cov_plus_expl},
 	                               cov_plus_expl_more_than_one,
-	                               twirling_strong, Count::Zero));
+	                               twirling_donors, Count::Zero));
 
-	_charge = &charge;
-	_coord_num = &coord_num;
-	_uninvolved_count = &uninvolved;
+	add_constraint(new StrictCount({&cov_plus_expl},
+	                               cov_plus_expl_more_than_one,
+	                               twirling_lp, Count::Zero));
 
 	/* counts which need to be hooked up to bond adders later */
 	_donors = &expl_donors;
-	_donors->setDesc("Donor bonds of " + _atomConf.desc());
+	_donors->setDesc("donor bonds of " + _atomConf.desc());
 	_acceptors = &expl_acceptors;
-	_acceptors->setDesc("Acceptor bonds of " + _atomConf.desc());
-//	_present = &expl_present;
-//	_present->setDesc("acceptor+donor bonds of " + _atomConf.desc());
-	_absent = &expl_absent;
-	_absent->setDesc("Lone pair bonds of " + _atomConf.desc());
-	_expl_bonds = &expl_bonds;
-	_expl_bonds->setDesc("Unbroken bonds of " + _atomConf.desc());
-	_twirling = &twirling_strong;
+	_acceptors->setDesc("acceptor bonds of " + _atomConf.desc());
+	_lonepair = &expl_lonepair;
+	_lonepair->setDesc("lone pair bonds of " + _atomConf.desc());
+	_unbroken_bonds = &unbroken_bonds;
+	_unbroken_bonds->setDesc("unbroken bonds of " + _atomConf.desc());
+	_twirling = &twirling_donors;
 
-	if (show_charge)
+	auto add_charge_display = [this]()
 	{
-		CountProbe &probe = 
-		_network.add_probe(new CountProbe(*_charge, *_existence, atomConf()), 
-		                   true);
-	}
+		if (!_showCharge)
+		{
+			return;
+		}
 
+		CountProbe &probe = 
+		_network.add_probe(new CountProbe(*_charge, *_existence, atomConf()),
+		                   true);
+	};
+
+	add_charge_display();
 	setupRealignment();
 }
 

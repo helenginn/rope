@@ -42,7 +42,7 @@ public:
 
 	std::string desc()
 	{
-		return "OR operator for counts";
+		return "OR operator for counts for " + _sum.desc();
 	}
 
 	bool check(const GuiltVersion &gv, CheckList &list)

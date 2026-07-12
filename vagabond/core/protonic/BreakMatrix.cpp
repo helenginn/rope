@@ -177,7 +177,7 @@ Eigen::MatrixXi BreakMatrix::partialMatrix(const std::vector<BondConnector *>
 
 void BreakMatrix::print_current(const std::vector<BondConnector *> &in_game)
 {
-	if (!(_ac.desc() == "S-HOH13:O" || _ac.desc() == "A-SER85:OG,A"))
+	if (!(_ac.desc() == "S-HOH57:O" || _ac.desc() == "A-SER85:OG,A"))
 	{
 		return;
 	}

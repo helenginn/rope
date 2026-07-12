@@ -34,7 +34,6 @@ class Model;
 
 namespace hnet
 {
-	typedef ExistenceConnector;
 	class Coordinated;
 	class Energy;
 }
@@ -171,6 +170,7 @@ private:
 
 	void setupInactiveAtom(hnet::AtomConf atom);
 	bool setupAmineNitrogen(hnet::AtomConf atom);
+	bool setupGuessLigand(hnet::AtomConf atom);
 	bool setupCarbonylOxygen(hnet::AtomConf atom);
 	bool setupSingleAlcohol(hnet::AtomConf atom);
 	bool setupLysineAmine(hnet::AtomConf atom);
@@ -183,13 +183,14 @@ private:
 	bool setupTryptophan(hnet::AtomConf atom);
 	bool setupMethionine(hnet::AtomConf atom);
 
+	void linkCovalentBonds(hnet::AtomConf atom);
 
 	hnet::CountConnector &shareCharges(hnet::AtomConf left, hnet::AtomConf right,
 	                             const hnet::Count::Values &allowable);
 	void shareDonors(hnet::AtomConf left, hnet::AtomConf right,
 	                 const hnet::Count::Values &allowable);
 
-	void setupAtom(hnet::AtomConf atom);
+	void findAtomCoordinations(hnet::AtomConf atom);
 
 	std::list<hnet::AnyConnector> _connectors;
 	std::list<hnet::ConstraintBase *> _constraints;

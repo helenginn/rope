@@ -23,9 +23,11 @@
 
 #include "Network.h"
 #include "alignment.h"
+#include "OptionAnalysis.h"
 
 class Atom;
 class AtomGroup;
+class OptionAnalysis;
 
 namespace hnet
 {
@@ -58,10 +60,12 @@ public:
 	
 	hnet::CountConnector &add_zero_or_positive_connector();
 
-	void prepareCoordinated( const Count::Values &n_charge,
-	                        const Count::Values &n_coord_num,
-	                        const Count::Values &remaining_valency, 
-	                        bool show_charge = true);
+	void addCoordinationState(const Count::Values &n_geometry,
+	                          const Count::Values &n_charge,
+	                          const Count::Values &n_coord_num,
+	                          const Count::Values &neutral_valency);
+
+	void prepareCoordination();
 
 	static OpSet<AtomConf> expandGroupToSet(AtomGroup *group);
 	OpSet<AtomConf> findNeighbours(const OpSet<AtomConf> &group,
@@ -113,14 +117,14 @@ public:
 		return _present;
 	}
 	
-	hnet::CountConnector *const &absent() const
+	hnet::CountConnector *const &lonepair() const
 	{
-		return _absent;
+		return _lonepair;
 	}
 	
-	hnet::CountConnector *const &expl_bonds() const
+	hnet::CountConnector *const &unbroken_bonds() const
 	{
-		return _expl_bonds;
+		return _unbroken_bonds;
 	}
 
 	size_t bondCount() const
@@ -153,6 +157,11 @@ public:
 	{
 		return _charge;
 	}
+	
+	void showCharge(bool show)
+	{
+		_showCharge = show;
+	}
 
 	void eitherOr(const ABPair &first, const ABPair &second,
 	              bool break_only);
@@ -184,6 +193,8 @@ public:
 		return _network.existMap();
 	}
 
+	OpSet<ACPair> uninvolvedCoordinators();
+	void setupRealignment();
 private:
 	OpSet<PairSet> findSeeds(int coord_num);
 	hnet::AtomConf makeHydrogenAtom(const glm::vec3 &pos);
@@ -192,7 +203,6 @@ private:
 	                          hnet::ExistenceConnector &h,
 	                          hnet::ExistenceConnector &hExist);
 	ABPair makePlaceholderHydrogen(const glm::vec3 &pos);
-	void setupRealignment();
 
 	hnet::ExistenceConnector &
 	hydrogenCombo(hnet::ExistenceConnector &h,
@@ -215,7 +225,6 @@ private:
 	void applyRestrictionsToUnbrokenBonds
 	(const std::map<int, std::vector<int>> &coord_state_broken_bond_counts);
 	
-	OpSet<ACPair> uninvolvedCoordinators();
 	AtomConf findPlanarAtom(); // e.g. for ASP or ARG
 
 	hnet::AtomConnector *_connector{};
@@ -224,13 +233,16 @@ private:
 	hnet::CountConnector *_coord_num{};
 	hnet::CountConnector *_charge{};
 
+	hnet::CountConnector *_geometries{};
 	hnet::CountConnector *_donors{};
 	hnet::CountConnector *_acceptors{};
 	hnet::CountConnector *_present{};
-	hnet::CountConnector *_absent{};
-	hnet::CountConnector *_expl_bonds{};
+	hnet::CountConnector *_lonepair{};
+	hnet::CountConnector *_unbroken_bonds{};
 	hnet::CountConnector *_twirling{};
-	hnet::CountConnector *_uninvolved_count{};
+	hnet::CountConnector *_covalent{};
+	hnet::CountConnector *_cov_single{};
+	hnet::CountConnector *_neutral_bonds{};
 
 	void clashLogic();
 
@@ -242,8 +254,9 @@ private:
 	OpSet<ACPair> _uninvolved{};
 	
 	bool _failedCheck = false;
-	
 	bool _ionic = false;
+	bool _showCharge = true;
+	bool _calculatedCov = false;
 
 	AtomProbe *_probe{};
 	
@@ -261,6 +274,9 @@ private:
 	AtomConf _atomConf = {nullptr, '\0'};
 	AtomConf _planar = {nullptr, '\0'};
 	OpSet<AtomConf> _neighbours{};
+	
+	OptionAnalysis _options;
+	void finishOptions();
 };
 
 }

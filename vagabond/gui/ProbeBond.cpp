@@ -16,6 +16,7 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
+#include <vagabond/core/protonic/CovalentProbe.h>
 #include <vagabond/core/protonic/Probe.h>
 #include <vagabond/core/protonic/hnet.h>
 #include <vagabond/gui/elements/Menu.h>
@@ -68,34 +69,39 @@ void ProbeBond::fixVertices(const glm::vec3 &start, const glm::vec3 &dir)
 	}
 }
 
+template <class Value>
+void populate_menu(Menu *m, const std::vector<Value> &options)
+{
+	if (options.size() > 1)
+	{
+		for (const Value &option : options)
+		{
+			std::ostringstream ss;
+			ss << option;
+			m->addOption(ss.str(), "setB_" + ss.str());
+		}
+	}
+}
+
 void ProbeBond::offerBondMenu()
 {
 	Menu *m = new Menu(_view, this);
 
+	if (!_probe->is_covalent())
 	{
 		std::vector<Bond::Values> options = _probe->_obj.values();
-		if (options.size() > 1)
-		{
-			for (const Bond::Values &option : options)
-			{
-				std::ostringstream ss;
-				ss << option;
-				m->addOption(ss.str(), "setB_" + ss.str());
-			}
-		}
+		populate_menu(m, options);
+	}
+	else
+	{
+		CovalentProbe *cp = static_cast<CovalentProbe *>(_probe);
+		std::vector<Covalent::Values> options = cp->_cov.values();
+		populate_menu(m, options);
 	}
 
 	{
 		std::vector<Existence::Values> options = _probe->_exist.values();
-		if (options.size() > 1)
-		{
-			for (const Existence::Values &option : options)
-			{
-				std::ostringstream ss;
-				ss << option;
-				m->addOption(ss.str(), "setB_" + ss.str());
-			}
-		}
+		populate_menu(m, options);
 	}
 
 	_view->setMenu(m);
@@ -199,105 +205,86 @@ ProbeBond::ProbeBond(ProtonNetworkView *view, BondProbe *probe)
 
 	_probe->_obj.set_update(update_method);
 	_probe->existence().set_update(update_method);
+	
+	if (_probe->is_covalent())
+	{
+		CovalentProbe *cp = static_cast<CovalentProbe *>(_probe);
+		cp->_cov.set_update(update_method);
+
+	}
 }
 
-void ProbeBond::declareBondExistence(Existence::Values value)
+template <class Object, class Value>
+void declareBondValue(ProbeBond *me, Object &pb, const Value &value)
 {
 	std::string name = "Declare bond existence";
 	GuiltVersion gv = Guilt::issueNext();
 
 	std::ostringstream ss;
 
-	auto make_declaration = [gv, value, this]
+	auto make_declaration = [&pb, gv, me, value]
 	{
-		bool okay = _probe->_exist.assign_value_and_check(value, gv);
-		std::cout << "Declared " << _probe->desc() << " existence, ";
+		bool okay = pb.assign_value_and_check(value, gv);
+		std::cout << "Declared " << pb.desc() << " existence, ";
 		std::cout << "OK: " << (okay ? "YES" : "NO") << std::endl;
 		if (!okay)
 		{
-			_view->setInformation("Contradiction occurred in logical "\
-			                      "network!!\nCtrl+Z to undo");
+			me->view()->setInformation("Contradiction occurred in logical "\
+			                           "network!!\nCtrl+Z to undo");
 		}
-		_view->network().firstOrderLogic();
 		ConnectBase::_silent = false;
 	};
 
-	auto rescind_declaration = [gv, this]
+	auto rescind_declaration = [gv, &pb]
 	{
-		_probe->_obj.forget_all(gv);
-		_probe->_obj.check_all(gv);
+		pb.forget_all(gv);
+		pb.check_all(gv);
 	};
 
 	ss << name << " " << value << std::endl;
 	std::string message = ss.str();
 	
-	_view->network().undoStack().addJobAndExecute(make_declaration,
-	                                              rescind_declaration,
-	                                              message);
-}
-
-void ProbeBond::declareBond(Bond::Values value)
-{
-	std::string name = "Declare bond";
-	GuiltVersion gv = Guilt::issueNext();
-
-//	_probe->_obj.assign_value(value, d, d);
-	std::ostringstream ss;
-
-	auto make_declaration = [gv, value, this]
-	{
-		bool okay = _probe->_obj.assign_value_and_check(value, gv);
-		std::cout << "Declared " << _probe->desc() << ", ";
-		std::cout << "OK: " << (okay ? "YES" : "NO") << std::endl;
-		if (!okay)
-		{
-			_view->setInformation("Contradiction occurred in logical "\
-			                      "network!!\nCtrl+Z to undo");
-		_view->network().firstOrderLogic();
-		ConnectBase::_silent = false;
-		}
-	};
-
-	auto rescind_declaration = [gv, this]
-	{
-		_probe->_obj.forget_all(gv);
-		_probe->_obj.check_all(gv);
-	};
-
-	ss << name << " " << value << std::endl;
-	std::string message = ss.str();
-	
-	_view->network().undoStack().addJobAndExecute(make_declaration,
-	                                              rescind_declaration,
-	                                              message);
+	me->view()->network().undoStack().addJobAndExecute(make_declaration,
+	                                                   rescind_declaration,
+	                                                   message);
 }
 
 void ProbeBond::buttonPressed(std::string tag, Button *button)
 {
 	if (tag == "setB_LonePair")
 	{
-		declareBond(Bond::LonePair);
+		declareBondValue(this, _probe->_obj, Bond::LonePair);
 	}
 	else if (tag == "setB_Acceptor")
 	{
-		declareBond(Bond::Weak);
+		declareBondValue(this, _probe->_obj, Bond::Weak);
 	}
 	else if (tag == "setB_Donor")
 	{
-		declareBond(Bond::Strong);
+		declareBondValue(this, _probe->_obj, Bond::Strong);
 	}
 	else if (tag == "setB_Broken")
 	{
-		declareBond(Bond::Broken);
+		declareBondValue(this, _probe->_obj, Bond::Broken);
 	}
 	else if (tag == "setB_Absent")
 	{
-		declareBondExistence(Existence::Absent);
+		declareBondValue(this, _probe->_exist, Existence::Absent);
 	}
 	else if (tag == "setB_Present")
 	{
-		declareBondExistence(Existence::Present);
-		declareBond(Bond::NotBroken);
+		declareBondValue(this, _probe->_exist, Existence::Present);
+		declareBondValue(this, _probe->_obj, Bond::NotBroken);
+	}
+	else if (tag == "setB_Single")
+	{
+		CovalentProbe *cp = static_cast<CovalentProbe *>(_probe);
+		declareBondValue(this, cp->_cov, Covalent::Single);
+	}
+	else if (tag == "setB_Double")
+	{
+		CovalentProbe *cp = static_cast<CovalentProbe *>(_probe);
+		declareBondValue(this, cp->_cov, Covalent::Double);
 	}
 
 }

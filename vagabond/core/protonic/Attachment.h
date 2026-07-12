@@ -66,15 +66,18 @@ struct Attachment
 		{
 			if (!(tell & Bond::Broken))
 			{
+				bool changed = false;
 				if (assign(_existence, Existence::Present))
 				{
-					return true;
+					changed |= true;
 				}
 
 				if (assign(_bond, tell))
 				{
-					return true;
+					changed |= true;
 				}
+
+				return changed;
 			}
 			else if (tell != Bond::Broken)
 			{

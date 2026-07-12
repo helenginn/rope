@@ -42,12 +42,12 @@ struct Covalent2Count : public ConstraintBase
 		auto assign = make_assign_and_say(this, gv, list);
 		
 		// first we check the covalent bond and what effect that has on count
-		
+
 		if (_cov.value() == Covalent::Unassigned)
 		{
 			assign(_count, Count::OneOrTwo, "single/double bond = 1/2");
 		}
-		else if (_cov.value() == Covalent::Double)
+	else if (_cov.value() == Covalent::Double)
 		{
 			assign(_count, Count::Two, "double bond = 2");
 		}

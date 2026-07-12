@@ -130,7 +130,8 @@ struct BondAdder : public ConstraintBase
 				certainty = Maybe;
 			}
 
-//			std::cout << "Telling it it's " << tell << std::endl;
+//			std::cout << "Telling it it's " << tell << ", " << certainty << " ("
+//			<< *_coordExist << ")" << std::endl;
 			attach.inform(tell, assign, certainty);
 
 			// don't even think about playing with sampling!
@@ -163,7 +164,7 @@ struct BondAdder : public ConstraintBase
 		get_certains_maybes(total, certain, maybe);
 //		std::cout << "BondAdder (" << Request << ") for " << *_coordExist << std::endl;
 //		std::cout << _centre << ": " << total << " bonds of which " << certain << " are "\
-//		"certainly " << Request << " and " << maybe << " maybe" << std::endl;
+		"certainly " << Request << " and " << maybe << " maybe" << std::endl;
 //		std::cout << "Bonds: ";
 		for (auto it = _bonds.begin(); it != _bonds.end(); it++)
 		{

@@ -61,6 +61,12 @@ hnet::Covalent::Values covalent_status_for_bond(const hnet::AtomConf &left,
 		maybe |= either_are_named_couple("CG", "OD2")(left, right);
 		maybe |= either_are_named_couple("CD", "OE2")(left, right);
 	}
+	if (left.ptr->code() == "ARG")
+	{
+		maybe |= either_are_named_couple("NH2", "CZ")(left, right);
+		maybe |= either_are_named_couple("NH1", "CZ")(left, right);
+		maybe |= either_are_named_couple("NE", "CZ")(left, right);
+	}
 	
 	if (maybe)
 	{

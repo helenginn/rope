@@ -71,6 +71,34 @@ struct EqualBonds : public ConstraintBase
 	ExistenceConnector &_lExist;
 	ExistenceConnector &_rExist;
 };
+
+struct EqualCount : public ConstraintBase
+{
+	EqualCount(CountConnector &left, CountConnector &right)
+	: _left(left), _right(right)
+	{
+		prep_constraints_and_forgets(this, {&left, &right});
+	}
+
+	std::string desc()
+	{
+		return "Counts \"" + _left.desc() + "\", \"" + _right.desc() 
+		+ "\" should be equal";
+	}
+
+	bool check(const GuiltVersion &gv, CheckList &list)
+	{
+		auto assign = make_assign_and_say(this, gv, list);
+
+		assign(_left, _right.value());
+		assign(_right, _left.value());
+
+		return assign.okay();
+	}
+
+	CountConnector &_left;
+	CountConnector &_right;
+};
 };
 
 #endif

@@ -241,7 +241,7 @@ namespace Count
 		mFourteen      = 1 << 29,
 		mFifteen       = 1 << 30,
 		mSixteen       = 1 << 31,
-		OneOrTwo       = (1 << 0 | 1 << 2),
+		OneOrTwo       = (1 << 1 | 1 << 2),
 		OneOrZero      = (1 << 0 | 1 << 1),
 		mOneOrZero     = (1 << 0 | 1 << 16),
 		TwoToZero      = (1 << 0 | 1 << 1 | 1 << 2),
@@ -549,22 +549,23 @@ inline std::ostream &operator<<(std::ostream &ss, const Bond::Values &v)
 	return ss;
 }
 
+inline Count::Values int_to_count(const int &val)
+{
+	if (val >= 0)
+	{
+		return (Count::Values)(1 << val);
+	}
+	else
+	{
+		return (Count::Values)(1 << (-val + 15));
+	}
+}
+
+
 /* for counts / integer conversion */
 template <class Container>
 inline Count::Values values_as_count(const Container &values)
 {
-	auto int_to_count = [](const int &val)
-	{
-		if (val >= 0)
-		{
-			return (Count::Values)(1 << val);
-		}
-		else
-		{
-			return (Count::Values)(1 << (-val + 15));
-		}
-	};
-	
 	Count::Values addition = Count::Contradiction;
 	for (const int &value : values)
 	{
