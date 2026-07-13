@@ -19,6 +19,9 @@
 #ifndef __vagabond__DisplayUnit__
 #define __vagabond__DisplayUnit__
 
+#include <utility>
+#include <vector>
+
 class Display;
 class GuiAtom;
 class GuiRefls;
@@ -31,6 +34,7 @@ class Entity;
 class Model;
 class AtomMap;
 class GuiBalls;
+class Atom;
 
 template <typename Thing> class Responder;
 
@@ -62,6 +66,8 @@ public:
 	}
 	
 	GuiBalls *const &balls();
+	void showConnections(const std::vector<std::pair<Atom *, Atom *>> &connections);
+	void clearConnections();
 	
 	void addAtomIndexResponder(Responder<GuiBalls> *const &rsp);
 

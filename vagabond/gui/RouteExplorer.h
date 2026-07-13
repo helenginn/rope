@@ -81,6 +81,9 @@ private:
 
 	void prepareEmptySpaceMenu();
 	void pickAtom(Atom *const &atom);
+	void toggleSubunitConnections();
+	void refreshSubunitConnections();
+	void clearSubunitConnections();
 
 	void makeLemons();
 	void exportSuperposed();
@@ -107,6 +110,7 @@ private:
 	std::string _progressName;
 	int _numberMade = 0;
 	AtomGroup *_atoms = nullptr;
+	bool _showingSubunitConnections = false;
 };
 
 #endif

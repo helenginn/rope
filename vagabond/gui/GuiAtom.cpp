@@ -21,6 +21,7 @@
 #include "GuiRibbon.h"
 #include "GuiHelices.h"
 #include "GuiThickBond.h"
+#include "GuiAtomConnections.h"
 
 #include <vagabond/gui/elements/SnowGL.h>
 #include <SDL2/SDL.h>
@@ -32,6 +33,7 @@
 
 #include <iostream>
 #include <thread>
+#include <algorithm>
 
 GuiAtom::GuiAtom() : SimplePolygon()
 {
@@ -59,6 +61,7 @@ GuiAtom::GuiAtom() : SimplePolygon()
 GuiAtom::~GuiAtom()
 {
 	stop();
+	clearConnections();
 	delete _balls;
 	_balls = nullptr;
 	delete _ribbon;
@@ -92,6 +95,8 @@ void GuiAtom::render(SnowGL *gl)
 
 void GuiAtom::watchAtoms(AtomGroup *a)
 {
+	std::lock_guard<std::recursive_mutex> lock(_representationsMutex);
+
 	for (GuiRepresentation *&r : _representations)
 	{
 		r->prepareAtomSpace(a);
@@ -115,6 +120,8 @@ void GuiAtom::watchAtoms(AtomGroup *a)
 
 bool GuiAtom::checkAtom(Atom *a)
 {
+	std::lock_guard<std::recursive_mutex> lock(_representationsMutex);
+
 	bool hidden = false;
 	if (!_multi)
 	{
@@ -160,6 +167,8 @@ bool GuiAtom::checkAtom(Atom *a)
 
 void GuiAtom::checkAtoms()
 {
+	std::lock_guard<std::recursive_mutex> lock(_representationsMutex);
+
 	bool changed = false;
 
 	for (size_t i = 0; i < _atoms.size(); i++)
@@ -259,4 +268,40 @@ void GuiAtom::setMultiBond(bool multi)
 	_multi = multi;
 	_balls->setMulti(_multi);
 	_thickBonds->setDisabled(_multi);
+}
+
+void GuiAtom::showConnections(
+const std::vector<std::pair<Atom *, Atom *>> &connections)
+{
+	std::lock_guard<std::recursive_mutex> lock(_representationsMutex);
+
+	if (_connections == nullptr)
+	{
+		_connections = new GuiAtomConnections(this);
+		_representations.push_back(_connections);
+		addObject(_connections);
+	}
+
+	_connections->setConnections(connections);
+}
+
+void GuiAtom::clearConnections()
+{
+	std::lock_guard<std::recursive_mutex> lock(_representationsMutex);
+
+	if (_connections == nullptr)
+	{
+		return;
+	}
+
+	auto it = std::find(_representations.begin(), _representations.end(),
+	                    _connections);
+	if (it != _representations.end())
+	{
+		_representations.erase(it);
+	}
+
+	removeObject(_connections);
+	delete _connections;
+	_connections = nullptr;
 }

@@ -24,6 +24,7 @@
 #include <map>
 #include <string>
 #include <iostream>
+#include <utility>
 #include <vagabond/utils/OpSet.h>
 #include <vagabond/utils/OpVec.h>
 #include <vagabond/utils/Eigen/Dense>
@@ -71,6 +72,8 @@ struct Segment
 class NonCovalents
 {
 public:
+	typedef std::pair<Atom *, Atom *> AtomPair;
+
 	NonCovalents();
 
 	void addInstance(Instance *a)
@@ -89,6 +92,16 @@ public:
 	}
 
 	std::function<BondSequence *(BondSequence *)> align_task(const float &frac);
+
+	const std::vector<AtomPair> &connectionPairs() const
+	{
+		return _connectionPairs;
+	}
+
+	const std::vector<AtomPair> &fiducialConnectionPairs() const
+	{
+		return _fiducialConnectionPairs;
+	}
 
 	struct WeightedSum
 	{
@@ -131,6 +144,7 @@ public:
 		};
 
 		Side lefts, rights;
+		std::vector<AtomPair> atom_pairs;
 		std::vector<WeightedSum> sums;
 	};
 
@@ -181,6 +195,8 @@ private:
 	std::vector<Instance *> _instances;
 	std::map<Segment, int> _segment2Idx;
 	std::vector<Interface> _faces;
+	std::vector<AtomPair> _connectionPairs;
+	std::vector<AtomPair> _fiducialConnectionPairs;
 	std::map<int, MatId> _seqToId;
 	std::map<Atom *, int> _atom2Seq;
 	std::vector<MatId> _matIds;

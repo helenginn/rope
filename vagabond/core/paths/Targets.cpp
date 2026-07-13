@@ -71,7 +71,7 @@ void Targets::setTargets(InstancePair &pair)
 		glm::vec3 s = atomStart[atom];
 		glm::vec3 diff = (d - s);
 		atom->setOtherPosition("moving", diff);
-		atom->setOtherPosition("target", s);
+		atom->setOtherPosition("target", s); // legacy start position
 	}
 }
 

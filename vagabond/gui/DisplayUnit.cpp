@@ -72,6 +72,23 @@ GuiBalls *const &DisplayUnit::balls()
 	return _guiAtoms->balls();
 }
 
+void DisplayUnit::showConnections(
+const std::vector<std::pair<Atom *, Atom *>> &connections)
+{
+	if (_guiAtoms)
+	{
+		_guiAtoms->showConnections(connections);
+	}
+}
+
+void DisplayUnit::clearConnections()
+{
+	if (_guiAtoms)
+	{
+		_guiAtoms->clearConnections();
+	}
+}
+
 DisplayUnit::~DisplayUnit()
 {
 	resetDensityMap();

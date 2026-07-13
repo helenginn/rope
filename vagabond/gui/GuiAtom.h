@@ -6,6 +6,9 @@
 #include <vagabond/gui/elements/SimplePolygon.h>
 #include <vagabond/core/Atom.h>
 #include <atomic>
+#include <utility>
+#include <vector>
+#include <mutex>
 
 class GuiBond;
 class GuiBalls;
@@ -15,6 +18,7 @@ class AtomGroup;
 class GuiHelices;
 class Icosahedron;
 class GuiThickBond;
+class GuiAtomConnections;
 class GuiRepresentation;
 class VisualPreferences;
 
@@ -35,6 +39,12 @@ public:
 	glm::vec3 getCentre();
 
 	void setMultiBond(bool m);
+	void showConnections(const std::vector<std::pair<Atom *, Atom *>> &connections);
+	void clearConnections();
+	bool showingConnections() const
+	{
+		return _connections != nullptr;
+	}
 
 	void stop();
 	
@@ -61,8 +71,10 @@ private:
 	GuiRibbon *_ribbon = nullptr;
 	GuiHelices *_helices = nullptr;
 	GuiThickBond *_thickBonds = nullptr;
+	GuiAtomConnections *_connections = nullptr;
 	
 	std::vector<GuiRepresentation *> _representations;
+	std::recursive_mutex _representationsMutex;
 
 	std::vector<Atom *> _atoms;
 	

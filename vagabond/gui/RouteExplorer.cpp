@@ -44,6 +44,7 @@
 #include <vagabond/core/Path.h>
 #include <vagabond/core/Instance.h>
 #include <vagabond/core/Model.h>
+#include <vagabond/core/NonCovalents.h>
 #include <vagabond/core/Superpose.h>
 #include <map>
 
@@ -437,6 +438,59 @@ void RouteExplorer::clearLemons()
 	deleteTemps();
 }
 
+void RouteExplorer::refreshSubunitConnections()
+{
+	NonCovalents *noncovs = _route->nonCovalents();
+	if (!noncovs || !noncovs->ready())
+	{
+		clearSubunitConnections();
+		return;
+	}
+
+	const std::vector<NonCovalents::AtomPair> &pairs =
+	noncovs->fiducialConnectionPairs();
+
+	for (DisplayUnit *unit : units())
+	{
+		unit->showConnections(pairs);
+	}
+}
+
+void RouteExplorer::clearSubunitConnections()
+{
+	for (DisplayUnit *unit : units())
+	{
+		unit->clearConnections();
+	}
+
+	_showingSubunitConnections = false;
+}
+
+void RouteExplorer::toggleSubunitConnections()
+{
+	if (_showingSubunitConnections)
+	{
+		clearSubunitConnections();
+		return;
+	}
+
+	NonCovalents *noncovs = _route->nonCovalents();
+	if (!noncovs)
+	{
+		setInformation("No non-covalent interface is attached to this route.");
+		return;
+	}
+
+	if (!noncovs->ready())
+	{
+		setInformation("Non-covalent interfaces are not ready yet.");
+		return;
+	}
+
+	_showingSubunitConnections = true;
+	refreshSubunitConnections();
+}
+
 void RouteExplorer::makeLemons()
 {
 	auto lemons = _route->lemons();
@@ -663,6 +717,13 @@ void RouteExplorer::prepareEmptySpaceMenu()
 	Menu *m = new Menu(this);
 	m->addOption("freeze all", clear_filter(false));
 	m->addOption("unfreeze all", clear_filter(true));
+
+	if (_route->nonCovalents())
+	{
+		std::string label = _showingSubunitConnections ?
+		                    "hide subunit contacts" : "show subunit contacts";
+		m->addOption(label, [this]() { toggleSubunitConnections(); });
+	}
 	
 	auto change_selection = [this, &hide_frozen, &selected](bool allow)
 	{

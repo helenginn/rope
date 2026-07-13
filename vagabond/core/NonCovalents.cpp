@@ -217,6 +217,7 @@ NonCovalents::Interface NonCovalents::findInterface(Segment first,
 				continue;
 			}
 
+			interface.atom_pairs.push_back({atom, other});
 			interface.lefts.atoms.insert(atom);
 			interface.rights.atoms.insert(other);
 		}
@@ -293,6 +294,13 @@ void NonCovalents::findInterfaces(const std::function<int(Atom *const &)>
 			l.reindex();
 			r.seq_idxs = r.atoms.convert_to_vector<int>(atom_idx);
 			r.reindex();
+
+			if (first < second)
+			{
+				_connectionPairs.insert(_connectionPairs.end(),
+				                        face.atom_pairs.begin(),
+				                        face.atom_pairs.end());
+			}
 			
 			_faces.push_back(face);
 		}
@@ -770,6 +778,17 @@ void NonCovalents::prepareBarycentricWeights()
 	{
 		weighted_sums_for_side(face, face.lefts, face.rights);
 
+		if (face.left < face.right)
+		{
+			for (WeightedSum &sum : face.sums)
+			{
+				for (Atom *fiducial : sum.fiducials)
+				{
+					_fiducialConnectionPairs.push_back({sum.atom, fiducial});
+				}
+			}
+		}
+
 		auto seq_idx_for_atom = [face](Atom *atom)
 		{
 			if (face.lefts.locs.count(atom))
@@ -863,6 +882,18 @@ void NonCovalents::prepareBarycentricWeights()
 
 void NonCovalents::prepare(BondSequence *const &seq)
 {
+	_atomNumbers.clear();
+	_segments.clear();
+	_segment2Idx.clear();
+	_faces.clear();
+	_connectionPairs.clear();
+	_fiducialConnectionPairs.clear();
+	_seqToId.clear();
+	_atom2Seq.clear();
+	_matIds.clear();
+	_invariant = Segment{-1};
+	_snapColumnFrom = 0;
+
 	auto atom_index = [seq](Atom *const &atom) -> int
 	{
 		return atom_index_for_atom(seq, atom);
