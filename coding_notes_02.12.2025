@@ -1630,8 +1630,292 @@ ROPE code notes - 17.06.2025
 
 
 ============================
-ROPE code notes - 18.06.2025
+ROPE code notes - 24.06.2025
 ============================
+
+Notes from meeting: 
+
+On creating HBondConstrainEntity
+
+> for the Atoms which come from the donor (that's Atom *Donor and Atom *ParentDonor) you need to be able to easily look up which subset they belong to so you can decide whether rigid body degrees of freedom apply to them or not
+
+> so you could include AtomGroup *donorGroup and AtomGroup *acceptorGroup
+inside the hbondentity
+
+> then when you look up a row and column (I.e. DoF and Constraint) and you want to know whether that constraint is sensitive to that doF
+
+> then you can check if the "atoms" in the DoF is equal to donorGroup (or acceptorGroup) and then you'll instantly know whether you need a non-zero value in that element
+
+> the alternative would be to search through every atom in atoms and see if "Donor" or "Acceptor" is in there, but this would take a very long time
+but instead of using HBondEntity (because you use that for other things like display in GUI) you can make an HBondConstraint which contains this information for the lookup in the Jacobian matrix
+
+> you could in fact just reference which HBondEntity you're referring to in HBondConstraint which means you don't have to duplicate as much information
+for example with an int hbond_idx which refers to the relevant HBondEntity in _hbonds
+
+
+============================
+ROPE code notes - 25.06.2025
+============================
+
+
+So far: 
+
+- Goal was: build a _dofMap that maps Jacobian row indices to DoF entries for the full protein assembly.
+
+- What have I done: 
+
+1. setReferenceMolecule()
+	> Finds the largest connected group by atom count
+	> Sets _referenceChain to that group's chain identifier
+2. buildDoFMap()
+	> Iterates over all connected groups (subsets)
+	> For each group, finds the anchor atom's block index in the kinematic tree
+	> Traverses blocks from that start index until a nullptr separator
+	> Adds torsion DoF for protein chains (non-hetatm)
+	> Adds 6 rigid body DoF for all non-reference groups
+
+- Current results for crystallin: 
+
+Chain X torsions:     1188 rows  (non-reference, also gets 6 RB DoF)
+Chain X rigid body:      6 rows  OK
+Chain A torsions:     1195 rows  (reference, no RB DoF) OK
+Chain a waters:        438 rows  (73 waters × 6 RB DoF) OK
+H1/H2/H3 extras:       18 rows  (3 × 6 RB DoF, known artefact)
+Total:               ~2851 rows
+
+- Known issues: 
+	> H1/H2/H3 get extra rigid body DoF (in chain X)
+
+
+============================
+ROPE code notes - 26.06.2025
+============================
+
+Plan for hbonds: 
+
+--------------------------------------------------------------------------------------
+enum ConstraintType
+{
+    Distance,
+    AngleAlpha,
+    AngleBeta,
+    Dihedral1,
+    Dihedral2
+}
+
+
+struct HBondConstraint
+{
+    int hbond_idx;            // index into _hbonds
+    ConstraintType type;      // which of the 5 constraints
+    AtomGroup *donorGroup;    // subset containing donor/hydrogen
+    AtomGroup *acceptorGroup; // subset containing acceptor/parentAcceptor
+    int col_idx;              // Jacobian column index
+};
+
+std::map<int, HBondConstraint> _constraintMap;  // key = Jacobian column index
+
+------------------------------------------------------------------------------------
+
+>> Building the constraint map
+For each H-bond in _hbonds, add 5 entries to _constraintMap — one per constraint type. Each entry stores which groups are affected (donor side and acceptor side).
+
+>> Jacobian lookup
+For each (row, col) pair:
+
+------------------------------------------------------------------------------------
+DoF &dof = _dofMap[row];
+HBondConstraint &con = _constraintMap[col];
+
+if (dof.atoms == con.donorGroup || dof.atoms == con.acceptorGroup)
+{
+    // compute derivative based on dof.type and con.type
+}
+// else: zero
+
+>> Derivative computation
+
+> Torsion DoF — existing gradient functions (alphaGradientHSide etc.)
+> Rigid body DoF — same gradient functions with axis -> e_x/e_y/e_z and axisA -> p_c
+> Reference chain — never matches any row -> naturally zero
+
+
+============================
+ROPE code notes - 29.06.2025
+============================
+
+1. Make HbondCOnstraint
+2. Build contraint map
+3. BuildJacobian
+4. derivatives
+
+
+============================
+ROPE code notes - 30.06.2025
+============================
+
+> derivatives
+> jacobian
+> Check constrain map: run some tests !!!!!!
+> Isomorphic labs 
+> from for TVM 
+> ELKE
+> hosting in DiffMEth
+	> payment for DiffMeth
+	> tickets (train) for DIffMeth
+
+
+
+Next step:
+
+> If constraintMap and dofMap are correct, the next step will be buildign the Jacobian
+
+DoF: 
+- torsion DoF for chain X, A, one of them being the reference 
+- 6 rigid body DoF for chain X and waters
+- No rigib body DoF for chain A (reference)
+
+Constraints: 
+- 5 constraint col per h-bond
+- each entry has donorGroup and acceptorGroup (pnt), hbodn pointer for access to TorsionVec, atompoistions etc 
+
+Derivatives: 
+- functions for the inter-chain constraitns
+
+NEED: 
+- functions for the rgbd constraints 
+- VdW separate or into _constaringMap as distances? 
+- For the jacobian new build fucntion: 
+
+for each (row, dof) in _dofMap
+{
+	for each (col, constraint) in _constraintMap
+	{
+		if dof.type == torsion: 
+			check if dof.idx is in constraint.hbond->Torsionvector
+			if TRUE: 
+				compute derivative for intra-chain constraints (existing)
+			else: dof.type == rb:
+				check if dof.atoms == cosntraint.donorGroup or constaint.acceptorGroup
+				if TRUE: 
+					compute derivative for rb (need to build)
+			else: 
+				zero
+	}
+}
+
+Notes after meeting with Helen: 
+
+> Vdw and hbond in the same struct named Bonds
+	- they will share the common infromation. 
+	- and hbond and vdw will be sub structs
+	- I will also include a function that give 
+	the gradient for a given ConstraintType 
+
+	
+============================
+ROPE code notes - 09.07.2025
+============================
+
+
+> removed calculation of full U in an effort to improve speed. 
+	> if we need it in the future we can also just calcualte ThinU instead of FullU
+
+
+
+Finished calculating torsion Flexibility, _colIdx = 0
+[ERROR] Invalid colIdx = 2850 with _allTorsions.size() = 0
+[ERROR] Invalid colIdx = 2850 with _allTorsions.size() = 0
+[ERROR] Invalid colIdx = 2850 with _allTorsions.size() = 0
+[ERROR] Invalid colIdx = 2850 with _allTorsions.size() = 0
+[ERROR] Invalid colIdx = 2850 with _allTorsions.size() = 0
+
+
+
+============================
+ROPE code notes - 10.07.2025
+============================
+
+
+> use sparse matrix for hte Jacobian, see if ti improves the speed
+? rotational derivative!
+> rename setCentre to getCentre
+> filter buildDoFMap with globalTorsionvecetor: globaltorsionvector has the torsiona that are actually effectign tand closign the loops 
+
+> in calculateFlexWeights: use dofMap to devide where the weights are goignt o be applied instead of globaltorsion vector because now we have 
+> globaltorsionvector is not the best inticator: it will fail to represent whihc torsions are moving becuase of rigid body motion, so this might need to be changed in the future
+
+
+============================
+ROPE code notes - 12.07.2025
+============================
+
+> Progress today: 
+	> fix a few bugs: 
+		> I wasn't returning any values from the RB derivatives: now fixed\
+		> VdW cosntraints was already included in the constraintMaps, so no need to add them extra in the Jacobian, fixed than 
+		> Now the RB are added into the Jacobian, but are not considered in the torsion weights. How am i supposed to tranalte the xontribution into the actual protein and therefore the atom2atomExplorer? 
+		> for now the atom2atom matrix looks like shit
+		> remove thinV to be replaces again with thinV 
+
+
+
+============================
+ROPE code notes - 13.07.2025
+============================
+
+> remove inter-chain modes from the contraints 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

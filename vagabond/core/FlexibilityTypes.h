@@ -31,7 +31,9 @@ enum DoFType
 
 struct DoF // give initial values
 {
+    // add a reference to the atom 
     AtomGroup *atoms = nullptr; // molecule this dof belongs to
+    Atom* atom = nullptr;
     DoFType type; // torsion or rb
     int idx = -1; // torsion index, unused for rb
     std::string chain;
@@ -48,10 +50,18 @@ struct BondEntity
 	std::vector<std::pair<int,bool>> TorsionVec; // (torsionIdx. isHSide)
 	virtual float getDerivative(ConstraintType type,
 								const DoF &dof,
-								const glm::vec3 &axisA,
-								const glm::vec3 &axisB,
+                                int pivotBlockIdx,
 								const std::vector<AtomBlock> &blocks) const;
 	virtual ~BondEntity() = default; 
+
+    protected: 
+    struct AxisAndPositions
+    {
+        glm::vec3 axisA, axisB, donorPos, acceptorPos;
+    };
+    AxisAndPositions computeAxisAndPositions(int pivotBlockIdx,
+                                             const std::vector<AtomBlock> &blocks) const;
+
 };
 
 struct HBondEntity : public BondEntity
@@ -67,8 +77,7 @@ struct HBondEntity : public BondEntity
 
 	virtual float getDerivative(ConstraintType type, 
 					const DoF &dof,
-					const glm::vec3 &axisA,
-					const glm::vec3 &axisB, 
+                    int pivotBlockIdx,
 					const std::vector<AtomBlock> &blocks) const override;
 }; 
 
@@ -78,13 +87,14 @@ struct VdWBondEntity : public BondEntity
 };
 
 
-struct HBondConstraint
+struct BondConstraint
 {
-    HBondEntity* hbond = nullptr; 
+    BondEntity* hbond = nullptr; 
     ConstraintType type; 
     AtomGroup* donorGroup = nullptr;
     AtomGroup* acceptorGroup = nullptr; 
     int col_idx = 1;
+
 };
 
 

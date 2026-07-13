@@ -86,12 +86,18 @@ public:
     void calculateTorsionFlexibility();
     void buildJacobianMatrix();
     void buildDoFMap();
+    void selectDoFMap();
+    template<class BondType>
+    void addConstraintsForBonds(std::vector<BondType> &entities, 
+                                         const std::vector<ConstraintType> &ctypes,
+                                         const std::vector<AtomGroup*> &subsets,
+                                         int &col_counter);
     void buildConstraintMap();
     void writeConstraintMapToCSV(const std::string &filename);
+    void newJacobian();
 
     SVDResult calculateSVD() const;
-    std::vector<float> assignWeightsToTorsions(const std::vector<float>& v_i,
-                                const std::vector<int>& torsionVector);
+    std::vector<float> assignWeightsToTorsions(const std::vector<float>& v_i);
     std::vector<float> extractVColumn(const Eigen::MatrixXf &V, int colIdx) const;
     std::vector<std::pair<int,bool>> TorsionVec; // (torsionIdx, isHSide)
 
@@ -111,6 +117,7 @@ public:
     {
         _colIdx = chosenColIdx;
     }
+    void writeJacobianStatsToCSV(const std::string &filename);
 
 
     // === UTILITY ===
@@ -185,7 +192,8 @@ private:
     std::map<Atom*, int> _atom2Block;
     std::string _referenceChain = "";
     std::map<int, DoF> _dofMap;
-    std::map<int, HBondConstraint> _constraintMap; 
+    std::map<int, DoF> _activeDoFMap;
+    std::map<int, BondConstraint> _constraintMap; 
 
 
     std::vector<HBondEntity> _hbonds;
