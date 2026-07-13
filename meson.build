@@ -78,6 +78,8 @@ if is_native  # Native builds
     dependencies: gui_deps,
     install: true)
 
+  subdir('tests')
+
 else  # emscripten
   extrafiles = ['vagabond/gui/print_file.cpp']
   start_cpp = 'vagabond/gui/main.cpp'
