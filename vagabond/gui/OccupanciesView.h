@@ -22,7 +22,7 @@
 #include <vagabond/gui/elements/IndexResponseView.h>
 #include <vagabond/utils/Eigen/Dense>
 #include <vagabond/core/protonic/Energy.h>
-#include <map>
+#include <unordered_map>
 
 class Graph;
 class Clique;
@@ -50,13 +50,15 @@ protected:
 	virtual void interactedWithNothing(bool left, bool hover = false);
 private:
 	void slider(std::string msg, const hnet::Energy::Source &src, float y);
-	void updateEstimates(std::map<ProbeTypePair, OccData> &ests);
-	std::map<ProbeTypePair, OccData> estimates();
+
+	typedef std::map<ProbeTypePair, OccData> EstimateMap;
+	void updateEstimates(EstimateMap &ests);
+	EstimateMap estimates();
 	Clique *_clique{};
 	Correlative *_correlative{};
 
-	std::map<ProbeTypePair, OccData> _estimates;
-	std::map<ProbeTypePair, OccData> _first;
+	EstimateMap _estimates;
+	EstimateMap _first;
 	Graph *_graph{};
 	Network &_network;
 	Eigen::MatrixXf _overall;

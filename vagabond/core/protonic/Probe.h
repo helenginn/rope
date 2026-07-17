@@ -264,12 +264,7 @@ public:
 		}
 
 		std::string str;
-		bool accessed = false;
-		hnet::Atom::Values val = _obj.value(&accessed);
-		if (!accessed)
-		{
-			return "";
-		}
+		hnet::Atom::Values val = _obj.value(true);
 
 		switch (val)
 		{
@@ -316,11 +311,11 @@ public:
 
 	virtual float transparency()
 	{
-		if (!_exist.is_certain())
+		if (!_exist.is_certain(true))
 		{
 			return -0.5f;
 		}
-		else if (_exist.value() == hnet::Existence::Absent)
+		else if (_exist.value(true) == hnet::Existence::Absent)
 		{
 			return -1.0f;
 		}
@@ -370,12 +365,7 @@ public:
 	{
 		if (!_right) return "";
 		std::string str;
-		bool accessed = false;
-		hnet::Existence::Values val = _obj.value(&accessed);
-		if (!accessed)
-		{
-			return "";
-		}
+		hnet::Existence::Values val = _obj.value(true);
 
 		switch (val)
 		{
@@ -432,12 +422,12 @@ public:
 
 	virtual float transparency()
 	{
-		if (!_exist.is_certain())
+		if (!_exist.is_certain(true))
 		{
 			return -0.5f;
 		}
-		else if (_exist.is_certain() &&
-		         _exist.value() == hnet::Existence::Absent)
+		else if (_exist.is_certain(true) &&
+		         _exist.value(true) == hnet::Existence::Absent)
 		{
 			return -1.0f;
 		}
@@ -527,12 +517,12 @@ public:
 
 	virtual float transparency()
 	{
-		if (!_exist.is_certain())
+		if (!_exist.is_certain(true))
 		{
 			return -0.5f;
 		}
-		else if (_exist.is_certain() &&
-		         _exist.value() == hnet::Existence::Absent)
+		else if (_exist.is_certain(true) &&
+		         _exist.value(true) == hnet::Existence::Absent)
 		{
 			return -1.0f;
 		}
@@ -551,12 +541,7 @@ public:
 	virtual std::string display()
 	{
 		std::string str;
-		bool accessed = false;
-		hnet::Bond::Values val = _obj.value(&accessed);
-		if (!accessed)
-		{
-			return "";
-		}
+		hnet::Bond::Values val = _obj.value(true);
 
 		switch (val)
 		{

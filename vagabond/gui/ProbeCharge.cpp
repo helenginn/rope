@@ -22,6 +22,14 @@
 ProbeCharge::ProbeCharge(ProtonNetworkView *view, CountProbe *probe)
 : FloatingImage("assets/images/" + probe->display() + ".png", 1, probe->_offset) 
 {
+	setQuickSwitch({"assets/images/circle_plus.png",
+		            "assets/images/circle_2plus.png",
+		            "assets/images/circle_3plus.png",
+		            "assets/images/circle_minus.png",
+		            "assets/images/circle_2minus.png",
+		            "assets/images/circle_3minus.png",
+		            "assets/images/transparency.png"});
+
 	_view = view;
 	_probe = probe;
 

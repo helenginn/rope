@@ -22,22 +22,22 @@
 #include "hnet.h"
 #include "Guilt.h"
 #include <map>
-#include <mutex>
+#include <atomic>
 
 template <class Value>
 struct Conditions
 {
-	typedef std::map<std::pair<void *, GuiltVersion>, Value> ConditionMap;
+	typedef std::map<GuiltVersion, Value> ConditionMap;
 	ConditionMap _conditions;
-	std::mutex _m;
+	std::atomic<Value> _cache{};
+	bool _written{false};
 	
 	size_t size() const
 	{
 		return _conditions.size();
 	}
 	
-	template <typename FilterIn>
-	Value belief_when(const FilterIn &filtered) const
+	Value calculated_belief() const
 	{
 		Value val{};
 		hnet::init_unassigned(val);
@@ -45,66 +45,29 @@ struct Conditions
 		for (typename ConditionMap::const_iterator it = _conditions.begin(); 
 		     it != _conditions.end(); it++)
 		{
-			if (filtered(it))
-			{
-				val = (Value)(val & it->second);
-			}
+			val = (Value)(val & it->second);
 		}
 		
 		return val;
 	}
 	
-	Value belief(bool *acquired = nullptr)
+	Value belief(bool cache_only = false)
 	{
-		if (!acquired)
+		if (!cache_only || !_written)
 		{
-			std::unique_lock<std::mutex> lk(_m);
-			return belief_when([](const typename ConditionMap::const_iterator &) 
-			                   { return true; });
+			_cache = calculated_belief();
+			_written = true;
 		}
-		else
-		{
-			std::unique_lock<std::mutex> lk(_m, std::defer_lock);
-			if (lk.try_lock())
-			{
-				*acquired = true;
-				return belief_when([](const typename 
-				                      ConditionMap::const_iterator &) 
-				{ return true; });
-			}
-			else
-			{
-				*acquired = false;
-				return (Value)(~Value{});
-			}
-		}
-	}
 
-	Value from_informant_and_blame(void *informant, 
-	                               const GuiltVersion &gv) const
-	{
-		auto from_combo = [informant, gv]
-		(const typename ConditionMap::const_iterator &cond)
-		{
-			return (cond->first.first == informant && 
-			        cond->first.second == gv);
-		};
-		
-		return belief_when(from_combo);
-	}
-
-	const Value &condition(void *informant, const GuiltVersion &gv) const
-	{
-		return _conditions.at(std::make_pair(informant, gv));
+		return _cache;
 	}
 
 	int remove_conditions_with_blame(const GuiltVersion &last)
 	{
 		int count = 0;
-		std::unique_lock<std::mutex> lk(_m);
 		for (auto it = _conditions.begin(); it != _conditions.end();)
 		{
-			if (it->first.second >= last)
+			if (it->first >= last)
 			{
 				it = _conditions.erase(it);
 				count++;
@@ -125,8 +88,8 @@ struct Conditions
 		std::cout << "conditions: " << _conditions.size() << std::endl;
 		for (auto it = _conditions.begin(); it != _conditions.end(); it++)
 		{
-			std::cout << "informant " << it->first.first << " who blames ";
-			std::cout << it->first.second << " says: " << it->second << std::endl;
+			std::cout << "Guilt version ";
+			std::cout << it->first << " says: " << it->second << std::endl;
 		}
 		std::cout << "Belief: " << belief() << std::endl;
 		std::cout << "===============" << std::endl;
@@ -137,16 +100,14 @@ struct Conditions
 	void apply_condition(void *informant, const GuiltVersion &gv, 
 	                     const Value &value)
 	{
-		std::unique_lock<std::mutex> lk(_m);
-		auto blame = std::make_pair(informant, gv);
-		if (_conditions.count(blame) == 0)
+		if (_conditions.count(gv) == 0)
 		{
-			_conditions[blame] = value;
+			_conditions[gv] = value;
 		}
 		else
 		{
-			auto before = _conditions[blame];
-			_conditions[blame] = (Value)(before & value);
+			auto before = _conditions[gv];
+			_conditions[gv] = (Value)(before & value);
 		}
 	}
 	

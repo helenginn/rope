@@ -16,9 +16,10 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#include "SearchAll.h"
 #include "ExhaustiveSearch.h"
 #include "CertainStates.h"
+#include "CliqueFinder.h"
+#include "SearchAll.h"
 #include "Clique.h"
 #include <time.h>
 
@@ -35,6 +36,9 @@ void SearchAll::run()
 	float total = 0;
 	int seconds = 0;
 	time_t start = ::time(nullptr);
+	
+	OpSet<Probe *> expanded = 
+	CliqueFinder::expandSelectionToNeighbours(_clique->probes(), 15, true);
 
 	for (Clique &clique : subs)
 	{
@@ -44,7 +48,7 @@ void SearchAll::run()
 			continue;
 		}
 
-		ExhaustiveSearch search(clique.probes(), _clique->probes());
+		ExhaustiveSearch search(clique.probes(), expanded);
 		search.search();
 		clickTicker();
 		clique.setStates(search.states());

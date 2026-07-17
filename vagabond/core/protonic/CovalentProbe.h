@@ -20,6 +20,30 @@
 #define __vagabond__CovalentProbe__
 
 #include "Probe.h"
+#include "BondAngle.h"
+
+inline hnet::AtomConf find_partner(hnet::AtomConf atom,
+                                   const std::string &search)
+{
+	hnet::AtomConf partner = {};
+	char conf = atom.conf;
+	for (size_t i = 0; i < atom.ptr->bondAngleCount(); i++)
+	{
+		BondAngle *angle = atom.ptr->bondAngle(i);
+		if (angle->atom(0)->atomName() == search)
+		{
+			partner = {angle->atom(0), conf};
+		}
+		if (angle->atom(2)->atomName() == search)
+		{
+			partner = {angle->atom(2), conf};
+		}
+
+		if (partner.ptr) break;
+	}
+
+	return partner;
+}
 
 inline
 hnet::Covalent::Values covalent_status_for_bond(const hnet::AtomConf &left,
@@ -35,7 +59,7 @@ hnet::Covalent::Values covalent_status_for_bond(const hnet::AtomConf &left,
 		};
 	};
 
-	bool sure_double = either_are_named_couple("C", "O")(left, right);
+	bool sure_double = false;
 	if (left.ptr->code() == "ASN" || left.ptr->code() == "GLN")
 	{
 		sure_double |= either_are_named_couple("CG", "OD1")(left, right);
@@ -47,6 +71,13 @@ hnet::Covalent::Values covalent_status_for_bond(const hnet::AtomConf &left,
 		sure_double |= either_are_named_couple("CD2", "CE2")(left, right);
 		sure_double |= either_are_named_couple("CE1", "CZ")(left, right);
 	}
+	if (left.ptr->code() == "TRP")
+	{
+		sure_double |= either_are_named_couple("CG", "CD1")(left, right);
+		sure_double |= either_are_named_couple("CE2", "CZ2")(left, right);
+		sure_double |= either_are_named_couple("CH2", "CZ3")(left, right);
+		sure_double |= either_are_named_couple("CE3", "CD2")(left, right);
+	}
 	
 	if (sure_double)
 	{
@@ -54,6 +85,24 @@ hnet::Covalent::Values covalent_status_for_bond(const hnet::AtomConf &left,
 	}
 
 	bool maybe = false;
+	maybe |= either_are_named_couple("OXT", "C")(left, right);
+	
+	if (either_are_named_couple("C", "O")(left, right))
+	{
+		hnet::AtomConf o = (left.ptr->atomName() == "O" ? left : right);
+		std::cout << "We got to this point for " << o.ptr->desc() << std::endl;
+		hnet::AtomConf oxt = find_partner(o, "OXT");
+		std::cout << "oxt is: " << oxt << std::endl;
+		if (oxt.ptr)
+		{
+			maybe = true;
+		}
+		else
+		{
+			return hnet::Covalent::Double;
+		}
+	}
+
 	if (left.ptr->code() == "ASP" || left.ptr->code() == "GLU")
 	{
 		maybe |= either_are_named_couple("CG", "OD1")(left, right);
@@ -67,9 +116,16 @@ hnet::Covalent::Values covalent_status_for_bond(const hnet::AtomConf &left,
 		maybe |= either_are_named_couple("NH1", "CZ")(left, right);
 		maybe |= either_are_named_couple("NE", "CZ")(left, right);
 	}
+	if (left.ptr->code() == "HIS")
+	{
+		maybe |= either_are_named_couple("CE1", "ND1")(left, right);
+		maybe |= either_are_named_couple("CE1", "NE2")(left, right);
+	}
 	
 	if (maybe)
 	{
+		std::cout << "Unassigned between " << left.ptr->atomName() << " and "
+		<< right.ptr->atomName() << std::endl;
 		return hnet::Covalent::Unassigned;
 	}
 
@@ -120,12 +176,7 @@ public:
 	virtual std::string display()
 	{
 		std::string str;
-		bool accessed = false;
-		hnet::Covalent::Values val = _cov.value(&accessed);
-		if (!accessed)
-		{
-			return "";
-		}
+		hnet::Covalent::Values val = _cov.value(true);
 
 		switch (val)
 		{

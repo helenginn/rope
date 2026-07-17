@@ -78,15 +78,13 @@ OpSet<Probe *> remove_absents(const OpSet<Probe *> &done)
 
 OpSet<Probe *> 
 CliqueFinder::expandSelectionToNeighbours(const OpSet<Probe *> &done,
-                                          const OpSet<Probe *> &all,
-int max_jumps)
+                                          int max_jumps, bool with_covalent)
 {
 	auto initial_assessment = [](Probe *){};
 
-	auto check_probe = [&all]
-	(Probe *other, Probe *prev) -> bool
+	auto check_probe = [with_covalent](Probe *other, Probe *prev) -> bool
 	{
-		if (other->is_covalent())
+		if (!with_covalent && other->is_covalent())
 		{
 			return false;
 		}
@@ -110,7 +108,7 @@ OpSet<Probe *> CliqueFinder::findOneClique(const OpSet<Probe *> &all)
 {
 	for (Probe *const &trial : all)
 	{
-		OpSet<Probe *> clique = expandSelectionToNeighbours({trial}, all);
+		OpSet<Probe *> clique = expandSelectionToNeighbours({trial});
 		return clique;
 	}
 

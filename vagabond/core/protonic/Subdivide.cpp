@@ -34,9 +34,12 @@ Subdivide::Subdivide(Clique *clique, int min, int max) : _clique(clique)
 
 bool Subdivide::finish_ends(OpSet<Probe *> &chunk)
 {
+	bool follow_hydrogens = false;
+	bool add_alt_confs = true;
+
 	for (Probe *const &probe : chunk)
 	{
-		if (!probe->is_atom()) // hydrogen or bond
+		if (follow_hydrogens && !probe->is_atom()) // hydrogen or bond
 		{
 			for (Probe *const &other : probe->others())
 			{
@@ -52,7 +55,7 @@ bool Subdivide::finish_ends(OpSet<Probe *> &chunk)
 				}
 			}
 		}
-		else // add the alt confs
+		if (add_alt_confs && probe->is_atom()) // add the alt confs
 		{
 			for (Probe *const &other : probe->others())
 			{
@@ -96,9 +99,9 @@ void Subdivide::shoot(OpSet<Probe *> &chunk)
 		bool found = false;
 		std::vector<Probe *> copy 
 		= {last->others().begin(), last->others().end()};
-		std::random_device rd;
-		std::mt19937 g(rd());
-		std::shuffle(copy.begin(), copy.end(), g);
+//		std::random_device rd;
+//		std::mt19937 g(rd());
+//		std::shuffle(copy.begin(), copy.end(), g);
 
 		for (Probe *const &other : copy)
 		{
@@ -317,6 +320,16 @@ void Subdivide::subdivide()
 	};
 
 	OpSet<Probe *> to_chunk = _clique->probes();
+	int covs = 0;
+	for (Probe *p : to_chunk)
+	{
+		if (p->is_covalent())
+		{
+			covs++;
+		}
+	}
+	std::cout << "Covalent probes in clique: " << covs << std::endl;
+
 	OpSet<OpSet<Probe *>> chunks;
 	OpSet<Clique> cliques;
 

@@ -31,9 +31,10 @@ Graph::Graph()
 
 }
 
-void Graph::addPoint(int series, float x, float y, const std::string &label)
+void Graph::addPoint(int series, float x, float y, const std::string &label,
+                     float alpha)
 {
-	_data[series].push_back({{x, y}, label});
+	_data[series].push_back({{x, y}, label, alpha});
 }
 
 void Graph::setRange(char axis, float min, float max)
@@ -337,7 +338,7 @@ void Graph::addPoints(float width, float height, int series,
 			c = _colours[series];
 		}
 
-		sc->addPoint(pos, c, 4);
+		sc->addPoint(pos, c, 4, dp.alpha);
 	}
 
 	addObject(sc);

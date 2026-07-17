@@ -35,8 +35,8 @@ public:
 
 	static 
 	OpSet<Probe *> expandSelectionToNeighbours(const OpSet<Probe *> &done,
-	                                           const OpSet<Probe *> &all = {},
-	                                           int max_jumps = INT_MAX);
+	                                           int max_jumps = INT_MAX, 
+	                                           bool with_covalent = false);
 	
 	typedef std::function<void(const OpSet<Probe *> &,
 	                           const std::string &)> HandleClique;

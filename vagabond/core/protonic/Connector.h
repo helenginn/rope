@@ -166,14 +166,6 @@ struct Connector : public ConnectBase
 	bool assign_value_without_checking(const Value &value, void *informant,
 	                                   const GuiltVersion &gv)
 	{
-		/*
-		if (_conditions.from_informant_and_blame(informant, gv) == value)
-		{
-			// if there's no change in value then we end the propagation
-			return false;
-		}
-		*/
-		
 		Value before = _conditions.belief();
 		/*
 		bool constriction = (before & ~value);
@@ -238,6 +230,7 @@ struct Connector : public ConnectBase
 
 		if (_update)
 		{
+			value();
 			_update(false);
 		}
 		
@@ -256,9 +249,9 @@ struct Connector : public ConnectBase
 		}
 	}
 	
-	bool is_certain()
+	bool is_certain(bool cache_only = false)
 	{
-		Value belief = _conditions.belief();
+		Value belief = _conditions.belief(cache_only);
 
 		return certain(belief);
 	}
@@ -304,9 +297,9 @@ struct Connector : public ConnectBase
 		_update = update;
 	}
 
-	Value value(bool *access = nullptr)
+	Value value(bool cache_only = false)
 	{
-		return _conditions.belief(access);
+		return _conditions.belief(cache_only);
 	}
 	
 	std::vector<Value> values()

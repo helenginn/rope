@@ -49,7 +49,7 @@ void OccupanciesView::setup()
 	tb->setCentre(0.50, 0.92);
 	addObject(tb);
 
-	std::map<ProbeTypePair, OccData> pass = estimates();
+	EstimateMap pass = estimates();
 	OpSet<ProbeTypePair> active;
 	for (auto &pair : pass)
 	{
@@ -116,21 +116,27 @@ void OccupanciesView::setup()
 		};
 	};
 
+	hnet::Energy &e = _network.energy();
 	tix->addOption("Torsion energies", 
 	              toggle_type("Torsion energies", 
-	              hnet::Energy::Torsion), true);
+	              hnet::Energy::Torsion),
+	              e.source_on(hnet::Energy::Torsion));
 	tix->addOption("Hydrogen bond acceptance", 
 	              toggle_type("Hydrogen bond acceptance", 
-	              hnet::Energy::Acceptor), true);
+	               hnet::Energy::Acceptor), 
+	               e.source_on(hnet::Energy::Acceptor));
 	tix->addOption("Hydrogen bond distance", 
 	              toggle_type("Hydrogen bond distance", 
-	              hnet::Energy::Distance), true);
+	               hnet::Energy::Distance), 
+	               e.source_on(hnet::Energy::Distance));
 	tix->addOption("Hydrogen bond angles", 
 	              toggle_type("Hydrogen bond angles", 
-	              hnet::Energy::Angle), true);
+	               hnet::Energy::Angle), 
+	               e.source_on(hnet::Energy::Angle));
 	tix->addOption("Liberation into bulk solvent", 
 	              toggle_type("Liberation into bulk solvent", 
-	              hnet::Energy::Bulk), true);
+	               hnet::Energy::Bulk), 
+	               e.source_on(hnet::Energy::Bulk));
 	tix->setVertical(true);
 	tix->setOneOnly(false);
 	tix->arrange(0.15, 0.52, 0.32, 0.78);
@@ -164,7 +170,7 @@ void OccupanciesView::slider(std::string msg, const hnet::Energy::Source &src,
 
 }
 
-std::map<ProbeTypePair, OccupanciesView::OccData> OccupanciesView::estimates()
+OccupanciesView::EstimateMap OccupanciesView::estimates()
 {
 	struct OccupancyEstimate // one per clique
 	{
@@ -174,7 +180,7 @@ std::map<ProbeTypePair, OccupanciesView::OccData> OccupanciesView::estimates()
 	};
 	
 	std::map<ProbeTypePair, std::vector<OccupancyEstimate>> occupancies;
-	std::map<ProbeTypePair, OccData> ret;
+	EstimateMap ret;
 	
 	auto process_clique = [&occupancies](const Clique &clique)
 	{
@@ -274,12 +280,11 @@ std::map<ProbeTypePair, OccupanciesView::OccData> OccupanciesView::estimates()
 	return ret;
 }
 
-void OccupanciesView::updateEstimates(std::map<ProbeTypePair, OccData> &ests)
+void OccupanciesView::updateEstimates(EstimateMap &ests)
 {
 	auto current = ests;
 	
-	auto fraction_for = [](std::map<ProbeTypePair, 
-	                       OccData> &ests,
+	auto fraction_for = [](EstimateMap &ests,
 	                       const ProbeTypePair &ptp, int state)
 	{
 		float calculated = ests.at(ptp).calculated;
@@ -327,7 +332,7 @@ void OccupanciesView::updateEstimates(std::map<ProbeTypePair, OccData> &ests)
 
 void OccupanciesView::occupancies()
 {
-	std::map<ProbeTypePair, OccData> pass;
+	EstimateMap pass;
 	if (_estimates.size() == 0)
 	{
 		pass = estimates();
@@ -339,7 +344,7 @@ void OccupanciesView::occupancies()
 		updateEstimates(pass);
 	}
 
-	std::map<ProbeTypePair, OccData> copy = pass;
+	EstimateMap copy = pass;
 	_estimates = pass;
 
 	deleteTemps();
@@ -351,6 +356,15 @@ void OccupanciesView::occupancies()
 	graph->setRange('y', 0, 1);
 	graph->setAxisLabel('x', "Calculated occupancy");
 	graph->setAxisLabel('y', "Observed occupancy");
+
+	std::set<size_t> results;
+	for (auto &pair : pass)
+	{
+		results.insert(pair.second.samples);
+	}
+	std::vector<size_t> joined = {results.begin(), results.end()};
+	int pct90 = results.size() * 0.9;
+	float max_samples = joined[pct90];
 	
 	std::cout << "observed, calculated, samples, atom" <<  std::endl;
 	for (auto &pair : pass)
@@ -359,8 +373,10 @@ void OccupanciesView::occupancies()
 		float &observed = pair.second.observed;
 		float &calculated = pair.second.calculated;
 		size_t &samples = pair.second.samples;
+		float alpha = (float)samples / max_samples;
+		alpha = 1.f;
 
-		graph->addPoint(0, calculated, observed, ptp.first->desc());
+		graph->addPoint(0, calculated, observed, ptp.first->desc(), alpha);
 		add_to_CD(&cd, calculated, observed);
 
 		std::cout << observed << " " << calculated << " " << samples << " " <<

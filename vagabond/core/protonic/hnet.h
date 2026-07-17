@@ -262,9 +262,213 @@ namespace Count
 	};
 };
 
+inline Count::Values int_to_count(const int &val)
+{
+	if (val >= 0)
+	{
+		return (Count::Values)(1 << val);
+	}
+	else
+	{
+		return (Count::Values)(1 << (-val + 15));
+	}
+}
+
+inline int count_to_int(const Count::Values &val)
+{
+	switch (val)
+	{
+		case Count::Zero:
+		return 0;
+
+		case Count::One:
+		return 1;
+
+		case Count::Two:
+		return 2;
+
+		case Count::Three:
+		return 3;
+
+		case Count::Four:
+		return 4;
+
+		case Count::Five:
+		return 5;
+
+		case Count::Six:
+		return 6;
+
+		case Count::Seven:
+		return 7;
+
+		case Count::Eight:
+		return 8;
+
+		case Count::Nine:
+		return 9;
+
+		case Count::Ten:
+		return 10;
+
+		case Count::Eleven:
+		return 11;
+
+		case Count::Twelve:
+		return 12;
+
+		case Count::Thirteen:
+		return 13;
+
+		case Count::Fourteen:
+		return 14;
+
+		case Count::Fifteen:
+		return 15;
+
+		case Count::mOne:
+		return -1;
+
+		case Count::mTwo:
+		return -2;
+
+		case Count::mThree:
+		return -3;
+
+		case Count::mFour:
+		return -4;
+
+		case Count::mFive:
+		return -5;
+
+		case Count::mSix:
+		return -6;
+
+		case Count::mSeven:
+		return -7;
+
+		case Count::mEight:
+		return -8;
+
+		case Count::mNine:
+		return -9;
+
+		case Count::mTen:
+		return -10;
+
+		case Count::mEleven:
+		return -11;
+
+		case Count::mTwelve:
+		return -12;
+
+		case Count::mThirteen:
+		return -13;
+
+		case Count::mFourteen:
+		return -14;
+
+		case Count::mFifteen:
+		return -15;
+
+		case Count::mSixteen:
+		return -16;
+
+		default:
+		throw std::runtime_error("straightforward conversion to integer"\
+		                         " impossible, val = " + std::to_string(val));
+	}
+};
+
+inline std::string num_to_string(int single_number)
+{
+	switch (single_number)
+	{
+		case 0: return "Zero";
+		case 1: return "One";
+		case 2: return "Two";
+		case 3: return "Three";
+		case 4: return "Four";
+		case 5: return "Five";
+		case 6: return "Six";
+		case 7: return "Seven";
+		case 8: return "Eight";
+		case 9: return "Nine";
+		case 10: return "Ten";
+		case 11: return "Eleven";
+		case 12: return "Twelve";
+		case 13: return "Thirteen";
+		case 14: return "Fourteen";
+		case 15: return "Fifteen";
+		case -1: return "Minus one";
+		case -2: return "Minus two";
+		case -3: return "Minus three";
+		case -4: return "Minus four";
+		case -5: return "Minus five";
+		case -6: return "Minus six";
+		case -7: return "Minus seven";
+		case -8: return "Minus eight";
+		case -9: return "Minus nine";
+		case -10: return "Minus ten";
+		case -11: return "Minus eleven";
+		case -12: return "Minus twelve";
+		case -13: return "Minus thirteen";
+		case -14: return "Minus fourteen";
+		case -15: return "Minus fifteen";
+		default: return "";
+	}
+}
+
 inline std::string to_string(int val)
 {
-	std::string str = "0b";
+	int loop[] = 
+	{31, 30, 29, 28, 27, 26, 25, 24, 23, 22, 21, 20, 19, 18, 17, 16,
+	0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15};
+
+	Count::Values first = Count::Contradiction;
+	Count::Values last = Count::Contradiction;
+	std::string str = "";
+	int run = 0;
+	for (int j = 0; j < 32; j++)
+	{
+		int l = loop[j];
+		unsigned char byte = (val >> l) & 1;
+		Count::Values count = (Count::Values)(1 << l);
+		if (byte == 1)
+		{
+			if (run == 0)
+			{
+				first = count;
+			}
+			last = count;
+			run++;
+		}
+		else if (byte == 0 && run == 1)
+		{
+			if (str.length() > 0) str += ", ";
+			str += num_to_string(count_to_int(first));
+			run = 0;
+		}
+		else if (byte == 0 && run > 1)
+		{
+			if (str.length() > 0) str += ", ";
+			str += num_to_string(count_to_int(first));
+			str += " to ";
+			str += num_to_string(count_to_int(last));
+			run = 0;
+		}
+	}
+
+	if (str.length() == 0)
+	{
+		str += "Contradiction!";
+	}
+	else
+	{
+		str = "[" + str + "]";
+	}
+
+	str += " 0b";
 	for (int j = 31; j >= 0; j--)
 	{
 		unsigned char byte = (val >> j) & 1;
@@ -549,19 +753,6 @@ inline std::ostream &operator<<(std::ostream &ss, const Bond::Values &v)
 	return ss;
 }
 
-inline Count::Values int_to_count(const int &val)
-{
-	if (val >= 0)
-	{
-		return (Count::Values)(1 << val);
-	}
-	else
-	{
-		return (Count::Values)(1 << (-val + 15));
-	}
-}
-
-
 /* for counts / integer conversion */
 template <class Container>
 inline Count::Values values_as_count(const Container &values)
@@ -584,111 +775,6 @@ inline Count::Values values_as_count(const Container &values)
 /* for integers, but can also be unassigned or contradictory */
 inline std::vector<int> possible_values(const Count::Values &count)
 {
-	auto count_to_int = [](const Count::Values &val)
-	{
-		switch (val)
-		{
-			case Count::Zero:
-			return 0;
-
-			case Count::One:
-			return 1;
-
-			case Count::Two:
-			return 2;
-
-			case Count::Three:
-			return 3;
-
-			case Count::Four:
-			return 4;
-
-			case Count::Five:
-			return 5;
-
-			case Count::Six:
-			return 6;
-
-			case Count::Seven:
-			return 7;
-
-			case Count::Eight:
-			return 8;
-
-			case Count::Nine:
-			return 9;
-
-			case Count::Ten:
-			return 10;
-
-			case Count::Eleven:
-			return 11;
-
-			case Count::Twelve:
-			return 12;
-
-			case Count::Thirteen:
-			return 13;
-
-			case Count::Fourteen:
-			return 14;
-
-			case Count::Fifteen:
-			return 15;
-
-			case Count::mOne:
-			return -1;
-
-			case Count::mTwo:
-			return -2;
-
-			case Count::mThree:
-			return -3;
-
-			case Count::mFour:
-			return -4;
-
-			case Count::mFive:
-			return -5;
-
-			case Count::mSix:
-			return -6;
-
-			case Count::mSeven:
-			return -7;
-
-			case Count::mEight:
-			return -8;
-
-			case Count::mNine:
-			return -9;
-
-			case Count::mTen:
-			return -10;
-
-			case Count::mEleven:
-			return -11;
-
-			case Count::mTwelve:
-			return -12;
-
-			case Count::mThirteen:
-			return -13;
-
-			case Count::mFourteen:
-			return -14;
-
-			case Count::mFifteen:
-			return -15;
-
-			case Count::mSixteen:
-			return -16;
-
-			default:
-			throw std::runtime_error("straightforward conversion to integer"\
-			                         " impossible, val = " + std::to_string(val));
-		}
-	};
 	
 	std::vector<int> results;
 	for (int i = 0; i < 32; i++)

@@ -62,8 +62,7 @@ public:
 
 	void addCoordinationState(const Count::Values &n_geometry,
 	                          const Count::Values &n_charge,
-	                          const Count::Values &n_coord_num,
-	                          const Count::Values &neutral_valency);
+	                          const Count::Values &n_neutral_ele);
 
 	void prepareCoordination();
 
@@ -230,7 +229,7 @@ private:
 	hnet::AtomConnector *_connector{};
 	hnet::ExistenceConnector *_existence{};
 
-	hnet::CountConnector *_coord_num{};
+	hnet::CountConnector *_outershell_neutral_e{};
 	hnet::CountConnector *_charge{};
 
 	hnet::CountConnector *_geometries{};

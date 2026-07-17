@@ -46,7 +46,8 @@ public:
 	
 	Style style = StyleLine;
 
-	void addPoint(int series, float x, float y, const std::string &label = "");
+	void addPoint(int series, float x, float y, const std::string &label = "",
+	              float alpha = 1.f);
 	void setRange(char axis, float min, float max);
 	
 	// width and height of box contents.
@@ -64,6 +65,7 @@ private:
 	{
 		glm::vec2 point;
 		std::string label;
+		float alpha;
 	};
 
 	void addAxes(float width, float height);

@@ -146,11 +146,10 @@ void ExhaustiveSearch::search()
 
 GetScore ExhaustiveSearch::score_wider_clique()
 {
-	OpSet<Probe *> check = _wider;
 	GuiltVersion gv = _gv;
 	
 	std::vector<std::pair<hnet::GetEnergy, std::string>> jobs;
-	for (Probe *const &probe : check)
+	for (Probe *const &probe : _wider)
 	{
 		hnet::GetEnergy contrib = probe->energy();
 		if (contrib)

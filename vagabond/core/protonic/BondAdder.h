@@ -210,6 +210,8 @@ struct BondAdder : public ConstraintBase
 		/* if there's only one acceptable value and it's either certain or
 		 * (certain + maybe) then we can assign the remainder */
 
+//		std::cout << "BondAdder: " << _sum << std::endl;
+//		std::cout << "common size: " << common.size() << std::endl;
 		if (common.size() >= 1)
 		{
 			assign(_sum, count);

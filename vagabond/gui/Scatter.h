@@ -37,7 +37,8 @@ public:
 
 	virtual void reindex();
 
-	void addPoint(glm::vec3 vec, glm::vec3 colour, int pointType);
+	void addPoint(glm::vec3 vec, glm::vec3 colour, int pointType, 
+	              float alpha = 1.f);
 	virtual void interacted(int idx, bool hover, bool left);
 	virtual void extraUniforms();
 private:

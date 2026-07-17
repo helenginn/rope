@@ -39,7 +39,8 @@ Scatter::~Scatter()
 	}
 }
 
-void Scatter::addPoint(glm::vec3 p, glm::vec3 colour, int pointType)
+void Scatter::addPoint(glm::vec3 p, glm::vec3 colour, int pointType,
+                       float alpha)
 {
 	if (!usesProjection())
 	{
@@ -51,7 +52,7 @@ void Scatter::addPoint(glm::vec3 p, glm::vec3 colour, int pointType)
 
 	vert.tex.x = 8; /* number of points */
 	vert.tex.y = 0.; /* point index */
-	vert.color = glm::vec4(colour, 1.f);
+	vert.color = glm::vec4(colour, alpha);
 	int idx = _vertices.size() - 1;
 	_vertices[idx].tex.y = pointType; /* point index */
 	addIndex(-1);

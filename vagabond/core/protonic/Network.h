@@ -185,10 +185,9 @@ private:
 
 	void linkCovalentBonds(hnet::AtomConf atom);
 
-	hnet::CountConnector &shareCharges(hnet::AtomConf left, hnet::AtomConf right,
-	                             const hnet::Count::Values &allowable);
-	void shareDonors(hnet::AtomConf left, hnet::AtomConf right,
-	                 const hnet::Count::Values &allowable);
+	hnet::CountConnector &shareCharges(hnet::AtomConf left,
+	                                   hnet::AtomConf right,
+	                                   const hnet::Count::Values &allowable);
 
 	void findAtomCoordinations(hnet::AtomConf atom);
 

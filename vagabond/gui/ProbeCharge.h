@@ -48,9 +48,9 @@ public:
 	}
 
 	virtual void reindex();
+	void quickUpdate();
 private:
 	void fullUpdate();
-	void quickUpdate();
 
 	CountProbe *_probe = nullptr;
 	ProtonNetworkView *_view = nullptr;

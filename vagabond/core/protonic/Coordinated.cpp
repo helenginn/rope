@@ -43,6 +43,10 @@ Coordinated::Coordinated(Network &network, ::Atom *atom, char conf)
 	probeAtom();
 	_network.atomMap()[_atomConf] = this;
 	_network.existMap()[_atomConf] = _existence;
+
+	CountConnector &charge = add(new CountConnector());
+	charge.setDesc("charge on " + _atomConf.desc());
+	_charge = &charge;
 }
 
 
@@ -312,13 +316,6 @@ void Coordinated::comparePairs(OpSet<PairSet> &results,
 
 		Coordinated *coord = atomMap()[check];
 		
-		if (!coord->_coord_num)
-		{
-			std::cout << "Oh no, no coord for " << check
-			<< "!!!" << std::endl;
-			return true;
-		}
-		
 		glm::vec3 child = centre + dir / 2.f;
 		if (!coord->acceptableHydrogenAngle(child))
 		{
@@ -389,14 +386,6 @@ AtomConf Coordinated::findPlanarAtom()
 	std::string code = _atomConf.ptr->code();
 	std::string name = _atomConf.ptr->atomName();
 	
-	/*
-	if (code != "ASP" && code != "GLU" && code != "ASN" && code != "GLN"
-	    && code != "ARG")
-	{
-		return {};
-	}
-	*/
-	
 	if (code == "ARG" && _atomConf.ptr->atomName() == "NE")
 	{
 		return {};
@@ -424,6 +413,20 @@ AtomConf Coordinated::findPlanarAtom()
 				planar = other;
 			}
 
+			if (name == "O" && other->atomName() == "OXT")
+			{
+				planar = other;
+			}
+
+			if (name == "OXT" && other->atomName() == "O")
+			{
+				planar = other;
+			}
+			else if (name == "O" && other->atomName() == "N")
+			{
+				planar = other;
+			}
+
 			if (code == "TYR" && other->atomName() == "CE2")
 			{
 				planar = other;
@@ -444,10 +447,6 @@ AtomConf Coordinated::findPlanarAtom()
 				planar = other;
 			}
 
-			if (name == "O" && other->atomName() == "N")
-			{
-				planar = other;
-			}
 		}
 	}
 	
@@ -585,9 +584,10 @@ OpSet<ACPair> Coordinated::uninvolvedCoordinators()
 	}
 
 	std::cout << "Uninvolved: " << _uninvolved.size() << std::endl;
+	std::cout << "Atom2Confs: " << atom_to_confs.size() << std::endl;
 	_calculatedCov = true;
 
-	Count::Values single_only = values_as_count(totals);
+	Count::Values single_only = int_to_count(atom_to_confs.size());
 	if (totals.size() == 0)
 	{
 		single_only = Count::Zero;
@@ -2012,10 +2012,9 @@ void Coordinated::attachAdderConstraints()
 
 void Coordinated::addCoordinationState(const Count::Values &n_geometry,
                                      const Count::Values &n_charge,
-                                     const Count::Values &n_coord_num,
-                                     const Count::Values &neutral_bonds)
+                                     const Count::Values &n_neutral_ele)
 {
-	_options.addState({n_geometry, n_charge, n_coord_num, neutral_bonds});
+	_options.addState({n_geometry, n_charge, n_neutral_ele});
 }
 
 void Coordinated::finishOptions()
@@ -2033,21 +2032,14 @@ void Coordinated::finishOptions()
 	geometries.setDesc("geometric arrangement of " + _atomConf.desc());
 	_geometries = &geometries;
 
-	CountConnector &charge = add(new CountConnector());
-	charge.setDesc("charge on " + _atomConf.desc());
-	_charge = &charge;
+	CountConnector &outershell_neutral_ele = add(new CountConnector());
+	outershell_neutral_ele.setDesc("outershell neutral ele for " 
+	                               + _atomConf.desc());
+	_outershell_neutral_e = &outershell_neutral_ele;
 
-	CountConnector &coord_num = add(new CountConnector());
-	coord_num.setDesc("coordination number for " + _atomConf.desc());
-	_coord_num = &coord_num;
-
-	CountConnector &neutral_bonds = add(new CountConnector());
-	neutral_bonds.setDesc("neutral bonds made by " + _atomConf.desc());
-	_neutral_bonds = &neutral_bonds;
-	
 	if (_options.stateCount() > 0)
 	{
-		_options.setOptions({_geometries, _charge, _coord_num, _neutral_bonds});
+		_options.setOptions({_geometries, _charge, _outershell_neutral_e});
 		_options.initialConstants();
 		_options.deriveConstraints();
 	}
@@ -2057,13 +2049,13 @@ void Coordinated::finishOptions()
 
 void Coordinated::prepareCoordination()
 {
+	if (_ionic) return;
 	std::cout << "Preparing coordinated for " << _atomConf << std::endl;
 	
 	// finish off added coordination states
 	finishOptions();
 
-	// next up: interim calculations
-
+	// bond counters
 	CountConnector &expl_donors = add_zero_or_positive_connector();
 	expl_donors.setDesc("explicit donors of " + _atomConf.desc());
 	CountConnector &twirling_donors = add_zero_or_positive_connector();
@@ -2084,26 +2076,6 @@ void Coordinated::prepareCoordination()
 	expl_vacancies.setDesc("explicit vacancies of " + _atomConf.desc());
 	CountConnector &all_vacancies = add_zero_or_positive_connector();
 	all_vacancies.setDesc("all vacancies of " + _atomConf.desc());
-	CountConnector &unbroken_bonds = add_zero_or_positive_connector();
-	unbroken_bonds.setDesc("unbroken bonds of " + _atomConf.desc());
-	CountConnector &proper_bonds = add_zero_or_positive_connector();
-	proper_bonds.setDesc("actual proper bonds of " + _atomConf.desc());
-
-	CountConnector &cov_plus_expl = add_zero_or_positive_connector();
-	cov_plus_expl.setDesc("all singly covalent + unbroken bonds for " 
-	                      + _atomConf.desc());
-	
-	/* CountAdder format: arg0 + arg1 = arg2 */
-
-	/* neutral occupied  + covalent bonds = neutral bonds */
-//	add_constraint(new CountAdder(*_covalent, neutral_donors,
-//	                              *_neutral_bonds));
-
-	/* working number of proper bonds = neutral bonds + charge */
-	add_constraint(new CountAdder(*_neutral_bonds, *_charge, proper_bonds));
-
-	/* total donor bonds is determined by neutral occupied and charge */
-	add_constraint(new CountAdder(*_covalent, all_donors, proper_bonds));
 
 	/* all donor bonds also comprise explicit + freely rotating bonds */
 	add_constraint(new CountAdder(expl_donors, twirling_donors, all_donors));
@@ -2111,21 +2083,69 @@ void Coordinated::prepareCoordination()
 	/* vacancies are the sum of weak bonds and lonepair (lone pair) bonds */
 	add_constraint(new CountAdder(expl_lonepair, twirling_lp, all_lp));
 
+	CountConnector &all_twirl = add_zero_or_positive_connector();
+	all_twirl.setDesc("all twirling bonds of " + _atomConf.desc());
+
+	/* vacancies are the sum of weak bonds and lonepair (lone pair) bonds */
+	add_constraint(new CountAdder(twirling_donors, twirling_lp, all_twirl));
+
 	/* vacancies are the sum of weak bonds and lonepair (lone pair) bonds */
 	add_constraint(new CountAdder(expl_lonepair, expl_acceptors, expl_vacancies));
 
 	/* vacancies are the sum of weak bonds and lonepair (lone pair) bonds */
 	add_constraint(new CountAdder(all_lp, expl_acceptors, all_vacancies));
 
-	/* coord number is accounted for by expl. donor, acceptor and lone pairs */
-	add_constraint(new CountAdder(expl_donors, expl_vacancies, unbroken_bonds));
+	// next up: interim calculations
 
-	/* adding up proper bonds + vacancies to get coordination number */
-	add_constraint(new CountAdder(all_vacancies, proper_bonds, *_coord_num));
+	CountConnector &outershell_limit = add(new CountConnector());
+	outershell_limit.setDesc("outershell electron limit of " + _atomConf.desc());
+	add_constraint(new CountConstant(outershell_limit, Count::Eight));
+
+	CountConnector &half_outershell_limit = add(new CountConnector());
+	half_outershell_limit.setDesc("half-outershell electron limit of "
+	                              + _atomConf.desc());
+	add_constraint(new CountConstant(half_outershell_limit, Count::Four));
+
+	CountConnector &outershell_electrons = add(new CountConnector());
+	outershell_electrons.setDesc("outershell electrons in " + _atomConf.desc());
+	/* outershell_electrons = outershell_neutral_e - charge */
+	/* outershell_electrons + charge = outershell_neutral_e */
+	add_constraint(new CountAdder(outershell_electrons, *_charge, 
+	                              *_outershell_neutral_e));
+
+	/* valency = outershell_limit - outershell_electrons */
+	/* valency + outershell_electrons = outershell_limit */
+	CountConnector &valency = add(new CountConnector());
+	valency.setDesc("valency of " + _atomConf.desc());
+	add_constraint(new CountAdder(outershell_electrons, valency, 
+	                              outershell_limit));
+	
+	CountConnector &all_bonds = add(new CountConnector());
+	all_bonds.setDesc("all bonds of " + _atomConf.desc());
+
+	add_constraint(new CountAdder(*_covalent, all_donors, valency));
+	add_constraint(new CountAdder(*_covalent, all_bonds, 
+	                              half_outershell_limit));
+
+	/* vacancies = outershell_electrons - half_outershell_limit */
+	add_constraint(new CountAdder(all_vacancies, half_outershell_limit, 
+	                              outershell_electrons));
 
 	/* explicit bonds + uninvolved bonds : for determining twirling allowance */
-	add_constraint(new CountAdder(unbroken_bonds, *_cov_single,
-	                              cov_plus_expl));
+	CountConnector &unbroken_bonds = add_zero_or_positive_connector();
+	unbroken_bonds.setDesc("unbroken bonds of " + _atomConf.desc());
+
+	CountConnector &cov_plus_expl = add_zero_or_positive_connector();
+	cov_plus_expl.setDesc("all singly covalent + unbroken bonds for " 
+	                      + _atomConf.desc());
+	add_constraint(new CountAdder(unbroken_bonds, *_cov_single, cov_plus_expl));
+
+	/*
+	CountConnector &noncov_valency = add_zero_or_positive_connector();
+	noncov_valency.setDesc("non-covalent valency of " + _atomConf.desc());
+	add_constraint(new CountAdder(all_twirl, unbroken_bonds, noncov_valency));
+	add_constraint(new CountAdder(*_covalent, noncov_valency, *_geometries));
+	*/
 
 	auto cov_plus_expl_more_than_one = [&cov_plus_expl]()
 	{
@@ -2139,9 +2159,11 @@ void Coordinated::prepareCoordination()
 	                               cov_plus_expl_more_than_one,
 	                               twirling_donors, Count::Zero));
 
+	/*
 	add_constraint(new StrictCount({&cov_plus_expl},
 	                               cov_plus_expl_more_than_one,
 	                               twirling_lp, Count::Zero));
+	*/
 
 	/* counts which need to be hooked up to bond adders later */
 	_donors = &expl_donors;
@@ -2157,6 +2179,11 @@ void Coordinated::prepareCoordination()
 	auto add_charge_display = [this]()
 	{
 		if (!_showCharge)
+		{
+			return;
+		}
+		
+		if (_charge->is_certain() && _charge->value() == Count::Zero)
 		{
 			return;
 		}

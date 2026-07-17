@@ -124,6 +124,7 @@ void ProtonNetworkView::findAtomProbes()
 		ProbeCharge *charge = new ProbeCharge(this, probe);
 		addObject((FloatingImage *)charge);
 		_allProbes.insert(probe);
+		_countProbes[probe] = charge;
 		probe->setResponder(this);
 		addIndexResponder(charge);
 	}
@@ -374,6 +375,12 @@ void ProtonNetworkView::arrangeFigure()
 	};
 	
 	std::vector<std::function<void()>> tidyJobs;
+
+	for (auto it = _countProbes.begin(); it != _countProbes.end(); it++)
+	{
+		it->first->setHide(-1.f, false);
+		it->second->quickUpdate();
+	}
 
 	_shifter->pause();
 	for (auto it = _textProbes.begin(); it != _textProbes.end(); it++)
@@ -728,8 +735,8 @@ void ProtonNetworkView::expandSelectionToNeighbours(int max_jumps)
 	// get the initial selected probes into a set.
 	OpSet<Probe *> done = selected_probes(_textProbes);
 
-	OpSet<Probe *> ps = CliqueFinder::expandSelectionToNeighbours(done, {}, 
-	                                                              max_jumps);
+	OpSet<Probe *> ps = 
+	CliqueFinder::expandSelectionToNeighbours(done, max_jumps);
 	selectProbes(ps);
 	highlightCliques();
 }

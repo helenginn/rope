@@ -23,7 +23,6 @@
 #include "SymMates.h"
 #include "AtomGroup.h"
 #include "BondAdder.h"
-#include "BondAngle.h"
 #include "CountAdder.h"
 #include "CountProbe.h"
 #include "Hydrogenate.h"
@@ -40,30 +39,25 @@ shareProperty(Network *me, AtomConf left, AtomConf right,
                    const Obtain &obtain, const Count::Values &allowable)
 {
 	CountConnector &sum = me->add(new CountConnector());
+	sum.setDesc("shared charge for " + left.desc() + " and " +
+	            right.desc());
 	me->add_constraint(new CountConstant(sum, allowable));
 	
 	CountConnector *lConnect = obtain(left);
 	CountConnector *rConnect = obtain(right);
 	
-	me->probeForAtom(left)->register_probe(me->probeForAtom(right));
-	me->probeForAtom(right)->register_probe(me->probeForAtom(left));
-
 	if (lConnect && rConnect)
 	{
+		me->probeForAtom(left)->register_probe(me->probeForAtom(right));
+		me->probeForAtom(right)->register_probe(me->probeForAtom(left));
+
 		me->add_constraint(new CountAdder(*lConnect, *rConnect, sum));
 	}
-	return sum;
-}
-
-void Network::shareDonors(AtomConf left, AtomConf right,
-                           const Count::Values &allowable)
-{
-	auto get_strong = [this](AtomConf atom)
+	else
 	{
-		return _atomMap[atom]->strong();
-	};
-
-	shareProperty(this, left, right, get_strong, allowable);
+		std::cout << "WARNING: left/right not found" << std::endl;
+	}
+	return sum;
 }
 
 CountConnector &Network::shareCharges(AtomConf left, AtomConf right,
@@ -74,32 +68,10 @@ CountConnector &Network::shareCharges(AtomConf left, AtomConf right,
 		return _atomMap[atom]->charge();
 	};
 
-	CountConnector &shared = 
-	shareProperty(this, left, right, get_charges, allowable);
+	CountConnector &shared = shareProperty(this, left, right, 
+	                                       get_charges, allowable);
 	
 	return shared;
-}
-
-AtomConf find_partner(AtomConf atom, const std::string &search)
-{
-	AtomConf partner = {};
-	char conf = atom.conf;
-	for (size_t i = 0; i < atom.ptr->bondAngleCount(); i++)
-	{
-		BondAngle *angle = atom.ptr->bondAngle(i);
-		if (angle->atom(0)->atomName() == search)
-		{
-			partner = {angle->atom(0), conf};
-		}
-		if (angle->atom(2)->atomName() == search)
-		{
-			partner = {angle->atom(2), conf};
-		}
-
-		if (partner.ptr) break;
-	}
-
-	return partner;
 }
 
 bool Network::setupSingleAlcohol(AtomConf atom)
@@ -117,7 +89,7 @@ bool Network::setupSingleAlcohol(AtomConf atom)
 	}
 
 	_atomMap[atom]->addCoordinationState(Count::Four, Count::Zero, 
-	                                   Count::Four, Count::Two);
+	                                   Count::Six);
 	return true;
 }
 
@@ -129,7 +101,7 @@ bool Network::setupLysineAmine(AtomConf atom)
 	}
 
 	_atomMap[atom]->addCoordinationState(Count::Four, Count::One, 
-	                                   Count::Four, Count::Three);
+	                                   Count::Five);
 	return true;
 }
 
@@ -146,12 +118,12 @@ bool Network::setupAmineNitrogen(AtomConf atom)
 	{
 		Count::Values n_charge = Count::OneOrZero;
 		_atomMap[atom]->addCoordinationState(Count::Four, Count::One, 
-		                                   Count::Four, Count::Three);
+		                                   Count::Five);
 	}
 	else
 	{
 		_atomMap[atom]->addCoordinationState(Count::Three, Count::Zero, 
-		                                   Count::Three, Count::Three);
+		                                   Count::Five);
 	}
 
 	return true;
@@ -168,45 +140,39 @@ bool Network::setupAsnGlnNitrogen(AtomConf atom)
 	if (bad) return false;
 
 	_atomMap[atom]->addCoordinationState(Count::Three, Count::Zero, 
-	                                   Count::Three, Count::Three);
+	                                   Count::Five);
 	return true;
 }
 
 bool Network::setupHistidine(AtomConf atom)
 {
-	bool bad = true;
-	if (atom.ptr->atomName() == "ND1" && atom.ptr->code() == "HIS")
-	{
-		bad = false;
-	}
-	
-	if (bad)
+	if (atom.ptr->code() != "HIS")
 	{
 		return false;
 	}
 	
-	AtomConf partner = find_partner(atom, "NE2");
-	
-	if (!partner.ptr)
+	if (atom.ptr->atomName() != "ND1" && atom.ptr->atomName() != "NE2")
 	{
 		return false;
 	}
-
+	
 	const Count::Values charge = Count::OneOrZero;
 
 	const Count::Values charge_sum = Count::OneOrZero;
-	const Count::Values donor_sum = Count::Values(Count::One | Count::Two);
 
-	_atomMap[atom]->addCoordinationState(Count::Three, charge, 
-	                                   Count::Three, Count::Three);
-	_atomMap[partner]->addCoordinationState(Count::Three, charge, 
-	                                      Count::Three, Count::Three);
-
+	_atomMap[atom]->addCoordinationState(Count::Three, charge, Count::Five);
 	_atomMap[atom]->showCharge(false);
-	_atomMap[partner]->showCharge(false);
-	
+
+	std::string other = atom.ptr->atomName() == "ND1" ? "NE2" : "ND1";
+	AtomConf partner = find_partner(atom, other);
+	if (!partner.ptr || !atomMap()[partner]->charge())
+	{
+		std::cout << "Did not find " << partner << " with a charge "\
+		"on it yet" << std::endl;
+		return true; // wait until the partner comes round
+	}
+
 	hnet::CountConnector &shared = shareCharges(atom, partner, charge_sum);
-//	shareDonors(atom, partner, donor_sum);
 
 	CountProbe &probe = 
 	add_probe(new CountProbe(shared, *atomMap()[atom]->existence(), 
@@ -217,8 +183,14 @@ bool Network::setupHistidine(AtomConf atom)
 
 bool Network::setupCarboxylOxygen(AtomConf atom)
 {
+	if (atom.ptr->elementSymbol() != "O")
+	{
+		return false;
+	}
+
 	bool bad = true;
 	std::string search;
+	
 	if (atom.ptr->atomName() == "OD1" && atom.ptr->code() == "ASP")
 	{
 		bad = false;
@@ -230,15 +202,21 @@ bool Network::setupCarboxylOxygen(AtomConf atom)
 		bad = false;
 		search = "OE2";
 	}
+
+	if (atom.ptr->atomName() == "OXT")
+	{
+		bad = false;
+		search = "O";
+	}
 	
 	if (bad)
 	{
 		return false;
 	}
 	
-	AtomConf partner = find_partner(atom, search);
+	AtomConf p = find_partner(atom, search);
 	
-	if (!partner.ptr)
+	if (!p.ptr)
 	{
 		return false;
 	}
@@ -248,30 +226,22 @@ bool Network::setupCarboxylOxygen(AtomConf atom)
 	Count::Values charge_sum = Count::mOneOrZero;
 	const Count::Values coord_num = Count::Values(Count::Three | Count::Four);
 
-	_atomMap[atom]->addCoordinationState(Count::Three, Count::Zero,
-	                                     Count::Four, Count::Two);
-	_atomMap[atom]->addCoordinationState(Count::Three, Count::Zero,
-	                                     Count::Three, Count::Two);
-	_atomMap[atom]->addCoordinationState(Count::Three, Count::mOne,
-	                                     Count::Three, Count::Two);
+	_atomMap[atom]->addCoordinationState(Count::Three, Count::Zero, Count::Six);
+	_atomMap[atom]->addCoordinationState(Count::Three, Count::mOne, Count::Six);
 
-	_atomMap[partner]->addCoordinationState(Count::Three, Count::Zero,
-	                                     Count::Four, Count::Two);
-	_atomMap[partner]->addCoordinationState(Count::Three, Count::Zero,
-	                                     Count::Three, Count::Two);
-	_atomMap[partner]->addCoordinationState(Count::Three, Count::mOne,
-	                                     Count::Three, Count::Two);
+	_atomMap[p]->addCoordinationState(Count::Three, Count::Zero, Count::Six);
+	_atomMap[p]->addCoordinationState(Count::Three, Count::mOne, Count::Six);
 	
 //	_atomMap[atom]->showCharge(false);
 //	_atomMap[partner]->showCharge(false);
 	
-	return true;
+//	return true;
 
-	hnet::CountConnector &shared = shareCharges(atom, partner, charge_sum);
+	hnet::CountConnector &shared = shareCharges(atom, p, charge_sum);
 
 	CountProbe &probe = 
 	add_probe(new CountProbe(shared, *atomMap()[atom]->existence(), 
-	                         {atom, partner}, 0), true);
+	                         {atom, p}, 0), true);
 	
 	return true;
 }
@@ -279,9 +249,6 @@ bool Network::setupCarboxylOxygen(AtomConf atom)
 bool Network::setupCarbonylOxygen(AtomConf atom)
 {
 	bool bad = false;
-	Count::Values geom = Count::Values(Count::Two | Count::Three);
-	Count::Values num = Count::Values(Count::Four | Count::Three);
-//	coordination = Count::Three; // fix
 
 	if ((atom.ptr->atomName() != "O" && atom.ptr->atomName() != "OXT") ||
 	    atom.ptr->code() == "HOH")
@@ -303,8 +270,9 @@ bool Network::setupCarbonylOxygen(AtomConf atom)
 	}
 
 	// fix me
-	_atomMap[atom]->addCoordinationState(Count::Two, Count::Zero, 
-	                                     Count::Three, Count::Two);
+	_atomMap[atom]->addCoordinationState(Count::Two, Count::Zero, Count::Six);
+
+	_atomMap[atom]->addCoordinationState(Count::Three, Count::Zero, Count::Six);
 	return true;
 }
 
@@ -312,8 +280,7 @@ bool Network::setupWater(AtomConf atom)
 {
 	if (atom.ptr->code() != "HOH") { return false; }
 	
-	_atomMap[atom]->addCoordinationState(Count::Four, Count::Zero, 
-	                                     Count::Four, Count::Two);
+	_atomMap[atom]->addCoordinationState(Count::Four, Count::Zero, Count::Six);
 	return true;
 }
 
@@ -321,14 +288,13 @@ bool Network::setupSodium(AtomConf atom)
 {
 	if (atom.ptr->elementSymbol() != "NA") { return false; }
 	
-	_atomMap[atom]->addCoordinationState(Count::Four, Count::Zero, 
-	                                     Count::Four, Count::Zero);
+	_atomMap[atom]->addCoordinationState(Count::Four, Count::Zero, Count::One);
 	return true;
 }
 
 bool Network::setupGuessLigand(AtomConf atom)
 {
-	if (atom.ptr->code() != "LIG" || atom.ptr->elementSymbol() != "O")
+	if (atom.ptr->elementSymbol() != "O")
 	{
 		return false;
 	}
@@ -336,7 +302,7 @@ bool Network::setupGuessLigand(AtomConf atom)
 	if (atom.ptr->elementSymbol() == "O")
 	{
 		_atomMap[atom]->addCoordinationState(Count::Four, Count::Zero, 
-		                                     Count::Four, Count::Two);
+		                                     Count::Six);
 	}
 
 	return true;
@@ -349,10 +315,8 @@ bool Network::setupArginine(AtomConf atom)
 	    atom.ptr->atomName() == "NE"))
 	{ return false; }
 
-	_atomMap[atom]->addCoordinationState(Count::Three, Count::Zero, 
-	                                     Count::Three, Count::Three);
-	_atomMap[atom]->addCoordinationState(Count::Three, Count::One, 
-	                                     Count::Four, Count::Three);
+	_atomMap[atom]->addCoordinationState(Count::Three, Count::Zero, Count::Five);
+	_atomMap[atom]->addCoordinationState(Count::Three, Count::One, Count::Five);
 
 	return true;
 }
@@ -367,8 +331,7 @@ bool Network::setupMethionine(AtomConf atom)
 	if (!(atom.ptr->code() == "MET" && atom.ptr->atomName() == "SD"))
 	{ return false; }
 
-	_atomMap[atom]->addCoordinationState(Count::Four, Count::Zero, 
-	                                   Count::Four, Count::Two);
+	_atomMap[atom]->addCoordinationState(Count::Four, Count::Zero, Count::Six);
 
 	return true;
 }
@@ -383,8 +346,7 @@ bool Network::setupTryptophan(AtomConf atom)
 	if (!(atom.ptr->code() == "TRP" && atom.ptr->atomName() == "NE1"))
 	{ return false; }
 
-	_atomMap[atom]->addCoordinationState(Count::Three, Count::Zero, 
-	                                   Count::Three, Count::Three);
+	_atomMap[atom]->addCoordinationState(Count::Three, Count::Zero, Count::Five);
 
 	return true;
 }
@@ -598,6 +560,7 @@ void Network::findAtomCoordinations(AtomConf atom)
 {
 	bool found = false;
 	std::cout << "Registering " << atom << std::endl;
+	
 	if (_atomMap[atom])
 	{
 		found |= setupAmineNitrogen(atom);
@@ -813,7 +776,6 @@ Network::Network(AtomGroup *group, const std::string &spg_name,
 	// here is when the coordination is finalised
 	donors->do_op(on_each_conf([this](::Atom *a, char conf)
 	{
-		// prepares covalent counter
 		_atomMap[{a, conf}]->prepareCoordination();
 	}));
 

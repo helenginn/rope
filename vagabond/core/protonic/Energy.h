@@ -53,6 +53,11 @@ public:
 		_sources[src] = on;
 	}
 
+	bool source_on(const Source &src)
+	{
+		return _sources[src];
+	}
+
 	EnergyWrapper energy_wrapper_for_covalent(BondProbe &bp);
 
 	EnergyWrapper energy_wrapper_for_half_hbond(HydrogenProbe *probe, 

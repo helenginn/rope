@@ -23,11 +23,11 @@ using namespace hnet;
 
 Energy::Energy()
 {
-	_sources[Torsion] = true;
-	_sources[Acceptor] = true;
-	_sources[Bulk] = true;
+	_sources[Torsion] = false;
+	_sources[Acceptor] = false;
+	_sources[Bulk] = false;
 	_sources[Distance] = false;
-	_sources[Angle] = true;
+	_sources[Angle] = false;
 }
 
 hnet::EnergyWrapper
@@ -36,27 +36,32 @@ Energy::energy_wrapper_for_covalent(BondProbe &bp)
 	Probe &left = bp.left();
 	Probe &right = bp.right();
 	
-	auto acquire_connected_atoms_for = [](Probe &probe)
+	auto acquire_connected_atoms_for = [&bp](Probe &probe)
 	{
 		std::vector<Probe *> connected;
 		for (Probe *const &other : probe.others())
 		{
-			if (other->is_covalent() && other->is_certain())
+			if (!other->is_covalent())
 			{
-				BondProbe *bOther = static_cast<BondProbe *>(other);
-				if (bOther->existence().value() != Existence::Present)
-				{
-					continue;
-				}
+				continue;
+			}
+			BondProbe *bOther = static_cast<BondProbe *>(other);
+			if (bOther == &bp)
+			{
+				continue;
+			}
+			if (bOther->existence().value() != Existence::Present)
+			{
+				continue;
+			}
 
-				if (&bOther->left() == &probe)
-				{
-					connected.push_back(&bOther->right());
-				}
-				else 
-				{
-					connected.push_back(&bOther->left());
-				}
+			if (&bOther->left() == &probe)
+			{
+				connected.push_back(&bOther->right());
+			}
+			else 
+			{
+				connected.push_back(&bOther->left());
 			}
 		}
 		return connected;
@@ -70,6 +75,7 @@ Energy::energy_wrapper_for_covalent(BondProbe &bp)
 			return 0.f;
 		}
 		std::vector<Probe *> lefts = acquire_connected_atoms_for(left);
+
 		std::vector<Probe *> rights = acquire_connected_atoms_for(right);
 		
 		glm::vec3 l = left.position();
@@ -94,8 +100,8 @@ Energy::energy_wrapper_for_covalent(BondProbe &bp)
 
 				float x = deg2rad(torsion * 3.f);
 				float cosine = cos(x); // relative
-//				if (isHL) cosine *= 0.5;
-//				if (isHR) cosine *= 0.5;
+				if (isHL) cosine *= 0.5;
+				if (isHR) cosine *= 0.5;
 				sum += cosine;
 			}
 		}
@@ -105,19 +111,24 @@ Energy::energy_wrapper_for_covalent(BondProbe &bp)
 	return modulate({{func, Torsion}});
 }
 
-auto evaluate_hbond_acceptor(BondProbe &bp)
+auto evaluate_hbond(BondProbe &bp)
 {
-	return [&bp]()
+	return [&bp](const hnet::Bond::Values &expect = hnet::Bond::Acceptor,
+	             bool only = true)
 	{
 		hnet::Existence::Values ex = bp._exist.value();
 
-		if (ex == hnet::Existence::Absent)
+		if (ex == hnet::Existence::Absent && only)
 		{
 			return false;
 		}
 
 		hnet::Bond::Values val = bp._obj.value();
-		if ((int)val == (int)hnet::Bond::Weak)
+		if (only && (int)val == (int)expect)
+		{
+			return true;
+		}
+		else if (!only && val & expect)
 		{
 			return true;
 		}
@@ -133,8 +144,8 @@ Energy::energy_wrapper_for_hbond_angle(HydrogenProbe *probe,
 	auto hbond_angle_for_bond = [probe](BondProbe &bp, AtomProbe &centre,
 	                                     AtomProbe &other)
 	{
-		auto evaluate = evaluate_hbond_acceptor(bp);
-		if (!evaluate())
+		auto evaluate = evaluate_hbond(bp);
+		if (!evaluate(hnet::Bond::Acceptor, true))
 		{
 			return 0.f;
 		}
@@ -171,22 +182,30 @@ hnet::EnergyWrapper
 Energy::energy_wrapper_for_half_hbond(HydrogenProbe *probe, BondProbe &bp, 
                                       glm::vec3 pos)
 {
-	auto evaluate = evaluate_hbond_acceptor(bp);
+	auto evaluate = evaluate_hbond(bp);
 
-	auto hbond_base = [evaluate]()
+	auto hbond_base = [evaluate, &bp]()
 	{
-		if (!evaluate())
-		{
-			return 0.f;
-		}
 		float base = 1.0;
-		float contrib = -base;
-		return contrib;
+		if (evaluate(hnet::Bond::Acceptor, true))
+		{
+			float contrib = -base;
+			return contrib;
+		}
+		else if (evaluate(hnet::Bond::Acceptor, false))
+		{
+			float contrib = -base;
+			if (bp.existence().value() & hnet::Existence::Absent)
+			{
+				contrib /= 2.f;
+			}
+			return contrib;
+		}
 	};
 
 	auto hbond_dist = [evaluate, probe, pos]()
 	{
-		if (!evaluate())
+		if (!evaluate(hnet::Bond::Acceptor, false))
 		{
 			return 0.f;
 		}
@@ -201,6 +220,10 @@ Energy::energy_wrapper_for_half_hbond(HydrogenProbe *probe, BondProbe &bp,
 		float base = 1.0;
 		float mod = 1 / (dist * dist);
 		float contrib = -base * mod;
+		if (!evaluate(hnet::Bond::Acceptor, true))
+		{
+			contrib /= 2;
+		}
 		return contrib;
 	};
 
@@ -233,7 +256,7 @@ Energy::energy_wrapper_for_liberated_bulk(AtomProbe &bulk)
 hnet::EnergyWrapper
 Energy::modulate(const std::vector<SourcedEnergy> &sources)
 {
-	return [this, sources]()
+	return [this, sources]() -> hnet::GetEnergy
 	{
 		struct Cached
 		{
@@ -247,8 +270,13 @@ Energy::modulate(const std::vector<SourcedEnergy> &sources)
 		for (const SourcedEnergy &se : sources)
 		{
 			float cached_energy = se.first();
+			if (fabs(cached_energy) < 1e-6)
+			{
+				continue;
+			}
 			if (cached_energy != cached_energy)
 			{
+				continue;
 				cached_energy = 0.f;
 			}
 			bool *source_ptr = &_sources[se.second];
@@ -256,7 +284,8 @@ Energy::modulate(const std::vector<SourcedEnergy> &sources)
 			cache.push_back({source_ptr, amp_ptr, cached_energy});
 		}
 		
-
+		if (cache.size() == 0) return {};
+		
 		return [this, cache]()
 		{
 			float total = 0;

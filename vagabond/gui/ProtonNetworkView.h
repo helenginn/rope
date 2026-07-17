@@ -28,6 +28,7 @@
 
 class PositionShifter;
 class HydrogenProbe;
+class ProbeCharge;
 class CliqueView;
 class ProbeBond;
 class ProbeAtom;
@@ -95,6 +96,7 @@ private:
 	
 	std::map<Probe *, ProbeAtom *> _textProbes;
 	std::map<Probe *, ProbeBond *> _bondProbes;
+	std::map<Probe *, ProbeCharge *> _countProbes;
 	
 	OpSet<Probe *> _allProbes;
 	OpSet<Probe *> _hProbes;

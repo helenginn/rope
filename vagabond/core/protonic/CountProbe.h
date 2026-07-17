@@ -56,29 +56,27 @@ public:
 
 	virtual float transparency()
 	{
-		if (!_exist.is_certain())
+		float val = 0;
+		if (!_exist.is_certain(true))
 		{
-			return -0.5f;
+			val = -0.5f;
 		}
-		else if (_exist.value() == hnet::Existence::Absent)
+		else if (_exist.value(true) == hnet::Existence::Absent)
 		{
-			return -1.0f;
+			val = -1.0f;
 		}
 		else 
 		{
-			return -0.0f;
+			val = -0.0f;
 		}
+		return val + _hide;
 	}
 	
 	virtual std::string display()
 	{
 		std::string str;
-		bool accessed = false;
-		hnet::Count::Values val = _obj.value(&accessed);
-		if (!accessed)
-		{
-			return "";
-		}
+		hnet::Count::Values val = _obj.value(true);
+
 		std::vector<int> options = hnet::possible_values(val);
 		if (options.size() > 1)
 		{
@@ -106,6 +104,7 @@ public:
 			default:
 			return "transparency";
 		}
+		return "transparency";
 	}
 
 	virtual std::string desc()
