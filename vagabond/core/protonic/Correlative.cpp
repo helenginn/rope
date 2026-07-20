@@ -138,7 +138,7 @@ void Correlative::addStates(const CertainStates &states)
 				_overall(seqN(y, n), seqN(x, m)) += c.mat.transpose();
 				
 				Eigen::MatrixXf copy = c.mat; copy.setOnes();
-				copy *= states.state_count();
+//				copy *= states.state_count();
 
 				_written(seqN(x, m), seqN(y, n)) += copy;
 				_written(seqN(y, n), seqN(x, m)) += copy.transpose();

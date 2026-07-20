@@ -34,7 +34,7 @@ Subdivide::Subdivide(Clique *clique, int min, int max) : _clique(clique)
 
 bool Subdivide::finish_ends(OpSet<Probe *> &chunk)
 {
-	bool follow_hydrogens = false;
+	bool follow_hydrogens = true;
 	bool add_alt_confs = true;
 
 	for (Probe *const &probe : chunk)
@@ -99,9 +99,9 @@ void Subdivide::shoot(OpSet<Probe *> &chunk)
 		bool found = false;
 		std::vector<Probe *> copy 
 		= {last->others().begin(), last->others().end()};
-//		std::random_device rd;
-//		std::mt19937 g(rd());
-//		std::shuffle(copy.begin(), copy.end(), g);
+		std::random_device rd;
+		std::mt19937 g(rd());
+		std::shuffle(copy.begin(), copy.end(), g);
 
 		for (Probe *const &other : copy)
 		{
