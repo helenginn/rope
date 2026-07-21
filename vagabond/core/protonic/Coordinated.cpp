@@ -23,6 +23,7 @@
 #include <iostream>
 
 #include <vagabond/utils/FileReader.h>
+#include <vagabond/utils/glm_import.h>
 #include "matrix_functions.h"
 #include "Coordinated.h"
 #include "BondAngle.h"
@@ -39,9 +40,84 @@ Coordinated::Coordinated(Network &network, ::Atom *atom, char conf)
 }
 
 
-auto find_close(const hnet::AtomConf &ref, float threshold, bool one_sided)
+auto find_close(const hnet::AtomConf &ref, float threshold, bool one_sided,
+                Network &network)
 {
-	return [ref, threshold, one_sided](const hnet::AtomConf &atom)
+		
+	auto are_h_bonded = [&network](const hnet::AtomConf &left, 
+	                               const hnet::AtomConf &right)
+	{
+		if (network.atomMap().count(left) && 
+		    network.atomMap()[left]->hasHBondTo(right))
+		{
+			return true;
+		}
+		if (network.atomMap().count(right) && 
+		    network.atomMap()[right]->hasHBondTo(left))
+		{
+			return true;
+		}
+		return false;
+	};
+	auto are_bonded = [are_h_bonded](const hnet::AtomConf &left, 
+	                                 const hnet::AtomConf &right)
+	{
+		if (!left.ptr || !right.ptr)
+		{
+			return false;
+		}
+		
+		if (are_h_bonded(left, right)) return true;
+
+		return (left.ptr->isConnectedToAtom(right.ptr) || 
+		        left.ptr == right.ptr || 
+		        left.ptr->bondsBetween(right.ptr, 5) >= 0);
+
+	};
+	
+	auto candidates_for = [&network](const hnet::AtomConf &ac)
+	{
+		std::vector<AtomConf> candidates;
+		if (!ac.ptr) return candidates;
+
+		HydrogenProbe *probe = network.probeForHydrogen(ac);
+		if (probe && probe->_left)
+		{
+			candidates.push_back(probe->_left->atomConf());
+		}
+		else if (probe && probe->_right)
+		{
+			candidates.push_back(probe->_right->atomConf());
+		}
+		else if (!probe)
+		{
+			candidates.push_back(ac);
+		}
+
+		return candidates;
+	};
+
+	auto are_remotely_bonded = [are_bonded, candidates_for]
+	(const hnet::AtomConf &left, const hnet::AtomConf &right)
+	{
+		std::vector<AtomConf> lefts = candidates_for(left);
+		std::vector<AtomConf> rights = candidates_for(right);
+		
+		for (AtomConf &l : lefts)
+		{
+			for (AtomConf &r : rights)
+			{
+				if (are_bonded(l, r))
+				{
+					return true;
+				}
+			}
+		}
+		return false;
+	};
+
+	return [ref, threshold, one_sided, are_remotely_bonded]
+	(const hnet::AtomConf &atom)
 	{
 		if (one_sided && (ref.ptr->atomNum() > atom.ptr->atomNum()))
 		{
@@ -59,8 +135,7 @@ auto find_close(const hnet::AtomConf &ref, float threshold, bool one_sided)
 			}
 		}
 
-		if (atom.ptr->isConnectedToAtom(ref.ptr) || atom.ptr == ref.ptr || 
-		    atom.ptr->bondsBetween(ref.ptr, 5) >= 0)
+		if (are_remotely_bonded(ref, atom))
 		{
 			return false;
 		}
@@ -76,7 +151,7 @@ OpSet<AtomConf> Coordinated::findNeighbours(const OpSet<AtomConf> &group,
                                             const glm::vec3 &v, 
                                             float distance, bool one_sided)
 {
-	auto filter_in = find_close(_atomConf, distance, one_sided);
+	auto filter_in = find_close(_atomConf, distance, one_sided, _network);
 
 	return group.filter(filter_in);
 }
