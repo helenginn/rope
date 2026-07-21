@@ -72,6 +72,17 @@ namespace Bond
 	};
 };
 
+/*  definitions for bonds which may or may not involve a hydrogen */
+namespace Covalent
+{
+	enum Values
+	{
+		Contradiction   =  (0),
+		Single          =  (1 << 0),
+		Double          =  (1 << 1),
+		Unassigned      =  (1 << 0 | 1 << 1),
+	};
+};
 /*  definitions for atoms which either are hydrogen or absent */
 namespace Existence
 {
@@ -326,6 +337,11 @@ inline void init_unassigned(Count::Values &val)
 	val = Count::Unassigned;
 }
 
+inline void init_unassigned(Covalent::Values &val)
+{
+	val = Covalent::Unassigned;
+}
+
 /* universal functions to determine contradictory values 
  * for use in templated constraints */
 
@@ -349,6 +365,10 @@ inline bool is_contradictory(const Count::Values &val)
 	return (val == Count::Contradiction);
 }
 
+inline bool is_contradictory(const Covalent::Values &val)
+{
+	return (val == Covalent::Contradiction);
+}
 /* function signatures */
 
 typedef std::function<void()> UpdateProbe;
@@ -395,6 +415,34 @@ inline std::ostream &operator<<(std::ostream &ss, const Atom::Values &v)
 		break;
 
 		case Atom::Unassigned:
+		ss << std::string("Unassigned");
+		break;
+
+		default:
+		ss << to_string(v);
+		break;
+	}
+
+	return ss;
+}
+
+inline std::ostream &operator<<(std::ostream &ss, const Covalent::Values &v)
+{
+	switch (v)
+	{
+		case Covalent::Contradiction:
+		ss << std::string("Contradiction!");
+		break;
+
+		case Covalent::Single:
+		ss << std::string("Single");
+		break;
+
+		case Covalent::Double:
+		ss << std::string("Double");
+		break;
+
+		case Covalent::Unassigned:
 		ss << std::string("Unassigned");
 		break;
 
