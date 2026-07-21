@@ -57,7 +57,7 @@ public:
 	template <class Constraint>
 	auto &add_constraint(Constraint *const &constraint)
 	{
-		_constraints.push_back(hnet::AnyConstraint(constraint));
+		_constraints.push_back(constraint);
 		return *constraint;
 	}
 	
@@ -174,7 +174,7 @@ private:
 	void setupAtom(hnet::AtomConf atom);
 
 	std::list<hnet::AnyConnector> _connectors;
-	std::list<hnet::AnyConstraint> _constraints;
+	std::list<hnet::ConstraintBase *> _constraints;
 	std::list<AtomProbe *> _atomProbes;
 	std::list<HydrogenProbe *> _hydrogenProbes;
 	std::list<BondProbe *> _bondProbes;
@@ -187,6 +187,7 @@ private:
 	std::vector<std::string> _impromptuCollapses;
 
 	std::map<hnet::AtomConf, hnet::Coordinated *> _atomMap;
+	std::map<hnet::AtomConf, hnet::ExistenceConnector *> _existMap;
 	std::map<hnet::AtomConf, AtomProbe *> _atom2Probe;
 	std::map<hnet::AtomConf, HydrogenProbe *> _h2Probe;
 

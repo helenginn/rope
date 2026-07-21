@@ -623,6 +623,7 @@ Network::Network(AtomGroup *group, const std::string &spg_name,
 		_cliques = model->cliques();
 	}
 
+	_hAtoms = new AtomGroup();
 	_extraHydrogens = new AtomGroup();
 	_original = rehydrogenate(nonHydrogensFrom(group));
 	AtomGroup *mates = SymMates::getSymmetryMates(_original, spg_name, 
@@ -798,6 +799,7 @@ Clique *Network::newClique(const OpSet<Probe *> &probes)
 
 void Network::firstOrderLogic()
 {
+	return;
 	ConnectBase::_silent = false;
 
 	auto check_and_or_revert = []<class Connector, typename Value>
@@ -949,11 +951,12 @@ AtomGroup *Network::assignCertainHydrogens(std::ostringstream &ss)
 		info[conf].pos.ave = vec;
 
 		HydrogenProbe *h = static_cast<HydrogenProbe *>(hydrogen);
-		AtomProbe *otherAtom = &(h->_left);
-		if (&(h->_left) == pAtom)
+		AtomProbe *otherAtom = h->_left;
+		if (h->_left == pAtom)
 		{
-			otherAtom = &(h->_right);
+			otherAtom = h->_right;
 		}
+		if (!otherAtom) continue;
 
 		::Atom *other = otherAtom->atom();
 		ResidueId hResi = atom->residueId();

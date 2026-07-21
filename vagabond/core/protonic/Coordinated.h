@@ -184,9 +184,11 @@ private:
 	                          hnet::ExistenceConnector &h,
 	                          hnet::ExistenceConnector &hExist);
 	ABPair makePlaceholderHydrogen(const glm::vec3 &pos);
+	hnet::ExistenceConnector &
 	hydrogenCombo(hnet::ExistenceConnector &h,
 	              hnet::ExistenceConnector &hExist);
 
+	bool acceptableHydrogenAngle(const glm::vec3 &hydrogen);
 	bool acceptableHydrogenAngle(const glm::vec3 &hydrogen, int coordNum);
 	bool acceptablePlane(const glm::vec3 &child);
 	void comparePairs(OpSet<PairSet> &results,
