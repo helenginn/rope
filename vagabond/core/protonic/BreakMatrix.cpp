@@ -72,11 +72,6 @@ void BreakMatrix::accounting()
 			BreakEntry be;
 			be.bond = it->first;
 			be.exist = it->second;
-			be.fake = true;
-			if (_coord->bond2HydrogenSample().count(be.bond))
-			{
-				be.fake = false;
-			}
 			be.index = count;
 
 			for (const ABPair &ab : _coord->bonds())
@@ -182,7 +177,11 @@ Eigen::MatrixXi BreakMatrix::partialMatrix(const std::vector<BondConnector *>
 
 void BreakMatrix::print_current(const std::vector<BondConnector *> &in_game)
 {
-	return;
+	if (!(_ac.desc() == "S-HOH13:O" || _ac.desc() == "A-SER85:OG,A"))
+	{
+		return;
+	}
+
 	if (ConnectBase::_silent)
 	{
 		return;
@@ -238,12 +237,9 @@ Existence::Values BreakMatrix::BreakEntry::existence()
 
 bool BreakMatrix::evaluate(hnet::make_assign_and_say<BreakMatrix> &assign)
 {
-//	std::cout << " == Evaluation round == " << std::endl;
-
 	/* stage one: gather bonds of interest, break competing bonds 
 	 * where an unbroken/present bond is identified. */
 	std::vector<BondConnector *> in_game;
-	std::vector<BondConnector *> nonfake_in;
 
 	for (BreakEntry &entry : _entries)
 	{
@@ -271,10 +267,6 @@ bool BreakMatrix::evaluate(hnet::make_assign_and_say<BreakMatrix> &assign)
 		if (type == Certain || type == Maybe)
 		{
 			in_game.push_back(entry.bond);
-			if (!entry.fake)
-			{
-				nonfake_in.push_back(entry.bond);
-			}
 		}
 	}
 	
@@ -290,7 +282,7 @@ bool BreakMatrix::evaluate(hnet::make_assign_and_say<BreakMatrix> &assign)
 	int lower_limit = options[0];
 	if (!ConnectBase::_silent)
 	{
-		ConnectBase::out() << "Lower limit for " << _ac.desc() << ": " << lower_limit << std::endl;
+//		ConnectBase::out() << "Lower limit for " << _ac.desc() << ": " << lower_limit << std::endl;
 		print_current(in_game);
 	}
 
@@ -336,7 +328,7 @@ bool BreakMatrix::evaluate(hnet::make_assign_and_say<BreakMatrix> &assign)
 		BreakEntry &entry = _entries[idx];
 		Attachment attach(*entry.bond, *entry.exist);
 
-		if (total == in_game.size())
+		if (total == in_game.size() && total == lower_limit)
 		{
 			//std::cout << "Removing possibility of broken for " << i << std::endl;
 			CountType certainty = (_myExist.value() == Existence::Present ?
@@ -350,6 +342,71 @@ bool BreakMatrix::evaluate(hnet::make_assign_and_say<BreakMatrix> &assign)
 			if (attach.inform(Bond::NotBroken, assign, certainty))
 			{
 				return true;
+			}
+		}
+	}
+
+	/*  if there are non-placeholder bonds available, and they would have 
+	 *  to be Broken in order to be missing, and there are placeholder 
+	 *  hydrogens which could be missing instead, then get rid of the 
+	 * 	placeholder hydrogens */
+	for (int i = 0; i < in_game.size() && 
+	     _myExist.value() == Existence::Present; i++)
+	{
+//		int total = tmp(i, Eigen::all).sum();
+		int idx = _indexing[in_game[i]];
+		BreakEntry &entry = _entries[idx];
+		Attachment attach(*entry.bond, *entry.exist);
+		
+		// we do not care about this kind of "Maybe"
+		/*
+		if (entry.exist->value() != Existence::Present)
+		{
+			continue;
+		}
+		*/
+
+		CountType certainty = attach.type_of_bond(Bond::NotBroken);
+		if (certainty != Maybe) // due to non-existence
+		{
+			continue;
+		}
+
+		Eigen::VectorXi reference = tmp(i, Eigen::all);
+
+		// we need to know, for each placeholder hydrogen, if it is
+		// a purely direct swap for the current bond (scrap), or if it is
+		// capable of co-existing with other bonds (allowed)
+
+		for (int j = 0; j < in_game.size(); j++)
+		{
+			int jdx = _indexing[in_game[j]];
+			BreakEntry &candidate = _entries[jdx];
+			// ignore non-placeholder
+			if (!candidate.bond->_placeholder) { continue; }
+
+			Eigen::VectorXi compare = tmp(j, Eigen::all);
+
+			// if the two bonds can co-exist, we are not interested
+			if (compare[i] == 1)
+			{
+				continue;
+			}
+			
+			// temporarily set diagonal elements to zero and check the diff.
+			reference[i] = 0;
+			compare[j] = 0;
+			
+			reference -= compare;
+			int total = reference.cwiseAbs().sum();
+			
+			if (total == 0)
+			{
+				Attachment rid_candidate(*candidate.bond, *candidate.exist);
+				if (rid_candidate.inform(Bond::Broken, assign, Certain))
+				{
+					return true;
+				}
 			}
 		}
 	}
