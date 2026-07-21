@@ -190,13 +190,15 @@ bool MatrixPlot::mouseOver()
 	double x, y;
 	_gl->getMoveCoords(x, y);
 	
-	x -= _vertices[0].pos.x;
-	y -= _vertices[0].pos.y;
+	float &minx = _vertices[0].pos.x;
+	float &miny = _vertices[0].pos.y;
+	float maxx = vertices().back().pos.x;
+	float maxy = vertices().back().pos.y;
 	
-	x /= maximalWidth();
-	y /= maximalHeight();
+	float cx = (x - minx) / (maxx - minx);
+	float cy = (y - miny) / (maxy - miny);
 	
-	_hoverJob(x, y);
+	_hoverJob(cx, cy);
 	
 	return true;
 }
