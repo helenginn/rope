@@ -245,8 +245,8 @@ float CommunicationAnalysis::compare(const std::string &first,
 
 void CommunicationAnalysis::svd()
 {
-	Eigen::JacobiSVD<MatrixXf> svd(_mat, Eigen::ComputeFullU | 
-	                               Eigen::ComputeFullV);
+	Eigen::BDCSVD<MatrixXf> svd(_mat, Eigen::ComputeFullU | 
+	                            Eigen::ComputeFullV);
 	Eigen::MatrixXf u = svd.matrixU().transpose();
 	Eigen::VectorXf w = svd.singularValues();
 	for (float &f : w)
