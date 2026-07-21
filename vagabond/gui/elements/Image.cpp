@@ -38,6 +38,7 @@ void Image::makeQuad()
 	mat[0][0] *= (double)Window::aspect();
 
 	rotateRound(mat);
+	_appliedAspect = Window::aspect();
 }
 
 void Image::changeImage(std::string filename)

@@ -17,7 +17,7 @@
 // Please email: vagabond @ hginn.co.uk for more details.
 
 #include "FloatingImage.h"
-#include "SnowGL.h"
+#include "GLView.h"
 
 FloatingImage::FloatingImage(std::string image, float mult, float yOff) 
 : Image(image)

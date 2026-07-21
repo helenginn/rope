@@ -17,7 +17,7 @@ public:
 	
 	~Modal();
 
-	virtual void render(SnowGL *gl);
+	virtual void render(GLView *gl);
 
 	void hide();
 	

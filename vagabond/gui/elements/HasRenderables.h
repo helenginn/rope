@@ -69,6 +69,10 @@ public:
 
 	virtual Renderable *findObject(double x, double y);
 	void doAccessibilityThings(SDL_Keycode pressed, bool shift);
+
+	/** window dimensions have changed: re-derive anything which was
+	 * calculated from them, and pass the message on to child objects */
+	virtual void windowSizeChanged();
 protected:
 	void clearHighlights();
 

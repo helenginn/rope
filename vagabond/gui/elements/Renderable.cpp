@@ -1,7 +1,7 @@
 // Copyright (C) 2021 Helen Ginn
 
 #include "Renderable.h"
-#include "SnowGL.h"
+#include "GLView.h"
 #include "Window.h"
 #include "config/config.h"
 #include "Library.h"
@@ -311,7 +311,7 @@ void Renderable::runProgram()
 	unbindVBOBuffers();
 }
 
-void Renderable::render(SnowGL *sender)
+void Renderable::render(GLView *sender)
 {
 	if (_disabled)
 	{

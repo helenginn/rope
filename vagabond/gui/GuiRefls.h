@@ -29,7 +29,7 @@ class GuiRefls : public SimplePolygon
 public:
 	GuiRefls();
 
-	virtual void render(SnowGL *gl);
+	virtual void render(GLView *gl);
 	void populateFromDiffraction(Diffraction *diffraction);
 	virtual void extraUniforms();
 	

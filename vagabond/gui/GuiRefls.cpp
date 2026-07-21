@@ -87,7 +87,7 @@ void GuiRefls::populateFromDiffraction(Diffraction *diffraction)
 	}
 }
 
-void GuiRefls::render(SnowGL *gl)
+void GuiRefls::render(GLView *gl)
 {
 	glEnable(GL_DEPTH_TEST);
 	glClear(GL_DEPTH_BUFFER_BIT);

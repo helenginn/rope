@@ -39,7 +39,7 @@ public:
 	void addBond(const glm::vec3 &v, const glm::vec3 &w, float score,
 	             const glm::vec4 &cl = {}, const glm::vec4 &cr = {});
 	
-	virtual void render(SnowGL *gl);
+	virtual void render(GLView *gl);
 	void setup();
 	void updateBonds();
 	void updateScore();

@@ -184,7 +184,7 @@ void GuiBond::reindex()
 {
 }
 
-void GuiBond::render(SnowGL *gl)
+void GuiBond::render(GLView *gl)
 {
 	Renderable::render(gl);
 }

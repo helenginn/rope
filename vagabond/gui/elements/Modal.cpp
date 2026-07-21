@@ -29,7 +29,7 @@ Modal::Modal(Scene *scene, double width, double height) : Box()
 	_height = height;
 }
 
-void Modal::render(SnowGL *gl)
+void Modal::render(GLView *gl)
 {
 	if (_darker)
 	{

@@ -23,8 +23,14 @@ public:
 	
 	virtual bool mouseOver();
 	virtual void unMouseOver();
-	
+
 	void addAltTag(std::string text, float hover_point = 0.02);
+
+	virtual void windowSizeChanged();
+protected:
+	/* window aspect ratio baked into the vertices, or negative if the
+	 * vertices do not depend on the window dimensions */
+	float _appliedAspect = -1;
 };
 
 #endif
