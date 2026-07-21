@@ -34,6 +34,8 @@ Coordinated::Coordinated(Network &network, ::Atom *atom, char conf)
 : _network(network), _atomConf{atom, conf}
 {
 	probeAtom();
+	_network.atomMap()[_atomConf] = this;
+	_network.existMap()[_atomConf] = _existence;
 }
 
 
