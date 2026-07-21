@@ -22,6 +22,7 @@ void main()
 
 	vec4 result = texture(pic_tex, vTex);
 	result += vColor;
+	if (result.a < 0.f) result.a = 0.f;
 	FragColor = result;
 
 	/* this shader is also used in multi-target (bloom) scenes; the
