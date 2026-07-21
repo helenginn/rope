@@ -57,12 +57,14 @@ namespace Bond
 		LonePairOrWeak  =  (1 << 0 | 1 << 1),
 		Weak            =  (1 << 1),
 		NotWeak         =  (1 << 0 | 1 << 2 | 1 << 3),
+		Acceptor        =  (1 << 1),
+		NotAcceptor     =  (1 << 0 | 1 << 2 | 1 << 3),
 		Strong          =  (1 << 2),
 		Donor           =  (1 << 2),
 		NotDonor        =  (1 << 0 | 1 << 1 | 1 << 3),
 		NotStrong       =  (1 << 0 | 1 << 1 | 1 << 3),
-		Bonded         =  (1 << 1 | 1 << 2),
-		NotBonded      =  (1 << 0 | 1 << 3),
+		Bonded          =  (1 << 1 | 1 << 2),
+		NotBonded       =  (1 << 0 | 1 << 3),
 		Broken          =  (1 << 3),
 		NotWeakOrBroken =  (1 << 0 | 1 << 2),
 		NotBroken       =  (1 << 0 | 1 << 1 | 1 << 2),
@@ -92,7 +94,8 @@ namespace Atom
 		Nitrogen      = 1 << 1,
 		Sulphur       = 1 << 2,
 		Inactive      = 1 << 3, // e.g. carbon
-		Unassigned    = (1 << 0 | 1 << 1 | 1 << 2 | 1 << 3),
+		Ion           = 1 << 4,
+		Unassigned    = (1 << 0 | 1 << 1 | 1 << 2 | 1 << 3 | 1 << 4),
 	};
 };
 
@@ -226,6 +229,7 @@ namespace Count
 		mFourteen      = 1 << 29,
 		mFifteen       = 1 << 30,
 		mSixteen       = 1 << 31,
+		OneOrTwo       = (1 << 0 | 1 << 2),
 		OneOrZero      = (1 << 0 | 1 << 1),
 		mOneOrZero     = (1 << 0 | 1 << 16),
 		TwoToZero      = (1 << 0 | 1 << 1 | 1 << 2),
