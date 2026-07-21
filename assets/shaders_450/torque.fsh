@@ -12,9 +12,12 @@ uniform float far_slab;
 
 layout (location = 0) out vec4 FragColor;
 layout (location = 1) out uint ValIndex;
+layout (location = 2) out vec4 BrightColor;
 
 void main()
 {
+	BrightColor = vec4(0.0);
+
 	vec2 tex = vTex;
 	vec3 cross = cross(vNormal, vExtra.xyz);
 

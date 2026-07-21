@@ -10,7 +10,9 @@ uniform sampler2D pic_tex;
 uniform float near_slab;
 uniform float far_slab;
 
-out vec4 FragColor;
+layout (location = 0) out vec4 FragColor;
+layout (location = 1) out uint ValIndex;
+layout (location = 2) out vec4 BrightColor;
 
 void main()
 {
@@ -27,6 +29,11 @@ void main()
 
 	vec4 result = vColor;
 	FragColor = result;
+
+	/* also rendered into multi-target (bloom) scenes: write the index
+	 * and bright buffers so they don't take undefined values */
+	ValIndex = 0u;
+	BrightColor = vec4(0.0);
 }
 
 

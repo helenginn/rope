@@ -8,6 +8,7 @@ in vec4 vExtra;
 uniform sampler2D pic_tex;
 
 layout (location = 0) out vec4 FragColor;
+layout (location = 1) out uint ValIndex;
 layout (location = 2) out vec4 BrightColor;
 
 vec4 get_glow(float prop)
@@ -30,6 +31,7 @@ void main()
 	vec4 color = vColor;
 	color.a = result.a;
 	FragColor = color;
+	ValIndex = 0u;
 	BrightColor = get_glow(vExtra[3]);
 }
 
