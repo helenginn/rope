@@ -746,14 +746,12 @@ CountProbe &Network::add_probe(CountProbe *const &probe)
 	return *probe;
 }
 
-HydrogenProbe &Network::add_probe(HydrogenProbe *const &probe)
+HydrogenProbe &Network::add_probe(HydrogenProbe *const &probe,
+                                  const char &conf)
 {
-	char lconf = probe->left()._conf;
-	char rconf = probe->right()._conf;
 	_hydrogenProbes.push_back(probe);
 	_desc2Probe[probe->desc()] = probe;
-	_h2Probe[{probe->left().atom(), lconf}].push_back(probe);
-	_h2Probe[{probe->right().atom(), rconf}].push_back(probe);
+	_h2Probe[{probe->_h, conf}] = probe;
 	return *probe;
 }
 
@@ -773,38 +771,11 @@ BondProbe &Network::add_probe(BondProbe *const &probe)
 	return *probe;
 }
 
-void Network::addNewHydrogen(hnet::AtomConf hydrogen, hnet::Coordinated *coord)
+void Network::addNewHydrogen(hnet::AtomConf hydrogen, 
+                             hnet::ExistenceConnector &hCombo)
 {
-	float max = 1.5;
-	float maxmax = max * max;
-	// WRONG!!
-	glm::vec3 pos = coord->probe()->atom()->initialPosition();
-
-	for (Coordinated *const &second : _hCoords)
-	{
-		Probe *other = second->probe();
-		glm::vec3 v = other->atom()->initialPosition();
-		for (int i = 0; i < 3; i++)
-		{
-			if (fabs(pos[i] - v[i]) > 1.5)
-			{
-				break;
-			}
-		}
-		
-		if (glm::dot(pos - v, pos - v) > maxmax)
-		{
-			break;
-		}
-
-		// WARNING!!
-		add_constraint(new OnlyOne({coord->existence(), 
-		                           second->existence()}));
-	}
-
-	*_extraHydrogens += hydrogen.ptr;
-	_hCoords.push_back(coord);
-	_atomMap[hydrogen] = coord;
+	_existMap[hydrogen] = &hCombo;
+	_hAtoms->add(hydrogen.ptr);
 }
 
 

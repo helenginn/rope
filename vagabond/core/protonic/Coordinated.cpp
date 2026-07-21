@@ -108,6 +108,11 @@ void Coordinated::probeAtom()
 	{
 		v = hnet::Atom::Sulphur;
 	}
+	else if (atom()->elementSymbol() == "NA")
+	{
+		v = hnet::Atom::Ion;
+		_ionic = true;
+	}
 	else
 	{
 		v = hnet::Atom::Inactive;
@@ -433,6 +438,20 @@ OpSet<ABPair> Coordinated::uninvolvedCoordinators()
 	return _uninvolved;
 }
 
+bool Coordinated::acceptableHydrogenAngle(const glm::vec3 &hydrogen)
+{
+	if (!_coord_num) return true;
+	std::vector<int> coord_nums = possible_values(_coord_num->value());
+	
+	for (const int &coordNum : coord_nums)
+	{
+		if (acceptableHydrogenAngle(hydrogen, coordNum))
+		{
+			return true;
+		}
+	}
+	return false;
+}
 
 bool Coordinated::acceptableHydrogenAngle(const glm::vec3 &hydrogen, 
                                           int coordNum)
@@ -585,7 +604,16 @@ auto prep_find_candidates(const PairSet &candidates, const glm::vec3 &centre)
 	};
 }
 
-::Atom *Coordinated::makeHydrogen(const glm::vec3 &pos)
+hnet::ExistenceConnector &
+Coordinated::hydrogenCombo(hnet::ExistenceConnector &h,
+                           hnet::ExistenceConnector &hExist)
+{
+	hnet::ExistenceConnector &hCombo = add(new hnet::ExistenceConnector());
+	add_constraint(new AndExistence(h, hExist, hCombo, Existence::Present));
+	return hCombo;
+}
+
+hnet::AtomConf Coordinated::makeHydrogenAtom(const glm::vec3 &pos)
 {
 	::Atom *hAtom = new ::Atom();
 	hAtom->setResidueId(atom()->residueId());
@@ -596,15 +624,55 @@ auto prep_find_candidates(const PairSet &candidates, const glm::vec3 &centre)
 	hAtom->setAtomName("H!");
 	hAtom->setCode(atom()->code());
 	hAtom->setElementSymbol("H");
-	_network.addNewHydrogen({hAtom, _atomConf.conf}, this);
+	return {hAtom, _atomConf.conf};
+}
+
+AtomConf Coordinated::makeBondedHydrogen(const glm::vec3 &pos,
+                                         hnet::ExistenceConnector &h,
+                                         hnet::ExistenceConnector &hExist)
+{
+	AtomConf hAtom = makeHydrogenAtom(pos);
+	ExistenceConnector &hCombo = hydrogenCombo(h, hExist);
+	hCombo.setDesc("chemical+sampling for bonded hydrogen off "
+	               + atomConf().desc());
+	_network.addNewHydrogen(hAtom, hCombo);
 	return hAtom;
 }
 
-ABPair Coordinated::makePossibleHydrogen(const glm::vec3 &pos)
+ABPair Coordinated::makePlaceholderHydrogen(const glm::vec3 &pos)
 {
-	::Atom *hAtom = makeHydrogen(pos);
+	AtomConf hAtom = makeHydrogenAtom(pos);
 	BondConnector &new_bond = add(new BondConnector());
-	return {{hAtom, _atomConf.conf}, &new_bond};
+	new_bond._placeholder = true;
+	ExistenceConnector &h = add(new ExistenceConnector());
+	h.setDesc("protonation state of placeholder hydrogen off " + 
+	          _atomConf.desc());
+	ExistenceConnector &hExist = add(new ExistenceConnector());
+	hExist.setDesc("existence of placeholder hydrogen off " + 
+	               _atomConf.desc());
+	ExistenceConnector &hCombo = hydrogenCombo(h, hExist);
+	hCombo.setDesc("chemical+sampling for placeholder hydrogen off "
+	               + atomConf().desc());
+
+	_network.addNewHydrogen(hAtom, hCombo);
+
+	HydrogenProbe &hProbe = 
+	_network.add_probe(new HydrogenProbe(h, hExist, hAtom.ptr, probe()),
+	                   _atomConf.conf);
+	_bond2HydrogenProbe[&new_bond] = &hProbe;
+	
+	auto bond_is_broken = [&new_bond]()
+	{
+		return new_bond.value() == Bond::Broken;
+	};
+
+	add_constraint(new StrictExistence({&new_bond}, bond_is_broken,
+	                                     hExist, Existence::Absent)); 
+
+	AtomProbe *ref = atomMap()[_atomConf]->probe();
+//	BondProbe &b = _network.add_probe(new BondProbe(new_bond, *ref, hProbe, h));
+
+	return {hAtom, &new_bond};
 }
 
 OpSet<AcceptableGroup> Coordinated::developSeed(const PairSet &seed,
@@ -694,7 +762,7 @@ OpSet<AcceptableGroup> Coordinated::developSeed(const PairSet &seed,
 		// at the missing location.
 		if (additions.size() == 0 || no_pair_is_definitely_present(additions))
 		{
-			ABPair fresh_hydrogen = makePossibleHydrogen(other);
+			ABPair fresh_hydrogen = makePlaceholderHydrogen(other);
 
 			additions += fresh_hydrogen;
 			fake_atom_count++;
@@ -983,7 +1051,9 @@ void Coordinated::mutualExclusions(AtomGroup *toClashCheck)
 				addBond(acceptable);
 				add_constraint(new BondConstant(*acceptable.second, 
 				                                Bond::NotWeak));
-				acceptable.second->setDesc("Fake H bond for " + _atomConf.desc() + desc_ending);
+				acceptable.second->setDesc("Placeholder Hbond for " 
+				                           + _atomConf.desc() + desc_ending);
+				acceptable.second->_placeholder = true;
 				ExistenceConnector &h = add(new ExistenceConnector());
 //				_bond2HydrogenSample[acceptable.second] = &h;
 
@@ -1098,29 +1168,13 @@ void Coordinated::attachToNeighbours(AtomGroup *searchGroup)
 
 	AtomProbe *ref = atomMap()[_atomConf]->probe();
 	
-	OpSet<ABPair> uninvolved = uninvolvedCoordinators();
-	std::cout << "Finding neighbours for " << _atomConf << std::endl;
-
-	for (const AtomConf &candidate : rough) 
+	auto create_two_half_hydrogen_bonds = [this, ref]
+	(const AtomConf &candidate, const glm::vec3 &pos1, const glm::vec3 &pos2)
 	{
-		glm::vec3 pos1 = _atomConf.position();
-		glm::vec3 pos2 = candidate.position();
-		
 		glm::vec3 midpoint = (pos1 + pos2) / 2.f;
 		Coordinated *candCoord = atomMap()[candidate];
-		candCoord->uninvolvedCoordinators();
-		if (!acceptablePlane(midpoint) || !candCoord->acceptablePlane(midpoint))
-		{
-			continue;
-		}
-
 		AtomProbe *other = candCoord->probe();
-		if ((other->_obj.value() == hnet::Atom::Inactive)
-		    || (candidate.ptr == _atomConf.ptr))
-		{
-			continue;
-		}
-		
+
 		std::ostringstream ss, rev;
 		ss << _atomConf << " and " << candidate;
 		rev << candidate << " and " << _atomConf;
@@ -1130,16 +1184,21 @@ void Coordinated::attachToNeighbours(AtomGroup *searchGroup)
 		ExistenceConnector &hExist = add(new ExistenceConnector());
 		hExist.setDesc("existence of hydrogen atom "
 		               "in H-bond between " + ss.str());
-		::Atom *hAtom = makeHydrogen(midpoint);
+		AtomConf hAtom = makeBondedHydrogen(midpoint, h, hExist);
 
 		HydrogenProbe &hProbe = 
-		_network.add_probe(new HydrogenProbe(h, hExist, *ref, *other, hAtom));
+		_network.add_probe(new HydrogenProbe(h, hExist, hAtom.ptr, ref, other), 
+		                   _atomConf.conf);
+
 		std::cout << "ADDING hydrogen connector: " << h << std::endl;
 		
 		BondConnector &left = add(new BondConnector());
 		left.setDesc("half the H-bond between " + ss.str());
 		BondConnector &right = add(new BondConnector());
 		right.setDesc("half the H-bond between " + rev.str());
+
+		_bond2HydrogenProbe[&left] = &hProbe;
+		candCoord->_bond2HydrogenProbe[&right] = &hProbe;
 
 		ExistenceConnector &le = add(new ExistenceConnector());
 		le.setDesc("existence of half the H-bond between " + ss.str());
@@ -1150,7 +1209,7 @@ void Coordinated::attachToNeighbours(AtomGroup *searchGroup)
 		ExistenceConnector &eOther = other->existence();
 		
 		add_constraint(new MutualExistence(le, eRef)); 
-		add_constraint(new SubExistence(le, hExist, re, true));
+		add_constraint(new SubExistence(le, hExist, re, false));
 		add_constraint(new MutualExistence(re, eOther));
 		
 		auto unpaired_right = [&le, &re]()
@@ -1167,9 +1226,9 @@ void Coordinated::attachToNeighbours(AtomGroup *searchGroup)
 		
 		// Acceptor bonds cannot be paired with non-existent bonds
 		add_constraint(new StricterBond({&le, &re}, unpaired_left, right,
-		                                        Bond::NotWeak));
+		                                        Bond::NotAcceptor));
 		add_constraint(new StricterBond({&re, &le}, unpaired_right, left,
-		                                        Bond::NotWeak));
+		                                        Bond::NotAcceptor));
 
 		auto non_existent_bonds = [&le, &re, &left, &right]()
 		{
@@ -1188,15 +1247,74 @@ void Coordinated::attachToNeighbours(AtomGroup *searchGroup)
 			return false;
 		};
 
+		auto bond_is_donor = [](BondConnector &bond,
+		                           ExistenceConnector &exist)
+		{
+			return [&bond, &exist]()
+			{
+				return (exist.value() == Existence::Present && 
+				        bond.value() == Bond::Donor);
+			};
+		};
+
+		add_constraint(new Stricter<Existence::Values>
+		               ({&left, &le}, bond_is_donor(left, le), 
+		               hExist, Existence::Present));
+
+		add_constraint(new Stricter<Existence::Values>
+		               ({&right, &re}, bond_is_donor(right, re), 
+		               hExist, Existence::Present));
+
 		auto bond_is_acceptor = [](BondConnector &bond,
 		                           ExistenceConnector &exist)
 		{
 			return [&bond, &exist]()
 			{
 				return (exist.value() == Existence::Present && 
-				        bond.value() == Bond::Weak);
+				        bond.value() == Bond::Acceptor);
 			};
 		};
+
+		add_constraint(new Stricter<Existence::Values>
+		               ({&left, &le}, bond_is_acceptor(left, le), 
+		               re, Existence::Present));
+
+		add_constraint(new Stricter<Existence::Values>
+		               ({&right, &re}, bond_is_acceptor(right, re), 
+		               le, Existence::Present));
+		
+
+		auto lone_pair_cannot_brace_hydrogen = [](BondConnector &bond,
+		                                          ExistenceConnector &bExist,
+		                                          ExistenceConnector &hExist)
+		{
+			return [&bond, &bExist, &hExist]()
+			{
+				bool interesting = (bExist.value() == Existence::Present && 
+				                    bond.value() == Bond::LonePair);
+				if (!interesting) return false;
+				
+				return (hExist.value() == Existence::Present);
+			};
+		};
+
+		add_constraint(new Stricter<Existence::Values>
+		               ({&left, &le, &h},
+		               lone_pair_cannot_brace_hydrogen(left, le, h), 
+		               hExist, Existence::Absent));
+		add_constraint(new Stricter<Existence::Values>
+		               ({&right, &re, &h},
+		               lone_pair_cannot_brace_hydrogen(right, re, h), 
+		               hExist, Existence::Absent));
+
+		add_constraint(new Stricter<Existence::Values>
+		               ({&left, &le, &hExist},
+		               lone_pair_cannot_brace_hydrogen(left, le, hExist), 
+		               h, Existence::Absent));
+		add_constraint(new Stricter<Existence::Values>
+		               ({&right, &re, &hExist},
+		               lone_pair_cannot_brace_hydrogen(right, re, hExist), 
+		               h, Existence::Absent));
 		
 		auto both_ends_exist = [&eRef, &eOther]()
 		{
@@ -1220,14 +1338,6 @@ void Coordinated::attachToNeighbours(AtomGroup *searchGroup)
 		               ({&left, &re, &le, &right}, non_existent_bonds, 
 		               hExist, Existence::Absent));
 
-		add_constraint(new Stricter<Existence::Values>
-		               ({&left, &le}, bond_is_acceptor(left, le), 
-		               re, Existence::Present));
-
-		add_constraint(new Stricter<Existence::Values>
-		               ({&right, &re}, bond_is_acceptor(right, re), 
-		               le, Existence::Present));
-		
 		auto could_be_bonded = [&le, &re, &h]
 		(BondConnector &other)
 		{
@@ -1278,6 +1388,51 @@ void Coordinated::attachToNeighbours(AtomGroup *searchGroup)
 
 		add_constraint(new HydrogenBond(left, h, right));
 		add_constraint(new HydrogenBond(right, h, left));
+	};
+
+	uninvolvedCoordinators();
+	std::cout << "Finding neighbours for " << _atomConf << std::endl;
+
+	for (const AtomConf &candidate : rough) 
+	{
+		glm::vec3 pos1 = _atomConf.position();
+		glm::vec3 pos2 = candidate.position();
+		
+		glm::vec3 midpoint = (pos1 + pos2) / 2.f;
+		if (!acceptableHydrogenAngle(midpoint))
+		{
+			continue;
+		}
+		Coordinated *candCoord = atomMap()[candidate];
+		candCoord->uninvolvedCoordinators();
+		if (!candCoord->acceptableHydrogenAngle(midpoint))
+		{
+			continue;
+		}
+
+		if (!_ionic && !candCoord->_ionic)
+		{
+			if (!acceptablePlane(midpoint) || 
+			    !candCoord->acceptablePlane(midpoint))
+			{
+				std::cout << "\tDiscarding " << candidate.desc() << std::endl;
+				continue;
+			}
+		}
+
+		AtomProbe *other = candCoord->probe();
+		if ((other->_obj.value() == hnet::Atom::Inactive)
+		    || (candidate.ptr == _atomConf.ptr))
+		{
+			std::cout << "\tDiscarding " << candidate.desc() << std::endl;
+			continue;
+		}
+		
+		std::cout << "\tFound neighbour with " << candidate.desc() << std::endl;
+		if (!_ionic)
+		{
+			create_two_half_hydrogen_bonds(candidate, pos1, pos2);
+		}
 	}
 }
 

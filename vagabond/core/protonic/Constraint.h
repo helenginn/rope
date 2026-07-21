@@ -23,6 +23,7 @@
 #include <variant>
 #include <functional>
 #include "ConstraintBase.h"
+#include "And.h"
 #include "OnlyOne.h"
 #include "Stricter.h"
 #include "Connector.h"

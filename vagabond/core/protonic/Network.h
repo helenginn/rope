@@ -86,9 +86,10 @@ public:
 	AtomProbe &add_probe(AtomProbe *const &probe);
 	BondProbe &add_probe(BondProbe *const &probe);
 	CountProbe &add_probe(CountProbe *const &probe);
-	HydrogenProbe &add_probe(HydrogenProbe *const &probe);
+	HydrogenProbe &add_probe(HydrogenProbe *const &probe, const char &conf);
 	
-	void addNewHydrogen(hnet::AtomConf hydrogen, hnet::Coordinated *coord);
+	void addNewHydrogen(hnet::AtomConf hydrogen, 
+	                    hnet::ExistenceConnector &hCombo);
 	
 	AtomGroup *atoms()
 	{
@@ -116,6 +117,14 @@ public:
 		return nullptr;
 	}
 	
+	HydrogenProbe *probeForHydrogen(const hnet::AtomConf &ac)
+	{
+		if (_h2Probe.count(ac))
+		{
+			return _h2Probe.at(ac);
+		}
+		return nullptr;
+	}
 	void addImpromptuCollapse(const std::string &message)
 	{
 		_impromptuCollapses.push_back(message);
@@ -179,10 +188,11 @@ private:
 
 	std::map<hnet::AtomConf, hnet::Coordinated *> _atomMap;
 	std::map<hnet::AtomConf, AtomProbe *> _atom2Probe;
-	std::map<hnet::AtomConf, std::vector<HydrogenProbe *> > _h2Probe;
+	std::map<hnet::AtomConf, HydrogenProbe *> _h2Probe;
 
 	AtomGroup *_original = nullptr;
 	AtomGroup *_originalAndMates = nullptr;
+	AtomGroup *_hAtoms = nullptr;
 	AtomGroup *_extraHydrogens = nullptr;
 	std::vector<hnet::Coordinated *> _hCoords;
 	

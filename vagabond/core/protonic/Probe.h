@@ -307,26 +307,26 @@ class HydrogenProbe : public Probe
 {
 public:
 	HydrogenProbe(hnet::ExistenceConnector &obj, 
-	              hnet::ExistenceConnector &exist,
-	              AtomProbe &left, AtomProbe &right, Atom *hAtom) :
+	              hnet::ExistenceConnector &exist, Atom *hAtom,
+	              AtomProbe *left = {}, AtomProbe *right = {}) :
 	_obj(obj), _exist(exist), _left(left), _right(right)
 	{
-		_init = left.position() + right.position();
-		_init /= 2;
+		_init = hAtom->initialPosition();
 		_pos = _init;
 		_h = hAtom;
+		_conf = hAtom->conformerPositions().begin()->first[0];
 
-		// covered by creation of bonds I think!
-//		left.register_probe(this);
-//		right.register_probe(this);
-
-//		register_probe(&left);
-//		register_probe(&right);
 		_colour = glm::vec3(0.28f, 0.1f, -0.147f);
+	}
+	
+	hnet::AtomConf atomConf() const
+	{
+		return {_h, _conf};
 	}
 	
 	virtual std::string display()
 	{
+		if (!_right) return "";
 		std::string str;
 		bool accessed = false;
 		hnet::Existence::Values val = _obj.value(&accessed);
@@ -378,16 +378,6 @@ public:
 		return _obj.desc();
 	}
 
-	const AtomProbe &left() const
-	{
-		return _left;
-	}
-
-	const AtomProbe &right() const
-	{
-		return _right;
-	}
-
 	hnet::ExistenceConnector &existence()
 	{
 		return _exist;
@@ -428,8 +418,8 @@ public:
 
 	hnet::ExistenceConnector &_obj;
 	hnet::ExistenceConnector &_exist;
-	AtomProbe &_left;
-	AtomProbe &_right;
+	AtomProbe *_left{};
+	AtomProbe *_right{};
 };
 
 

@@ -178,8 +178,15 @@ public:
 
 private:
 	OpSet<PairSet> findSeeds(int coord_num);
-	::Atom *makeHydrogen(const glm::vec3 &pos);
-	ABPair makePossibleHydrogen(const glm::vec3 &pos);
+	hnet::AtomConf makeHydrogenAtom(const glm::vec3 &pos);
+
+	AtomConf makeBondedHydrogen(const glm::vec3 &pos,
+	                          hnet::ExistenceConnector &h,
+	                          hnet::ExistenceConnector &hExist);
+	ABPair makePlaceholderHydrogen(const glm::vec3 &pos);
+	hydrogenCombo(hnet::ExistenceConnector &h,
+	              hnet::ExistenceConnector &hExist);
+
 	bool acceptableHydrogenAngle(const glm::vec3 &hydrogen, int coordNum);
 	bool acceptablePlane(const glm::vec3 &child);
 	void comparePairs(OpSet<PairSet> &results,
@@ -224,6 +231,7 @@ private:
 	
 	int _coordNum = 0;
 	bool _failedCheck = false;
+	bool _ionic = false;
 
 	AtomProbe *_probe{};
 	
@@ -235,6 +243,8 @@ private:
 	std::map<BondConnector *, ExistenceConnector *> _bond2Exist;
 	std::map<BondConnector *, ExistenceConnector *> _bond2HydrogenSample;
 	std::map<BondConnector *, ExistenceConnector *> _bond2HydrogenStatus;
+	std::map<BondConnector *, HydrogenProbe *> _bond2HydrogenProbe;
+	std::map<BondConnector *, ExistenceConnector *> _placeholderBond2Exist;
 	Network &_network;
 	AtomConf _atomConf = {nullptr, '\0'};
 	AtomConf _planar = {nullptr, '\0'};

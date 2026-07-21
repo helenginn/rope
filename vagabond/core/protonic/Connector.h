@@ -325,6 +325,7 @@ struct Connector : public ConnectBase
 	
 	std::string _desc{};
 	bool _user = false;
+	bool _placeholder = false; // for fake H
 };
 
 template <typename Value>
