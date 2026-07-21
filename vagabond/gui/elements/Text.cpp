@@ -37,7 +37,7 @@ Text::~Text()
 
 }
 
-void Text::render(SnowGL *gl)
+void Text::render(GLView *gl)
 {
 	if (_delay && _retext)
 	{
@@ -99,6 +99,7 @@ void Text::makeQuad()
 	mat *= (_type == Font::Thin ? 1 : 0.7);
 
 	rotateRound(mat);
+	_appliedAspect = Window::aspect();
 }
 
 void Text::squishToWidth(float target)

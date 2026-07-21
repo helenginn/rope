@@ -194,14 +194,27 @@ void Window::window_tick()
 
 void Window::handleWindowEvent(SDL_Event &event)
 {
-	if (event.window.event == SDL_WINDOWEVENT_RESIZED)
+	/* SIZE_CHANGED covers user resizes as well as maximise/restore and
+	 * programmatic changes, which RESIZED does not */
+	if (event.window.event == SDL_WINDOWEVENT_SIZE_CHANGED)
 	{
 		_rect.w = event.window.data1;
 		_rect.h = event.window.data2;
 		glSetup();
-		_current->setDims(_rect.w, _rect.h);
-	}
 
+		if (_current != nullptr)
+		{
+			_current->setDims(_rect.w, _rect.h);
+			_current->viewChanged();
+		}
+	}
+	else if (event.window.event == SDL_WINDOWEVENT_EXPOSED)
+	{
+		if (_current != nullptr)
+		{
+			_current->viewChanged();
+		}
+	}
 }
 
 void Window::recordEvent(const SDL_Event &event)

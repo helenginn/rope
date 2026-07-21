@@ -5,7 +5,7 @@
 #define _USE_MATH_DEFINES
 #include <math.h>
 #include <SDL2/SDL.h>
-#include "SnowGL.h"
+#include "GLView.h"
 #include "Renderable.h"
 #include "Quad.h"
 #include "Window.h"
@@ -15,9 +15,9 @@
 
 #define MOUSE_SENSITIVITY 500
 
-bool SnowGL::_setup = false;
+bool GLView::_setup = false;
 
-SnowGL::SnowGL()
+GLView::GLView()
 {
 	_shadowing = false;
 	_shadowProgram = 0;
@@ -38,20 +38,73 @@ SnowGL::SnowGL()
 	_r = 1.; _g = 1.; _b = 0.5; _a = 1.;
 }
 
-SnowGL::~SnowGL()
+GLView::~GLView()
 {
-	delete _indices;
+	deletePingPongBuffers();
+	deleteSceneBuffers();
 
+	if (_depthFbo != 0)
+	{
+		glDeleteFramebuffers(1, &_depthFbo);
+		_depthFbo = 0;
+	}
+
+	if (_depthMap != 0)
+	{
+		glDeleteTextures(1, &_depthMap);
+		_depthMap = 0;
+	}
+
+	delete _quad;
+	_quad = nullptr;
 }
 
-void SnowGL::time()
+void GLView::deleteSceneBuffers()
+{
+	if (_sceneFbo != 0)
+	{
+		glDeleteFramebuffers(1, &_sceneFbo);
+		_sceneFbo = 0;
+	}
+
+	if (_sceneMapCount > 0)
+	{
+		glDeleteTextures(_sceneMapCount, _sceneMap);
+		memset(_sceneMap, '\0', sizeof(GLuint) * 8);
+	}
+
+	if (_sceneDepth != 0)
+	{
+		glDeleteTextures(1, &_sceneDepth);
+		_sceneDepth = 0;
+	}
+
+	delete [] _indices;
+	_indices = nullptr;
+}
+
+void GLView::deletePingPongBuffers()
+{
+	if (_pingPongFbo[0] == 0 && _pingPongFbo[1] == 0)
+	{
+		return;
+	}
+
+	glDeleteFramebuffers(2, _pingPongFbo);
+	glDeleteTextures(2, _pingPongMap);
+
+	_pingPongFbo[0] = 0; _pingPongFbo[1] = 0;
+	_pingPongMap[0] = 0; _pingPongMap[1] = 0;
+}
+
+void GLView::time()
 {
 	_time += 0.002;
 	
 	if (_time > 1) _time -= 1;
 }
 
-void SnowGL::rotate(double x, double y, double z)
+void GLView::rotate(double x, double y, double z)
 {
 	_camAlpha += x;
 	_camBeta += y;
@@ -91,8 +144,9 @@ void checkFrameBuffers()
 	}
 }
 
-void SnowGL::preparePingPongBuffers()
+void GLView::preparePingPongBuffers()
 {
+	deletePingPongBuffers();
 	prepareDepthColourIndex(true);
 
 	glGenFramebuffers(2, _pingPongFbo);
@@ -118,13 +172,13 @@ void SnowGL::preparePingPongBuffers()
 	}
 
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
-	
-	_quad = new Quad();
-	_quad->setTextureID(0, _sceneMap[0]);
 }
 
-void SnowGL::prepareDepthColourIndex(bool bright)
+void GLView::prepareDepthColourIndex(bool bright)
 {
+	deleteSceneBuffers();
+	_sceneBright = bright;
+
 	/* generate new frame buffer for additional targets */
 	glGenFramebuffers(1, &_sceneFbo);
 	
@@ -199,13 +253,18 @@ void SnowGL::prepareDepthColourIndex(bool bright)
 	
 	_indices = new GLuint[_dw * _dh];
 	memset(_indices, '\0', _dw * _dh * sizeof(GLuint));
-	
-	_quad = new Quad();
+
+	if (_quad == nullptr)
+	{
+		_quad = new Quad();
+	}
+
+	/* textures were regenerated, so rebind them to the composite quad */
 	_quad->prepareTextures(this);
 	_quad->setTextureID(0, _sceneMap[0]);
 }
 
-int SnowGL::checkIndexInPixels(int x, int y) const
+int GLView::checkIndexInPixels(int x, int y) const
 {
 	if (_indices == nullptr)
 	{
@@ -223,7 +282,7 @@ int SnowGL::checkIndexInPixels(int x, int y) const
 	return val - 1;
 }
 
-void SnowGL::convertGLToHD(float &x, float &y) const
+void GLView::convertGLToHD(float &x, float &y) const
 {
 	x = 0.5 + x / 2;
 	y = 0.5 + y / 2;
@@ -233,7 +292,7 @@ void SnowGL::convertGLToHD(float &x, float &y) const
 
 }
 
-int SnowGL::checkIndex(double x, double y) const
+int GLView::checkIndex(double x, double y) const
 {
 	if (_indices == nullptr)
 	{
@@ -249,7 +308,7 @@ int SnowGL::checkIndex(double x, double y) const
 	return val;
 }
 
-void SnowGL::grabIndexBuffer()
+void GLView::grabIndexBuffer()
 {
 	if (_sceneFbo == 0)
 	{
@@ -270,7 +329,7 @@ void SnowGL::grabIndexBuffer()
 	checkErrors("read pixels");
 }
 
-void SnowGL::prepareShadowBuffer()
+void GLView::prepareShadowBuffer()
 {
 	glGenFramebuffers(1, &_depthFbo);
 	glGenTextures(1, &_depthMap);
@@ -299,7 +358,7 @@ void SnowGL::prepareShadowBuffer()
 	shadowProgram();
 }
 
-void SnowGL::renderShadows()
+void GLView::renderShadows()
 {
 	_shadowing = true;
 	int w = SHADOW_DIM; int h = SHADOW_DIM;
@@ -320,7 +379,7 @@ void SnowGL::renderShadows()
 	_shadowing = false;
 }
 
-void SnowGL::renderScene()
+void GLView::renderScene()
 {
 	for (unsigned int i = 0; i < _objects.size(); i++)
 	{
@@ -338,7 +397,7 @@ void SnowGL::renderScene()
 	}
 }
 
-void SnowGL::render()
+void GLView::render()
 {
 	checkErrors("before paintGL");
 	updateCamera();
@@ -349,10 +408,17 @@ void SnowGL::render()
 	}
 	
 	std::unique_lock<std::mutex> lock(_renderMutex, std::try_to_lock);
-	
+
 	if (!lock.owns_lock())
 	{
 		return;
+	}
+
+	/* drawable size may have changed behind our back (window resize);
+	 * a mismatched framebuffer garbles the display and the index buffer */
+	if (framebuffersAreStale())
+	{
+		recreateFramebuffers();
 	}
 
 	if (_depthMap > 0)
@@ -398,7 +464,7 @@ void SnowGL::render()
 	_viewChanged = false;
 }
 
-void SnowGL::updateCamera()
+void GLView::updateCamera()
 {
 	glm::vec3 centre = _centre;
 	glm::vec3 negCentre = _centre * -1.f;
@@ -439,7 +505,7 @@ void SnowGL::updateCamera()
 }
 
 
-void SnowGL::setupCamera()
+void GLView::setupCamera()
 {
 	_translation = glm::vec3(0, 0, 0);
 	_transOnly = glm::vec3(0, 0, 0);
@@ -455,7 +521,7 @@ void SnowGL::setupCamera()
 }
 
 
-void SnowGL::updateProjection(float side)
+void GLView::updateProjection(float side)
 {
 	float aspect = 1 / Window::aspect();
 	
@@ -470,12 +536,43 @@ void SnowGL::updateProjection(float side)
 	_unproj = glm::inverse(_proj);
 }
 
-void SnowGL::resizeGL(int w, int h)
+bool GLView::framebuffersAreStale()
 {
-	updateProjection();
+	if (_sceneFbo == 0)
+	{
+		return false;
+	}
+
+	return (_dw != Window::width() || _dh != Window::height());
 }
 
-void SnowGL::convertCoords(double *x, double *y)
+void GLView::recreateFramebuffers()
+{
+	if (_pingPongFbo[0] != 0)
+	{
+		preparePingPongBuffers();
+	}
+	else if (_sceneFbo != 0)
+	{
+		prepareDepthColourIndex(_sceneBright);
+	}
+}
+
+void GLView::resizeGL()
+{
+	std::unique_lock<std::mutex> lock(_renderMutex);
+
+	if (framebuffersAreStale())
+	{
+		recreateFramebuffers();
+	}
+
+	updateProjection();
+	windowSizeChanged();
+	_viewChanged = true;
+}
+
+void GLView::convertCoords(double *x, double *y)
 {
 	double w = width();
 	double h = height();
@@ -484,13 +581,13 @@ void SnowGL::convertCoords(double *x, double *y)
 	*y =  - (2 * *y / h - 1.0);
 }
 
-bool SnowGL::checkErrors(std::string what)
+bool GLView::checkErrors(std::string what)
 {
 	GLenum err = glGetError();
 
 	if (err != 0)
 	{
-		std::cout << "Error as SnowGL was doing " << what << ":" 
+		std::cout << "Error as GLView was doing " << what << ":" 
 		<< err << std::endl;
 		
 		switch (err)
@@ -523,7 +620,7 @@ bool SnowGL::checkErrors(std::string what)
 	return (err != 0);
 }
 
-void SnowGL::shadowProgram()
+void GLView::shadowProgram()
 {
 	if (_shadowProgram != 0)
 	{
@@ -540,7 +637,7 @@ void SnowGL::shadowProgram()
 //	_shadowProgram = _shadowObj->getProgram();
 }
 
-GLuint SnowGL::getOverrideProgram()
+GLuint GLView::getOverrideProgram()
 {
 	if (_shadowing)
 	{
@@ -550,14 +647,14 @@ GLuint SnowGL::getOverrideProgram()
 	return 0;
 }
 
-void SnowGL::resetMouseKeyboard()
+void GLView::resetMouseKeyboard()
 {
 	_right = false;
 	_controlPressed = false;
 	_shiftPressed = false;
 }
 
-void SnowGL::shiftToCentre(const glm::vec3 &update, float distance)
+void GLView::shiftToCentre(const glm::vec3 &update, float distance)
 {
 	glm::mat4x4 rot = glm::mat4(glm::mat3(_model));
 	glm::vec3 diff = (update - _centre);
@@ -573,14 +670,14 @@ void SnowGL::shiftToCentre(const glm::vec3 &update, float distance)
 	_model = step_forward * rot * step_back * _model;
 }
 
-void SnowGL::renderQuad()
+void GLView::renderQuad()
 {
 	glClearColor(_r, _g, _b, _a);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	_quad->render(this);
 }
 
-void SnowGL::specialQuadRender()
+void GLView::specialQuadRender()
 {
 	int amount = 16;
 	int mode = 0;

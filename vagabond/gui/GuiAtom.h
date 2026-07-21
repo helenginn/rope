@@ -51,7 +51,7 @@ public:
 	void setDisableBalls(bool dis);
 	void setDisableRibbon(bool dis);
 
-	virtual void render(SnowGL *gl);
+	virtual void render(GLView *gl);
 
 	void applyVisuals(VisualPreferences *vp, Instance *inst = nullptr);
 private:

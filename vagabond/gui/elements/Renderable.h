@@ -17,7 +17,7 @@ typedef struct
 } IndexTrio;
 
 
-class SnowGL;
+class GLView;
 
 class Renderable : public HasRenderables
 {
@@ -25,7 +25,7 @@ public:
 	Renderable() {}
 	virtual ~Renderable();
 	virtual void initialisePrograms();
-	virtual void render(SnowGL *sender);
+	virtual void render(GLView *sender);
 	void deleteOnMainThread();
 	
 	virtual void test() = 0;
@@ -404,7 +404,7 @@ protected:
 	std::atomic<bool> _forceIndices{false};
 	void rotateByMatrix(glm::mat3x3 m);
 
-	SnowGL *_gl = nullptr;
+	GLView *_gl = nullptr;
 	
 	float cx() const
 	{
@@ -483,7 +483,7 @@ private:
 	std::string _gFile;
 	std::string _vFile;
 	
-	Alignment _align;
+	Alignment _align = None;
 	double _x = 0.0;
 	double _y = 0.0;
 	float _resizeScale = 1.f;

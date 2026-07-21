@@ -1,7 +1,7 @@
 // Copyright (C) 2021 Helen Ginn
 
-#ifndef __Slip__SnowGL__
-#define __Slip__SnowGL__
+#ifndef __vagabond__GLView__
+#define __vagabond__GLView__
 
 #include <vagabond/utils/glm_import.h>
 #include <mutex>
@@ -11,17 +11,26 @@
 
 class Quad;
 
-class SnowGL : public HasRenderables
+class GLView : public HasRenderables
 {
 public:
-	SnowGL();
-	virtual ~SnowGL();
+	GLView();
+	virtual ~GLView();
 	
 	void setDims(int w, int h)
 	{
+		bool changed = (w != _w || h != _h);
 		_w = w;
 		_h = h;
-		updateProjection();
+
+		if (changed)
+		{
+			resizeGL();
+		}
+		else
+		{
+			updateProjection();
+		}
 	}
 	
 	int width()
@@ -202,10 +211,14 @@ protected:
 	void prepareShadowBuffer();
 	void preparePingPongBuffers();
 	void prepareDepthColourIndex(bool bright = false);
+	void deletePingPongBuffers();
+	void deleteSceneBuffers();
+	void recreateFramebuffers();
+	bool framebuffersAreStale();
 	void renderShadows();
 	void renderScene();
 
-	virtual void resizeGL(int w, int h);
+	virtual void resizeGL();
 	void convertCoords(double *x, double *y);
 	void convertGLToHD(float &x, float &y) const;
 
@@ -223,6 +236,7 @@ protected:
 	GLuint _sceneDepth;
 	GLuint _sceneFbo;
 	size_t _sceneMapCount;
+	bool _sceneBright = false;
 	
 	GLuint _pingPongMap[2] = {0, 0};
 	GLuint _pingPongFbo[2] = {0, 0};
@@ -271,12 +285,12 @@ protected:
 	bool _alwaysOn = false;
 	
 	/* widths and heights - boundaries */
-	int _w;
-	int _h;
+	int _w = 0;
+	int _h = 0;
 
 	/* widths and heights - drawable */
-	int _dw;
-	int _dh;
+	int _dw = 0;
+	int _dh = 0;
 	
 	int checkIndex(double x, double y) const;
 	int checkIndexInPixels(int x, int y) const;

@@ -3,6 +3,8 @@
 #include "Box.h"
 #include "Text.h"
 #include "Slider.h"
+#include "Window.h"
+#include <cmath>
 #include <iostream>
 
 Box::Box() : SimplePolygon()
@@ -67,6 +69,32 @@ void Box::makeQuad()
 {
 	clearVertices();
 	addQuad();
+	_appliedAspect = -1;
+}
+
+void Box::windowSizeChanged()
+{
+	float aspect = Window::aspect();
+
+	/* projected objects follow the projection matrix instead */
+	if (_appliedAspect > 0 && aspect > 0 && !usesProjection() &&
+	    fabs(aspect - _appliedAspect) > 1e-6)
+	{
+		/* swap the aspect ratio baked into the vertices for the new one */
+		glm::mat3x3 mat = glm::mat3(1.f);
+		mat[0][0] = aspect / _appliedAspect;
+		rotateRoundCentre(mat);
+		_appliedAspect = aspect;
+
+		if (alignment() != None)
+		{
+			realign();
+		}
+
+		rebufferVertexData();
+	}
+
+	SimplePolygon::windowSizeChanged();
 }
 
 void Box::rescale(double x, double y)

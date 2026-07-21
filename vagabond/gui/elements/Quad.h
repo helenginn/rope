@@ -56,7 +56,7 @@ public:
 		_threshold = thresh;
 	}
 
-	void prepareTextures(SnowGL *sender);
+	void prepareTextures(GLView *sender);
 	
 	void setTextureID(int idx, GLuint val)
 	{
@@ -68,7 +68,7 @@ public:
 		_textures[idx] = val;
 	}
 
-	virtual void render(SnowGL *sender);
+	virtual void render(GLView *sender);
 protected:
 	virtual void extraUniforms();
 	virtual void bindTextures();

@@ -31,6 +31,14 @@ void HasRenderables::deleteObjects(bool recursive)
 	_temps.clear();
 }
 
+void HasRenderables::windowSizeChanged()
+{
+	for (size_t i = 0; i < objectCount(); i++)
+	{
+		object(i)->windowSizeChanged();
+	}
+}
+
 void HasRenderables::clearHighlights()
 {
 	for (size_t i = 0; i < objectCount(); i++)

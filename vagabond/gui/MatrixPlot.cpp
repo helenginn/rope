@@ -17,7 +17,7 @@
 // Please email: vagabond @ hginn.co.uk for more details.
 
 #include "MatrixPlot.h"
-#include <vagabond/gui/elements/SnowGL.h>
+#include <vagabond/gui/elements/GLView.h>
 #include <vagabond/gui/elements/Window.h>
 #include <vagabond/utils/maths.h>
 #include <vagabond/gui/ColourLegend.h>

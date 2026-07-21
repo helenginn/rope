@@ -48,7 +48,7 @@ public:
 	
 	void addVisuals(Atom *a);
 	void removeVisuals();
-	virtual void render(SnowGL *gl);
+	virtual void render(GLView *gl);
 private:
 	void changeNetworks(int n);
 	void incrementNetworks(int n);

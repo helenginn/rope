@@ -16,7 +16,7 @@
 
 std::string Scene::_defaultBg = "assets/images/paper.jpg";
 
-Scene::Scene(Scene *prev) : SnowGL()
+Scene::Scene(Scene *prev) : GLView()
 {
 	_mouseDown = false;
 	_previous = prev;
@@ -141,11 +141,21 @@ void Scene::doThings()
 
 void Scene::render()
 {
-	SnowGL::render();
+	GLView::render();
 
 	for (Modal *modal : _modals)
 	{
 		modal->render(this);
+	}
+}
+
+void Scene::windowSizeChanged()
+{
+	GLView::windowSizeChanged();
+
+	for (Modal *modal : _modals)
+	{
+		modal->windowSizeChanged();
 	}
 }
 

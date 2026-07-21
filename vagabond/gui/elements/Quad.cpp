@@ -17,7 +17,7 @@
 // Please email: vagabond @ hginn.co.uk for more details.
 
 #include "Quad.h"
-#include "SnowGL.h"
+#include "GLView.h"
 #include <iostream>
 
 Quad::Quad() : Box()
@@ -49,7 +49,7 @@ void Quad::prepareNormalDist()
 	}
 }
 
-void Quad::prepareTextures(SnowGL *sender)
+void Quad::prepareTextures(GLView *sender)
 {
 	if (_texid == 0)
 	{
@@ -66,7 +66,7 @@ void Quad::prepareTextures(SnowGL *sender)
 //	prepareNormalDist();
 }
 
-void Quad::render(SnowGL *sender)
+void Quad::render(GLView *sender)
 {
 	Renderable::render(sender);
 }

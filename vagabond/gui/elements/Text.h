@@ -18,7 +18,7 @@ public:
 
 	void setText(std::string text, bool force = false);
 	
-	virtual void render(SnowGL *gl);
+	virtual void render(GLView *gl);
 	
 	const std::string text() const
 	{

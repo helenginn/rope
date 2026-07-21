@@ -4,7 +4,7 @@
 #define __practical__Scene__
 
 #include <functional>
-#include "SnowGL.h"
+#include "GLView.h"
 #include "SDL2/SDL.h"
 #include "ButtonResponder.h"
 
@@ -15,7 +15,7 @@ class Button;
 class Modal;
 class Text;
 
-class Scene : public SnowGL, public ButtonResponder
+class Scene : public GLView, public ButtonResponder
 {
 public:
 	Scene(Scene *prev = nullptr);
@@ -64,6 +64,7 @@ public:
 	virtual void showSimple();
 	virtual void render();
 	virtual void doThings();
+	virtual void windowSizeChanged();
 
 	virtual void mouseMoveEvent(double x, double y);
 	virtual void mousePressEvent(double x, double y, SDL_MouseButtonEvent button);

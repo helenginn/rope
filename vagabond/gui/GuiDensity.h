@@ -37,7 +37,7 @@ class GuiDensity : public CullablePrimitives
 public:
 	GuiDensity();
 
-	virtual void render(SnowGL *gl);
+	virtual void render(GLView *gl);
 
 	void sampleFromOtherMap(OriginGrid<fftwf_complex> *ref, 
 	                        OriginGrid<fftwf_complex> *map,

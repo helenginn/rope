@@ -269,7 +269,7 @@ void Visual::setup()
 	updateBonds();
 }
 
-void Visual::render(SnowGL *gl)
+void Visual::render(GLView *gl)
 {
 	Renderable::render(gl);
 }

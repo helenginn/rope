@@ -19,7 +19,7 @@
 #include <fstream>
 #include "GuiDensity.h"
 #include <vagabond/core/refine/Sampler.h>
-#include <vagabond/gui/elements/SnowGL.h>
+#include <vagabond/gui/elements/GLView.h>
 #include <vagabond/core/AtomGroup.h>
 #include <vagabond/core/BondCalculator.h>
 #include <vagabond/core/grids/AtomMap.h>
@@ -169,7 +169,7 @@ void GuiDensity::populateFromMap(OriginGrid<fftwf_complex> *map)
 	sampleFromOtherMap(map, map);
 }
 
-void GuiDensity::render(SnowGL *gl)
+void GuiDensity::render(GLView *gl)
 {
 	glEnable(GL_DEPTH_TEST);
 	

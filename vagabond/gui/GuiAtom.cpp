@@ -22,7 +22,7 @@
 #include "GuiHelices.h"
 #include "GuiThickBond.h"
 
-#include <vagabond/gui/elements/SnowGL.h>
+#include <vagabond/gui/elements/GLView.h>
 #include <SDL2/SDL.h>
 
 #include <vagabond/core/matrix_functions.h>
@@ -80,7 +80,7 @@ void GuiAtom::stop()
 	}
 }
 
-void GuiAtom::render(SnowGL *gl)
+void GuiAtom::render(GLView *gl)
 {
 	gl->viewChanged();
 	glEnable(GL_DEPTH_TEST);

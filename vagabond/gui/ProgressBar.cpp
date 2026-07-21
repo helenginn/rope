@@ -19,7 +19,7 @@
 #include "ProgressBar.h"
 #include <vagabond/gui/elements/Text.h>
 #include <vagabond/gui/VagWindow.h>
-#include <vagabond/gui/elements/SnowGL.h>
+#include <vagabond/gui/elements/GLView.h>
 
 ProgressBar::ProgressBar(std::string text) : Image("assets/images/rope.png")
 {

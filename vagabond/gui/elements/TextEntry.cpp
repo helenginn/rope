@@ -18,7 +18,7 @@
 
 #include "TextEntry.h"
 #include "ButtonResponder.h"
-#include "SnowGL.h"
+#include "GLView.h"
 #include <SDL2/SDL_clipboard.h>
 #include <iostream>
 
