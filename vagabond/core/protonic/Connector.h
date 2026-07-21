@@ -325,6 +325,7 @@ inline std::ostream &operator<<(std::ostream &ss, const Connector<Value> &c)
 typedef Connector<Atom::Values> AtomConnector;
 typedef Connector<Bond::Values> BondConnector;
 typedef Connector<Existence::Values> ExistenceConnector;
+typedef Connector<Covalent::Values> CovalentConnector;
 typedef Connector<Count::Values> CountConnector;
 
 /* union to store created connectors in a list */
@@ -332,7 +333,7 @@ struct AnyConnector
 {
 	enum Type
 	{
-		Atom, Bond, Existence, Count
+		Atom, Bond, Existence, Count, Covalent
 	};
 	
 	AnyConnector(BondConnector *const &connector)
@@ -359,6 +360,12 @@ struct AnyConnector
 		_ptr = connector;
 	}
 	
+	AnyConnector(CovalentConnector *const &connector)
+	{
+		_type = Covalent;
+		_ptr = connector;
+	}
+	
 	void destroy()
 	{
 		switch (_type)
@@ -377,6 +384,10 @@ struct AnyConnector
 
 			case Existence:
 			delete static_cast<ExistenceConnector *>(_ptr);
+			break;
+			
+			case Covalent:
+			delete static_cast<CovalentConnector *>(_ptr);
 			break;
 			
 			default: break;
