@@ -1730,7 +1730,20 @@ void Coordinated::findSymmetricallyRelatedBonds()
 	AtomConf mother_conf = {mother_atom, atomConf().conf};
 	Coordinated *mother = atomMap()[mother_conf];
 	// existence must be the same
-	add_constraint(new MutualExistence(*existence(), *mother->existence()));
+	std::ostringstream result;
+	try
+	{
+		add_constraint(new MutualExistence(*existence(), *mother->existence()));
+	}
+	catch (const std::runtime_error &err)
+	{
+		result << "Failed to add symmetry constraint between " 
+		<< *existence() << " and " << *mother->existence() << 
+		" as it led to immediate contradiction";
+		std::cout << result.str() << std::endl;
+
+		_network.addImpromptuCollapse(result.str());
+	}
 
 	std::cout << "Adding symmetries for " << atomConf() << std::endl;
 
@@ -1769,12 +1782,24 @@ void Coordinated::findSymmetricallyRelatedBonds()
 				
 				std::cout << "Propose that " << left << " and " << right << " should be equal " << std::endl;
 
-				add_constraint(new EqualBonds(left, right, 
-				                              *_bond2Exist[&left], 
-				                              *mother->_bond2Exist[&right]));
+
+				try
+				{
+					add_constraint(new EqualBonds(left, right, 
+					                              *_bond2Exist[&left], 
+					 *mother->_bond2Exist[&right]));
+				}
+				catch (const std::runtime_error &err)
+				{
+					result << "Failed to add symmetry constraint between " 
+					<< left << " and " << right << " as it led to immediate "
+					"contradiction";
+					std::cout << result.str() << std::endl;
+
+					_network.addImpromptuCollapse(result.str());
+				}
 			}
 		}
 	}
 }
-
 
