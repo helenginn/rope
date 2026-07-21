@@ -119,6 +119,7 @@ struct BondAdder : public ConstraintBase
 
 			Attachment attach(*bond, *exist);
 			CountType type = attach.type_of_bond(Request);
+//			std::cout << "Bond: " << *bond << " is: " << type << std::endl;
 
 			if (type != Maybe)
 			{
@@ -129,6 +130,7 @@ struct BondAdder : public ConstraintBase
 				certainty = Maybe;
 			}
 
+//			std::cout << "Telling it it's " << tell << std::endl;
 			attach.inform(tell, assign, certainty);
 
 			// don't even think about playing with sampling!
@@ -213,9 +215,13 @@ struct BondAdder : public ConstraintBase
 		}
 		if (common.size() == 1)
 		{
+//			std::cout << "common: " << *common.begin() << " for " << certain << " + " << maybe << " for desc " << desc() << std::endl;
 			if (*common.begin() == certain)
 			{
-				tell_maybe_bonds((Bond::Values)~Request, assign, Certain);
+				Bond::Values unrequest = 
+				(Bond::Values)(~Request & Bond::Unassigned);
+//				std::cout << "My unrequest: " << unrequest << std::endl;
+				tell_maybe_bonds(unrequest, assign, Certain);
 			}
 			else if (*common.begin() == certain + maybe)
 			{
