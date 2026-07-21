@@ -83,6 +83,7 @@ namespace Covalent
 		Unassigned      =  (1 << 0 | 1 << 1),
 	};
 };
+
 /*  definitions for atoms which either are hydrogen or absent */
 namespace Existence
 {
@@ -369,9 +370,10 @@ inline bool is_contradictory(const Covalent::Values &val)
 {
 	return (val == Covalent::Contradiction);
 }
+
 /* function signatures */
 
-typedef std::function<void()> UpdateProbe;
+typedef std::function<void(bool thorough)> UpdateProbe;
 typedef std::list<void *> CheckList;
 typedef std::function<bool(const GuiltVersion &, CheckList &)> Checker;
 typedef std::function<void(const GuiltVersion &, CheckList &)> Forget;

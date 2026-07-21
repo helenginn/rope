@@ -189,7 +189,7 @@ struct Connector : public ConnectBase
 		bool changed = (before != after);
 		if (changed && _update)
 		{
-			_update();
+			_update(false);
 		}
 
 		if (changed && _desc.length() && !ConnectBase::_silent)
@@ -238,7 +238,7 @@ struct Connector : public ConnectBase
 
 		if (_update)
 		{
-			_update();
+			_update(false);
 		}
 		
 		add_to_forget_list(gv, list);
@@ -281,6 +281,22 @@ struct Connector : public ConnectBase
 		}
 
 		return true;
+	}
+
+	void add_update(const UpdateProbe &update)
+	{
+		if (!_update)
+		{
+			set_update(update);
+			return;
+		}
+
+		UpdateProbe copy = _update;
+		_update = [copy, update](bool thorough)
+		{
+			copy(thorough);
+			update(thorough);
+		};
 	}
 	
 	void set_update(const UpdateProbe &update)

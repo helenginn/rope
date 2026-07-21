@@ -166,9 +166,12 @@ void ProbeBond::updatePosition()
 
 void ProbeBond::fullUpdate()
 {
-	updateProbe();
-	updatePosition();
-	
+	Image::addMainThreadJob
+	([this]()
+	{
+		updateProbe();
+		updatePosition();
+	});
 }
 
 ProbeBond::ProbeBond(ProtonNetworkView *view, BondProbe *probe)
@@ -188,9 +191,14 @@ ProbeBond::ProbeBond(ProtonNetworkView *view, BondProbe *probe)
 	Image::setUsesProjection(true);
 
 	fullUpdate();
+	
+	auto update_method = [this](bool thorough)
+	{
+		thorough ? fullUpdate() : updateProbe();
+	};
 
-	_probe->_obj.set_update([this](){ updateProbe(); });
-	_probe->existence().set_update([this]() { updateProbe(); });
+	_probe->_obj.set_update(update_method);
+	_probe->existence().set_update(update_method);
 }
 
 void ProbeBond::declareBondExistence(Existence::Values value)

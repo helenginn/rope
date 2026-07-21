@@ -360,6 +360,13 @@ public:
 		
 		return str;
 	}
+	
+	void setPosition(const glm::vec3 &pos)
+	{
+		_pos = pos;
+		_h->setInitialPosition(pos);
+		_obj._update(true);
+	}
 
 	virtual bool is_text()
 	{

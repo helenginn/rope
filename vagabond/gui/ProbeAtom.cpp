@@ -26,12 +26,22 @@ using namespace hnet;
 
 void ProbeAtom::fullUpdate()
 {
+	FloatingText::addMainThreadJob
+	([this]()
+	 {
+		fullUpdateProbe();
+	});
+}
+
+void ProbeAtom::fullUpdateProbe()
+{
 	glm::vec3 c = _probe->colour();
 	FloatingText::setText(_probe->display());
 	FloatingText::correctBox(_probe->mult(), 0.0);
 	FloatingText::setPosition(_probe->position());
 	FloatingText::setColour(c.x, c.y, c.z);
 	FloatingText::setAlpha(_probe->alpha());
+	reindex();
 	updateProbe();
 	FloatingText::forceRender(true, true);
 }
@@ -66,9 +76,10 @@ ProbeAtom::ProbeAtom(ProtonNetworkView *view, AtomProbe *probe)
 #endif
 
 	FloatingText::setFragmentShaderFile(shader);
-	probe->_obj.set_update([this]() { updateProbe(); });
-	probe->existence().set_update([this]() { updateProbe(); });
-	fullUpdate();
+	probe->_obj.set_update([this](bool thorough)
+	                       { thorough ? fullUpdate() : updateProbe(); });
+	probe->existence().add_update([this](bool thorough) { updateProbe(); });
+	fullUpdateProbe();
 }
 
 ProbeAtom::ProbeAtom(ProtonNetworkView *view, HydrogenProbe *probe)
@@ -87,10 +98,11 @@ ProbeAtom::ProbeAtom(ProtonNetworkView *view, HydrogenProbe *probe)
 	std::string shader = "assets/shaders/box.fsh";
 #endif
 	FloatingText::setFragmentShaderFile(shader);
-	probe->_obj.set_update([this]() { updateProbe(); });
-	probe->existence().set_update([this]() { updateProbe(); });
+	probe->_obj.set_update([this](bool thorough)
+	                       { thorough ? fullUpdate() : updateProbe(); });
+	probe->existence().set_update([this](bool thorough) { updateProbe(); });
 
-	fullUpdate();
+	fullUpdateProbe();
 }
 
 void ProbeAtom::hoverOverAtom()

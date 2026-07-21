@@ -38,6 +38,7 @@ public:
 	void updatePosition();
 	void updateProbe();
 	void fullUpdate();
+	void fullUpdateProbe();
 	
 	Probe *probe()
 	{
