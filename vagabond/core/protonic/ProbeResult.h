@@ -24,6 +24,8 @@
 
 class Probe;
 
+typedef std::function<float()> GetScore;
+
 struct ProbeTypePair : public std::pair<Probe *, hnet::Types>
 {
 	ProbeTypePair(const std::pair<Probe *, hnet::Types> &orig = {})
@@ -67,7 +69,7 @@ struct OneProbe
 class ProbeResult
 {
 public:
-	ProbeResult(const std::vector<OneProbe> &results, float score)
+	ProbeResult(const std::vector<OneProbe> &results, const GetScore &score)
 	{
 		_results = results;
 		_score = score;
@@ -83,14 +85,14 @@ public:
 		_results.push_back(result);
 	}
 
-	const float &score() const
+	const GetScore &getScore() const
 	{
 		return _score;
 	}
 	
 private:
 	std::vector<OneProbe> _results;
-	float _score;
+	GetScore _score;
 };
 
 #endif

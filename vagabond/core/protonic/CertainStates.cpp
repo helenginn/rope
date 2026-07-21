@@ -48,7 +48,7 @@ CertainStates::CertainStates(const std::vector<ProbeResult> &results)
 	}
 
 	_data = Eigen::MatrixXi(rows, cols);
-	_scores = Eigen::VectorXf(cols);
+	_scores.resize(cols);
 	
 	for (int i = 0; i < rows; i++)
 	{
@@ -57,7 +57,7 @@ CertainStates::CertainStates(const std::vector<ProbeResult> &results)
 			_data(i, j) = results[j].results()[i].value;
 			if (i == 0)
 			{
-				_scores(j) = results[j].score();
+				_scores[j] = results[j].getScore();
 			}
 		}
 	}
@@ -77,12 +77,17 @@ int CertainStates::value(int col, int row) const
 
 float CertainStates::score(int col) const
 {
-	return _scores(col);
+	return _scores[col]();
 }
 
 float CertainStates::average_score() const
 {
-	return _scores.sum() / (float)state_count();
+	float sum = 0;
+	for (const GetScore &score : _scores)
+	{
+		sum += score();
+	}
+	return sum / (float)state_count();
 }
 
 ProbeCorrelation CertainStates::correlate(const ProbeTypePair &left,
@@ -140,6 +145,14 @@ ProbeCorrelation CertainStates::correlate(const ProbeTypePair &left,
 		
 		// we also want to figure out the total sum of energy weights
 		float prob = exp((ave - sc) / rt);
+		
+		if (prob != prob)
+		{
+			std::cout << "Ave: " << ave << std::endl;
+			std::cout << "Score: " << sc << std::endl;
+			std::cout << "Prob: " << prob << std::endl;
+		}
+
 		total_probs += prob;
 
 		int l = get_index(mv);
@@ -166,6 +179,21 @@ ProbeCorrelation CertainStates::correlate(const ProbeTypePair &left,
 		else if (!relative)
 		{
 			corr.mat.row(j) /= total_probs;
+		}
+	}
+
+	bool done = false;
+	for (int i = 0; i < corr.mat.rows() && !done; i++)
+	{
+		for (int j = 0; j < corr.mat.cols() && !done; j++)
+		{
+			if (corr.mat(i, j) > 1)
+			{
+				std::cout << "over one: " << std::endl;
+				std::cout << corr.mat << std::endl;
+				done = true;
+				break;
+			}
 		}
 	}
 
@@ -197,7 +225,8 @@ std::map<int, float> CertainStates::proportions(ProbeTypePair ptp,
 		sum += contrib;
 		
 	}
-	if (ptp.first->desc() == "A-SER200:OG,A")
+
+	if (false && ptp.first->atom() && ptp.first->atom()->residueId() == 74 && false)
 	{
 		for (const ProbeTypePair &other : _headers)
 		{

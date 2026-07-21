@@ -17,6 +17,7 @@
 // Please email: vagabond @ hginn.co.uk for more details.
 
 #include "Model.h"
+#include "Energy.h"
 #include "Network.h"
 #include "SymMates.h"
 #include "AtomGroup.h"
@@ -611,6 +612,7 @@ void Network::updateModelCliques()
 Network::~Network()
 {
 	updateModelCliques();
+	delete _energy;
 }
 
 Network::Network(AtomGroup *group, const std::string &spg_name,
@@ -618,13 +620,14 @@ Network::Network(AtomGroup *group, const std::string &spg_name,
                  Model *const &model)
 : _model(model)
 {
+	_energy = new hnet::Energy();
+
 	if (model)
 	{
 		_cliques = model->cliques();
 	}
 
 	_hAtoms = new AtomGroup();
-	_extraHydrogens = new AtomGroup();
 	_original = rehydrogenate(nonHydrogensFrom(group));
 	AtomGroup *mates = SymMates::getSymmetryMates(_original, spg_name, 
 	                                              unit_cell, 4.0);

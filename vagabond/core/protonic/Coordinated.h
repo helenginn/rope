@@ -141,6 +141,8 @@ public:
 		return _bonds;
 	}
 	
+	bool hasHBondTo(const AtomConf &other) const;
+	
 	hnet::CountConnector *const &donors() const
 	{
 		return _donors;
@@ -174,6 +176,11 @@ public:
 	std::map<hnet::AtomConf, Coordinated *> &atomMap() const
 	{
 		return _network.atomMap();
+	}
+
+	std::map<hnet::AtomConf, hnet::ExistenceConnector *> &existMap()
+	{
+		return _network.existMap();
 	}
 
 private:

@@ -28,6 +28,8 @@
 #include "Coordinated.h"
 #include "BondAngle.h"
 #include "AtomGroup.h"
+#include "Energy.h"
+#include "Guilt.h"
 
 using namespace hnet;
 
@@ -1511,6 +1513,18 @@ void Coordinated::attachToNeighbours(AtomGroup *searchGroup)
 			create_two_half_hydrogen_bonds(candidate, pos1, pos2);
 		}
 	}
+}
+
+bool Coordinated::hasHBondTo(const AtomConf &other) const
+{
+	for (const ABPair &pair : _bonds)
+	{
+		if (pair.first == other)
+		{
+			return true;
+		}
+	}
+	return false;
 }
 
 void Coordinated::clashLogic(OpSet<AtomConf> &clash_check)

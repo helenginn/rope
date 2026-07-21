@@ -144,51 +144,36 @@ void ExhaustiveSearch::search()
 	cleanup();
 }
 
-float ExhaustiveSearch::score_wider_clique()
+GetScore ExhaustiveSearch::score_wider_clique()
 {
-	float score = 0;
-	float energy = 1.5; // kcal/mol
-	for (Probe *const &probe : _wider)
+	OpSet<Probe *> check = _wider;
+	GuiltVersion gv = _gv;
+	
+	std::vector<std::pair<hnet::GetEnergy, std::string>> jobs;
+	for (Probe *const &probe : check)
 	{
-		if (probe->is_bond() && !probe->is_covalent())
+		hnet::GetEnergy contrib = probe->energy();
+		if (contrib)
 		{
-			BondProbe *bp = static_cast<BondProbe *>(probe);
-			hnet::Existence::Values ex = bp->_exist.value();
-
-			if (ex == hnet::Existence::Absent)
-			{
-				continue;
-			}
-
-			hnet::Bond::Values val = bp->_obj.value();
-
-			if ((int)val == (int)hnet::Bond::Weak)
-			{
-				float dist = bp->_distance;
-				float mod = 1 - (dist - 2.f) * (dist - 2.f) / 2.f;
-
-				float contrib = energy * mod * 4.18;
-				score -= contrib; // kcal -> mol
-			}
-		}
-		
-		if (probe->is_bulk())
-		{
-			AtomProbe *ap = static_cast<AtomProbe *>(probe);
-			hnet::Existence::Values ex = ap->_exist.value();
-
-			if (ex == hnet::Existence::Absent)
-			{
-				continue;
-			}
-
-			// bulk solvent will provide 3.6 hydrogen bonds on average
-			float contrib = energy * 1.0 * 4.18;
-			score -= contrib; // kcal -> mol
+			jobs.push_back({contrib, probe->desc()});
 		}
 	}
 
-	return score;
+	return [jobs]()
+	{
+		float score = 0;
+		for (const auto &job : jobs)
+		{
+			float contrib = job.first();
+			if (contrib != contrib)
+			{
+				std::cout << "NAN for: " << job.second << std::endl;
+			}
+			score += contrib;
+		}
+
+		return score;
+	};
 }
 
 bool ExhaustiveSearch::next()
@@ -249,7 +234,7 @@ bool ExhaustiveSearch::next()
 		
 		if (cert && _configs.count(c) == 0)
 		{
-			float score = score_wider_clique();
+			GetScore score = score_wider_clique();
 			_configs += c;
 			_scores[c] = score;
 //			print(c);
@@ -321,18 +306,10 @@ bool ExhaustiveSearch::next()
 		count_down();
 	}
 	
-	float ave_score = 0;
-	for (auto it = _scores.begin(); it != _scores.end(); it++)
-	{
-		ave_score += it->second;
-	}
-	ave_score /= (float)_scores.size();
-	ave_score = 0;
-	
-	auto process_result = [this, &ave_score](const Config &c)
+	auto process_result = [this](const Config &c)
 	{
 		int i = 0;
-		float sc = _scores[c];// - ave_score;
+		GetScore sc = _scores[c];
 		ProbeResult result({}, sc);
 		for (IteratedProbe *ip : _iterations)
 		{

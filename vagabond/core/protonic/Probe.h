@@ -21,8 +21,15 @@
 
 #define Z_DEF (-0)
 #include "Connector.h"
+#include <string>
 #include <vagabond/core/Atom.h>
 #include <vagabond/core/Responder.h>
+
+namespace hnet
+{
+	typedef std::function<float()> GetEnergy;
+	typedef std::function<GetEnergy()> EnergyWrapper;
+};
 
 class Probe : public HasResponder<Responder<Probe>>
 {
@@ -161,6 +168,25 @@ public:
 	{
 		return _mult;
 	}
+
+	void setEnergyWrapper(const hnet::EnergyWrapper &f)
+	{
+		_energy = f;
+	}
+	
+	hnet::GetEnergy energy()
+	{
+		if (!_energy)
+		{
+			return {};
+		}
+		return _energy();
+	}
+
+	void realign()
+	{
+		if (_realign) { _realign(); };
+	}
 	
 	::Atom *const &atom() const
 	{
@@ -184,6 +210,9 @@ public:
 	float _mult = 25;
 	float _hide = 0.f;
 	bool _bulk = false;
+	hnet::EnergyWrapper _energy;
+
+	std::function<void()> _realign{};
 };
 
 class AtomProbe : public Probe

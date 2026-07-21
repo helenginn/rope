@@ -35,6 +35,7 @@ class Model;
 namespace hnet
 {
 	class Coordinated;
+	class Energy;
 }
 
 class Network
@@ -96,11 +97,11 @@ public:
 		return _original;
 	}
 
-	AtomGroup *extraHydrogens()
+	std::map<hnet::AtomConf, hnet::ExistenceConnector *> &existMap()
 	{
-		return _extraHydrogens;
+		return _existMap;
 	}
-
+	
 	std::map<hnet::AtomConf, hnet::Coordinated *> &atomMap()
 	{
 		return _atomMap;
@@ -140,6 +141,11 @@ public:
 	std::list<Clique> &cliques()
 	{
 		return _cliques;
+	}
+	
+	hnet::Energy &energy()
+	{
+		return *_energy;
 	}
 	
 	void updateModelCliques();
@@ -183,6 +189,7 @@ private:
 	
 	std::list<Clique> _cliques;
 	Model *_model{};
+	hnet::Energy *_energy{};
 
 	std::vector<std::string> _impromptuCollapses;
 

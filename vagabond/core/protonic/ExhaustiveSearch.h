@@ -233,11 +233,11 @@ public:
 		return _total * (float)sizeof(OneProbe) / (float)1000000.f;
 	}
 private:
-	float score_wider_clique();
+	GetScore score_wider_clique();
 
 	typedef std::vector<unsigned int> Config;
 	OpSet<Config> _configs;
-	std::map<Config, float> _scores;
+	std::map<Config, GetScore> _scores;
 
 	int _total = 0;
 	std::vector<ProbeResult> _results;
@@ -249,6 +249,7 @@ private:
 	int _counter{0};
 	std::mutex _m;
 	std::condition_variable _cv;
+	GuiltVersion _gv{0};
 };
 
 #endif
