@@ -83,7 +83,7 @@ void SearchPDB::buttonPressed(std::string tag, Button *button)
 	{
 		std::string str = "Choose sequence identify cutoff";
 		ChooseRange *cr = new ChooseRange(this, str, "set_identity_cutoff", this);
-		cr->setDefault(_cutoff);
+		cr->setDefault(_cutoff, _cutoff);
 		cr->setRange(0, 100, 100);
 		setModal(cr);
 	}

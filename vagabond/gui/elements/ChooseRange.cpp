@@ -45,15 +45,22 @@ void ChooseRange::setRange(float min, float max, float steps)
 	_max = max;
 	_step = (max - min) / steps;
 	
-	float pos = (float)(_default - _min) / (float)(_max - _min + 1);
-	pos = std::max(0.f, pos);
-	pos = std::min(1.f, pos);
+	auto get_default = [](float def, float min, float max)
+	{
+		float pos = (float)(def - min) / (float)(max - min + 1);
+		pos = std::max(0.f, pos);
+		pos = std::min(1.f, pos);
+		return pos;
+	};
+	
+	float minPos = get_default(_defaultMin, _min, _max);
+	float maxPos = get_default(_defaultMax, _min, _max);
 
 	{
 		Slider *s = new Slider();
 		s->resize(0.5);
 		s->setup("Range", min, max, _step);
-		s->setStart(pos, 0.);
+		s->setStart(minPos, 0.);
 		s->setCentre(0.5, 0.5);
 		_minSlider = s;
 		addObject(s);
@@ -64,7 +71,7 @@ void ChooseRange::setRange(float min, float max, float steps)
 		Slider *s = new Slider();
 		s->resize(0.5);
 		s->setup("Range", min, max, _step);
-		s->setStart(1., 0.);
+		s->setStart(maxPos, 0.);
 		s->setCentre(0.5, 0.5);
 		_maxSlider = s;
 		addObject(s);

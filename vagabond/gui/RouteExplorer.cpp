@@ -89,7 +89,7 @@ void RouteExplorer::setup()
 	{
 		std::string str = "Choose number of threads";
 		ChooseRange *cr = new ChooseRange(this, str, "choose_threads", this);
-		cr->setDefault(4);
+		cr->setDefault(4, 4);
 		cr->setRange(1, 32, 31);
 		setModal(cr);
 	}
