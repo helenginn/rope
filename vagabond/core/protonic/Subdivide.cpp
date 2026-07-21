@@ -196,7 +196,7 @@ void Subdivide::prune(OpSet<Probe *> &chunk)
 	std::erase_if(chunk,
 	              [](Probe *const &probe)
 	              {
-		             return probe->is_certain() || probe->is_covalent();
+		             return probe->is_certain();// || probe->is_covalent();
 		          });
 }
 
@@ -212,7 +212,7 @@ void Subdivide::one()
 
 
 void expand_to_bonded(OpSet<Probe *> &chunk, bool same_residue = false,
-                      const OpSet<Probe *> &reference = {})
+                      const OpSet<Probe *> &reference = {}, int max = INT_MAX)
 {
 	OpSet<Probe *> last = chunk;
 	OpSet<ResidueId> ids;
@@ -256,9 +256,14 @@ void expand_to_bonded(OpSet<Probe *> &chunk, bool same_residue = false,
 				{
 					add += other;
 				}
+				
 			}
 		}
 		
+		if (chunk.size() > max)
+		{
+			break;
+		}
 		if (add.size() == 0)
 		{
 			break;
@@ -337,13 +342,15 @@ void Subdivide::subdivide()
 	
 	if (search & Covalent)
 	{
+		std::cout << "Doing covalents" << std::endl;
 		OpSet<Probe *> covalents = covalentProbes(to_chunk);
 		OpSet<Probe *> remaining = covalents;
 		while (remaining.size())
 		{
+			std::cout << "Remaining: " << remaining.size() << std::endl;
 			OpSet<Probe *> chunk;
 			chunk += *remaining.begin();
-			expand_to_bonded(chunk, true, to_chunk);
+			expand_to_bonded(chunk, true, to_chunk, _max);
 			remaining -= chunk;
 			
 			chunk = to_chunk.common_to_both(chunk);
