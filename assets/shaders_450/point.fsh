@@ -9,6 +9,7 @@ uniform sampler2D pic_tex;
 
 layout (location = 0) out vec4 FragColor;
 layout (location = 1) out uint ValIndex;
+layout (location = 2) out vec4 BrightColor;
 
 void main()
 {
@@ -22,6 +23,7 @@ void main()
 	temp.a *= tex.a;
 	ValIndex = uint(vExtra.x);
 	FragColor = temp;
+	BrightColor = vec4(0.0);
 }
 
 

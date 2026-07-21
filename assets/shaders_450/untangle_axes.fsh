@@ -13,9 +13,12 @@ uniform bool show_dirt;
 
 layout (location = 0) out vec4 FragColor;
 layout (location = 1) out uint ValIndex;
+layout (location = 2) out vec4 BrightColor;
 
 void main()
 {
+	BrightColor = vec4(0.0);
+
 	vec4 result = texture(pic_tex, vTex);
 
 	if (result.a < 0.05)

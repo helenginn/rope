@@ -7,10 +7,15 @@ in vec2 vTex;
 
 uniform sampler2D pic_tex;
 
-out vec4 FragColor;
+layout (location = 0) out vec4 FragColor;
+layout (location = 1) out uint ValIndex;
+layout (location = 2) out vec4 BrightColor;
 
 void main()
 {
+	ValIndex = 0u;
+	BrightColor = vec4(0.0);
+
 	vec4 result = vColor;
 	vec3 remaining = vec3(1., 1., 1.) - result.xyz;
 	remaining *= 0.5;
