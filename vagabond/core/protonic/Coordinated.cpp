@@ -1465,7 +1465,7 @@ void Coordinated::clashLogic(OpSet<AtomConf> &clash_check)
 	ExistenceConnector *&left = _existence;
 	for (const AtomConf &hit : hits)
 	{
-		ExistenceConnector *right = atomMap()[hit]->existence();
+		ExistenceConnector *right = existMap()[hit];
 		
 		if (hit.ptr->elementSymbol() == "NA") // not a proper handling of metals
 		{
@@ -1487,8 +1487,8 @@ void Coordinated::clashLogic(OpSet<AtomConf> &clash_check)
 			continue;
 		}
 		
-		if (_atomConf.ptr->elementSymbol() == "H" &&
-		    hit.ptr->elementSymbol() == "H" && l > 1.5)
+		if ((_atomConf.ptr->elementSymbol() == "H" ||
+		     hit.ptr->elementSymbol() == "H") && l > 1.5)
 		{
 			continue;
 		}
@@ -1500,9 +1500,22 @@ void Coordinated::clashLogic(OpSet<AtomConf> &clash_check)
 		std::cout << "Organising a clash between " << *left << " and "
 		<< *right << " due to length " << l << std::endl;
 
-		add_constraint(new OnlyOne({left, right}, false));
-
 		std::ostringstream result;
+		try
+		{
+			add_constraint(new MaxOne(*left, *right));
+		}
+		catch (const std::runtime_error &err)
+		{
+			result << "Failed to add constraint between " << *left
+			<< " and " << *right << " as it led to immediate contradiction";
+			std::cout << result.str() << std::endl;
+
+			_network.addImpromptuCollapse(result.str());
+
+			continue;
+		}
+
 		result << "Clash between " << *left << " and "
 		<< *right << " prematurely collapsed alternate conformer of ";
 
@@ -1523,11 +1536,12 @@ void Coordinated::clashLogic(OpSet<AtomConf> &clash_check)
 		if (rChange)
 		{
 			result << "the latter";
+			if (hit.ptr->atomName() == "H!")
+			{
+				continue;
+			}
 		}
 		
-		std::cout << left_before << " -> " << left_after << std::endl;
-		std::cout << right_before << " -> " << right_after << std::endl;
-
 		if (lChange || rChange)
 		{
 			_network.addImpromptuCollapse(result.str());

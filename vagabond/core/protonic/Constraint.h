@@ -34,6 +34,7 @@
 #include "HydrogenBond.h"
 #include "SubExistence.h"
 #include "BreakMatrix.h"
+#include "MaxOne.h"
 #include "MutualExistence.h"
 
 /* simple constant class to impose a value (AND) on a connector */
