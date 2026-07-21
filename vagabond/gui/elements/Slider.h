@@ -25,9 +25,15 @@ public:
 		_vert = v;
 	}
 
-	void setup(std::string text, double min, double max, double step);
+	void setup(std::string text, double min, double max, double step, 
+	           bool show_num = true);
 
 	virtual void finishedDragging(std::string tag, double x, double y);
+
+	void setDragFunction(const std::function<void(double x, double y)> &drag)
+	{
+		_drag = drag;
+	}
 	
 	void setReturnTag(std::string tag);
 	
@@ -70,6 +76,8 @@ private:
 	
 	DraggableImage *_dot = nullptr;
 	DragResponder *_responder = nullptr;
+	
+	std::function<void(double x, double y)> _drag;
 };
 
 #endif

@@ -10,12 +10,13 @@
 
 Slider::Slider() : Image("assets/images/line.png")
 {
-	_display = NULL;
+	_display = nullptr;
 	rescale(1.0, 0.5);
 
 }
 
-void Slider::setup(std::string text, double min, double max, double step)
+void Slider::setup(std::string text, double min, double max, double step,
+                   bool show_num)
 {
 	_width = maximalWidth();
 	setCentre(0.f, 0.f);
@@ -39,7 +40,7 @@ void Slider::setup(std::string text, double min, double max, double step)
 	_step = step;
 	_numsteps = numsteps + 1;
 	
-	if (!_vert)
+	if (!_vert && show_num)
 	{
 		_display = new Text(text);
 		_display->resize(0.6);
@@ -125,6 +126,10 @@ void Slider::finishedDragging(std::string tag, double x, double y)
 	{
 		tag = (_dot && _dot->tag().length()) ? _dot->tag() : tag;
 		_responder->finishedDragging(tag, _val, 0);
+	}
+	else if (_drag)
+	{
+		_drag(_val, 0);
 	}
 }
 
