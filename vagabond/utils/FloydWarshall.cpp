@@ -30,11 +30,13 @@ FloydWarshall::FloydWarshall(Eigen::MatrixXf &sqMat, const CombineWeight &cw,
 void FloydWarshall::run() // symmetric matrix
 {
 	int size = _sqMat.rows();
-	int update = (size / 10.f);
+	int update = (size / 5.f);
 	if (update <= 10)
 	{
 		update = 10;
 	}
+	
+	PCA::Matrix copy = PCA::Matrix(_sqMat);
 
 	for (int k = 0; k < size; k++)
 	{
@@ -54,15 +56,19 @@ void FloydWarshall::run() // symmetric matrix
 				
 				if (_mat && _mutex)
 				{
-					std::unique_lock<std::mutex> lock(*_mutex);
-					(*_mat)[i][j] = _sqMat(i, j);
-					(*_mat)[j][i] = _sqMat(j, i);
+					copy[i][j] = _sqMat(i, j);
+					copy[j][i] = _sqMat(j, i);
 				}
 			}
 		}
 		
 		if (_update && (k % update == 0))
 		{
+			if (_mat && _mutex)
+			{
+				std::unique_lock<std::mutex> lock(*_mutex);
+				copyMatrix(*_mat, copy);
+			}
 			_update();
 		}
 	}
