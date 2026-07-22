@@ -1706,7 +1706,8 @@ void Coordinated::attachAdderConstraints()
 
 void Coordinated::prepareCoordinated(const Count::Values &n_charge,
                                  const Count::Values &n_coord_num,
-                                 const Count::Values &remaining_valency)
+                                 const Count::Values &remaining_valency,
+                                     bool show_charge)
 {
 	std::cout << "Preparing coordinated for " << _atomConf << std::endl;
 	CountConnector &expl_donors = add_zero_or_positive_connector();
@@ -1794,7 +1795,12 @@ void Coordinated::prepareCoordinated(const Count::Values &n_charge,
 	_expl_bonds->setDesc("Unbroken bonds of " + _atomConf.desc());
 	_twirling = &twirling_strong;
 
-	CountProbe &probe = _network.add_probe(new CountProbe(*_charge, atom()));
+	if (show_charge)
+	{
+		CountProbe &probe = 
+		_network.add_probe(new CountProbe(*_charge, *_existence, atomConf()), 
+		                   true);
+	}
 }
 
 ABPair Coordinated::bondForAtom(const AtomConf &asymmetric)

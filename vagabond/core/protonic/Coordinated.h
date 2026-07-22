@@ -60,7 +60,8 @@ public:
 
 	void prepareCoordinated( const Count::Values &n_charge,
 	                        const Count::Values &n_coord_num,
-	                        const Count::Values &remaining_valency);
+	                        const Count::Values &remaining_valency, 
+	                        bool show_charge = true);
 
 	static OpSet<AtomConf> expandGroupToSet(AtomGroup *group);
 	OpSet<AtomConf> findNeighbours(const OpSet<AtomConf> &group,
