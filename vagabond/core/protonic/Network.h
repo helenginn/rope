@@ -29,8 +29,7 @@
 #include "Probe.h"
 
 class CountProbe;
-class HideComplete;
-class Probe;
+class CovalentProbe;
 class Model;
 
 namespace hnet
@@ -131,6 +130,12 @@ public:
 		}
 		return nullptr;
 	}
+	
+	std::vector<CovalentProbe *> covalentsForAtom(const hnet::AtomConf &ac)
+	{
+		return _atom2Covs[ac];
+	}
+	
 	void addImpromptuCollapse(const std::string &message)
 	{
 		_impromptuCollapses.push_back(message);
@@ -192,6 +197,7 @@ private:
 	std::list<BondProbe *> _bondProbes;
 	std::list<CountProbe *> _countProbes;
 	std::list<CountProbe *> _chargeProbes;
+	std::list<CovalentProbe *> _covalentProbes;
 	std::map<std::string, Probe *> _desc2Probe;
 	
 	std::list<Clique> _cliques;
@@ -204,6 +210,7 @@ private:
 	std::map<hnet::AtomConf, hnet::ExistenceConnector *> _existMap;
 	std::map<hnet::AtomConf, AtomProbe *> _atom2Probe;
 	std::map<hnet::AtomConf, HydrogenProbe *> _h2Probe;
+	std::map<hnet::AtomConf, std::vector<CovalentProbe *>> _atom2Covs;
 
 	AtomGroup *_original = nullptr;
 	AtomGroup *_originalAndMates = nullptr;
