@@ -108,7 +108,7 @@ void HBondAnalysisControl::setup()
 			                        Subdivide::None);
 			Subdivide::Search s2 = (spread ? Subdivide::Breadth :
 			                        Subdivide::None);
-			Subdivide::Search s3 = (spread ? Subdivide::Covalent :
+			Subdivide::Search s3 = (cov ? Subdivide::Covalent :
 			                        Subdivide::None);
 
 			Subdivide::Search s = Subdivide::Search(s1 | s2 | s3);
@@ -118,6 +118,7 @@ void HBondAnalysisControl::setup()
 		ChooseRange *cr = new ChooseRange(this, "Set search size for "\
 		                                  "hydrogen bond subnetwork", "",
 		                                  this, true);
+		cr->setDefault(8, 12);
 		cr->setRange(2, 50, 48);
 		cr->setReturn(convert);
 		
