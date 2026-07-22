@@ -289,6 +289,10 @@ public:
 			str = " ";
 			break;
 
+			case hnet::Atom::Ion:
+			str = "M";
+			break;
+
 			case hnet::Atom::Contradiction:
 			str = "!";
 			break;
@@ -296,6 +300,15 @@ public:
 			default:
 			str = "?";
 			break;
+		}
+		
+		if (str == "M" && _atom)
+		{
+			str = _atom->elementSymbol();
+			if (str.length() > 1)
+			{
+				str[1] = std::tolower(str[1]);
+			}
 		}
 		
 		return str;
