@@ -34,6 +34,7 @@ class Model;
 
 namespace hnet
 {
+	typedef ExistenceConnector;
 	class Coordinated;
 	class Energy;
 }
@@ -215,8 +216,6 @@ private:
 	AtomGroup *_original = nullptr;
 	AtomGroup *_originalAndMates = nullptr;
 	AtomGroup *_hAtoms = nullptr;
-	AtomGroup *_extraHydrogens = nullptr;
-	std::vector<hnet::Coordinated *> _hCoords;
 	
 	UndoStack _undoStack{};
 };

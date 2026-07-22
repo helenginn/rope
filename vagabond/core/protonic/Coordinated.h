@@ -192,6 +192,8 @@ private:
 	                          hnet::ExistenceConnector &h,
 	                          hnet::ExistenceConnector &hExist);
 	ABPair makePlaceholderHydrogen(const glm::vec3 &pos);
+	void setupRealignment();
+
 	hnet::ExistenceConnector &
 	hydrogenCombo(hnet::ExistenceConnector &h,
 	              hnet::ExistenceConnector &hExist);
@@ -200,7 +202,7 @@ private:
 	bool acceptableHydrogenAngle(const glm::vec3 &hydrogen, int coordNum);
 	bool acceptablePlane(const glm::vec3 &child);
 	void comparePairs(OpSet<PairSet> &results,
-	                  const ABPair &first, const ABPair &second,
+	                  const AtomConf &first, const AtomConf &second,
 	                  glm::vec3 &centre, int coordNum);
 	OpSet<AcceptableGroup> developSeed(const PairSet &seed, const PairSet &all,
 	                                   const glm::vec3 &centre,
@@ -213,7 +215,7 @@ private:
 	void applyRestrictionsToUnbrokenBonds
 	(const std::map<int, std::vector<int>> &coord_state_broken_bond_counts);
 	
-	OpSet<ABPair> uninvolvedCoordinators();
+	OpSet<ACPair> uninvolvedCoordinators();
 	AtomConf findPlanarAtom(); // e.g. for ASP or ARG
 
 	hnet::AtomConnector *_connector{};
@@ -236,11 +238,11 @@ private:
 	PairSet _bonds;
 	
 	// the atom not involved in hydrogen bonding, but important for coordination
-	OpSet<PairSet> _uninvolved_groups{};
-	OpSet<ABPair> _uninvolved{};
+	OpSet<CovPairSet> _uninvolved_groups{};
+	OpSet<ACPair> _uninvolved{};
 	
-	int _coordNum = 0;
 	bool _failedCheck = false;
+	
 	bool _ionic = false;
 
 	AtomProbe *_probe{};

@@ -28,6 +28,7 @@
 #include "Hydrogenate.h"
 #include "Coordinated.h"
 #include "CovalentProbe.h"
+#include "And.h"
 
 using namespace hnet;
 
@@ -406,6 +407,7 @@ void Network::setupInactiveAtom(AtomConf atom)
 		add_constraint(new CovalentConstant(cov, status));
 		BondProbe &bp = add_probe(new CovalentProbe(*probe, *other, 
 		                                             covalent, cov));
+		bp.setEnergyWrapper(energy().energy_wrapper_for_covalent(bp));
 
 		if (atom.ptr->elementSymbol() == "H" || 
 		    connected.ptr->elementSymbol() == "H")
@@ -531,8 +533,8 @@ AtomGroup *hydrogenDonorsFrom(AtomGroup *const &other)
 {
 	return other->new_subset([](::Atom *const &atom)
 	{
-		return (atom->elementSymbol() == "N" || atom->elementSymbol() == "O"
-		        || atom->elementSymbol() == "S");
+		return (atom->elementSymbol() == "N" || atom->elementSymbol() == "O" ||
+		        atom->elementSymbol() == "S" || atom->elementSymbol() == "NA");
 	});
 }
 
@@ -563,7 +565,6 @@ void Network::establishAtom(::Atom *atom)
 		char conf = conformer.length() ? conformer[0] : '\0';
 		coord = new Coordinated(*this, atom, conf);
 		AtomConf tmp = AtomConf{atom, conf};
-		_atomMap[tmp] = coord;
 		total_occ += tmp.occupancy();
 		connections.push_back(coord->existence());
 		these_coords.push_back(coord);
@@ -618,8 +619,8 @@ void Network::establishAtom(::Atom *atom)
 		AtomProbe *probe = &(add_probe(new AtomProbe(*bulkAtom, *bulkExist,
 		                                             bulk)));
 		probe->setBulk(true);
-		std::cout << "CREATING BULK SOLVENT: " << probe << " " << 
-		probe->desc() << std::endl;
+		probe->setEnergyWrapper
+		(energy().energy_wrapper_for_liberated_bulk(*probe));
 		
 		for (Coordinated *coord : these_coords)
 		{

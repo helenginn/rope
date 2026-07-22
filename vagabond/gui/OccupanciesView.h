@@ -21,6 +21,7 @@
 
 #include <vagabond/gui/elements/IndexResponseView.h>
 #include <vagabond/utils/Eigen/Dense>
+#include <vagabond/core/protonic/Energy.h>
 #include <map>
 
 class Graph;
@@ -48,6 +49,7 @@ public:
 protected:
 	virtual void interactedWithNothing(bool left, bool hover = false);
 private:
+	void slider(std::string msg, const hnet::Energy::Source &src, float y);
 	void updateEstimates(std::map<ProbeTypePair, OccData> &ests);
 	std::map<ProbeTypePair, OccData> estimates();
 	Clique *_clique{};

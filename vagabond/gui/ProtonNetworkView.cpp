@@ -238,8 +238,8 @@ void ProtonNetworkView::interactedWithNothing(bool left, bool hover)
 		Menu *menu = new Menu(this);
 		menu->addOption("expand to clique", 
 		                [this]() { expandSelectionToNeighbours(); });
-		menu->addOption("expand by five jumps", 
-		                [this]() { expandSelectionToNeighbours(5); });
+		menu->addOption("expand by four jumps", 
+		                [this]() { expandSelectionToNeighbours(4); });
 		menu->addOption("complete residues", 
 		                [this]() { completeResidues(false); });
 		menu->addOption("complete to C-alpha", 
@@ -466,6 +466,17 @@ void ProtonNetworkView::makeMainMenu()
 	{
 		OpSet<Probe *> probes = selected_probes(_textProbes);
 		probes += selected_probes(_bondProbes);
+		if (probes.size() == 0)
+		{
+			OpSet<Probe *> all;
+			all += _network.bondProbes();
+			all += _network.atomProbes();
+			all += _network.hydrogenProbes();
+			selectProbes(all);
+			probes = selected_probes(_textProbes);
+			probes += selected_probes(_bondProbes);
+		}
+
 		Clique *all = new Clique(probes);
 		all->setName("active selection");
 		setActive(all);

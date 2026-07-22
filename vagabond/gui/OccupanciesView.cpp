@@ -23,12 +23,15 @@
 #include <vagabond/utils/FloydWarshall.h>
 #include <vagabond/gui/GraphView.h>
 #include <vagabond/gui/Graph.h>
+#include <vagabond/core/protonic/Energy.h>
 #include <vagabond/core/protonic/Clique.h>
 #include <vagabond/core/protonic/Network.h>
 #include <vagabond/core/protonic/Correlative.h>
 #include <vagabond/core/protonic/ProbeResult.h>
 #include <vagabond/core/protonic/CertainStates.h>
 #include <vagabond/gui/elements/TextButton.h>
+#include <vagabond/gui/elements/TickBoxes.h>
+#include <vagabond/gui/elements/Slider.h>
 
 OccupanciesView::OccupanciesView(Scene *prev, Clique *clique, Network &network)
 : Scene(prev), IndexResponseView(prev), _clique(clique), _network(network)
@@ -43,7 +46,7 @@ void OccupanciesView::setup()
 
 	TextButton *tb = new TextButton("Check occupancies");
 	tb->setReturnJob([this]() { occupancies(); });
-	tb->setCentre(0.50, 0.84);
+	tb->setCentre(0.50, 0.92);
 	addObject(tb);
 
 	std::map<ProbeTypePair, OccData> pass = estimates();
@@ -84,8 +87,13 @@ void OccupanciesView::setup()
 
 	PCA::Matrix tmp(_overall);
 	MatrixPlot *mp = new MatrixPlot(tmp);
-	mp->setCentre(0.25, 0.5);
+	mp->resize(0.5);
+	mp->setCentre(0.125, 0.25);
 	addObject(mp);
+	Text *caption = new Text("Atom-wise correlation");
+	caption->resize(0.5);
+	caption->setCentre(0.125, 0.39);
+	addObject(caption);
 
 	auto lookup = _correlative->matrixLookup();
 	auto display_lookup = [this, lookup](float x, float y)
@@ -95,14 +103,72 @@ void OccupanciesView::setup()
 	};
 	mp->setHoverJob(display_lookup);
 	
+	TickBoxes *tix = new TickBoxes(this, this);
+
+	auto toggle_type = [this, tix]
+	(std::string tag, hnet::Energy::Source source)
+	{
+		return [this, tix, tag, source]()
+		{
+			bool ticked = tix->isTicked(tag);
+			_network.energy().alter_source(source, ticked);
+			_estimates = {};
+		};
+	};
+
+	tix->addOption("Torsion energies", 
+	              toggle_type("Torsion energies", 
+	              hnet::Energy::Torsion), true);
+	tix->addOption("Hydrogen bond acceptance", 
+	              toggle_type("Hydrogen bond acceptance", 
+	              hnet::Energy::Acceptor), true);
+	tix->addOption("Hydrogen bond distance", 
+	              toggle_type("Hydrogen bond distance", 
+	              hnet::Energy::Distance), true);
+	tix->addOption("Hydrogen bond angles", 
+	              toggle_type("Hydrogen bond angles", 
+	              hnet::Energy::Angle), true);
+	tix->addOption("Liberation into bulk solvent", 
+	              toggle_type("Liberation into bulk solvent", 
+	              hnet::Energy::Bulk), true);
+	tix->setVertical(true);
+	tix->setOneOnly(false);
+	tix->arrange(0.15, 0.52, 0.32, 0.78);
+	addObject(tix);
+	
+	slider("", hnet::Energy::Torsion, 0.52);
+	slider("", hnet::Energy::Acceptor, 0.57);
+	slider("", hnet::Energy::Distance, 0.62);
+	slider("", hnet::Energy::Angle, 0.67);
+	slider("", hnet::Energy::Bulk, 0.72);
+	
 	IndexResponseView::setup();
+}
+
+void OccupanciesView::slider(std::string msg, const hnet::Energy::Source &src,
+                             float y)
+{
+	auto drag_me = [src, this](double x, double y)
+	{
+		_network.energy().alter_amplification(src, x);
+		_estimates = {};
+	};
+
+	Slider *s = new Slider();
+	s->setDragFunction(drag_me);
+	s->resize(0.15);
+	s->setup("", -2, +2, 0.1, false);
+	s->setStart(0.5, 0.);
+	s->setCentre(0.1, y);
+	addObject(s);
+
 }
 
 std::map<ProbeTypePair, OccupanciesView::OccData> OccupanciesView::estimates()
 {
-	struct OccupancyEstimate
+	struct OccupancyEstimate // one per clique
 	{
-		std::map<int, float> results{};
+		std::map<int, float> results{}; // one per state
 		float sum = 0;
 		size_t samples = 0;
 	};
@@ -118,7 +184,7 @@ std::map<ProbeTypePair, OccupanciesView::OccData> OccupanciesView::estimates()
 
 		for (const ProbeTypePair &ptp : states.ptps())
 		{
-			float sum = 0;
+			float sum = 0; // sum of all energy contributions, populated next
 			std::map<int, float> occs = states.proportions(ptp, sum, ave);
 			occupancies[ptp].push_back({occs, sum, states.state_count()});
 		}
@@ -148,7 +214,7 @@ std::map<ProbeTypePair, OccupanciesView::OccData> OccupanciesView::estimates()
 		for (const int &state : {1, 2})
 		{
 			float sum = 0; float weights = 0;
-			for (const OccupancyEstimate &est : estimates)
+			for (const OccupancyEstimate &est : estimates) // one per state
 			{
 				if (est.results.count(state) == 0)
 				{
@@ -201,11 +267,6 @@ std::map<ProbeTypePair, OccupanciesView::OccData> OccupanciesView::estimates()
 			continue;
 		}
 		float observed = ptp.first->atomConf().occupancy();
-		
-		if (fabs(calculated - 0.5) < 1e-6)
-		{
-			continue;
-		}
 		
 		ret[ptp] = {calculated, observed, grand_sum, sample_count};
 	}

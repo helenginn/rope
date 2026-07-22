@@ -43,6 +43,7 @@ struct ProbeTypePair : public std::pair<Probe *, hnet::Types>
 		else if (this->second == other.second)
 		{
 			return this->first->desc() < other.first->desc();
+//			return this->first < other.first;
 		}
 		else
 		{

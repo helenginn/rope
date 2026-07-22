@@ -31,7 +31,9 @@ namespace hnet
 {
 
 typedef std::pair<AtomConf, hnet::BondConnector *> ABPair;
+typedef std::pair<AtomConf, hnet::CovalentConnector *> ACPair;
 typedef OpSet<ABPair> PairSet;
+typedef OpSet<ACPair> CovPairSet;
 
 struct AcceptableGroup
 {

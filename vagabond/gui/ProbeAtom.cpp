@@ -119,22 +119,28 @@ void ProbeAtom::hoverOverAtom()
 void ProbeAtom::offerHeavyAtomMenu()
 {
 	AtomProbe *aProbe = static_cast<AtomProbe *>(_probe);
-	if (aProbe->existence().is_certain())
-	{
-		return;
-	}
 
 	std::vector<Existence::Values> options = aProbe->existence().values();
 
 	Menu *m = new Menu(_view, this);
 	
-	for (const Existence::Values &option : options)
+	if (!aProbe->existence().is_certain())
 	{
-		std::ostringstream ss;
-		ss << option;
-		m->addOption(ss.str(), [this, option]
-		             () { declareAtomExistence(option); });
+		for (const Existence::Values &option : options)
+		{
+			std::ostringstream ss;
+			ss << option;
+			m->addOption(ss.str(), [this, option]
+			             () { declareAtomExistence(option); });
+		}
 	}
+	
+	auto realign_atom = [aProbe]()
+	{
+		aProbe->realign();
+	};
+
+	m->addOption("realign", realign_atom);
 
 	_view->setMenu(m);
 }
