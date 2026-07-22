@@ -61,7 +61,7 @@ void OccupanciesView::setup()
 	OpSet<ProbeTypePair> all = 
 	Correlative::probeTypePairs(_clique->subdivisions(), all_ave);
 
-	_correlative = new Correlative(active, all_ave, false);
+	_correlative = new Correlative(active, all_ave, false, true);
 
 	auto process_clique = [this](const Clique &clique)
 	{

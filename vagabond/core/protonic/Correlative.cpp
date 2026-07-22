@@ -49,8 +49,8 @@ OpSet<ProbeTypePair> Correlative::probeTypePairs
 }
 
 Correlative::Correlative(const OpSet<ProbeTypePair> &all, float ave_score,
-                         bool relative) 
-: _probes(all), _ave_score(ave_score), _relative(relative)
+                         bool relative, bool loggy) 
+: _probes(all), _ave_score(ave_score), _relative(relative), _loggy(loggy)
 {
 	size_t accumulative = 0;
 	for (const ProbeTypePair &ptp : all)
@@ -116,7 +116,7 @@ void Correlative::addStates(const CertainStates &states)
 			ProbeCorrelation c = states.correlate(left, right, _ave_score,
 			                                      _relative);
 			
-			if (!_relative)
+			if (_loggy)
 			{
 				c.mat *= (float)states.state_count();
 				auto copy_c = c.mat;
@@ -186,7 +186,7 @@ Eigen::MatrixXf Correlative::acquireMatrix()
 
 	for (int i = 0; i < ret.rows(); i++)
 	{
-		if (_relative)
+		if (!_loggy)
 		{
 			for (int j = 0; j < ret.cols(); j++)
 			{
@@ -201,7 +201,7 @@ Eigen::MatrixXf Correlative::acquireMatrix()
 			}
 		}
 		
-		if (!_relative)
+		if (_loggy)
 		{
 			for (int j = 0; j < ret.cols(); j++)
 			{
@@ -215,7 +215,7 @@ Eigen::MatrixXf Correlative::acquireMatrix()
 		}
 	}
 
-	for (int i = 0; i < ret.rows() && !_relative; i++)
+	for (int i = 0; i < ret.rows() && _loggy; i++)
 	{
 		ret.row(i) /= ret(i, i);
 

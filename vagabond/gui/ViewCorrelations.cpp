@@ -91,7 +91,7 @@ void ViewCorrelations::viewAll()
 	OpSet<ProbeTypePair> all = 
 	Correlative::probeTypePairs(_clique->subdivisions(), all_ave);
 
-	_correlative = new Correlative(all, all_ave, true);
+	_correlative = new Correlative(all, all_ave, false);
 	Correlative &correl = *_correlative;
 
 	auto process_clique = [&correl](const Clique &clique)

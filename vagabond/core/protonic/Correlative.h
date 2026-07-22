@@ -31,7 +31,7 @@ class Correlative
 {
 public:
 	Correlative(const OpSet<ProbeTypePair> &all, float ave_score,
-	            bool relative = true);
+	            bool relative = true, bool loggy = false);
 
 	static OpSet<ProbeTypePair> probeTypePairs(const std::list<Clique> &cliques,
 	                                           float &all_ave);
@@ -72,6 +72,7 @@ private:
 	size_t _size = 0;
 	float _ave_score = 0;
 	bool _relative = true;
+	bool _loggy = false;
 };
 
 #endif
