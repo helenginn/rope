@@ -136,20 +136,9 @@ ProbeCorrelation CertainStates::correlate(const ProbeTypePair &left,
 	// to partial energy knowledge.
 	float rt = 2.57;
 	float total_probs = 0;
-	
-	int count = 0;
-	for (const ProbeTypePair &ptp : ptps())
-	{
-		std::cout << count << ": " << ptp << std::endl;
-		count++;
-	}
-
-	std::cout << "We have " << _data.cols() << " columns and ";
-	std::cout << "we have " << _data.rows() << " rows" << std::endl;
 
 	for (int i = 0; i < state_count(); i++)
 	{
-		std::cout << _data.col(i).transpose() << std::endl;
 		int mv = value(i, m);
 		int nv = value(i, n);
 		float sc = score(i);
