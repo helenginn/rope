@@ -164,6 +164,7 @@ private:
 	bool setupSingleAlcohol(hnet::AtomConf atom);
 	bool setupLysineAmine(hnet::AtomConf atom);
 	bool setupWater(hnet::AtomConf atom);
+	bool setupSodium(hnet::AtomConf atom);
 	bool setupArginine(hnet::AtomConf atom);
 	bool setupAsnGlnNitrogen(hnet::AtomConf atom);
 	bool setupCarboxylOxygen(hnet::AtomConf atom);

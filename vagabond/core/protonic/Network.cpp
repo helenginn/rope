@@ -273,6 +273,14 @@ bool Network::setupWater(AtomConf atom)
 	return true;
 }
 
+bool Network::setupSodium(AtomConf atom)
+{
+	if (atom.ptr->elementSymbol() != "NA") { return false; }
+	
+	_atomMap[atom]->prepareCoordinated(Count::Zero, Count::Four, Count::Zero);
+	return true;
+}
+
 bool Network::setupArginine(AtomConf atom)
 {
 	if (atom.ptr->code() != "ARG" || 
@@ -472,6 +480,7 @@ void Network::setupAtom(AtomConf atom)
 		found |= setupTryptophan(atom);
 		found |= setupMethionine(atom);
 		found |= setupWater(atom);
+		found |= setupSodium(atom);
 	}
 	
 	if (!found) // this atom is inactive.
