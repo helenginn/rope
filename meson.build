@@ -59,12 +59,14 @@ if is_native  # Native builds
 
   executable('rope.gui', 'vagabond/gui/main.cpp',
     link_with: [gui, core],
+    cpp_args: [compile_args],
     link_args: [links],
     dependencies: gui_deps,
     install: true)
 
   executable('rope', 'vagabond/cmd/main.cpp',
     link_with: [core, cli],
+    cpp_args: [compile_args],
     link_args: [links],
     dependencies: cli_deps,
     install: true)
@@ -74,6 +76,7 @@ if is_native  # Native builds
      'vagabond/gui/tests/CheckList.cpp',
      'vagabond/gui/tests/CheckList.h'],
     link_with: [gui, core],
+    cpp_args: [compile_args],
     link_args: [links],
     dependencies: gui_deps,
     install: true)
@@ -84,7 +87,7 @@ else  # emscripten
   compile_args += ['-DNDEBUG', '-DBOOST_UBLAS_NDEBUG']
   executable('index.html', extrafiles, start_cpp,
     link_with: [core, gui],
-    cpp_args: ['-I/usr/local/include', compile_args],
+    cpp_args: [compile_args],
     link_args: [links],
     dependencies: header_deps,
     install: true)

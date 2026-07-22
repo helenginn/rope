@@ -147,7 +147,7 @@ Window::~Window()
 
 void Window::updateDimensions(int width, int height)
 {
-#ifndef __EMSCRIPTEN
+#ifndef __EMSCRIPTEN__
 	int w, h;
 	SDL_GL_GetDrawableSize(_window, &w, &h);
 	glViewport(0, 0, w, h);
@@ -155,7 +155,12 @@ void Window::updateDimensions(int width, int height)
 	_height = h;
 	int logical_w, logical_h;
 	SDL_GetWindowSize(_window, &logical_w, &logical_h);
-	_ratio = (long int)lrint(_width / logical_w);
+
+  _rect.w = logical_w;
+  _rect.h = logical_h;
+
+  _ratio = static_cast<double>(_width) / logical_w;
+
 #else
 	glViewport(0, 0, width * _ratio, height * _ratio);
 	_rect.w = width;
