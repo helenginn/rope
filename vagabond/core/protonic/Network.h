@@ -42,7 +42,6 @@ namespace hnet
 class Network
 {
 public:
-	friend HideComplete;
 	Network();
 	~Network();
 	Network(AtomGroup *group, const std::string &spg_name,
