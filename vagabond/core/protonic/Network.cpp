@@ -27,6 +27,7 @@
 #include "CountProbe.h"
 #include "Hydrogenate.h"
 #include "Coordinated.h"
+#include "CovalentProbe.h"
 
 using namespace hnet;
 
@@ -353,17 +354,7 @@ void Network::setupInactiveAtom(AtomConf atom)
 {
 	AtomProbe *probe = _atom2Probe[atom];
 	
-	auto either_are_named_couple = []
-	(const std::string &a, const std::string &b)
-	{
-		return [a, b](AtomConf left, AtomConf right) -> bool
-		{
-			return (left.ptr->atomName() == a && right.ptr->atomName() == b) ||
-			        (right.ptr->atomName() == a && left.ptr->atomName() == b);
-		};
-	};
-	
-	auto make_certain_covalent_bond = [this, &either_are_named_couple]
+	auto make_certain_covalent_bond = [this]
 	(AtomConf atom, AtomConf connected)
 	{
 		AtomProbe *probe = _atom2Probe[atom];
@@ -405,18 +396,24 @@ void Network::setupInactiveAtom(AtomConf atom)
 			dbond |= either_are_named_couple("CG", "OD1")(connected, atom);
 			dbond |= either_are_named_couple("CD", "OE1")(connected, atom);
 		}
+		*/
 
-		BondProbe &cov = add_probe(new CovalentProbe(*probe, *other, 
-		                                             covalent, dbond));
+		Covalent::Values status = covalent_status_for_bond(connected, atom);
+		CovalentConnector &cov = add(new CovalentConnector());
+		cov.setDesc("covalent bond between " + probe->desc() + " and " +
+		            other->desc());
+		add_constraint(new CovalentConstant(cov, status));
+		BondProbe &bp = add_probe(new CovalentProbe(*probe, *other, 
+		                                             covalent, cov));
 
 		if (atom.ptr->elementSymbol() == "H" || 
 		    connected.ptr->elementSymbol() == "H")
 		{
-			cov.setHide(-1, false);
+			bp.setHide(-1, false);
 		}
 	};
 
-	auto make_maybe_covalent_bond = [this, &either_are_named_couple]
+	auto make_maybe_covalent_bond = [this]
 	(AtomConf atom, AtomConf connected)
 	{
 		AtomProbe *probe = _atom2Probe[atom];
@@ -438,9 +435,13 @@ void Network::setupInactiveAtom(AtomConf atom)
 
 		std::cout << "Making maybe-bond between " << atom << " and "
 		<< connected << std::endl;
-		bool double_bond = false;
-		double_bond |= either_are_named_couple("C", "O")(connected, atom);
-		add_probe(new CovalentProbe(*probe, *other, covalent, double_bond));
+
+		Covalent::Values status = covalent_status_for_bond(connected, atom);
+		CovalentConnector &cov = add(new CovalentConnector());
+		add_constraint(new CovalentConstant(cov, status));
+
+		add_probe(new CovalentProbe(*probe, *other, covalent, cov));
+		return &covalent;
 	};
 
 	for (int i = 0; i < atom.ptr->bondLengthCount(); i++)
@@ -802,6 +803,13 @@ BondProbe &Network::add_probe(BondProbe *const &probe)
 {
 	_bondProbes.push_back(probe);
 	_desc2Probe[probe->desc()] = probe;
+	
+	if (probe->is_covalent())
+	{
+		CovalentProbe *cov = static_cast<CovalentProbe *>(probe);
+		_atom2Covs[cov->left().atomConf()].push_back(cov);
+		_atom2Covs[cov->right().atomConf()].push_back(cov);
+	}
 	return *probe;
 }
 

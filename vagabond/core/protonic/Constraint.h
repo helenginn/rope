@@ -72,6 +72,7 @@ typedef Constant<AtomConnector, Atom::Values> AtomConstant;
 typedef Constant<BondConnector, Bond::Values> BondConstant;
 typedef Constant<CountConnector, Count::Values> CountConstant;
 typedef Constant<ExistenceConnector, Existence::Values> ExistenceConstant;
+typedef Constant<CovalentConnector, Covalent::Values> CovalentConstant;
 
 };
 

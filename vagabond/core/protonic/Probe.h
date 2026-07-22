@@ -329,7 +329,7 @@ public:
 			return -0.0f;
 		}
 	}
-
+	
 	virtual bool is_certain()
 	{
 		return _obj.is_certain() && _exist.is_certain();
@@ -612,57 +612,6 @@ public:
 	Probe &_right;
 	hnet::ExistenceConnector &_exist;
 	float _distance{};
-};
-
-class CovalentProbe : public BondProbe
-{
-public:
-	CovalentProbe(Probe &left, Probe &right, hnet::ExistenceConnector &exist, 
-	              bool doubleBond) 
-	: BondProbe(_silent, left, right, exist)
-	{
-		_doubleBond = doubleBond;
-	}
-
-	virtual const glm::vec3 &position() const
-	{
-		return _left.position();
-	}
-	
-	const glm::vec3 &end() const
-	{
-		return _right.position();
-	}
-
-	virtual bool is_covalent()
-	{
-		return true;
-	}
-
-	virtual bool is_text()
-	{
-		return false;
-	}
-
-	virtual std::string desc()
-	{
-		return "covalent bond between " + _left.desc() + " and " + _right.desc();
-	}
-	
-	virtual std::string display()
-	{
-		if (_doubleBond)
-		{
-			return "double_bond";
-		}
-		else
-		{
-			return "single_bond";
-		}
-	}
-
-	bool _doubleBond{false};
-	hnet::BondConnector _silent{};
 };
 
 
