@@ -86,7 +86,7 @@ public:
 	
 	AtomProbe &add_probe(AtomProbe *const &probe);
 	BondProbe &add_probe(BondProbe *const &probe);
-	CountProbe &add_probe(CountProbe *const &probe);
+	CountProbe &add_probe(CountProbe *const &probe, bool charge = false);
 	HydrogenProbe &add_probe(HydrogenProbe *const &probe, const char &conf);
 	
 	void addNewHydrogen(hnet::AtomConf hydrogen, 
@@ -173,9 +173,9 @@ private:
 	bool setupMethionine(hnet::AtomConf atom);
 
 
-	void shareCharges(hnet::AtomConf left, hnet::AtomConf right,
-	                 const hnet::Count::Values &allowable);
-	void shareStrong(hnet::AtomConf left, hnet::AtomConf right,
+	hnet::CountConnector &shareCharges(hnet::AtomConf left, hnet::AtomConf right,
+	                             const hnet::Count::Values &allowable);
+	void shareDonors(hnet::AtomConf left, hnet::AtomConf right,
 	                 const hnet::Count::Values &allowable);
 
 	void setupAtom(hnet::AtomConf atom);

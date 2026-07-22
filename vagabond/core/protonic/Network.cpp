@@ -24,13 +24,15 @@
 #include "BondAdder.h"
 #include "BondAngle.h"
 #include "CountAdder.h"
+#include "CountProbe.h"
 #include "Hydrogenate.h"
 #include "Coordinated.h"
 
 using namespace hnet;
 
 template <typename Obtain>
-void shareProperty(Network *me, AtomConf left, AtomConf right, 
+CountConnector &
+shareProperty(Network *me, AtomConf left, AtomConf right, 
                    const Obtain &obtain, const Count::Values &allowable)
 {
 	CountConnector &sum = me->add(new CountConnector());
@@ -46,9 +48,10 @@ void shareProperty(Network *me, AtomConf left, AtomConf right,
 	{
 		me->add_constraint(new CountAdder(*lConnect, *rConnect, sum));
 	}
+	return sum;
 }
 
-void Network::shareStrong(AtomConf left, AtomConf right,
+void Network::shareDonors(AtomConf left, AtomConf right,
                            const Count::Values &allowable)
 {
 	auto get_strong = [this](AtomConf atom)
@@ -59,7 +62,7 @@ void Network::shareStrong(AtomConf left, AtomConf right,
 	shareProperty(this, left, right, get_strong, allowable);
 }
 
-void Network::shareCharges(AtomConf left, AtomConf right,
+CountConnector &Network::shareCharges(AtomConf left, AtomConf right,
                            const Count::Values &allowable)
 {
 	auto get_charges = [this](AtomConf atom)
@@ -67,7 +70,10 @@ void Network::shareCharges(AtomConf left, AtomConf right,
 		return _atomMap[atom]->charge();
 	};
 
+	CountConnector &shared = 
 	shareProperty(this, left, right, get_charges, allowable);
+	
+	return shared;
 }
 
 AtomConf find_partner(AtomConf atom, const std::string &search)
@@ -182,13 +188,17 @@ bool Network::setupHistidine(AtomConf atom)
 	const Count::Values valency = Count::Two;
 
 	const Count::Values charge_sum = Count::OneOrZero;
-	const Count::Values strong_sum = Count::Values(Count::One | Count::Two);
+	const Count::Values donor_sum = Count::Values(Count::One | Count::Two);
 
-	_atomMap[atom]->prepareCoordinated(charge, Count::Three, valency);
-	_atomMap[partner]->prepareCoordinated(charge, Count::Three, valency);
+	_atomMap[atom]->prepareCoordinated(charge, Count::Three, valency, false);
+	_atomMap[partner]->prepareCoordinated(charge, Count::Three, valency, false);
 	
-	shareCharges(atom, partner, charge_sum);
-	shareStrong(atom, partner, strong_sum);
+	hnet::CountConnector &shared = shareCharges(atom, partner, charge_sum);
+//	shareDonors(atom, partner, donor_sum);
+
+	CountProbe &probe = 
+	add_probe(new CountProbe(shared, *atomMap()[atom]->existence(), 
+	                         {atom, partner}, 0), true);
 	
 	return true;
 }
@@ -223,15 +233,22 @@ bool Network::setupCarboxylOxygen(AtomConf atom)
 	}
 
 	Count::Values charge = Count::mOneOrZero;
-	Count::Values valency = Count::Values(Count::One | Count::Two);
-	Count::Values strong_sum = Count::mOneOrZero;
+	Count::Values valency = Count::Three;
+	Count::Values donor_sum = Count::OneOrZero;
 	Count::Values charge_sum = Count::mOneOrZero;
 
-	_atomMap[atom]->prepareCoordinated(charge, Count::Three, valency);
-	_atomMap[partner]->prepareCoordinated(charge, Count::Three, valency);
+	_atomMap[atom]->prepareCoordinated(charge, Count::Three, 
+	                                   Count::Three, false);
+	_atomMap[partner]->prepareCoordinated(charge, Count::Three, 
+	                                      Count::Three, false);
 	
-	shareCharges(atom, partner, charge_sum);
-	shareStrong(atom, partner, strong_sum);
+	return true;
+	hnet::CountConnector &shared = shareCharges(atom, partner, charge_sum);
+//	shareDonors(atom, partner, donor_sum);
+
+	CountProbe &probe = 
+	add_probe(new CountProbe(shared, *atomMap()[atom]->existence(), 
+	                         {atom, partner}, 2), true);
 	
 	return true;
 }
@@ -752,7 +769,7 @@ Network::Network()
 
 }
 
-CountProbe &Network::add_probe(CountProbe *const &probe)
+CountProbe &Network::add_probe(CountProbe *const &probe, bool charge)
 {
 	_countProbes.push_back(probe);
 	_desc2Probe[probe->desc()] = probe;
