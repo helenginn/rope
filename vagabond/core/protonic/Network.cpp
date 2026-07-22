@@ -560,11 +560,11 @@ void Network::establishAtom(::Atom *atom)
 	
 	// only one is allowed to exist at the same time
 	
-	if (connections.size() > 1 && total_occ > 0.995)
+	if (connections.size() > 1 && total_occ > 0.975)
 	{
 		add_constraint(new OnlyOne(connections));
 	}
-	else if (coord && total_occ > 0.995)
+	else if (coord && total_occ > 0.975)
 	{
 		// existence of a heavy atom can be constrained to Present if it only
 		// has one conformer.
