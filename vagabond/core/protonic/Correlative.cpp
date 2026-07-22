@@ -70,7 +70,7 @@ Correlative::Correlative(const OpSet<ProbeTypePair> &all, float ave_score,
 	_matrixLookup = [lookup, accumulative](float x, float y) -> std::string
 	{
 		int xi = x * accumulative;
-		int yi = -y * accumulative;
+		int yi = accumulative * (y);
 
 		if (lookup.count(xi) == 0)
 		{
@@ -113,11 +113,6 @@ void Correlative::addStates(const CertainStates &states)
 			}
 			int y = _insertions[right].first;
 			int n = _insertions[right].second;
-			float ave = states.average_score();
-			if (!_relative)
-			{
-				ave = _ave_score;
-			}
 			ProbeCorrelation c = states.correlate(left, right, _ave_score,
 			                                      _relative);
 			
@@ -151,7 +146,7 @@ void Correlative::addStates(const CertainStates &states)
 			else
 			{
 				float w = states.state_count();
-				Eigen::MatrixXf cc = c.mat * w;
+				Eigen::MatrixXf cc = c.mat;// * w;
 				Eigen::MatrixXf csq = c.mat;
 
 				for (int j = 0; j < cc.cols(); j++)
@@ -159,7 +154,7 @@ void Correlative::addStates(const CertainStates &states)
 					for (int i = 0; i < cc.rows(); i++)
 					{
 						cc(i, j) = fabs(cc(i, j));
-						csq(i, j) = w;
+						csq(i, j) = 1;
 					}
 				}
 
@@ -182,7 +177,7 @@ Eigen::MatrixXf Correlative::acquireMatrix()
 	{
 		for (int j = 0; j < ret.cols(); j++)
 		{
-			if (ret(i, j) != ret(i, j))
+			if (ret(i, j) != ret(i, j) || !isfinite(ret(i, j)))
 			{
 				ret(i, j) = 0;
 			}
@@ -198,6 +193,10 @@ Eigen::MatrixXf Correlative::acquireMatrix()
 				if (_written(i, j) > 1e-6)
 				{
 					ret(i, j) /= _written(i, j);
+					if (ret(i, j) > 1)
+					{
+						std::cout << "still over one: " << _written(i, j) << std::endl;
+					}
 				}
 			}
 		}
