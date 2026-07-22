@@ -694,19 +694,19 @@ Network::Network(AtomGroup *group, const std::string &spg_name,
 	std::cout << "==      FIND NEIGHBOURS       ==" << std::endl;
 	std::cout << "================================" << std::endl;
 
-	// record the hydrogen-bonding neighbours for each atom
-	// generate connectors for each acquired bond
-	donors->do_op(on_each_conf([this, symDonors](::Atom *a, char conf)
-	{
-		_atomMap[{a, conf}]->attachToNeighbours(symDonors);
-	}));
-
 	// here is when the coordination is prepared
 	for (auto it = atomMap().begin(); it != atomMap().end(); it++)
 	{
 		const AtomConf &ac = it->first;
 		setupAtom(ac);
 	}
+
+	// record the hydrogen-bonding neighbours for each atom
+	// generate connectors for each acquired bond
+	donors->do_op(on_each_conf([this, symDonors](::Atom *a, char conf)
+	{
+		_atomMap[{a, conf}]->attachToNeighbours(symDonors);
+	}));
 
 	// find sets of bonds which can/cannot participate in bonding together
 	donors->do_op(on_each_conf([this](::Atom *a, char conf)
@@ -717,6 +717,7 @@ Network::Network(AtomGroup *group, const std::string &spg_name,
 	// add clash logic
 	OpSet<AtomConf> searchGroup = 
 	Coordinated::expandGroupToSet(_originalAndMates);
+	searchGroup += Coordinated::expandGroupToSet(_hAtoms);
 	
 	std::cout << "================================" << std::endl;
 	std::cout << "==        CLASH LOGIC         ==" << std::endl;
@@ -728,6 +729,10 @@ Network::Network(AtomGroup *group, const std::string &spg_name,
 		_atomMap[{a, conf}]->clashLogic(searchGroup);
 	}));
 	
+	std::cout << "================================" << std::endl;
+	std::cout << "==  FINALISING BOND COUNTERS  ==" << std::endl;
+	std::cout << "================================" << std::endl;
+	
 	// set the previously determined adder constraints linking actual
 	// bonding patterns to the coordinated atom.
 	auto job = [this](::Atom *a, char conf)
@@ -735,6 +740,10 @@ Network::Network(AtomGroup *group, const std::string &spg_name,
 		_atomMap[{a, conf}]->attachAdderConstraints();
 	};
 	
+	std::cout << "================================" << std::endl;
+	std::cout << "==     FINDING SYMMETRY       ==" << std::endl;
+	std::cout << "================================" << std::endl;
+
 	// make sure bonds in the next crystal contact are the same as this asu
 	symDonors->do_op(on_each_conf([this](::Atom *a, char conf)
 	{
