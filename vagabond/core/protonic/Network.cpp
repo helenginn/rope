@@ -772,6 +772,10 @@ Network::Network()
 CountProbe &Network::add_probe(CountProbe *const &probe, bool charge)
 {
 	_countProbes.push_back(probe);
+	if (charge)
+	{
+		_chargeProbes.push_back(probe);
+	}
 	_desc2Probe[probe->desc()] = probe;
 	return *probe;
 }

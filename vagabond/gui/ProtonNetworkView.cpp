@@ -18,11 +18,12 @@
 
 #include "ProbeAtom.h"
 #include "ProbeBond.h"
+#include "ProbeCharge.h"
 #include "FocusResidue.h"
 #include "ProtonNetworkView.h"
 #include <vagabond/core/protonic/ExhaustiveSearch.h>
 #include <vagabond/core/protonic/CliqueFinder.h>
-#include <vagabond/core/protonic/Probe.h>
+#include <vagabond/core/protonic/CountProbe.h>
 #include <vagabond/core/protonic/Subdivide.h>
 #include <vagabond/core/PositionShifter.h>
 #include <vagabond/core/AtomGroup.h>
@@ -116,6 +117,15 @@ void ProtonNetworkView::findAtomProbes()
 		_allProbes.insert(probe);
 		probe->setResponder(this);
 		addIndexResponder(bond);
+	}
+
+	for (CountProbe *const &probe : _network.chargeProbes())
+	{
+		ProbeCharge *charge = new ProbeCharge(this, probe);
+		addObject((FloatingImage *)charge);
+		_allProbes.insert(probe);
+		probe->setResponder(this);
+		addIndexResponder(charge);
 	}
 
 	shiftToCentre(_network.centre(), 50);

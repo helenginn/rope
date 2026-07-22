@@ -78,6 +78,11 @@ public:
 		return _atomProbes;
 	}
 	
+	const std::list<CountProbe *> &chargeProbes() const
+	{
+		return _chargeProbes;
+	}
+	
 	UndoStack &undoStack()
 	{
 		return _undoStack;
@@ -187,6 +192,7 @@ private:
 	std::list<HydrogenProbe *> _hydrogenProbes;
 	std::list<BondProbe *> _bondProbes;
 	std::list<CountProbe *> _countProbes;
+	std::list<CountProbe *> _chargeProbes;
 	std::map<std::string, Probe *> _desc2Probe;
 	
 	std::list<Clique> _cliques;
