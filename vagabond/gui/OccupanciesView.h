@@ -25,13 +25,14 @@
 
 class Graph;
 class Clique;
+class Network;
 class Correlative;
 struct ProbeTypePair;
 
 class OccupanciesView : public IndexResponseView
 {
 public:
-	OccupanciesView(Scene *prev, Clique *clique);
+	OccupanciesView(Scene *prev, Clique *clique, Network &network);
 
 	virtual void setup();
 	void occupancies();
@@ -55,6 +56,7 @@ private:
 	std::map<ProbeTypePair, OccData> _estimates;
 	std::map<ProbeTypePair, OccData> _first;
 	Graph *_graph{};
+	Network &_network;
 	Eigen::MatrixXf _overall;
 };
 

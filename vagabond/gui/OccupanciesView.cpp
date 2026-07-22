@@ -24,13 +24,14 @@
 #include <vagabond/gui/GraphView.h>
 #include <vagabond/gui/Graph.h>
 #include <vagabond/core/protonic/Clique.h>
+#include <vagabond/core/protonic/Network.h>
 #include <vagabond/core/protonic/Correlative.h>
 #include <vagabond/core/protonic/ProbeResult.h>
 #include <vagabond/core/protonic/CertainStates.h>
 #include <vagabond/gui/elements/TextButton.h>
 
-OccupanciesView::OccupanciesView(Scene *prev, Clique *clique)
-: Scene(prev), IndexResponseView(prev), _clique(clique)
+OccupanciesView::OccupanciesView(Scene *prev, Clique *clique, Network &network)
+: Scene(prev), IndexResponseView(prev), _clique(clique), _network(network)
 {
 
 }

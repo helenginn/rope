@@ -219,7 +219,7 @@ void HBondAnalysisControl::setup()
 
 		auto view_occs = [this]()
 		{
-			OccupanciesView *ov = new OccupanciesView(this, _clique);
+			OccupanciesView *ov = new OccupanciesView(this, _clique, _network);
 			ov->show();
 		};
 
