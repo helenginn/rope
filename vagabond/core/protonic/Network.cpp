@@ -472,11 +472,15 @@ void Network::setupInactiveAtom(AtomConf atom)
 		{
 			std::cout << "we have no definitive other for " << 
 			connect->desc() << " from " << atom << std::endl;
+			std::vector<ExistenceConnector *> group;
 			for (const std::string &c : connect->conformerList())
 			{
 				char conf = char_from_conf(c);
+				ExistenceConnector *result =
 				make_maybe_covalent_bond(atom, {connect, conf});
+				group.push_back(result);
 			}
+			add_constraint(new OnlyOne(group, false));
 		}
 	}
 
