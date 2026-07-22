@@ -26,6 +26,7 @@
 #include <vagabond/utils/glm_import.h>
 #include "matrix_functions.h"
 #include "Coordinated.h"
+#include "CountProbe.h"
 #include "BondAngle.h"
 #include "AtomGroup.h"
 #include "Energy.h"

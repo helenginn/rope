@@ -28,6 +28,7 @@
 #include "Clique.h"
 #include "Probe.h"
 
+class CountProbe;
 class HideComplete;
 class Probe;
 class Model;
