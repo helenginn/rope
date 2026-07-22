@@ -103,11 +103,13 @@ struct HydrogenBond : public ConstraintBase
 				       "both sides, remaining side cannot be acceptor/broken");
 			}
 			// if we only have choice between lone pair and acceptor, it's acceptor
+			/* // not the case due to sampling things
 			if (_left.value() == Bond::LonePairOrWeak)
 			{
 				assign(_left, Bond::Weak, "if we only have choice between lone "\
 				       "pair and acceptor, it's acceptor");
 			}
+			*/
 		}
 
 		
@@ -124,12 +126,20 @@ struct HydrogenBond : public ConstraintBase
 			assign(_centre, Existence::Absent, "a hydrogen braced by two "\
 			       "non-bonds must be absent");
 		}
+		
+		if (_centre.value() == Existence::Present)
+		{
+//			assign(_left, Bond::NotLonePair);
+		}
 
+		// no: it could be, because of sampling reasons
+		/*
 		if (_left.value() == Bond::LonePair)
 		{
 			assign(_centre, Existence::Absent, "a lone pair cannot be braced"\
 			       " by a proton");
 		}
+		*/
 		
 		if (_right.value() == Bond::Broken)
 		{
