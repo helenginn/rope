@@ -388,6 +388,7 @@ void Network::setupInactiveAtom(AtomConf atom)
 		
 		std::cout << "Making certain bond between " << ss.str() << std::endl;
 		
+		/*
 		bool dbond = false;
 		dbond |= either_are_named_couple("C", "O")(connected, atom);
 		
