@@ -179,7 +179,8 @@ ProbeCorrelation CertainStates::correlate(const ProbeTypePair &left,
 		}
 		else if (!relative)
 		{
-			corr.mat.row(j) /= total_probs;
+			float sum = corr.mat.row(j).sum();
+			corr.mat.row(j) /= sum;
 		}
 	}
 
