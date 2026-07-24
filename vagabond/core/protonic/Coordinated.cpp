@@ -1932,7 +1932,7 @@ void Coordinated::setupRealignment()
 						continue;
 					}
 					glm::vec3 pos = *it;
-					hp->setPosition(pos);
+					hp->setAtomPosition(pos);
 
 					for (Probe *const &other : hp->others())
 					{

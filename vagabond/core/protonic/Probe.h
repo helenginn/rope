@@ -392,6 +392,11 @@ public:
 		
 		return str;
 	}
+
+	void setAtomPosition(const glm::vec3 &pos)
+	{
+		_h->setInitialPosition(pos);
+	}
 	
 	void setPosition(const glm::vec3 &pos)
 	{

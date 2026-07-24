@@ -156,7 +156,7 @@ Energy::energy_wrapper_for_hbond_angle(HydrogenProbe *probe,
 		
 		glm::vec3 lPos = centre.position();
 		glm::vec3 rPos = other.position();
-		glm::vec3 hPos = probe->position();
+		glm::vec3 hPos = probe->_h->initialPosition();
 		glm::vec3 hl = glm::normalize(hPos - lPos);
 		glm::vec3 rl = glm::normalize(rPos - lPos);
 		float dot = glm::dot(hl, rl);
