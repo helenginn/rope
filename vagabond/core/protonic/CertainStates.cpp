@@ -161,7 +161,6 @@ ProbeCorrelation CertainStates::correlate(const ProbeTypePair &left,
 		// for Boltzmann energy calculation
 		corr.mat(l, r) += prob;
 	}
-	std::cout << std::endl;
 	
 	for (int j = 0; j < corr.mat.rows(); j++)
 	{
@@ -174,13 +173,13 @@ ProbeCorrelation CertainStates::correlate(const ProbeTypePair &left,
 			
 			for (int i = 0; i < col_count; i++)
 			{
-				corr.mat.row(j)(i) -= 1.f / (float)col_count;
+				corr.mat.row(j)(i) -= 1.f / (float)row_total;
 			}
 		}
 		else if (!relative)
 		{
 			float sum = corr.mat.row(j).sum();
-			corr.mat.row(j) /= sum;
+			corr.mat.row(j) /= total_probs;
 		}
 	}
 
