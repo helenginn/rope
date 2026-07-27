@@ -51,6 +51,10 @@ private:
 
 	int _min = 0;
 	int _max = 0;
+
+	// shoot() keeps every probe within this many hops of *some* shortest
+	// path between its chosen endpoints, not just one arbitrary path.
+	int _slack = 5;
 };
 
 #endif

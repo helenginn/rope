@@ -21,6 +21,7 @@
 #include "Clique.h"
 #include <algorithm>
 #include <random>
+#include <queue>
 
 Subdivide::Subdivide(Clique *clique, int min, int max) : _clique(clique)
 {
@@ -82,57 +83,124 @@ bool Subdivide::finish_ends(OpSet<Probe *> &chunk)
 	return false;
 }
 
-void Subdivide::shoot(OpSet<Probe *> &chunk)
+// BFS out to `radius` hops from `root`, respecting the same
+// is_definitely_not_present() filter the old random walk used. Fills
+// `dist` with every reached probe's hop count from `root` and returns
+// the farthest distance actually reached (capped at `radius`).
+static int bounded_bfs(Probe *root, int radius, std::map<Probe *, int> &dist)
 {
-	Probe *last = *chunk.begin();
-	std::vector<Probe *> list = std::vector<Probe *>(chunk.begin(),
-	                                                 chunk.end());
-	int restart = 0;
+	dist[root] = 0;
+	std::queue<Probe *> frontier;
+	frontier.push(root);
+	int farthest = 0;
 
-	while (chunk.size() < _min)
+	while (!frontier.empty())
 	{
-		if (chunk.size() >= _max)
+		Probe *current = frontier.front();
+		frontier.pop();
+		int d = dist[current];
+
+		if (d >= radius)
 		{
-			break;
+			continue;
 		}
 
-		bool found = false;
-		std::vector<Probe *> copy 
-		= {last->others().begin(), last->others().end()};
-		std::random_device rd;
-		std::mt19937 g(rd());
-		std::shuffle(copy.begin(), copy.end(), g);
-
-		for (Probe *const &other : copy)
+		for (Probe *const &other : current->others())
 		{
-			if (other->is_definitely_not_present())
+			if (other->is_definitely_not_present() || dist.count(other))
 			{
 				continue;
 			}
 
-			if (chunk.count(other) == 0)
-			{
-				list.push_back(other);
-				chunk += other;
-				last = other;
-				found = true;
-				restart = 0;
-				break;
-			}
-		}
-		
-		if (!found)
-		{
-			last = list[list.size() - restart - 1];
-			restart++;
-			if (restart > list.size() - 1)
-			{
-				break;
-			}
+			dist[other] = d + 1;
+			farthest = std::max(farthest, d + 1);
+			frontier.push(other);
 		}
 	}
-	
-	chunk = OpSet<Probe *>(list);
+
+	return farthest;
+}
+
+// Picks a probe roughly _max hops from the start (biased to the farthest
+// reachable layer, so chunks are deep chains rather than the old
+// shuffle-and-backtrack random walk, which tended to meander), then keeps
+// the union of every probe within _slack hops of some shortest path
+// between the two - not just one arbitrary shortest path - since real
+// signalling paths fork and converge rather than being a single strand.
+void Subdivide::shoot(OpSet<Probe *> &chunk)
+{
+	Probe *start = *chunk.begin();
+
+	// leave headroom under _max for finish_ends() to patch hydrogen-bond
+	// halves and alt-confs afterward, rather than filling the whole
+	// budget with the path itself.
+	int radius = _max / 2;
+
+	std::map<Probe *, int> dist_start;
+	int d = bounded_bfs(start, radius, dist_start);
+
+	if (d == 0)
+	{
+		return; // nothing reachable within budget; chunk stays {start}
+	}
+
+	std::vector<Probe *> farthest_layer;
+	for (const auto &entry : dist_start)
+	{
+		if (entry.second == d)
+		{
+			farthest_layer.push_back(entry.first);
+		}
+	}
+
+	static thread_local std::mt19937 rng{std::random_device{}()};
+	std::uniform_int_distribution<size_t> pick(0, farthest_layer.size() - 1);
+	Probe *end = farthest_layer[pick(rng)];
+
+	std::map<Probe *, int> dist_end;
+	bounded_bfs(end, d + _slack, dist_end);
+
+	// _slack widens the accepted region to the whole "lens" between start
+	// and end, not just the path itself, and how many probes fall in that
+	// lens depends on local branching, not on _max - so nothing here
+	// guarantees the result stays within budget on its own. Rank every
+	// candidate by how close it is to an actual shortest path (smallest
+	// combined distance first) and keep only the closest _max of them, so
+	// the true path (combined distance == d) always survives and the cut
+	// falls on the least central candidates. Shuffle first (with the same
+	// rng used to pick `end`) so which of several equally-close candidates
+	// survive a tie at the cutoff varies across samples, then stable-sort
+	// by sum only so that shuffled order is what breaks ties - rather than
+	// dist_start's pointer-ordered iteration deciding it by accident.
+	struct Candidate { Probe *probe; int sum; };
+	std::vector<Candidate> candidates;
+	for (const auto &entry : dist_start)
+	{
+		auto it = dist_end.find(entry.first);
+		if (it != dist_end.end() && entry.second + it->second <= d + _slack)
+		{
+			candidates.push_back({entry.first, entry.second + it->second});
+		}
+	}
+
+	std::shuffle(candidates.begin(), candidates.end(), rng);
+	std::stable_sort(candidates.begin(), candidates.end(),
+	                 [](const Candidate &a, const Candidate &b)
+	                 {
+		                return a.sum < b.sum;
+		             });
+
+	// cap at half of _max here too, leaving the other half of the budget
+	// as headroom for finish_ends() to patch hydrogen-bond halves and
+	// alt-confs afterward, matching the radius reservation above.
+	OpSet<Probe *> result;
+	size_t cap = std::min((size_t)radius, candidates.size());
+	for (size_t i = 0; i < cap; i++)
+	{
+		result += candidates[i].probe;
+	}
+
+	chunk = result;
 }
 
 void Subdivide::spread(OpSet<Probe *> &chunk, bool force)
@@ -335,7 +403,7 @@ void Subdivide::subdivide()
 
 	for (Probe *probe : to_chunk)
 	{
-		for (int i = 0; i < 1 && (search & Breadth); i++)
+		for (int i = 0; i < 3 && (search & Breadth); i++)
 		{
 			OpSet<Probe *> chunk = grow_clique(probe, grow, Breadth);
 			if (chunk.size() > 0 && has_non_water(chunk))
@@ -343,7 +411,7 @@ void Subdivide::subdivide()
 				chunks += chunk;
 			}
 		}
-		for (int i = 0; i < 1 && (search & Depth); i++)
+		for (int i = 0; i < 3 && (search & Depth); i++)
 		{
 			OpSet<Probe *> chunk = grow_clique(probe, grow, Depth);
 			if (chunk.size() > 0 && has_non_water(chunk))
