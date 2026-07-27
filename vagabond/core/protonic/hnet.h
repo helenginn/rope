@@ -153,26 +153,21 @@ struct AtomConf
 		 * is kept as a last-resort tie-break only so this can never
 		 * silently conflate two genuinely distinct atoms into one
 		 * set/map key if every other field ever ties. */
-		int n1 = ptr->atomNum();
-		int n2 = other.ptr->atomNum();
-		if (n1 != n2)
-		{
-			return n1 < n2;
-		}
-
 		if (ptr->chain() != other.ptr->chain())
 		{
 			return ptr->chain() < other.ptr->chain();
 		}
 
-		if (ptr->code() != other.ptr->code())
-		{
-			return ptr->code() < other.ptr->code();
-		}
-
 		if (ptr->residueNumber() != other.ptr->residueNumber())
 		{
 			return ptr->residueNumber() < other.ptr->residueNumber();
+		}
+
+		int n1 = ptr->atomNum();
+		int n2 = other.ptr->atomNum();
+		if (n1 != n2)
+		{
+			return n1 < n2;
 		}
 
 		if (ptr->atomName() != other.ptr->atomName())
