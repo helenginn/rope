@@ -135,6 +135,61 @@ struct AtomConf
 			return conf < other.conf;
 		}
 
+		if (!ptr || !other.ptr)
+		{
+			return ptr < other.ptr;
+		}
+
+		/* order by stable, file-derived identity rather than heap address,
+		 * so iteration order (and therefore which of several equally valid
+		 * tie-broken solutions gets found first) doesn't depend on where
+		 * the allocator happened to place each Atom this run. atomNum() is
+		 * a plain stored int and is unique for essentially every real,
+		 * deposited atom, so it's checked first as a cheap fast path - this
+		 * is called on the hot path of every AtomConf-keyed set/map
+		 * operation, so deliberately compares already-stored fields
+		 * (references, no allocation) rather than building a desc()
+		 * string, which would allocate on every single call. The pointer
+		 * is kept as a last-resort tie-break only so this can never
+		 * silently conflate two genuinely distinct atoms into one
+		 * set/map key if every other field ever ties. */
+		int n1 = ptr->atomNum();
+		int n2 = other.ptr->atomNum();
+		if (n1 != n2)
+		{
+			return n1 < n2;
+		}
+
+		if (ptr->chain() != other.ptr->chain())
+		{
+			return ptr->chain() < other.ptr->chain();
+		}
+
+		if (ptr->code() != other.ptr->code())
+		{
+			return ptr->code() < other.ptr->code();
+		}
+
+		if (ptr->residueNumber() != other.ptr->residueNumber())
+		{
+			return ptr->residueNumber() < other.ptr->residueNumber();
+		}
+
+		if (ptr->atomName() != other.ptr->atomName())
+		{
+			return ptr->atomName() < other.ptr->atomName();
+		}
+
+		if (ptr->symNote() != other.ptr->symNote())
+		{
+			return ptr->symNote() < other.ptr->symNote();
+		}
+
+		if (conf != other.conf)
+		{
+			return conf < other.conf;
+		}
+
 		return ptr < other.ptr;
 	}
 	
