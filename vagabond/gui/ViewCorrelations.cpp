@@ -237,29 +237,35 @@ void ViewCorrelations::viewSubnetwork(Clique &clique)
 	
 	std::cout << "Number of probes: " << states.ptps().size() << std::endl;
 	
-	for (int p = 0; p < states.ptps().size(); p++)
+	// states.ptps() is a set now (deterministic row order - see
+	// CertainStates), so no operator[]; track position with a counter
+	// while iterating instead, which gives identical grid positions to
+	// the old positional-index loop.
+	int p = 0;
+	for (const ProbeTypePair &ptp : states.ptps())
 	{
-		std::string desc = states.ptps()[p].first->desc();
-		std::string type = states.ptps()[p].second == 
+		std::string desc = ptp.first->desc();
+		std::string type = ptp.second ==
 		hnet::Types::BondType ? " bonding" : " exists";
-		
+
 		for (int i = 0; i < 2; i++)
 		{
 			Text *t = new Text(desc + type);
 			t->resize(0.3);
 			align_to_grid(t, (i == 0 ? -1 : p), (i == 0 ? p : -1));
 		}
+		p++;
 	}
-	
-	for (int m = 0; m < states.ptps().size(); m++)
+
+	int m = 0;
+	for (const ProbeTypePair &left : states.ptps())
 	{
-		const ProbeTypePair &left = states.ptps()[m];
-		for (int n = 0; n < states.ptps().size(); n++)
+		int n = 0;
+		for (const ProbeTypePair &right : states.ptps())
 		{
-			const ProbeTypePair &right = states.ptps()[n];
 			float ave = states.average_score();
 			ProbeCorrelation corr = states.correlate(left, right, ave, true);
-			
+
 			PCA::Matrix pca = PCA::Matrix(corr.mat);
 			MatrixPlot *mp = new MatrixPlot(pca);
 			mp->resize(xdim * 3);
@@ -268,7 +274,9 @@ void ViewCorrelations::viewSubnetwork(Clique &clique)
 				mp->resize(0.667);
 			}
 			align_to_grid(mp, m, n);
+			n++;
 		}
+		m++;
 	}
 }
 

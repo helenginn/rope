@@ -20,6 +20,7 @@
 #define __vagabond__CertainStates__
 
 #include <vagabond/utils/Eigen/Dense>
+#include <vagabond/utils/OpSet.h>
 #include "ProbeResult.h"
 
 int dim_for_type(const hnet::Types &type);
@@ -39,7 +40,7 @@ public:
 
 	int operator()(const ProbeTypePair &ptp) const;
 	
-	const std::vector<ProbeTypePair> &ptps() const
+	const OpSet<ProbeTypePair> &ptps() const
 	{
 		return _headers;
 	}
@@ -66,7 +67,15 @@ public:
 	std::map<int, float> proportions(ProbeTypePair ptp, float &sum, 
 	                                 float ave) const;
 private:
-	std::vector<ProbeTypePair> _headers;
+	// a set, not a vector, so header (row) order is a deterministic
+	// function of which probes are present - not of the order they
+	// happened to be discovered while scanning results (which could vary
+	// run to run - see ExhaustiveSearch's _wider). _lookup's indices are
+	// assigned in a dedicated pass over the finished, fully-sorted set
+	// (see the constructor) - not during insertion, since a set's sorted
+	// position for existing elements can shift as later elements are
+	// added.
+	OpSet<ProbeTypePair> _headers;
 	std::map<ProbeTypePair, int> _lookup;
 
 	Eigen::MatrixXi _data;

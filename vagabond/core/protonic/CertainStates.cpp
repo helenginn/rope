@@ -29,36 +29,54 @@ CertainStates::CertainStates(const std::vector<ProbeResult> &results)
 	// row = one probe's states
 	// cols = number of H-bonding states
 	int cols = results.size();
-	int rows = 0;
-	if (cols > 0)
-	{
-		rows = results[0].results().size();
-	}
-	else
+	if (cols == 0)
 	{
 		return;
 	}
-	
-	_headers.reserve(rows);
-	for (const OneProbe &op : results[0].results())
+
+	// first pass: union of every probe+type pair seen across all results,
+	// not just results[0] - different results can carry different sets
+	// of wider-clique probes driven to certainty, so no single result is
+	// guaranteed to list everything the others do. Just insert here -
+	// _headers being a set means row order falls out of its own sort
+	// order, not insertion order, so _lookup can't be assigned yet: a
+	// later insertion can sort before an earlier one, which would shift
+	// every index assigned so far.
+	for (const ProbeResult &result : results)
 	{
-		ProbeTypePair ptp = ProbeTypePair({op.probe, op.type});
-		_lookup[ptp] = _headers.size();
-		_headers.push_back(ptp);
+		for (const OneProbe &op : result.results())
+		{
+			_headers.insert(ProbeTypePair({op.probe, op.type}));
+		}
 	}
 
-	_data = Eigen::MatrixXi(rows, cols);
-	_scores.resize(cols);
-	
-	for (int i = 0; i < rows; i++)
+	// now that the set is complete and its order fixed, walk it once to
+	// assign each row its final, stable index.
+	int row_index = 0;
+	for (const ProbeTypePair &ptp : _headers)
 	{
-		for (int j = 0; j < cols; j++)
+		_lookup[ptp] = row_index;
+		row_index++;
+	}
+
+	int rows = _headers.size();
+	_data = Eigen::MatrixXi(rows, cols);
+	_data.setConstant(-1);
+	_scores.resize(cols);
+
+	// second pass: fill in whatever each result actually recorded: a
+	// probe missing from a particular result (never decreed there and
+	// never became certain as a side effect) is left as -1 - value()
+	// returns that as-is, and correlate() skips it.
+	for (int j = 0; j < cols; j++)
+	{
+		_scores[j] = results[j].getScore();
+
+		for (const OneProbe &op : results[j].results())
 		{
-			_data(i, j) = results[j].results()[i].value;
-			if (i == 0)
-			{
-				_scores[j] = results[j].getScore();
-			}
+			ProbeTypePair ptp = ProbeTypePair({op.probe, op.type});
+			int row = _lookup.at(ptp);
+			_data(row, j) = op.value;
 		}
 	}
 }
@@ -141,8 +159,18 @@ ProbeCorrelation CertainStates::correlate(const ProbeTypePair &left,
 	{
 		int mv = value(i, m);
 		int nv = value(i, n);
+
+		// -1 means this particular result never recorded a value for
+		// left or right (see the constructor) - nothing to correlate
+		// for this state, so it must not contribute to either the
+		// histogram or total_probs.
+		if (mv == -1 || nv == -1)
+		{
+			continue;
+		}
+
 		float sc = score(i);
-		
+
 		// we also want to figure out the total sum of energy weights
 		float prob = exp((ave - sc) / rt);
 		
@@ -162,7 +190,29 @@ ProbeCorrelation CertainStates::correlate(const ProbeTypePair &left,
 		corr.mat(l, r) += prob;
 	}
 	
-	for (int j = 0; j < corr.mat.rows(); j++)
+	if (!relative || true)
+	{
+		Eigen::MatrixXf copy = corr.mat;
+
+		for (int j = 0; j < corr.mat.rows(); j++)
+		{
+			float row_sum = copy.row(j).sum();
+			for (int i = 0; i < corr.mat.cols(); i++)
+			{
+				float col_sum = copy.col(i).sum();
+				float ele_given_row = copy(j, i) / row_sum;
+				float ele_given_col = col_sum / total_probs;
+				
+				if (ele_given_row == ele_given_row && 
+				    ele_given_col == ele_given_col)
+				{
+					float val = (ele_given_row / ele_given_col);
+					corr.mat(j, i) = val > 1e-6 ? log(val) : -1;
+				}
+			}
+		}
+	}
+	for (int j = 0; j < corr.mat.rows() && false; j++)
 	{
 		float row_total = corr.mat.row(j).sum();
 		int col_count = corr.mat.cols();
@@ -176,25 +226,20 @@ ProbeCorrelation CertainStates::correlate(const ProbeTypePair &left,
 				corr.mat.row(j)(i) -= 1.f / (float)row_total;
 			}
 		}
-		else if (!relative)
-		{
-			float sum = corr.mat.row(j).sum();
-			corr.mat.row(j) /= total_probs;
-		}
 	}
 
 	bool done = false;
-	for (int i = 0; i < corr.mat.rows() && !done; i++)
+	for (int i = 0; i < corr.mat.rows(); i++)
 	{
-		for (int j = 0; j < corr.mat.cols() && !done; j++)
+		for (int j = 0; j < corr.mat.cols(); j++)
 		{
-			if (corr.mat(i, j) > 1)
+			if (corr.mat(i, j) != corr.mat(i, j) || !isfinite(corr.mat(i, j)))
 			{
-				std::cout << "over one: " << std::endl;
-				std::cout << corr.mat << std::endl;
-				done = true;
-				break;
+				corr.mat(i, j) = 0;
 			}
+
+			if (corr.mat(i, j) > 1) corr.mat(i, j) = 1;
+			if (corr.mat(i, j) < -1) corr.mat(i, j) = -1;
 		}
 	}
 
