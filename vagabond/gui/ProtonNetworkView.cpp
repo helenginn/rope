@@ -484,13 +484,57 @@ void ProtonNetworkView::makeMainMenu()
 			probes += selected_probes(_bondProbes);
 		}
 
+		// if the current selection is exactly an existing clique, reuse it
+		// (subdivisions, states, communication groups, custom name and
+		// all) rather than fabricating a fresh, metadata-less one - the
+		// same clique right-click "analyse" in CliqueView would give you.
+		for (Clique &existing : _network.cliques())
+		{
+			if (existing.probes() == probes)
+			{
+				setActive(&existing);
+				return;
+			}
+		}
+
 		Clique *all = new Clique(probes);
 		all->setName("active selection");
 		setActive(all);
 	};
 	
+	auto reset_cliques = [this]()
+	{
+		std::string text = "This will delete all cliques and recalculate\n"\
+		"them. Are you sure?";
+
+		AskYesNo *ayn = new AskYesNo(this, text);
+		ayn->addJob("yes", [this]()
+		{
+			_network.cliques().clear();
+			_network.updateModelCliques();
+
+			// browse_cliques() re-shows the existing _cv rather than
+			// rebuilding it if one is already around, so its cached list
+			// (populated once at construction from _network.cliques() as
+			// it was then) would keep showing the just-deleted cliques.
+			// Destroy it so the next "Browse cliques" click reconstructs
+			// it fresh and re-discovers from the now-empty network.
+			if (_cv)
+			{
+				deleteLater(_cv);
+				_cv = nullptr;
+			}
+		});
+
+		addMainThreadJob
+		([this, ayn]()
+		 {
+			setModal(ayn);
+		});
+	};
+
 	TextButton *text = new TextButton("Menu", this);
-	auto make_menu = [this, browse_cliques, analyse_all, text]()
+	auto make_menu = [this, browse_cliques, analyse_all, reset_cliques, text]()
 	{
 		if (hasObject(_cv))
 		{
@@ -502,6 +546,7 @@ void ProtonNetworkView::makeMainMenu()
 		{
 			m->addOption("Browse cliques", browse_cliques);
 			m->addOption("Analyse in place", analyse_all);
+			m->addOption("Reset cliques", reset_cliques);
 		}
 
 		m->addOption("Save", [this]()
