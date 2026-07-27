@@ -42,8 +42,19 @@ struct ProbeTypePair : public std::pair<Probe *, hnet::Types>
 		}
 		else if (this->second == other.second)
 		{
+			/* desc() rebuilds a fresh string every call (AtomConf::desc()
+			 * goes via ostringstream) and this is on std::map's hot path.
+			 * When both sides are AtomProbes, _atom/_conf are reliably set
+			 * (unlike BondProbe, which never sets them, and HydrogenProbe,
+			 * whose own atomConf() override isn't reachable through this
+			 * non-virtual base pointer), so compare the underlying AtomConf
+			 * directly - same ordering as desc(), no string allocation. */
+			if (this->first->is_atom() && other.first->is_atom())
+			{
+				return this->first->atomConf() < other.first->atomConf();
+			}
+
 			return this->first->desc() < other.first->desc();
-//			return this->first < other.first;
 		}
 		else
 		{
