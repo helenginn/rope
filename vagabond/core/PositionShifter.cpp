@@ -31,6 +31,10 @@ PositionShifter::~PositionShifter()
 
 	if (_worker)
 	{
+		// if the worker is currently parked in unpause()'s wait(), it will
+		// never see _stop without being woken up - join() below would
+		// otherwise block forever on a paused shifter.
+		_waitForPause.notify_all();
 		_worker->join();
 		delete _worker;
 	}
@@ -246,11 +250,22 @@ void PositionShifter::run()
 	{
 		while (!_stop)
 		{
-			std::unique_lock<std::mutex> lock(_pauseMutex);
-			if (_pause)
 			{
-				_waitForPause.wait(lock);
+				std::unique_lock<std::mutex> lock(_pauseMutex);
+				while (_pause && !_stop)
+				{
+					_waitForPause.wait(lock);
+				}
 			}
+			// _pauseMutex is released here, before the expensive part -
+			// holding it through move() is what starved the GUI thread's
+			// pause()/unpause() calls (isPaused() no longer needs it at all).
+
+			if (_stop)
+			{
+				break;
+			}
+
 			move();
 		}
 	};

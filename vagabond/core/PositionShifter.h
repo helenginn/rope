@@ -79,7 +79,8 @@ public:
 	
 	bool isPaused()
 	{
-		std::unique_lock<std::mutex> lk(_pauseMutex);
+		// _pause is already atomic - no need to contend for _pauseMutex,
+		// which the worker thread holds for the whole of move().
 		return _pause;
 	}
 	
