@@ -147,6 +147,10 @@ struct AtomConf
 	float occupancy() const
 	{
 		std::string c = as_string();
+		if (ptr->conformerPositions().count(c) == 0)
+		{
+			return ptr->occupancy();
+		}
 		float occ = ptr->conformerPositions().at(c).occ;
 		return occ;
 	}
