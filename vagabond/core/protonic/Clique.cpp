@@ -120,6 +120,30 @@ void Clique::housekeeping(Network &network)
 	_subdivs = cleaned;
 }
 
+void Clique::prepareForStorage()
+{
+	for (Probe *const &probe : _probes)
+	{
+		_descs += probe->desc();
+	}
+	_probes = ProbeKey();
+
+	// this Clique is a copy that may outlive whatever registered as a
+	// responder on it (e.g. CliqueView, via insertClique) - the copy
+	// carries the same pointer forward without the original ever being
+	// told, so when that object is later destroyed nothing removes it
+	// here, leaving a dangling pointer for the next session's
+	// triggerResponse() to call. clearResponders() only empties the list,
+	// it never dereferences the pointers, so this is safe regardless of
+	// whether they are still valid.
+	clearResponders();
+
+	for (Clique &sub : _subdivs)
+	{
+		sub.prepareForStorage();
+	}
+}
+
 void Clique::addProbeDesc(const std::string &str)
 {
 	_descs += str;

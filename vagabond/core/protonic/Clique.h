@@ -59,6 +59,14 @@ public:
 	
 	void housekeeping(Network &network);
 
+	// inverse of housekeeping(): downgrades live Probe* references back to
+	// their stable desc() strings and forgets the pointers. Call this on a
+	// copy before it outlives the Network that owns those Probes (e.g.
+	// before pushing to Model) - housekeeping() only ever adds to _probes
+	// from _descs, it never clears stale entries first, so a Clique handed
+	// to a future Network must not still be holding pointers into this one.
+	void prepareForStorage();
+
 	std::string name();
 	void setName(std::string new_name)
 	{

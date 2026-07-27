@@ -708,7 +708,17 @@ void Network::updateModelCliques()
 {
 	if (_model)
 	{
-		_model->setCliques(_cliques);
+		// push a copy with Probe* references downgraded to their desc()
+		// strings, not _cliques itself - the live session's cliques need
+		// to keep their real Probe pointers to stay interactive, but
+		// anything handed to Model must survive this Network (and its
+		// Probes) being torn down and a fresh one built on next entry.
+		std::list<Clique> snapshot = _cliques;
+		for (Clique &cl : snapshot)
+		{
+			cl.prepareForStorage();
+		}
+		_model->setCliques(snapshot);
 	}
 }
 
