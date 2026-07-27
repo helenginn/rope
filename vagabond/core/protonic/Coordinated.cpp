@@ -788,12 +788,16 @@ Coordinated::hydrogenCombo(hnet::ExistenceConnector &h,
 hnet::AtomConf Coordinated::makeHydrogenAtom(const glm::vec3 &pos)
 {
 	::Atom *hAtom = new ::Atom();
+	hAtom->setChain(atom()->chain());
 	hAtom->setResidueId(atom()->residueId());
 	hAtom->setInitialPosition(pos);
 	hAtom->conformerPositions()[_atomConf.as_string()].pos.ave = pos;
-	hAtom->conformerPositions()[_atomConf.as_string()].occ = 
+	hAtom->conformerPositions()[_atomConf.as_string()].occ =
 	_atomConf.occupancy();
-	hAtom->setAtomName("H!");
+	// donor/acceptor identity of this candidate isn't decided yet (that's
+	// what the search resolves), so a plain counter is the only stable,
+	// deterministic tag available at creation time - see setAtomName below.
+	hAtom->setAtomName("H!" + std::to_string(_hydrogenIndex++));
 	hAtom->setCode(atom()->code());
 	hAtom->setElementSymbol("H");
 	return {hAtom, _atomConf.conf};
@@ -981,6 +985,15 @@ OpSet<AcceptableGroup> Coordinated::developSeed(const PairSet &seed,
 	return to_return;
 }
 
+// makeHydrogenAtom() tags each auto-generated placeholder hydrogen with
+// "H!" + a disambiguating index (H!0, H!1, ...) rather than the exact
+// name "H!", so anything checking for a placeholder hydrogen must check
+// the prefix rather than an exact match.
+bool is_placeholder_hydrogen_name(const std::string &name)
+{
+	return name.rfind("H!", 0) == 0;
+}
+
 // we need to make a custom equality function as we need to ignore
 // the Atom; the fake hydrogens would otherwise always register as
 // different.
@@ -988,7 +1001,7 @@ bool are_equivalent(const PairSet &a_all, const PairSet &b_all)
 {
 	auto strip_fake_h = [](const ABPair &pair)
 	{
-		return (pair.first.ptr->atomName() != "H!");
+		return !is_placeholder_hydrogen_name(pair.first.ptr->atomName());
 	};
 
 	PairSet a = a_all.filter(strip_fake_h);
@@ -1226,7 +1239,7 @@ void Coordinated::mutualExclusions(AtomGroup *toClashCheck)
 		std::string desc_ending = " pairing with ";
 		for (const ABPair &acceptable : acceptables.group)
 		{
-			if (acceptable.first.ptr->atomName() != "H!")
+			if (!is_placeholder_hydrogen_name(acceptable.first.ptr->atomName()))
 			{
 				desc_ending += acceptable.first.desc() + ", ";
 			}
@@ -1234,7 +1247,7 @@ void Coordinated::mutualExclusions(AtomGroup *toClashCheck)
 
 		for (const ABPair &acceptable : acceptables.group)
 		{
-			if (acceptable.first.ptr->atomName() == "H!")
+			if (is_placeholder_hydrogen_name(acceptable.first.ptr->atomName()))
 			{
 				addBond(acceptable);
 				add_constraint(new BondConstant(*acceptable.second, 
@@ -1733,8 +1746,10 @@ void Coordinated::clashLogic(OpSet<AtomConf> &clash_check)
 		Existence::Values left_before = left->value();
 		Existence::Values right_before = right->value();
 
-		std::cout << "Organising a clash between " << *left << " and "
-		<< *right << " due to length " << l << std::endl;
+		std::cout << "Organising a clash between " << *left << " (element "
+		<< _atomConf.ptr->elementSymbol() << ") and "
+		<< *right << " (element " << hit.ptr->elementSymbol() << 
+		") due to length " << l << std::endl;
 
 		std::ostringstream result;
 		try
@@ -1772,7 +1787,7 @@ void Coordinated::clashLogic(OpSet<AtomConf> &clash_check)
 		if (rChange)
 		{
 			result << "the latter";
-			if (hit.ptr->atomName() == "H!")
+			if (is_placeholder_hydrogen_name(hit.ptr->atomName()))
 			{
 				continue;
 			}

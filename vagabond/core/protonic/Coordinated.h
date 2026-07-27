@@ -257,6 +257,10 @@ private:
 	bool _showCharge = true;
 	bool _calculatedCov = false;
 
+	// counts candidate hydrogens made off this atom, so each gets a
+	// deterministic, unique name regardless of which seed/loop created it
+	int _hydrogenIndex = 0;
+
 	AtomProbe *_probe{};
 	
 	::Atom *const &atom() const
