@@ -193,7 +193,7 @@ public:
 		return _atom;
 	}
 	
-	hnet::AtomConf atomConf() const
+	virtual hnet::AtomConf atomConf() const
 	{
 		return {_atom, _conf};
 	}
@@ -356,7 +356,7 @@ public:
 		_colour = glm::vec3(0.28f, 0.1f, -0.147f);
 	}
 	
-	hnet::AtomConf atomConf() const
+	virtual hnet::AtomConf atomConf() const
 	{
 		return {_h, _conf};
 	}
