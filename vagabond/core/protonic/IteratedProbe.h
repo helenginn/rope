@@ -40,13 +40,12 @@ template <class Connector, class HValue>
 class IterateDecree : public IteratedProbe
 {
 public:
-	IterateDecree(Probe *probe, 
-	              Connector &connector, 
+	IterateDecree(Probe *probe,
+	              Connector &connector,
 	              hnet::ExistenceConnector &exist,
-	              hnet::BondConnector *bond,
 	              const std::vector<HValue> &values,
 	              const std::string &add)
-	: _probe(probe), _connector(connector), _exist(exist), _bond(bond),
+	: _probe(probe), _connector(connector), _exist(exist),
 	_values(values), _add(add)
 	{
 		std::ostringstream msg;
@@ -61,24 +60,11 @@ public:
 		_msg.pop_back();
 	}
 
-	unsigned int connector_as_int()
-	{
-		return (unsigned int)_connector.value();
-	}
-
 	virtual unsigned int value_as_int()
 	{
-		if (_exist.value() == hnet::Existence::Absent)
-		{
-			return hnet::Existence::Absent;
-		}
-		if (_bond && (_bond->value() == hnet::Bond::Broken ||
-		              _bond->value() == hnet::Bond::LonePair))
-		{
-			return hnet::Existence::Absent;
-		}
-
-		return (unsigned int)connector_as_int();
+		hnet::Types type = (_add == "bond" ? hnet::Types::BondType
+		                                   : hnet::Types::ExistenceType);
+		return (unsigned int)_probe->certainValueAsInt(type);
 	}
 	
 	void forget_last_decree(std::condition_variable &cv, std::mutex &m)
@@ -179,7 +165,6 @@ private:
 	Probe *_probe{};
 	Connector &_connector;
 	hnet::ExistenceConnector &_exist;
-	hnet::BondConnector *_bond{};
 	std::vector<HValue> _values{};
 	std::string _msg;
 	GuiltVersion _lastDecree{-1};

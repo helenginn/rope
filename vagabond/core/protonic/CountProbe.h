@@ -117,6 +117,11 @@ public:
 		return _obj.is_certain();
 	}
 
+	virtual int certainValueAsInt(hnet::Types type)
+	{
+		return (int)_obj.value();
+	}
+
 	hnet::CountConnector &_obj;
 	hnet::ExistenceConnector &_exist;
 	float _offset = 2.f;

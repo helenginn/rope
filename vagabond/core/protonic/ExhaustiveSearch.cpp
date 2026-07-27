@@ -28,6 +28,15 @@ ExhaustiveSearch::ExhaustiveSearch(const OpSet<Probe *> &interesting,
 : _all(interesting), _wider(wider)
 {
 	_wider += interesting;
+
+	// only probes still uncertain at the outset are worth re-checking as
+	// the search proceeds - anything already certain here is a constant
+	// for every result, so recording it per-result would just add
+	// meaningless columns to the correlation data.
+	_wider.filter([](Probe *const &probe)
+	{
+		return !probe->is_certain();
+	});
 }
 
 void ExhaustiveSearch::setup()
@@ -42,7 +51,7 @@ void ExhaustiveSearch::setup()
 		options = probe->_obj.values();
 		IteratedProbe *ip = 
 		new IterateDecree<hnet::BondConnector, hnet::Bond::Values>
-		(probe, probe->_obj, probe->_exist, &probe->_obj, options, "bond");
+		(probe, probe->_obj, probe->_exist, options, "bond");
 		return ip;
 	};
 
@@ -53,7 +62,7 @@ void ExhaustiveSearch::setup()
 		std::vector<hnet::Existence::Values> options = probe->_exist.values();
 		IteratedProbe *ip = 
 		new IterateDecree<hnet::ExistenceConnector, hnet::Existence::Values>
-		(probe, probe->_exist, probe->_exist, nullptr, options, "exist");
+		(probe, probe->_exist, probe->_exist, options, "exist");
 		return ip;
 	};
 
@@ -65,7 +74,7 @@ void ExhaustiveSearch::setup()
 		std::vector<hnet::Existence::Values> options = probe->_exist.values();
 		IteratedProbe *ip = 
 		new IterateDecree<hnet::ExistenceConnector, hnet::Existence::Values>
-		(probe, probe->_exist, probe->_exist, &probe->_obj, options, "exist");
+		(probe, probe->_exist, probe->_exist, options, "exist");
 		return ip;
 	};
 	
@@ -213,16 +222,7 @@ bool ExhaustiveSearch::next()
 		return results;
 	};
 	
-	auto print = [](const Config &c)
-	{
-		std::cout << "Config: ";
-		for (const unsigned int &i : c)
-		{
-			std::cout << i << "-";
-		}
-	};
-	
-	auto add_result = [this, &check_certainty, &print]
+	auto add_result = [this, &check_certainty]
 	(const Config &c)
 	{
 		bool cert = check_certainty(c);
@@ -230,15 +230,54 @@ bool ExhaustiveSearch::next()
 		{
 			_certain++;
 		}
-		
+
 		if (cert && _configs.count(c) == 0)
 		{
-			GetScore score = score_wider_clique();
 			_configs += c;
-			_scores[c] = score;
-//			print(c);
-//			std::cout << "\t" << score;
-//			std::cout << std::endl;
+
+			// built here, not in a later deferred pass: by the time any
+			// pass over all of _configs would run, the search has moved
+			// on and the live connector state no longer corresponds to
+			// this specific historical config - is_certain()/
+			// certainValueAsInt() have to be read while c is still live.
+			GetScore score = score_wider_clique();
+			ProbeResult result({}, score);
+
+			// _wider only holds probes that were still uncertain at the
+			// outset (see the constructor) - anything now certain became
+			// so as a side effect of this particular decree combination,
+			// covering every decreed probe too (they are a subset of
+			// _wider), so nothing else needs recording separately.
+			for (Probe *const &probe : _wider)
+			{
+				if (!probe->is_certain() || probe->is_covalent())
+				{
+					continue;
+				}
+				
+				if (probe->atom() &&
+				    (probe->atom()->elementSymbol() == "H" ||
+				     probe->atom()->elementSymbol() == "C"))
+				{
+					continue;
+				}
+
+				if (probe->is_bond())
+				{
+					result.addResult({probe, hnet::Types::BondType,
+					                  probe->certainValueAsInt
+					                  (hnet::Types::BondType)});
+				}
+				else
+				{
+					result.addResult({probe, hnet::Types::ExistenceType,
+					                  probe->certainValueAsInt
+					                  (hnet::Types::ExistenceType)});
+				}
+			}
+
+			_total += result.results().size();
+			_results.push_back(result);
 		}
 	};
 	
@@ -305,36 +344,8 @@ bool ExhaustiveSearch::next()
 		count_down();
 	}
 	
-	auto process_result = [this](const Config &c)
-	{
-		int i = 0;
-		GetScore sc = _scores[c];
-		ProbeResult result({}, sc);
-		for (IteratedProbe *ip : _iterations)
-		{
-			int val = c[i];
-			hnet::Types type = (ip->type() == "exist"
-			                   ? hnet::Types::ExistenceType
-			                   : hnet::Types::BondType);
-			Probe *const &pr = ip->probe();
-			i++;
-			
-			OneProbe pres = {pr, type, val};
-			result.addResult(pres);
-		}
-
-		_results.push_back(result);
-		return result.results().size();
-	};
-	
 	if (_counter < 0 || (_counter == 0 && (**it).done()))
 	{
-		for (const Config &c : _configs)
-		{
-			int extra = process_result(c);
-			_total += extra;
-		}
-
 		return false;
 	}
 

@@ -70,7 +70,6 @@ private:
 
 	typedef std::vector<unsigned int> Config;
 	OpSet<Config> _configs;
-	std::map<Config, GetScore> _scores;
 
 	int _total = 0;
 	std::vector<ProbeResult> _results;

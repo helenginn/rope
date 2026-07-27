@@ -119,6 +119,14 @@ public:
 	}
 	
 	virtual bool is_certain() = 0;
+
+	// the probe's current resolved value as a plain int, for recording
+	// into a ProbeResult/OneProbe. Meaningful once is_certain() is true;
+	// callers should check that first. `type` matters for BondProbe,
+	// which is tracked as two separate ProbeTypePair slots (its own
+	// existence, and - once present - which kind of bond); other probe
+	// types only ever have one meaningful value and ignore it.
+	virtual int certainValueAsInt(hnet::Types type) = 0;
 	
 	void setHide(float alpha, OpSet<Probe *> &fixed)
 	{
@@ -329,7 +337,12 @@ public:
 	{
 		return _obj.is_certain() && _exist.is_certain();
 	}
-	
+
+	virtual int certainValueAsInt(hnet::Types type)
+	{
+		return (int)_exist.value();
+	}
+
 	hnet::ExistenceConnector &existence()
 	{
 		return _exist;
@@ -446,6 +459,11 @@ public:
 	virtual bool is_certain()
 	{
 		return _obj.is_certain() && _exist.is_certain();
+	}
+
+	virtual int certainValueAsInt(hnet::Types type)
+	{
+		return (int)_obj.value();
 	}
 
 	virtual bool is_absent()
@@ -590,6 +608,31 @@ public:
 		}
 
 		return _obj.is_certain() && _exist.is_certain();
+	}
+
+	virtual int certainValueAsInt(hnet::Types type)
+	{
+		// same collapse for both slots: absent existence or a
+		// functionally-absent bond state (broken/lone pair) means there
+		// is nothing more to report either way.
+		if (_exist.value() == hnet::Existence::Absent)
+		{
+			return (int)hnet::Existence::Absent;
+		}
+		if (_obj.value() == hnet::Bond::Broken ||
+		    _obj.value() == hnet::Bond::LonePair)
+		{
+			return (int)hnet::Existence::Absent;
+		}
+
+		// BondProbe is tracked as two separate ProbeTypePair slots: its
+		// own existence, and (once present) which kind of bond it is.
+		if (type == hnet::Types::BondType)
+		{
+			return (int)_obj.value();
+		}
+
+		return (int)_exist.value();
 	}
 
 	hnet::ExistenceConnector &existence()
