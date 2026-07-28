@@ -19,7 +19,7 @@
 #include <iostream>
 #include <vagabond/gui/elements/TextEntry.h>
 #include <vagabond/gui/elements/TextButton.h>
-#include <vagabond/gui/elements/SnowGL.h>
+#include <vagabond/gui/elements/GLView.h>
 #include "../ImageButton.h"
 #include "../Window.h"
 #include "ItemLine.h"
