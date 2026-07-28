@@ -117,6 +117,12 @@ void ProtonNetworkView::findAtomProbes()
 		_allProbes.insert(probe);
 		probe->setResponder(this);
 		addIndexResponder(bond);
+
+		// _textProbes is fully populated for both AtomProbe and
+		// HydrogenProbe by the two loops above, before any BondProbe is
+		// constructed, so both lookups are guaranteed to succeed here.
+		bond->setEndpoints(_textProbes[&probe->left()],
+		                   _textProbes[&probe->right()]);
 	}
 
 	for (CountProbe *const &probe : _network.chargeProbes())
@@ -312,14 +318,21 @@ void ProtonNetworkView::interactedWithNothing(bool left, bool hover)
 
 void ProtonNetworkView::arrangeFigure()
 {
-	auto make_getter = [](Probe *probe)
+	// getter/setter operate on the ProbeAtom (render layer), not the
+	// physics Probe - PositionShifter must never write Probe::_pos, since
+	// Energy.cpp reads that directly for H-bond angle geometry and must
+	// never see 2D layout positions.
+	auto make_getter = [](ProbeAtom *probe)
 	{
 		return [probe]() -> glm::vec3
 		{
-			return probe->position();
+			return probe->FloatingText::centroid();
 		};
 	};
 
+	// the layout algorithm still needs real 3D inter-atomic distances as
+	// its reference geometry, so this alone stays reading the physics
+	// probe - read-only, never written back to.
 	auto make_init = [](Probe *probe)
 	{
 		return [probe]() -> glm::vec3
@@ -328,16 +341,31 @@ void ProtonNetworkView::arrangeFigure()
 		};
 	};
 
-	auto make_setter = [](Probe *probe)
+	auto make_setter = [](ProbeAtom *probe)
 	{
 		return [probe](const glm::vec3 &vec)
 		{
-			probe->setPosition(vec);
+			probe->FloatingText::setPosition(vec);
 		};
 	};
 
-	// template this one
-	auto make_tidy = []<class ProbeType> (ProbeType *probe)
+	// atoms: the setter above already wrote the new render position
+	// directly, so all that is needed per step is to flag a redraw - NOT
+	// updatePosition(), which would immediately resync from (unchanged)
+	// physics and undo the shift. Bonds are unaffected by this - they are
+	// never given their own position via addPosition(), only included via
+	// includePointer(), and their updatePosition() already follows their
+	// endpoints' current render position (see ProbeBond::setEndpoints),
+	// physics-derived or not.
+	auto make_tidy_atom = [](ProbeAtom *probe)
+	{
+		return [probe]()
+		{
+			probe->FloatingText::forceRender(true, false);
+		};
+	};
+
+	auto make_tidy_bond = [](ProbeBond *probe)
 	{
 		return [probe]()
 		{
@@ -394,14 +422,14 @@ void ProtonNetworkView::arrangeFigure()
 		{
 			it->first->setHide(0.f, false);
 			_shifter->addPosition(probe, make_init(probe->probe()),
-			                      make_getter(probe->probe()), 
-			                      make_setter(probe->probe()));
+			                      make_getter(probe),
+			                      make_setter(probe));
 
 			OpSet<void *> set;
 			get_probes_as_set(probe->probe(), set);
 			_shifter->limitSensitivity(probe, set);
 
-			_shifter->addTidy(make_tidy(probe));
+			_shifter->addTidy(make_tidy_atom(probe));
 		}
 
 		probe->selected(0, true);
@@ -419,12 +447,61 @@ void ProtonNetworkView::arrangeFigure()
 		{
 			it->first->setHide(0.f, false);
 			_shifter->includePointer(probe);
-			_shifter->addTidy(make_tidy(probe));
+			_shifter->addTidy(make_tidy_bond(probe));
 		}
 		probe->selected(0, true);
 	}
 	
 	_shifter->tidy();
+}
+
+void ProtonNetworkView::leave2D()
+{
+	// discard the 2D layout entirely rather than trying to reconcile it -
+	// next entry into 2D mode (see arrangeFigure()) always starts a fresh
+	// PositionShifter, since _shifter is null again.
+	if (_shifter)
+	{
+		delete _shifter;
+		_shifter = nullptr;
+	}
+
+	// resync every render position back from the (untouched throughout)
+	// physics position, undoing the 2D placement - atoms first, since
+	// ProbeBond::updatePosition() now follows its endpoints' current
+	// render position rather than physics directly.
+	for (auto it = _textProbes.begin(); it != _textProbes.end(); it++)
+	{
+		it->first->setHide(0.f, false);
+		it->second->updatePosition();
+	}
+
+	for (auto it = _bondProbes.begin(); it != _bondProbes.end(); it++)
+	{
+		it->first->setHide(0.f, false);
+		it->second->updatePosition();
+	}
+
+	for (auto it = _countProbes.begin(); it != _countProbes.end(); it++)
+	{
+		it->first->setHide(0.f, false);
+		it->second->quickUpdate();
+	}
+
+	_2D = false;
+
+	if (_activeClique)
+	{
+		// re-select so it is obvious where the active clique is once back
+		// in 3D, and frame the clique itself rather than the whole
+		// protein - that is what we are actually looking at.
+		selectProbes(_activeClique->probes());
+		shiftToCentre(_activeClique->centroid(), 50);
+	}
+	else
+	{
+		shiftToCentre(_network.centre(), 50);
+	}
 }
 
 void ProtonNetworkView::sendObject(std::string tag, void *object)
@@ -469,39 +546,6 @@ void ProtonNetworkView::makeMainMenu()
 		}
 	};
 	
-	auto analyse_all = [this]()
-	{
-		OpSet<Probe *> probes = selected_probes(_textProbes);
-		probes += selected_probes(_bondProbes);
-		if (probes.size() == 0)
-		{
-			OpSet<Probe *> all;
-			all += _network.bondProbes();
-			all += _network.atomProbes();
-			all += _network.hydrogenProbes();
-			selectProbes(all);
-			probes = selected_probes(_textProbes);
-			probes += selected_probes(_bondProbes);
-		}
-
-		// if the current selection is exactly an existing clique, reuse it
-		// (subdivisions, states, communication groups, custom name and
-		// all) rather than fabricating a fresh, metadata-less one - the
-		// same clique right-click "analyse" in CliqueView would give you.
-		for (Clique &existing : _network.cliques())
-		{
-			if (existing.probes() == probes)
-			{
-				setActive(&existing);
-				return;
-			}
-		}
-
-		Clique *all = new Clique(probes);
-		all->setName("active selection");
-		setActive(all);
-	};
-	
 	auto reset_cliques = [this]()
 	{
 		std::string text = "This will delete all cliques and recalculate\n"\
@@ -534,7 +578,7 @@ void ProtonNetworkView::makeMainMenu()
 	};
 
 	TextButton *text = new TextButton("Menu", this);
-	auto make_menu = [this, browse_cliques, analyse_all, reset_cliques, text]()
+	auto make_menu = [this, browse_cliques, reset_cliques, text]()
 	{
 		if (hasObject(_cv))
 		{
@@ -545,7 +589,6 @@ void ProtonNetworkView::makeMainMenu()
 		if (!_activeClique)
 		{
 			m->addOption("Browse cliques", browse_cliques);
-			m->addOption("Analyse in place", analyse_all);
 			m->addOption("Reset cliques", reset_cliques);
 		}
 
@@ -595,6 +638,23 @@ void ProtonNetworkView::makeMainMenu()
 		else if (_shifter && _shifter->isPaused())
 		{
 			m->addOption("Unfreeze positions", unfreeze_positions);
+		}
+
+		if (_2D)
+		{
+			m->addOption("Switch to 3D", [this]() { leave2D(); });
+		}
+		else if (_activeClique)
+		{
+			m->addOption("Switch to 2D", [this]()
+			{
+				// matches what right-click "analyse" did the first time
+				// (CliqueView::analyse_bonds) - without this, re-entering
+				// 2D after a trip back to 3D only has leave2D()'s
+				// re-selected clique probes, not expanded up to CA.
+				completeResidues(true);
+				arrangeFigure();
+			});
 		}
 
 		m->setup(c.x, c.y);

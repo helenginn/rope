@@ -76,6 +76,7 @@ public:
 	void completeResidues(bool stop_at_alpha = false);
 	void selectProbes(const OpSet<Probe *> &probes, bool on = true);
 	void arrangeFigure();
+	void leave2D();
 
 	void highlightCliques();
 

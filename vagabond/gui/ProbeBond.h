@@ -24,6 +24,7 @@
 #include <vagabond/core/protonic/Probe.h>
 
 class BondProbe;
+class ProbeAtom;
 class ProtonNetworkView;
 
 class ProbeBond : public Image, public ButtonResponder,
@@ -63,7 +64,17 @@ public:
 	{
 		return _view;
 	}
-	
+
+	// updatePosition() draws between these, not the physics probe
+	// position, so a bond always follows wherever its two endpoint dots
+	// are currently rendered - physics-synced in 3D mode, PositionShifter-
+	// driven in 2D mode - without needing to know which mode it is.
+	void setEndpoints(ProbeAtom *left, ProbeAtom *right)
+	{
+		_leftGui = left;
+		_rightGui = right;
+	}
+
 	void reindex();
 	void interacted(int idx, bool hover, bool left);
 	void offerBondMenu();
@@ -73,6 +84,9 @@ public:
 private:
 	BondProbe *_probe = nullptr;
 	ProtonNetworkView *_view = nullptr;
+
+	ProbeAtom *_leftGui = nullptr;
+	ProbeAtom *_rightGui = nullptr;
 
 	bool _selected{};
 };

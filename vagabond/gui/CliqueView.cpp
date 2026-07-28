@@ -162,10 +162,11 @@ void CliqueView::insertClique(Clique *clique)
 			
 			auto analyse_bonds = [this, clique, scene]()
 			{
+				// 3D is the default view for an active clique now - 2D is
+				// opt-in via the "Switch to 2D" menu option.
 				scene->deselect();
 				scene->selectProbes(clique->probes());
 				scene->completeResidues(true);
-				scene->arrangeFigure();
 				scene->setActive(clique);
 				_kill();
 			};
