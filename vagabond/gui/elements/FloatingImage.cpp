@@ -26,7 +26,6 @@ FloatingImage::FloatingImage(std::string image, float mult, float yOff)
 	setFragmentShaderFile("assets/shaders/floating_box.fsh");
 	setName("Floating image: " + image);
 	makeQuad();
-	setAlpha(0.f);
 	correctBox(mult, yOff);
 	setUsesProjection(true);
 }

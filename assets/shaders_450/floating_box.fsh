@@ -21,12 +21,12 @@ void main()
 	}
 
 	vec4 result = texture(pic_tex, vTex);
+	result += vColor;
 	if (result.a < 0.01)
 	{
 		discard;
 	}
 
-	result += vColor;
 	FragColor = result;
 	ValIndex = 0u;
 	BrightColor = vec4(0.0);
