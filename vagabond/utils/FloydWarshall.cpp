@@ -42,8 +42,13 @@ void FloydWarshall::run() // symmetric matrix
 	{
 		for (int i = 0; i < size; i++)
 		{
-			for (int j = i + 1; j < size; j++)
+			for (int j = 0; j < size; j++)
 			{
+				if (i == j || k == i || k == j)
+				{
+					continue;
+				}
+
 				float current = fabs(_sqMat(i, j));
 				float candidate = fabs(_combineWeight(_sqMat(i, k), 
 				                                      _sqMat(k, j)));
@@ -52,12 +57,10 @@ void FloydWarshall::run() // symmetric matrix
 				              std::min(current, candidate));
 				
 				_sqMat(i, j) = best;
-				_sqMat(j, i) = best;
 				
 				if (_mat && _mutex)
 				{
 					copy[i][j] = _sqMat(i, j);
-					copy[j][i] = _sqMat(j, i);
 				}
 			}
 		}

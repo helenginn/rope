@@ -152,8 +152,8 @@ void Correlative::addStates(const CertainStates &states)
 				_overall(seqN(x, m), seqN(y, n)) += cc;
 				_written(seqN(x, m), seqN(y, n)) += csq;
 
-				_overall(seqN(y, n), seqN(x, m)) += cc.transpose();
-				_written(seqN(y, n), seqN(x, m)) += csq.transpose();
+//				_overall(seqN(y, n), seqN(x, m)) += cc.transpose();
+//				_written(seqN(y, n), seqN(x, m)) += csq.transpose();
 			}
 		}
 	}
@@ -179,8 +179,9 @@ Eigen::MatrixXf Correlative::acquireMatrix()
 	}
 
 	float ave = sum / (float)(ret.cols() * ret.rows());
-	float k = 1.f / ave;
-	std::cout << "K: " << k << std::endl;
+	float k = log(3) / (ave * 3);
+	std::cout << "Sum: " << sum << std::endl;
+	std::cout << "k: " << k << std::endl;
 
 	for (int i = 0; i < ret.rows(); i++)
 	{

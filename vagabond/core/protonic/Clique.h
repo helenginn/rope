@@ -235,13 +235,23 @@ private:
 inline void to_json(json &j, const Clique &cl)
 {
 	j["name"] = cl._name;
-	
+
 	std::vector<std::string> descs;
-	for (Probe *const &probe : cl.probes())
+	if (cl._probes.size())
 	{
-		descs.push_back(probe->desc());
+		for (Probe *const &probe : cl.probes())
+		{
+			descs.push_back(probe->desc());
+		}
 	}
-	
+	else
+	{
+		for (const std::string &desc : cl._descs)
+		{
+			descs.push_back(desc);
+		}
+	}
+
 	j["probes"] = descs;
 	
 	if (cl._communication.size())

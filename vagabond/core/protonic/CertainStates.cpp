@@ -173,13 +173,6 @@ ProbeCorrelation CertainStates::correlate(const ProbeTypePair &left,
 
 		// we also want to figure out the total sum of energy weights
 		float prob = exp((ave - sc) / rt);
-		
-		if (prob != prob)
-		{
-			std::cout << "Ave: " << ave << std::endl;
-			std::cout << "Score: " << sc << std::endl;
-			std::cout << "Prob: " << prob << std::endl;
-		}
 
 		total_probs += prob;
 
@@ -190,41 +183,23 @@ ProbeCorrelation CertainStates::correlate(const ProbeTypePair &left,
 		corr.mat(l, r) += prob;
 	}
 	
-	if (!relative || true)
-	{
-		Eigen::MatrixXf copy = corr.mat;
+	Eigen::MatrixXf copy = corr.mat;
 
-		for (int j = 0; j < corr.mat.rows(); j++)
-		{
-			float row_sum = copy.row(j).sum();
-			for (int i = 0; i < corr.mat.cols(); i++)
-			{
-				float col_sum = copy.col(i).sum();
-				float ele_given_row = copy(j, i) / row_sum;
-				float ele_given_col = col_sum / total_probs;
-				
-				float val = (ele_given_row - ele_given_col);
-				corr.mat(j, i) = val;
-			}
-		}
-	}
-	for (int j = 0; j < corr.mat.rows() && false; j++)
+	for (int j = 0; j < corr.mat.rows(); j++)
 	{
-		float row_total = corr.mat.row(j).sum();
-		int col_count = corr.mat.cols();
-		
-		if (row_total > 1e-6 && relative)
+		float row_sum = copy.row(j).sum();
+		for (int i = 0; i < corr.mat.cols(); i++)
 		{
-			corr.mat.row(j) /= row_total;
-			
-			for (int i = 0; i < col_count; i++)
-			{
-				corr.mat.row(j)(i) -= 1.f / (float)row_total;
-			}
+			float outcome_given_row = copy(j, i) / row_sum;
+
+			float col_sum = copy.col(i).sum();
+			float average_outcome = col_sum / total_probs;
+			float enrichment = outcome_given_row - average_outcome;
+
+			corr.mat(j, i) = enrichment;
 		}
 	}
 
-	bool done = false;
 	for (int i = 0; i < corr.mat.rows(); i++)
 	{
 		for (int j = 0; j < corr.mat.cols(); j++)

@@ -117,7 +117,7 @@ public:
 		return _obj.is_certain();
 	}
 
-	virtual int certainValueAsInt(hnet::Types type)
+	virtual int certainValueAsInt()
 	{
 		return (int)_obj.value();
 	}

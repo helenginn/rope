@@ -62,9 +62,7 @@ public:
 
 	virtual unsigned int value_as_int()
 	{
-		hnet::Types type = (_add == "bond" ? hnet::Types::BondType
-		                                   : hnet::Types::ExistenceType);
-		return (unsigned int)_probe->certainValueAsInt(type);
+		return (unsigned int)_probe->certainValueAsInt();
 	}
 	
 	void forget_last_decree(std::condition_variable &cv, std::mutex &m)

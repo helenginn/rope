@@ -270,14 +270,12 @@ bool ExhaustiveSearch::next()
 				if (probe->is_bond())
 				{
 					result.addResult({probe, hnet::Types::BondType,
-					                  probe->certainValueAsInt
-					                  (hnet::Types::BondType)});
+					                  probe->certainValueAsInt()});
 				}
 				else
 				{
 					result.addResult({probe, hnet::Types::ExistenceType,
-					                  probe->certainValueAsInt
-					                  (hnet::Types::ExistenceType)});
+					                  probe->certainValueAsInt()});
 				}
 			}
 
