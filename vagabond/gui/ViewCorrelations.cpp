@@ -50,10 +50,19 @@ void ViewCorrelations::setup()
 	makeList();
 }
 
+ViewCorrelations::~ViewCorrelations()
+{
+	for (auto &pair : _prevJobs)
+	{
+		pair.first->setSelectJob(pair.second);
+	}
+}
+
 void ViewCorrelations::makeList()
 {
+	_prevJobs[_clique] = _clique->selectJob();
 	_clique->setSelectJob({});
-	
+
 	for (Clique &clique : _clique->subdivisions())
 	{
 		auto view_subnetwork = [this, &clique](bool left)
@@ -64,6 +73,7 @@ void ViewCorrelations::makeList()
 			}
 		};
 
+		_prevJobs[&clique] = clique.selectJob();
 		clique.setSelectJob(view_subnetwork);
 	}
 

@@ -512,6 +512,19 @@ void ProtonNetworkView::leave2D()
 	}
 }
 
+void ProtonNetworkView::cancelAnalysis()
+{
+	if (_2D)
+	{
+		leave2D();
+	}
+
+	_activeClique = nullptr;
+	_analysing = false;
+
+	deselect();
+}
+
 void ProtonNetworkView::sendObject(std::string tag, void *object)
 {
 	auto main_job = [this, &object]()
@@ -537,6 +550,10 @@ void ProtonNetworkView::makeMainMenu()
 	{
 		if (_cv)
 		{
+			// picks up subdivisions created (Exhaustive search) or whose
+			// select job was borrowed and restored (ViewCorrelations)
+			// since this cached view was last shown.
+			_cv->rewireSubdivisions();
 			addObject(_cv);
 		}
 		else
@@ -622,6 +639,7 @@ void ProtonNetworkView::makeMainMenu()
 		if (_activeClique)
 		{
 			m->addOption("Analysis overview", control_analysis);
+			m->addOption("Cancel analysis", [this]() { cancelAnalysis(); });
 		}
 		
 		auto freeze_positions = [this]()

@@ -147,7 +147,8 @@ public:
 	}
 	
 	Clique *newClique(const OpSet<Probe *> &probes);
-	
+	void removeClique(Clique *clique);
+
 	std::list<Clique> &cliques()
 	{
 		return _cliques;

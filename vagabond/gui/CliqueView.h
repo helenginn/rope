@@ -46,8 +46,23 @@ public:
 	
 	void highlightCliquesWith(const OpSet<Probe *> &probes);
 	void insertClique(Clique *clique);
+
+	// re-applies wireDescendants() to every top-level clique already in
+	// this view. Subdivisions can be created (via SearchAll/Exhaustive
+	// search) or have their select job temporarily borrowed (see
+	// ViewCorrelations) after this view was first built and cached -
+	// call this whenever the view is shown again to pick up either case.
+	void rewireSubdivisions();
 private:
 	void setupCloseButton();
+
+	// subdivisions created by SearchAll (see SearchAll::run()) are wired
+	// into a clique's Item children purely for display - unlike top-level
+	// Network cliques, they never go through insertClique(), so they have
+	// no select job. Recurse through a clique's descendants after it is
+	// inserted and give each one a minimal, view-only click behaviour.
+	void wireDescendants(Item *item);
+	void wireSubdivision(Clique *sub);
 
 	Network &_network;
 	std::function<void()> _kill{};

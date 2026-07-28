@@ -32,6 +32,7 @@ class ViewCorrelations : public Scene
 {
 public:
 	ViewCorrelations(Scene *prev, Clique *clique);
+	~ViewCorrelations();
 
 	virtual void setup();
 	void makeList();
@@ -41,6 +42,12 @@ public:
 private:
 	Clique *_clique{};
 	Correlative *_correlative{};
+
+	// makeList() borrows _clique's and its subdivisions' select jobs
+	// (shared Item state, not view-local) for the duration this view is
+	// open - saved here before being overwritten, and restored in the
+	// destructor so nothing is left pointing at this Scene once it closes.
+	std::map<Clique *, std::function<void(bool)>> _prevJobs;
 
 	PCA::Matrix _matrix{};
 	std::mutex _mutex{};

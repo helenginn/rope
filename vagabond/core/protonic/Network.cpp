@@ -966,6 +966,20 @@ Clique *Network::newClique(const OpSet<Probe *> &probes)
 	return &_cliques.back();
 }
 
+void Network::removeClique(Clique *clique)
+{
+	for (auto it = _cliques.begin(); it != _cliques.end(); it++)
+	{
+		if (&(*it) == clique)
+		{
+			_cliques.erase(it);
+			break;
+		}
+	}
+
+	updateModelCliques();
+}
+
 void Network::firstOrderLogic()
 {
 	return;

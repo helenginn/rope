@@ -77,6 +77,7 @@ public:
 	void selectProbes(const OpSet<Probe *> &probes, bool on = true);
 	void arrangeFigure();
 	void leave2D();
+	void cancelAnalysis();
 
 	void highlightCliques();
 

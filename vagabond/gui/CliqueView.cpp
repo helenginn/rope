@@ -170,14 +170,34 @@ void CliqueView::insertClique(Clique *clique)
 				scene->setActive(clique);
 				_kill();
 			};
-			
+
+			auto delete_clique = [this, clique]()
+			{
+				// unlink from the display groups and this view's cache
+				// while the pointer is still valid, then erase the Clique
+				// itself from the Network - that also pushes the removal
+				// through to Model so it is gone from the next json save.
+				clique->removeSelf(true);
+
+				auto it = std::find(_cliques.begin(), _cliques.end(), clique);
+				if (it != _cliques.end())
+				{
+					_cliques.erase(it);
+				}
+
+				_network.removeClique(clique);
+
+				_lg->refreshGroups();
+			};
+
 			Menu *menu = new Menu(scene);
 			if (!_combine)
 			{
 				menu->addOption("rename", change_name);
 				menu->addOption("analyse", analyse_bonds);
-				menu->addOption("combine with...", [this, clique]() 
+				menu->addOption("combine with...", [this, clique]()
 				                { _combine = clique; });
+				menu->addOption("delete", delete_clique);
 			}
 			else
 			{
@@ -198,6 +218,82 @@ void CliqueView::insertClique(Clique *clique)
 
 	add_clique(clique)();
 	clique->setSelectJob(click(clique));
+
+	wireDescendants(clique);
+}
+
+void CliqueView::rewireSubdivisions()
+{
+	for (Clique *clique : _cliques)
+	{
+		wireDescendants(clique);
+	}
+}
+
+void CliqueView::wireDescendants(Item *item)
+{
+	for (Item *child : item->items())
+	{
+		Clique *sub = static_cast<Clique *>(child);
+		wireSubdivision(sub);
+		wireDescendants(sub);
+	}
+}
+
+void CliqueView::wireSubdivision(Clique *sub)
+{
+	ProtonNetworkView *scene = _scene;
+
+	auto select_and_centre = [this, scene](Clique *clique)
+	{
+		if (_scene->controlPressed())
+		{
+			scene->selectProbes(clique->probes(), false);
+		}
+		else if (!_scene->shiftPressed())
+		{
+			scene->deselect();
+		}
+		if (!_scene->controlPressed())
+		{
+			scene->selectProbes(clique->probes());
+		}
+		if (!_scene->shiftPressed())
+		{
+			scene->shiftToCentre(clique->centroid(), 0);
+		}
+	};
+
+	auto analyse_sub = [this, sub, scene]()
+	{
+		scene->deselect();
+		scene->selectProbes(sub->probes());
+		scene->completeResidues(true);
+		scene->setActive(sub);
+		_kill();
+	};
+
+	sub->setSelectJob([this, select_and_centre, sub, scene, analyse_sub]
+	                  (bool left)
+	{
+		if (left)
+		{
+			select_and_centre(sub);
+			return;
+		}
+
+		Menu *menu = new Menu(scene);
+		menu->addOption("analyse", analyse_sub);
+
+		float x = 0.5; float y = 0.5;
+		if (_gl)
+		{
+			_gl->getFractionalPos(x, y);
+		}
+
+		menu->setup(x, y);
+		scene->setModal(menu);
+	});
 }
 
 CliqueView::CliqueView(ProtonNetworkView *scene, Network &network, 

@@ -200,7 +200,7 @@ ProbeCorrelation CertainStates::correlate(const ProbeTypePair &left,
 			float col_sum = copy.col(i).sum();
 			float average_outcome = col_sum / total_probs;
 			float enrichment = outcome_given_row - average_outcome;
-			enrichment *= (copy(j, i) / total_probs);
+//			enrichment *= (copy(j, i) / total_probs);
 
 			corr.mat(j, i) = enrichment;
 		}
