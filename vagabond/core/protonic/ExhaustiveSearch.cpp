@@ -255,6 +255,11 @@ bool ExhaustiveSearch::next()
 					continue;
 				}
 				
+				if (!probe->is_bond() && !probe->is_atom())
+				{
+					continue;
+				}
+				
 				if (probe->atom() &&
 				    (probe->atom()->elementSymbol() == "H" ||
 				     probe->atom()->elementSymbol() == "C"))
