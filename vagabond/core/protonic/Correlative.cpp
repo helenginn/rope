@@ -145,18 +145,9 @@ void Correlative::addStates(const CertainStates &states)
 			}
 			else
 			{
-				float w = states.state_count();
-				Eigen::MatrixXf cc = c.mat;// * w;
+				Eigen::MatrixXf cc = c.mat;
 				Eigen::MatrixXf csq = c.mat;
-
-				for (int j = 0; j < cc.cols(); j++)
-				{
-					for (int i = 0; i < cc.rows(); i++)
-					{
-						cc(i, j) = cc(i, j);
-						csq(i, j) = 1;
-					}
-				}
+				csq.setOnes();
 
 				_overall(seqN(x, m), seqN(y, n)) += cc;
 				_written(seqN(x, m), seqN(y, n)) += csq;
@@ -181,13 +172,15 @@ Eigen::MatrixXf Correlative::acquireMatrix()
 			if (ret(i, j) != ret(i, j) || !isfinite(ret(i, j)))
 			{
 				ret(i, j) = 0;
-				sum += fabs(ret(i, j));
 			}
+
+			sum += fabs(ret(i, j));
 		}
 	}
 
 	float ave = sum / (float)(ret.cols() * ret.rows());
 	float k = 1.f / ave;
+	std::cout << "K: " << k << std::endl;
 
 	for (int i = 0; i < ret.rows(); i++)
 	{
@@ -196,7 +189,7 @@ Eigen::MatrixXf Correlative::acquireMatrix()
 			for (int j = 0; j < ret.cols(); j++)
 			{
 				float x = ret(i, j);
-				float val = 1 / (1 + exp(-x * k));
+				float val = 2 / (1 + exp(-x * k)) - 1;
 				ret(i, j) = val;
 			}
 		}

@@ -233,9 +233,6 @@ ProbeCorrelation CertainStates::correlate(const ProbeTypePair &left,
 			{
 				corr.mat(i, j) = 0;
 			}
-
-			if (corr.mat(i, j) > 1) corr.mat(i, j) = 1;
-			if (corr.mat(i, j) < -1) corr.mat(i, j) = -1;
 		}
 	}
 
