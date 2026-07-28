@@ -37,6 +37,18 @@ void FloydWarshall::run() // symmetric matrix
 	}
 	
 	PCA::Matrix copy = PCA::Matrix(_sqMat);
+	
+	auto find_best = [&](float x, float y)
+	{
+		if (fabs(x) > fabs(y))
+		{
+			return _maximise ? x : y;
+		}
+		else
+		{
+			return _maximise ? y : x;
+		}
+	};
 
 	for (int k = 0; k < size; k++)
 	{
@@ -49,13 +61,10 @@ void FloydWarshall::run() // symmetric matrix
 					continue;
 				}
 
-				float current = fabs(_sqMat(i, j));
-				float candidate = fabs(_combineWeight(_sqMat(i, k), 
-				                                      _sqMat(k, j)));
+				float current = _sqMat(i, j);
+				float candidate = _combineWeight(_sqMat(i, k), _sqMat(k, j));
 				
-				float best = (_maximise ? std::max(current, candidate) :
-				              std::min(current, candidate));
-				
+				float best = find_best(current, candidate);
 				_sqMat(i, j) = best;
 				
 				if (_mat && _mutex)

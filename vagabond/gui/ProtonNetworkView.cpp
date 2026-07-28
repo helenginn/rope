@@ -52,8 +52,16 @@ ProtonNetworkView::ProtonNetworkView(Scene *scene, Network &network)
 ProtonNetworkView::~ProtonNetworkView()
 {
 	delete _shifter;
-	delete &_network;
 
+	// every ProbeAtom/ProbeBond/ProbeCharge/CliqueView added via
+	// addObject() holds a raw pointer into _network - they must be torn
+	// down before the network (and its Probes/Cliques) is deleted below,
+	// otherwise ~HasRenderables() (which runs later, as part of the
+	// implicit Scene base-class teardown) deletes them while they still
+	// point at freed memory.
+	deleteObjects();
+
+	delete &_network;
 }
 
 void ProtonNetworkView::linkSymmetricAtomProbes(const hnet::AtomConf &ac)

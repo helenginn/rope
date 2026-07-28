@@ -164,17 +164,22 @@ ProbeCorrelation CertainStates::correlate(const ProbeTypePair &left,
 		// left or right (see the constructor) - nothing to correlate
 		// for this state, so it must not contribute to either the
 		// histogram or total_probs.
-		if (mv == -1 || nv == -1)
-		{
-			continue;
-		}
-
 		float sc = score(i);
 
 		// we also want to figure out the total sum of energy weights
 		float prob = exp((ave - sc) / rt);
+		
+		if (mv == -1 && nv == -1)
+		{
+			continue;
+		}
 
 		total_probs += prob;
+
+		if (mv == -1 || nv == -1)
+		{
+			continue;
+		}
 
 		int l = get_index(mv);
 		int r = get_index(nv);
@@ -195,6 +200,7 @@ ProbeCorrelation CertainStates::correlate(const ProbeTypePair &left,
 			float col_sum = copy.col(i).sum();
 			float average_outcome = col_sum / total_probs;
 			float enrichment = outcome_given_row - average_outcome;
+			enrichment *= (copy(j, i) / total_probs);
 
 			corr.mat(j, i) = enrichment;
 		}

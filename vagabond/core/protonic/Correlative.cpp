@@ -179,9 +179,9 @@ Eigen::MatrixXf Correlative::acquireMatrix()
 	}
 
 	float ave = sum / (float)(ret.cols() * ret.rows());
-	float k = log(3) / (ave * 3);
+	float k = 1 / ave;
 	std::cout << "Sum: " << sum << std::endl;
-	std::cout << "k: " << k << std::endl;
+	std::cout << "Ave: " << ave << std::endl;
 
 	for (int i = 0; i < ret.rows(); i++)
 	{
@@ -190,7 +190,7 @@ Eigen::MatrixXf Correlative::acquireMatrix()
 			for (int j = 0; j < ret.cols(); j++)
 			{
 				float x = ret(i, j);
-				float val = 2 / (1 + exp(-x * k)) - 1;
+				float val = 1 / (1 + exp(-x * k)) - 0.5;
 				ret(i, j) = val;
 			}
 		}
