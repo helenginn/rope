@@ -203,12 +203,8 @@ ProbeCorrelation CertainStates::correlate(const ProbeTypePair &left,
 				float ele_given_row = copy(j, i) / row_sum;
 				float ele_given_col = col_sum / total_probs;
 				
-				if (ele_given_row == ele_given_row && 
-				    ele_given_col == ele_given_col)
-				{
-					float val = (ele_given_row / ele_given_col);
-					corr.mat(j, i) = val > 1e-6 ? log(val) : -1;
-				}
+				float val = (ele_given_row - ele_given_col);
+				corr.mat(j, i) = val;
 			}
 		}
 	}

@@ -153,7 +153,7 @@ void Correlative::addStates(const CertainStates &states)
 				{
 					for (int i = 0; i < cc.rows(); i++)
 					{
-						cc(i, j) = fabs(cc(i, j));
+						cc(i, j) = cc(i, j);
 						csq(i, j) = 1;
 					}
 				}
@@ -173,6 +173,7 @@ Eigen::MatrixXf Correlative::acquireMatrix()
 	Eigen::MatrixXf ret = _overall;
 
 	// get rid of nans
+	float sum = 0;
 	for (int i = 0; i < ret.rows(); i++)
 	{
 		for (int j = 0; j < ret.cols(); j++)
@@ -180,9 +181,13 @@ Eigen::MatrixXf Correlative::acquireMatrix()
 			if (ret(i, j) != ret(i, j) || !isfinite(ret(i, j)))
 			{
 				ret(i, j) = 0;
+				sum += fabs(ret(i, j));
 			}
 		}
 	}
+
+	float ave = sum / (float)(ret.cols() * ret.rows());
+	float k = 1.f / ave;
 
 	for (int i = 0; i < ret.rows(); i++)
 	{
@@ -190,14 +195,9 @@ Eigen::MatrixXf Correlative::acquireMatrix()
 		{
 			for (int j = 0; j < ret.cols(); j++)
 			{
-				if (_written(i, j) > 1e-6)
-				{
-					ret(i, j) /= _written(i, j);
-					if (ret(i, j) > 1)
-					{
-						std::cout << "still over one: " << _written(i, j) << std::endl;
-					}
-				}
+				float x = ret(i, j);
+				float val = 1 / (1 + exp(-x * k));
+				ret(i, j) = val;
 			}
 		}
 		
