@@ -267,14 +267,19 @@ void ViewCorrelations::viewSubnetwork(Clique &clique)
 		p++;
 	}
 
+	// computed once for this run, not cached on states itself - score(i)
+	// is a live callback that can change if enabled energy terms change
+	// between separate runs, so this must be fresh every call.
+	float ave = states.average_score();
+	std::vector<float> probs = states.probsForAve(ave);
+
 	int m = 0;
 	for (const ProbeTypePair &left : states.ptps())
 	{
 		int n = 0;
 		for (const ProbeTypePair &right : states.ptps())
 		{
-			float ave = states.average_score();
-			ProbeCorrelation corr = states.correlate(left, right, ave, true);
+			ProbeCorrelation corr = states.correlate(left, right, probs, true);
 
 			PCA::Matrix pca = PCA::Matrix(corr.mat);
 			MatrixPlot *mp = new MatrixPlot(pca);

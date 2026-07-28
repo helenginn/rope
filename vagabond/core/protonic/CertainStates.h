@@ -19,6 +19,7 @@
 #ifndef __vagabond__CertainStates__
 #define __vagabond__CertainStates__
 
+#include <cmath>
 #include <vagabond/utils/Eigen/Dense>
 #include <vagabond/utils/OpSet.h>
 #include "ProbeResult.h"
@@ -60,9 +61,21 @@ public:
 	
 	float average_score() const;
 
-	ProbeCorrelation correlate(const ProbeTypePair &left, 
-	                           const ProbeTypePair &right, 
-	                           float ave, bool norm = true) const;
+	// score(i) is a live callback (see GetScore in ProbeResult.h) that can
+	// change value if the enabled energy terms change between calls -
+	// probsForAve() must therefore be recomputed by the caller at the
+	// start of each correlation run, never cached across separate runs.
+	// Callers loop correlate() O(ptps^2) times per run, all sharing the
+	// same ave, so computing this vector once up front and passing it in
+	// (rather than recomputing exp() per state inside every correlate()
+	// call) avoids a large amount of redundant work without risking
+	// staleness - it is fresh for exactly as long as the run that made it.
+	std::vector<float> probsForAve(float ave) const;
+
+	ProbeCorrelation correlate(const ProbeTypePair &left,
+	                           const ProbeTypePair &right,
+	                           const std::vector<float> &probs,
+	                           bool norm = true) const;
 
 	std::map<int, float> proportions(ProbeTypePair ptp, float &sum, 
 	                                 float ave) const;

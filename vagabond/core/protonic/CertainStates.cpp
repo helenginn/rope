@@ -108,9 +108,22 @@ float CertainStates::average_score() const
 	return sum / (float)state_count();
 }
 
+std::vector<float> CertainStates::probsForAve(float ave) const
+{
+	float rt = 2.57;
+	std::vector<float> probs(state_count());
+	for (size_t i = 0; i < state_count(); i++)
+	{
+		probs[i] = exp((ave - score(i)) / rt);
+	}
+
+	return probs;
+}
+
 ProbeCorrelation CertainStates::correlate(const ProbeTypePair &left,
-                                          const ProbeTypePair &right, 
-                                          float ave, bool relative) const
+                                          const ProbeTypePair &right,
+                                          const std::vector<float> &probs,
+                                          bool relative) const
 {
 	if (state_count() == 0 || probe_count() == 0)
 	{
@@ -152,7 +165,6 @@ ProbeCorrelation CertainStates::correlate(const ProbeTypePair &left,
 	// possible result for left and right nodes.
 	// we want to keep track of relative probabilities of each state according
 	// to partial energy knowledge.
-	float rt = 2.57;
 	float total_probs = 0;
 
 	for (int i = 0; i < state_count(); i++)
@@ -164,11 +176,10 @@ ProbeCorrelation CertainStates::correlate(const ProbeTypePair &left,
 		// left or right (see the constructor) - nothing to correlate
 		// for this state, so it must not contribute to either the
 		// histogram or total_probs.
-		float sc = score(i);
 
 		// we also want to figure out the total sum of energy weights
-		float prob = exp((ave - sc) / rt);
-		
+		float prob = probs[i];
+
 		if (mv == -1 && nv == -1)
 		{
 			continue;

@@ -96,6 +96,11 @@ Correlative::Correlative(const OpSet<ProbeTypePair> &all, float ave_score,
 
 void Correlative::addStates(const CertainStates &states)
 {
+	// computed once for this run, not cached on states itself - score(i)
+	// is a live callback that can change if enabled energy terms change
+	// between separate runs, so this must be fresh every call.
+	std::vector<float> probs = states.probsForAve(_ave_score);
+
 	for (const ProbeTypePair &left : states.ptps())
 	{
 		if (_probes.count(left) == 0)
@@ -113,7 +118,7 @@ void Correlative::addStates(const CertainStates &states)
 			}
 			int y = _insertions[right].first;
 			int n = _insertions[right].second;
-			ProbeCorrelation c = states.correlate(left, right, _ave_score,
+			ProbeCorrelation c = states.correlate(left, right, probs,
 			                                      _relative);
 			
 			if (_loggy)
