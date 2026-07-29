@@ -85,6 +85,21 @@ void ProgressBar::finish()
 
 void ProgressBar::sendObject(std::string tag, void *object)
 {
+	// Progressor::clickTicker()/finishTicker() (Progressor.h) call this
+	// synchronously, on whatever thread the underlying job runs on -
+	// often a worker thread (e.g. ModelManager::autoModel()/rescan(),
+	// called from Dictator's worker thread). finish() below touches
+	// renderable/GL state (setDisabled(), _gl->viewChanged()), which
+	// must only happen on the main thread - defer the actual handling
+	// instead of mutating that state directly from here.
+	addMainThreadJob([this, tag]()
+	                 {
+		                handleProgressEvent(tag);
+	});
+}
+
+void ProgressBar::handleProgressEvent(std::string tag)
+{
 	if (tag == "tick")
 	{
 		_ticks++;
@@ -92,7 +107,7 @@ void ProgressBar::sendObject(std::string tag, void *object)
 		{
 			finish();
 		}
-		
+
 		if (_gl)
 		{
 			_gl->viewChanged();

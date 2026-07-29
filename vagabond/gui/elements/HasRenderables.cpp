@@ -218,14 +218,21 @@ void HasRenderables::addMainThreadJob(const std::function<void()> &job)
 
 void HasRenderables::doJobs()
 {
-	std::unique_lock<std::mutex> lock(_joblock);
-	for (const auto &job : _jobs)
+	// jobs run outside the lock, not while holding it - a job that
+	// itself calls addMainThreadJob() (e.g. ProgressBar::finish() ->
+	// requestProgressBarRemoval()) would otherwise try to re-lock
+	// _joblock on the same thread that already holds it, which
+	// self-deadlocks on a non-recursive std::mutex.
+	std::vector<std::function<void()>> jobs;
+	{
+		std::unique_lock<std::mutex> lock(_joblock);
+		std::swap(jobs, _jobs);
+	}
+
+	for (const auto &job : jobs)
 	{
 		job();
 	}
-	
-	_jobs.clear();
-
 }
 
 void HasRenderables::doThingsCircuit()

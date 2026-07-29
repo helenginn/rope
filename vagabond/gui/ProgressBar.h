@@ -43,6 +43,10 @@ public:
 	virtual void extraUniforms();
 	virtual void sendObject(std::string tag, void *object);
 private:
+	// the actual tick/done handling, deferred onto the main thread by
+	// sendObject() - see there for why.
+	void handleProgressEvent(std::string tag);
+
 	int _maxTicks = 0;
 	int _ticks = 0;
 
