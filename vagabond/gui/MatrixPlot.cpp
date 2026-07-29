@@ -95,13 +95,16 @@ void MatrixPlot::prepareSmallVertices()
 	int matNum = 0;
 	int vertNum = 0;
 
+	// row index -> vertical (y), column index -> horizontal (x) - matches
+	// how row/column labels get placed by callers like MatrixBox (rows
+	// down the left, columns across the bottom).
 	for (int i = 0; i < _mat.rows; i++)
 	{
 		for (int j = 0; j < _mat.cols; j++)
 		{
 			glm::vec3 pos{};
-			pos.x = i * _xProp;
-			pos.y = j * _yProp;
+			pos.x = j * _xProp;
+			pos.y = i * _yProp;
 
 			for (int m = 0; m < 2; m++)
 			{
@@ -139,16 +142,17 @@ void MatrixPlot::setup()
 	_cols = _mat.cols;
 	_rows = _mat.rows;
 	
-	_xProp = 1 / (float)_rows;
-	_yProp = 1 / (float)_cols;
-	
-	if (_cols > _rows)
+	// x spans columns, y spans rows - see prepareSmallVertices().
+	_xProp = 1 / (float)_cols;
+	_yProp = 1 / (float)_rows;
+
+	if (_rows > _cols)
 	{
-		_xProp *= _rows / (float)_cols;
+		_xProp *= _cols / (float)_rows;
 	}
-	else if (_rows > _cols)
+	else if (_cols > _rows)
 	{
-		_yProp *= _cols / (float)_rows;
+		_yProp *= _rows / (float)_cols;
 	}
 	
 	prepareSmallVertices();

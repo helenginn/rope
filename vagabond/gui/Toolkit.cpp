@@ -21,9 +21,19 @@
 #include <vagabond/gui/elements/Menu.h>
 #include <vagabond/gui/elements/TextButton.h>
 #include <vagabond/gui/VagWindow.h>
+#include <vagabond/gui/MatrixBoxTest.h>
 #include <vagabond/core/Environment.h>
 #include <vagabond/core/FileManager.h>
 #include <vagabond/core/ModelManager.h>
+#include <cstdlib>
+
+// gates developer-only tools (e.g. "test matrix") out of the toolkit menu
+// unless explicitly opted into - set ROPE_DEV=1 (any non-empty value) in
+// the environment to reveal them.
+static bool ropeDevToolsEnabled()
+{
+	return std::getenv("ROPE_DEV") != nullptr;
+}
 
 Toolkit::Toolkit(Scene *scene) : ImageButton("assets/images/tools.png", scene)
 {
@@ -40,9 +50,21 @@ void Toolkit::click(bool left)
 	m->setReturnTag("tools");
 	TextButton *tb1 = m->addOption("automodel");
 	TextButton *tb2 = m->addOption("rescan");
+
+	TextButton *tb3 = nullptr;
+	if (ropeDevToolsEnabled())
+	{
+		tb3 = m->addOption("test matrix");
+	}
+
 	m->setup(this);
 	tb1->addAltTag("automatic models from PDBs\nscan for defined entities");
 	tb2->addAltTag("rescan for entities\nonly in existing models");
+
+	if (tb3)
+	{
+		tb3->addAltTag("interactive MatrixBox test window");
+	}
 
 	_scene->setModal(m);
 
@@ -73,6 +95,13 @@ void Toolkit::buttonPressed(std::string tag, Button *button)
 		prepareProgress(mm->objectCount(), "Rescanning models...");
 
 		VagWindow::addJob("rescan");
+
+		return;
+	}
+	else if (tag == "test matrix")
+	{
+		MatrixBoxTest *mbt = new MatrixBoxTest(_scene);
+		mbt->show();
 
 		return;
 	}

@@ -86,6 +86,8 @@ guifiles = [
 'MainMenu.cpp',
 'MatrixBox.cpp',
 'MatrixBox.h',
+'MatrixBoxTest.cpp',
+'MatrixBoxTest.h',
 'MatrixPlot.cpp',
 'MatrixPlot.h',
 'MetadataView.cpp',

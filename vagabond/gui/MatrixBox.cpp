@@ -17,6 +17,7 @@
 // Please email: vagabond @ hginn.co.uk for more details.
 
 #include <climits>
+#include <iostream>
 #include <vagabond/utils/OpSet.h>
 #include "MatrixBox.h"
 #include <vagabond/gui/MatrixPlot.h>
@@ -29,7 +30,30 @@ MatrixBox::MatrixBox(MatrixPlot *mp, const std::vector<std::string> &rowNames,
 : _plot(mp), _rowNames(rowNames), _colNames(colNames)
 {
 	_identical = (&rowNames == &colNames);
-	std::reverse(_colNames.begin(), _colNames.end());
+
+	// capture before anything else touches _plot's matrix - this is the
+	// one copy that never gets permuted.
+	_original = _plot->_mat.toEigen();
+
+	// MatrixPlot renders row index along +y in raw OpenGL space, and +y is
+	// up - so a row list in natural order renders bottom-up. Compensate
+	// here, once, as the starting permutation rather than a separate
+	// reversal disconnected from the data: _rowPerm begins reversed so
+	// row labels (and the matrix rows behind them) both render top-down
+	// together. Columns run along +x, which needs no such flip.
+	_rowPerm.resize(_rowNames.size());
+	for (size_t i = 0; i < _rowPerm.size(); i++)
+	{
+		_rowPerm[i] = _rowPerm.size() - 1 - i;
+	}
+
+	_colPerm.resize(_colNames.size());
+	for (size_t i = 0; i < _colPerm.size(); i++)
+	{
+		_colPerm[i] = i;
+	}
+
+	refreshDisplay();
 
 	_plot->setCentre(0.0, 0.0);
 	addObject(_plot);
@@ -39,6 +63,54 @@ MatrixBox::MatrixBox(MatrixPlot *mp, const std::vector<std::string> &rowNames,
 		guessReordering();
 	}
 	draw();
+}
+
+void MatrixBox::refreshDisplay()
+{
+	Eigen::MatrixXf display(_rowPerm.size(), _colPerm.size());
+	for (size_t i = 0; i < _rowPerm.size(); i++)
+	{
+		for (size_t j = 0; j < _colPerm.size(); j++)
+		{
+			display(i, j) = _original(_rowPerm[i], _colPerm[j]);
+		}
+	}
+
+	_plot->_mat.dropFromEigen(display);
+	_plot->update();
+}
+
+void MatrixBox::syncCoupledPerm(bool rowsChanged)
+{
+	std::vector<int> &source = rowsChanged ? _rowPerm : _colPerm;
+	std::vector<int> &target = rowsChanged ? _colPerm : _rowPerm;
+	target = source;
+	std::reverse(target.begin(), target.end());
+}
+
+float MatrixBox::valueAtOriginal(int origRow, int origCol) const
+{
+	return _original(origRow, origCol);
+}
+
+void MatrixBox::setValueAtOriginal(int origRow, int origCol, float value)
+{
+	_original(origRow, origCol) = value;
+	refreshDisplay();
+}
+
+void MatrixBox::setOriginalMatrix(const Eigen::MatrixXf &matrix)
+{
+	if (matrix.rows() != _original.rows() || matrix.cols() != _original.cols())
+	{
+		std::cout << "MatrixBox::setOriginalMatrix: expected " <<
+		_original.rows() << "x" << _original.cols() << ", got " <<
+		matrix.rows() << "x" << matrix.cols() << " - ignoring" << std::endl;
+		return;
+	}
+
+	_original = matrix;
+	refreshDisplay();
 }
 
 typedef std::pair<float, TextButton *> OrderedButton;
@@ -182,28 +254,40 @@ void MatrixBox::draw()
 
 			if (changed)
 			{
-				Eigen::MatrixXf A = _plot->_mat.toEigen();
-				Eigen::VectorXi perm = Eigen::Map<Eigen::VectorXi>(order.data(), 
-				                                                   order.size());
+				// order[newPos] = oldPos, over display positions for this
+				// coord only. Compose it onto whichever permutation vector
+				// this drag directly controls.
+				auto compose = [](std::vector<int> &perm,
+				                  const std::vector<int> &order)
+				{
+					std::vector<int> updated(perm.size());
+					for (size_t i = 0; i < order.size(); i++)
+					{
+						updated[i] = perm[order[i]];
+					}
+					perm = updated;
+				};
 
-				Eigen::PermutationMatrix<Eigen::Dynamic, Eigen::Dynamic> P(perm);
-				Eigen::MatrixXf pA;
-				if (_identical)
+				if (coord == 1) // buttons on y -> row swaps
 				{
-					pA = P.transpose() * A * P;
-				}
-				else if (coord == 1) // buttons on y -> row swaps
-				{
-					std::cout << "Implement non-square matrix permutations pls" << std::endl;
+					compose(_rowPerm, order);
 				}
 				else if (coord == 0)
 				{
-					std::cout << "Implement non-square matrix permutations pls" << std::endl;
-
+					compose(_colPerm, order);
 				}
-				A = pA;
-				_plot->_mat.dropFromEigen(A);
-				_plot->update();
+
+				// _identical: composing the same positional order into
+				// both independently only stays correct while they share
+				// a baseline - re-derive the other one from whichever
+				// just changed instead, to keep rows and columns in
+				// lock-step (see syncCoupledPerm()).
+				if (_identical)
+				{
+					syncCoupledPerm(coord == 1);
+				}
+
+				refreshDisplay();
 
 				save_current_pos_info();
 				_order = tmp;
@@ -216,26 +300,28 @@ void MatrixBox::draw()
 	Renderable::Alignment col_align = Renderable::Alignment
 	(Renderable::Alignment::Centre | Renderable::Alignment::Bottom);
 	
-	std::vector<std::pair<TextButton *, TextButton *>> pairs;
-
-	for (const std::string &first : _rowNames)
+	// buttons keep a fixed name for their whole lifetime once created here
+	// - dragging only ever moves a button's position, never its text. The
+	// baseline flip (and any pre-drag reordering from guessReordering())
+	// is therefore expressed entirely by which original name gets placed
+	// at which starting display position, via _rowPerm/_colPerm.
+	std::vector<TextButton *> rowButtons(_rowNames.size());
+	for (size_t i = 0; i < _rowNames.size(); i++)
 	{
+		const std::string &first = _rowNames[_rowPerm[i]];
 		TextButton *t = new TextButton(first);
 		t->resize(0.3);
 		t->setArbitrary(-width / 2, y, row_align);
 		t->setDragFunction(drag_button(t, 1));
 		addObject(t);
 		y += ystep;
-		if (_identical)
-		{
-			_indices[pairs.size()] = t;
-			pairs.push_back({t, nullptr});
-		}
+		rowButtons[i] = t;
 	}
 
-	int n = 0;
-	for (const std::string &first : _colNames)
+	std::vector<TextButton *> colButtons(_colNames.size());
+	for (size_t j = 0; j < _colNames.size(); j++)
 	{
+		const std::string &first = _colNames[_colPerm[j]];
 		TextButton *t = new TextButton(first);
 		t->resize(0.3);
 		t->setDragFunction(drag_button(t, 0));
@@ -249,13 +335,27 @@ void MatrixBox::draw()
 		t->rotateRoundCentre(rot);
 		addObject(t);
 		x += xstep;
-		if (_identical)
+		colButtons[j] = t;
+	}
+
+	if (_identical)
+	{
+		// pair by matching label, not by position in either list - robust
+		// regardless of which axis carries the baseline flip, and the
+		// direct fix for rows/columns not staying in step with each other.
+		for (TextButton *rowButton : rowButtons)
 		{
-			pairs[n].second = t; n++;
+			for (TextButton *colButton : colButtons)
+			{
+				if (rowButton->text() == colButton->text())
+				{
+					_couples[rowButton] = colButton;
+					_couples[colButton] = rowButton;
+					break;
+				}
+			}
 		}
 	}
-	
-	_couples = std::map<TextButton *, TextButton *>(pairs.begin(), pairs.end());
 }
 
 void removeRow(Eigen::MatrixXf& matrix, unsigned int rowToRemove)
@@ -293,13 +393,24 @@ void MatrixBox::guessReordering()
 		return;
 	}
 
+	// operates on the current display matrix (i.e. already reflecting
+	// _rowPerm/_colPerm as they stand right now, including the baseline
+	// flip) - logicalOrder accumulates the reordering relative to *that*
+	// starting arrangement, then gets composed onto _rowPerm/_colPerm
+	// below, rather than being written to _plot's matrix directly.
 	Eigen::MatrixXf A = _plot->_mat.toEigen();
 	OpSet<int> row_list;
 	for (int i = 0; i < A.rows(); i++)
 	{
 		row_list += i;
 	}
-	
+
+	std::vector<int> logicalOrder(A.rows());
+	for (int i = 0; i < A.rows(); i++)
+	{
+		logicalOrder[i] = i;
+	}
+
 	auto insertion = []<typename Obj>(std::vector<Obj> &list, int i, int j)
 	{
 		Obj tmp = list[i];
@@ -307,15 +418,15 @@ void MatrixBox::guessReordering()
 		if (j > i) j--;
 		list.insert(list.begin() + j, tmp);
 	};
-	
+
 	auto insert_rows = [&](int i, int j)
 	{
 		std::vector<int> reorder = {row_list.begin(), row_list.end()};
 		insertion(reorder, i, j);
-		
-		insertion(_rowNames, i, j);
-		
-		Eigen::VectorXi perm = Eigen::Map<Eigen::VectorXi>(reorder.data(), 
+
+		insertion(logicalOrder, i, j);
+
+		Eigen::VectorXi perm = Eigen::Map<Eigen::VectorXi>(reorder.data(),
 		                                                   reorder.size());
 
 		Eigen::PermutationMatrix<Eigen::Dynamic, Eigen::Dynamic> P(perm);
@@ -396,33 +507,39 @@ void MatrixBox::guessReordering()
 		round();
 	}
 
-	_colNames = _rowNames;
-	std::reverse(_colNames.begin(), _colNames.end());
-
-	_plot->_mat.dropFromEigen(A);
-	_plot->update();
-}
-
-std::vector<std::string> MatrixBox::names(int coord)
-{
-	auto create_order = create_order_function(1);
-	std::set<OrderedButton> ordered = create_order();
-	
-	std::vector<std::string> texts; texts.reserve(ordered.size());
-	for (const OrderedButton &button  : ordered)
+	auto compose = [](std::vector<int> &perm, const std::vector<int> &order)
 	{
-		texts.push_back(button.second->text());
-	}
-	return texts;
+		std::vector<int> updated(perm.size());
+		for (size_t i = 0; i < order.size(); i++)
+		{
+			updated[i] = perm[order[i]];
+		}
+		perm = updated;
+	};
+
+	compose(_rowPerm, logicalOrder);
+	syncCoupledPerm(true);
+
+	refreshDisplay();
 }
 
 std::vector<std::string> MatrixBox::rowNames()
 {
-	return names(1);
+	std::vector<std::string> texts(_rowPerm.size());
+	for (size_t i = 0; i < _rowPerm.size(); i++)
+	{
+		texts[i] = _rowNames[_rowPerm[i]];
+	}
+	return texts;
 }
 
 std::vector<std::string> MatrixBox::colNames()
 {
-	return names(0);
+	std::vector<std::string> texts(_colPerm.size());
+	for (size_t i = 0; i < _colPerm.size(); i++)
+	{
+		texts[i] = _colNames[_colPerm[i]];
+	}
+	return texts;
 }
 
