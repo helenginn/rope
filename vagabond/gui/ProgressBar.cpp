@@ -90,9 +90,16 @@ void ProgressBar::sendObject(std::string tag, void *object)
 	// often a worker thread (e.g. ModelManager::autoModel()/rescan(),
 	// called from Dictator's worker thread). finish() below touches
 	// renderable/GL state (setDisabled(), _gl->viewChanged()), which
-	// must only happen on the main thread - defer the actual handling
-	// instead of mutating that state directly from here.
-	addMainThreadJob([this, tag]()
+	// must only happen on the main thread - defer the actual handling.
+	//
+	// Deferred via VagWindow's own job queue, not this object's own: as a
+	// window-level object (added via VagWindow::addObject(), not part of
+	// the current Scene's tree), nothing ever calls this object's own
+	// doJobs() to drain it - only curr->doThingsCircuit() (Window.cpp,
+	// called on the current Scene) recurses doJobs() into Scene children.
+	// Window-level objects only ever get ->render() called on them
+	// (Window::render()). Queuing here instead would silently never run.
+	VagWindow::window()->addMainThreadJob([this, tag]()
 	                 {
 		                handleProgressEvent(tag);
 	});
