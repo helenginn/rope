@@ -42,7 +42,7 @@ public:
 
 	void highlight();
 	virtual void reindex();
-	virtual void render(SnowGL *gl);
+	virtual void render(GLView *gl);
 private:
 	unsigned int _currVersion = 0;
 	const unsigned int &_versionTrack;

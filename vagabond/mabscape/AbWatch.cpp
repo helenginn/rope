@@ -86,7 +86,7 @@ void AbWatch::interacted(int idx, bool hover, bool left)
 	}
 }
 
-void AbWatch::render(SnowGL *gl)
+void AbWatch::render(GLView *gl)
 {
 	glEnable(GL_DEPTH_TEST);
 
