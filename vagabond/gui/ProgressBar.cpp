@@ -18,6 +18,7 @@
 
 #include "ProgressBar.h"
 #include <vagabond/gui/elements/Text.h>
+#include <vagabond/gui/elements/TextButton.h>
 #include <vagabond/gui/VagWindow.h>
 #include <vagabond/gui/elements/GLView.h>
 
@@ -42,6 +43,28 @@ ProgressBar::ProgressBar(std::string text) : Image("assets/images/rope.png")
 ProgressBar::~ProgressBar()
 {
 
+}
+
+void ProgressBar::setCancelJob(const std::function<void()> &job)
+{
+	if (_cancelButton)
+	{
+		removeObject(_cancelButton);
+		Window::setDelete(_cancelButton);
+		_cancelButton = nullptr;
+	}
+
+	if (!job)
+	{
+		return;
+	}
+
+	TextButton *tb = new TextButton("x", nullptr);
+	tb->resize(0.4);
+	tb->setCentre(0.35, -0.03);
+	tb->setReturnJob(job);
+	addObject(tb);
+	_cancelButton = tb;
 }
 
 void ProgressBar::setMaxTicks(int count)

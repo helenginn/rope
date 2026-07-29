@@ -22,6 +22,9 @@
 #include <vagabond/gui/elements/Image.h>
 #include <vagabond/core/Progressor.h>
 #include <vagabond/core/Responder.h>
+#include <functional>
+
+class TextButton;
 
 class ProgressBar : public Image,
 public Responder<Progressor>
@@ -32,12 +35,18 @@ public:
 
 	void finish();
 	void setMaxTicks(int count);
+
+	// puts an "x" TextButton next to the bar; clicking it only calls job -
+	// aborting whatever is actually being tracked is up to the caller.
+	void setCancelJob(const std::function<void()> &job);
+
 	virtual void extraUniforms();
 	virtual void sendObject(std::string tag, void *object);
 private:
 	int _maxTicks = 0;
 	int _ticks = 0;
 
+	TextButton *_cancelButton = nullptr;
 };
 
 #endif

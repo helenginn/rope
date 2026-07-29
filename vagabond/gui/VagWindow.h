@@ -20,49 +20,68 @@
 #define __vagabond__VagWindow__
 
 #include <vagabond/gui/elements/Window.h>
+#include <vagabond/core/Responder.h>
+#include <vagabond/core/Progressor.h>
 #include <atomic>
+#include <functional>
 #include "MainMenu.h"
 
 class Dictator;
 class ProgressBar;
 
-class VagWindow : public Window//, public ProgressViewResponder
+class VagWindow : public Window, public Responder<Progressor>
+//, public ProgressViewResponder
 {
 public:
 	VagWindow();
 	virtual void setup(int argc, char **argv);
 	void setup_special();
 	virtual void mainThreadActivities();
-	
+
 	static VagWindow *window()
 	{
 		return static_cast<VagWindow *>(_myWindow);
 	}
-	
+
 	static Dictator *dictator()
 	{
 		return _dictator;
 	}
-	
+
 	static void addJob(std::string str);
 
 	void prepareProgressView();
-	
+
 	bool hasProgressBar()
 	{
 		return (_bar.ptr != nullptr);
 	}
-	
+
 	virtual void extraWindowFlags(unsigned int &flags)
 	{
 		flags += SDL_WINDOW_RESIZABLE;
 	}
 
-	void requestProgressBar(int ticks, std::string text);
+	// caller and cancelJob are both optional, purely additive - existing
+	// callers that only pass ticks/text keep working identically. When
+	// caller is supplied, this registers directly on it (bypassing
+	// Environment's progressResponder() entirely - see sendObject()) so
+	// the bar can never miss a tick/done that arrives before it exists.
+	// When cancelJob is supplied, an "x" button appears next to the bar;
+	// clicking it only invokes cancelJob - aborting whatever the tracked
+	// job is actually doing is the caller's own responsibility.
+	void requestProgressBar(int ticks, std::string text,
+	                        Progressor *caller = nullptr,
+	                        const std::function<void()> &cancelJob = nullptr);
 	void requestProgressBarRemoval();
+
+	// Responder<Progressor> - see sendObject() for why this exists
+	// alongside Environment's progressResponder() rather than replacing it.
+	virtual void sendObject(std::string tag, void *object);
 private:
 	void prepareProgressBar(int ticks, std::string text);
 	void removeProgressBar();
+	void handleProgressEvent(std::string tag);
 
 	static Dictator *_dictator;
 	MainMenu *_menu = nullptr;
@@ -72,8 +91,15 @@ private:
 		std::string text = "";
 		ProgressBar *ptr = nullptr;
 		Progressor *caller = nullptr;
+		std::function<void()> cancelJob;
+
+		// set by handleProgressEvent() when a tick/done arrives before
+		// ptr exists yet - prepareProgressBar() applies these the moment
+		// it creates the bar, instead of the event being lost.
+		int pendingTicks = 0;
+		bool pendingDone = false;
 	};
-	
+
 	BarDetails _bar;
 
 };

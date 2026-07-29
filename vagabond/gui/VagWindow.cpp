@@ -72,25 +72,123 @@ void VagWindow::requestProgressBarRemoval()
 
 }
 
-void VagWindow::requestProgressBar(int ticks, std::string text)
+void VagWindow::requestProgressBar(int ticks, std::string text,
+                                   Progressor *caller,
+                                   const std::function<void()> &cancelJob)
 {
-	addMainThreadJob([this, ticks, text]()
+	// register synchronously, immediately, on whatever thread called this -
+	// not deferred - so a job cannot possibly tick before it is heard. This
+	// is plain, unmodified Progressor::setResponder() (via HasResponder),
+	// bypassing Environment::progressResponder() entirely for this job;
+	// see sendObject() for why.
+	if (caller)
+	{
+		caller->setResponder(this);
+	}
+
+	addMainThreadJob([this, ticks, text, caller, cancelJob]()
 	                 {
+		                _bar.caller = caller;
+		                _bar.cancelJob = cancelJob;
 		                prepareProgressBar(ticks, text);
 	});
 }
 
 void VagWindow::prepareProgressBar(int ticks, std::string text)
 {
+	Progressor *caller = _bar.caller;
+	std::function<void()> cancelJob = _bar.cancelJob;
+
+	// removeProgressBar() resets _bar entirely (BarDetails{}), so anything
+	// still needed afterwards - including any tick/done that arrived
+	// before this bar existed - must be captured first.
+	int pendingTicks = _bar.pendingTicks;
+	bool pendingDone = _bar.pendingDone;
+
 	removeProgressBar();
 
 	ProgressBar *pb = new ProgressBar(text);
-	Environment::env().setProgressResponder(pb);
+
+	// only fall back to Environment's global responder for jobs that were
+	// not registered directly above (existing callers that do not pass a
+	// Progressor* keep working exactly as before).
+	if (!caller)
+	{
+		Environment::env().setProgressResponder(pb);
+	}
+
+	if (cancelJob)
+	{
+		pb->setCancelJob(cancelJob);
+	}
+
 	pb->setMaxTicks(ticks);
 	_bar.ptr = pb;
 	_bar.ticks = ticks;
 	_bar.text = text;
+	_bar.caller = caller;
+	_bar.cancelJob = cancelJob;
 	addObject(pb);
+
+	// apply whatever arrived before this bar existed to receive it,
+	// instead of leaving the bar to hang forever waiting for an event
+	// that already happened.
+	if (pendingDone)
+	{
+		pb->finish();
+	}
+	else
+	{
+		for (int i = 0; i < pendingTicks; i++)
+		{
+			pb->sendObject("tick", nullptr);
+		}
+	}
+}
+
+void VagWindow::sendObject(std::string tag, void *object)
+{
+	// Responder<Progressor>::sendObject - reached only for jobs that were
+	// given directly to requestProgressBar() as caller, via
+	// caller->setResponder(this) above. object (the Progressor*) is
+	// deliberately not touched: the job may delete itself immediately
+	// after finishing (see e.g. SearchAll's DoJob lambda), so nothing
+	// here may dereference it, even later on the main thread. Deferred
+	// through the same main-thread job queue prepareProgressBar() uses,
+	// so ordering between "create the bar" and "handle this event" is
+	// always resolved in true call order, not left to thread scheduling.
+	addMainThreadJob([this, tag]()
+	                 {
+		                handleProgressEvent(tag);
+	});
+}
+
+void VagWindow::handleProgressEvent(std::string tag)
+{
+	if (_bar.ptr)
+	{
+		if (tag == "done")
+		{
+			_bar.ptr->finish();
+		}
+		else if (tag == "tick")
+		{
+			_bar.ptr->sendObject("tick", nullptr);
+		}
+
+		return;
+	}
+
+	// no bar exists yet - remember this until prepareProgressBar() creates
+	// one (see there for where this is applied).
+	if (tag == "done")
+	{
+		_bar.pendingDone = true;
+	}
+	else if (tag == "tick")
+	{
+		_bar.pendingTicks++;
+	}
 }
 
 void VagWindow::setup(int argc, char **argv)
