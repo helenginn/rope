@@ -20,6 +20,8 @@
 #define __vagabond__KdTree__
 
 #include "glm_import.h"
+#include <functional>
+#include <vector>
 
 class KdTree
 {
