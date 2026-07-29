@@ -70,7 +70,7 @@ void SurfaceAreaValidator::validatePaths(int steps, int resources, int threads)
         BaseTask *first_hook = nullptr;
         CalcTask *final_hook = nullptr;
 
-        Task<Result, void *> *submit_result = calculator->submitResult(0);
+        Task<Result, void *> *submit_result = calculator->actOfSubmission(0);
 
         Flag::Calc calc_flags = Flag::Calc(Flag::DoTorsions);
 	      Flag::Extract gets = Flag::Extract(Flag::AtomMap);
@@ -91,7 +91,7 @@ void SurfaceAreaValidator::validatePaths(int steps, int resources, int threads)
         
         tasks->addTask(first_hook);
 
-        Result *r = calculator->acquireResult();
+        Result *r = calculator->acquireObject();
         
         float area = r->surface_area;
 
