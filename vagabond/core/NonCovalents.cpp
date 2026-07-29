@@ -496,14 +496,15 @@ void weighted_sums_for_side(NonCovalents::Interface &face,
 			}
 			
 			std::cout << ", ACCEPTED" << std::endl;
-
-		for (Atom *f : candidate.fiducials)
-		{
-			std::cout << f->desc() << ", ";
 		}
 		else
 		{
 			std::cout << ", rejected" << std::endl;
+		}
+
+		for (Atom *f : candidate.fiducials)
+		{
+			std::cout << f->desc() << ", ";
 		}
 
 		for (Atom *f : candidate.fiducials)
