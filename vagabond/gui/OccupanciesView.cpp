@@ -260,7 +260,7 @@ OccupanciesView::EstimateMap OccupanciesView::estimates()
 			continue;
 		}
 
-		if (atom->elementSymbol() == "C" || atom->elementSymbol() == "H")
+		if (!ptp.first->isActiveAtom())
 		{
 			continue;
 		}

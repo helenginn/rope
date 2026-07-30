@@ -93,7 +93,22 @@ public:
 	{
 		return false;
 	}
-	
+
+	/** true unless this is an AtomProbe whose chemistry connector has
+	 * resolved to hnet::Atom::Inactive (i.e. not N/O/S/ion - carbon and
+	 * anything else that can't be an H-bond donor/acceptor). The single
+	 * source of truth for "is this atom H-bond-relevant", set once in
+	 * Coordinated::probeAtom() - callers should prefer this over
+	 * re-deriving the same thing from Atom::elementSymbol() themselves.
+	 * Default true: only AtomProbe restricts it, so this is safe to call
+	 * on any Probe without an is_atom() guard first. Says nothing about
+	 * hydrogens (never AtomProbe, so never Inactive here) or covalent
+	 * bonds (a separate axis - see is_covalent()). */
+	virtual bool isActiveAtom()
+	{
+		return true;
+	}
+
 	virtual std::string desc() = 0;
 	
 	void register_probe(Probe *other)
@@ -258,7 +273,12 @@ public:
 	{
 		return true;
 	}
-	
+
+	virtual bool isActiveAtom()
+	{
+		return _obj.value(true) != hnet::Atom::Inactive;
+	}
+
 	virtual std::string desc()
 	{
 		return atomConf().desc();

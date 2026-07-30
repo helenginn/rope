@@ -858,7 +858,18 @@ void ProtonNetworkView::selectUsingPlan(std::string plan)
 		std::vector<OpSet<Probe *>> groups =
 		CliqueFinder::probeGroupsForResidues(_network, tokens);
 		OpSet<Probe *> connected =
-		CliqueFinder::connectGroups(groups, n, true);
+		CliqueFinder::connectGroups(groups, n, false);
+
+		// matches the manual "expand to clique" (H-bond only) + "complete
+		// to C-alpha" (covalent) combination - the bridging search above
+		// stays H-bond-only, but the residues it touches still need
+		// their covalent-bonded backbone filled in. Those atoms carry no
+		// correlation data themselves (isActiveAtom() excludes them from
+		// ProbeResult regardless), but they're what SearchAll's own
+		// covalent-inclusive _wider expansion needs to actually reach
+		// nearby H-bond-active atoms that only connect via the backbone,
+		// not any direct hydrogen bond.
+		connected = CliqueFinder::completeToResidues(connected, true);
 
 		while (Subdivide::finish_ends(connected)) {}
 
@@ -894,57 +905,7 @@ void ProtonNetworkView::highlightCliques()
 void ProtonNetworkView::completeResidues(bool stop_at_alpha)
 {
 	OpSet<Probe *> done = selected_probes(_textProbes);
-
-	typedef std::pair<std::string, ResidueId> ChainRes;
-	OpSet<ChainRes> residues;
-	
-	// go through covalently bound atoms and extend to include all 
-	// existing residue IDs
-	
-	auto chain_res = [](Atom *const &atom) -> ChainRes
-	{
-		return {atom->chain(), atom->residueId()};
-	};
-	
-	auto initial_assessment = [&residues, chain_res](Probe *probe)
-	{
-		residues.insert(chain_res(probe->atom()));
-	};
-	
-	auto check_probe = [&residues, chain_res, stop_at_alpha]
-	(Probe *other, Probe *prev) -> bool
-	{
-		if (other->is_bond())
-		{
-			BondProbe *bp = static_cast<BondProbe *>(other);
-			// exclude those which bridge a hydrogen (nullptr atom)
-			if (!(bp->left().atom() && bp->right().atom()))
-			{
-				return false;
-			}
-			if (!(residues.count(chain_res(bp->left().atom())) &&
-			      residues.count(chain_res(bp->right().atom()))))
-			{
-				return false;
-			}
-			
-			if (stop_at_alpha && prev->atom() && prev->atom()->isReporterAtom())
-			{
-				return false;
-			}
-		}
-
-		if (other->atom() && 
-		    !residues.count(chain_res(other->atom())))
-		{
-			return false;
-		}
-
-		return true;
-	};
-	
-	OpSet<Probe *> ps = 
-	CliqueFinder::completeOnCondition(done, initial_assessment, check_probe);
+	OpSet<Probe *> ps = CliqueFinder::completeToResidues(done, stop_at_alpha);
 	selectProbes(ps);
 	highlightCliques();
 }

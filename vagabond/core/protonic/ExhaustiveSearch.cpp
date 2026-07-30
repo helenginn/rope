@@ -265,9 +265,7 @@ bool ExhaustiveSearch::next()
 					continue;
 				}
 				
-				if (probe->atom() &&
-				    (probe->atom()->elementSymbol() == "H" ||
-				     probe->atom()->elementSymbol() == "C"))
+				if (probe->atom() && probe->atom()->elementSymbol() == "H")
 				{
 					continue;
 				}

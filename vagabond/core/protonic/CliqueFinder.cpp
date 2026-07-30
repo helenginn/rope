@@ -100,11 +100,64 @@ CliqueFinder::expandSelectionToNeighbours(const OpSet<Probe *> &done,
 		return true;
 	};
 	
-	OpSet<Probe *> ps = 
+	OpSet<Probe *> ps =
 	CliqueFinder::completeOnCondition(done, initial_assessment,
 	                                  check_probe, max_jumps);
-	
+
 	return ps;
+}
+
+OpSet<Probe *>
+CliqueFinder::completeToResidues(const OpSet<Probe *> &start,
+                                 bool stop_at_alpha)
+{
+	typedef std::pair<std::string, ResidueId> ChainRes;
+	OpSet<ChainRes> residues;
+
+	auto chain_res = [](Atom *const &atom) -> ChainRes
+	{
+		return {atom->chain(), atom->residueId()};
+	};
+
+	auto initial_assessment = [&residues, chain_res](Probe *probe)
+	{
+		residues.insert(chain_res(probe->atom()));
+	};
+
+	auto check_probe = [&residues, chain_res, stop_at_alpha]
+	(Probe *other, Probe *prev) -> bool
+	{
+		if (other->is_bond())
+		{
+			BondProbe *bp = static_cast<BondProbe *>(other);
+			// exclude those which bridge a hydrogen (nullptr atom)
+			if (!(bp->left().atom() && bp->right().atom()))
+			{
+				return false;
+			}
+			if (!(residues.count(chain_res(bp->left().atom())) &&
+			      residues.count(chain_res(bp->right().atom()))))
+			{
+				return false;
+			}
+
+			if (stop_at_alpha && prev->atom() && prev->atom()->isReporterAtom())
+			{
+				return false;
+			}
+		}
+
+		if (other->atom() &&
+		    !residues.count(chain_res(other->atom())))
+		{
+			return false;
+		}
+
+		return true;
+	};
+
+	return CliqueFinder::completeOnCondition(start, initial_assessment,
+	                                         check_probe);
 }
 
 std::vector<OpSet<Probe *>>
@@ -232,8 +285,7 @@ void CliqueFinder::completeAndChop(const OpSet<Probe *> &done,
 	protein.filter([](Probe *const &probe)
 	{
 		return (probe->is_atom() && probe->atom()->bondLengthCount() > 0
-		        && probe->atom()->elementSymbol() != "H"
-		        && probe->atom()->elementSymbol() != "C");
+		        && probe->isActiveAtom());
 	});
 	
 	handle_clique(protein, "protein");

@@ -41,6 +41,19 @@ public:
 	                                           int max_jumps = INT_MAX,
 	                                           bool with_covalent = false);
 
+	/** walks covalent bonds only, filling in the rest of every residue
+	 * already represented in `start` (never reaching into a *new*
+	 * residue that wasn't already there) - shared by
+	 * ProtonNetworkView::completeResidues() (the "complete residues"/
+	 * "complete to C-alpha" menu options) and anything else that wants
+	 * the same "fill in this residue's full atom set" behaviour, e.g. to
+	 * give SearchAll's own covalent-inclusive _wider expansion something
+	 * to reach through beyond an H-bond-only selection. stop_at_alpha
+	 * stops each residue's completion at its reporter atom (Cα) rather
+	 * than continuing on into the next residue's backbone. */
+	static OpSet<Probe *> completeToResidues(const OpSet<Probe *> &start,
+	                                         bool stop_at_alpha = false);
+
 	/** one group of AtomProbes per named residue (a chain == "" token is
 	 * resolved to the model's first chain). Used by connectGroups() to
 	 * tell "reaches a different named residue" apart from "just another
