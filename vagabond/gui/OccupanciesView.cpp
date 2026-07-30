@@ -26,7 +26,6 @@
 #include <vagabond/core/protonic/Energy.h>
 #include <vagabond/core/protonic/Clique.h>
 #include <vagabond/core/protonic/Network.h>
-#include <vagabond/core/protonic/Correlative.h>
 #include <vagabond/core/protonic/ProbeResult.h>
 #include <vagabond/core/protonic/CertainStates.h>
 #include <vagabond/gui/elements/TextButton.h>
@@ -48,60 +47,6 @@ void OccupanciesView::setup()
 	tb->setReturnJob([this]() { occupancies(); });
 	tb->setCentre(0.50, 0.92);
 	addObject(tb);
-
-	EstimateMap pass = estimates();
-	OpSet<ProbeTypePair> active;
-	for (auto &pair : pass)
-	{
-		active += pair.first;
-	}
-	std::cout << "Active: " << active.size() << std::endl;
-
-	float all_ave = 0;
-	OpSet<ProbeTypePair> all = 
-	Correlative::probeTypePairs(_clique->subdivisions(), all_ave);
-
-	_correlative = new Correlative(active, all_ave, false, true);
-
-	auto process_clique = [this](const Clique &clique)
-	{
-		if (!clique.states()) return;
-		const CertainStates &states = *clique.states();
-		_correlative->addStates(states);
-	};
-	
-	for (Clique &clique : _clique->subdivisions())
-	{
-		process_clique(clique);
-	}
-
-	_overall = _correlative->acquireMatrix();
-
-	auto combine = [](float x, float y)
-	{
-		return x * y;
-	};
-
-	FloydWarshall fw(_overall, combine, true);
-	fw.run();
-
-	PCA::Matrix tmp(_overall);
-	MatrixPlot *mp = new MatrixPlot(tmp);
-	mp->resize(0.5);
-	mp->setCentre(0.125, 0.25);
-	addObject(mp);
-	Text *caption = new Text("Atom-wise correlation");
-	caption->resize(0.5);
-	caption->setCentre(0.125, 0.39);
-	addObject(caption);
-
-	auto lookup = _correlative->matrixLookup();
-	auto display_lookup = [this, lookup](float x, float y)
-	{
-		std::string info = _correlative->matrixLookup()(x, y);
-		setInformation(info);
-	};
-	mp->setHoverJob(display_lookup);
 	
 	TickBoxes *tix = new TickBoxes(this, this);
 
@@ -112,7 +57,6 @@ void OccupanciesView::setup()
 		{
 			bool ticked = tix->isTicked(tag);
 			_network.energy().alter_source(source, ticked);
-			_estimates = {};
 		};
 	};
 
@@ -157,7 +101,6 @@ void OccupanciesView::slider(std::string msg, const hnet::Energy::Source &src,
 	auto drag_me = [src, this](double x, double y)
 	{
 		_network.energy().alter_amplification(src, x);
-		_estimates = {};
 	};
 
 	Slider *s = new Slider();
@@ -208,9 +151,6 @@ OccupanciesView::EstimateMap OccupanciesView::estimates()
 		{
 			continue; // skip for now
 		}
-
-		std::string desc = ptp.first->desc();
-		desc += (ptp.second == hnet::Types::BondType ?  " bonding" : " exists");
 
 		const std::vector<OccupancyEstimate> &estimates = occs.second;
 		std::map<int, float> sums;
@@ -280,72 +220,9 @@ OccupanciesView::EstimateMap OccupanciesView::estimates()
 	return ret;
 }
 
-void OccupanciesView::updateEstimates(EstimateMap &ests)
-{
-	auto current = ests;
-	
-	auto fraction_for = [](EstimateMap &ests,
-	                       const ProbeTypePair &ptp, int state)
-	{
-		float calculated = ests.at(ptp).calculated;
-		if (state == 2) return calculated;
-		if (state == 1) return 1 - calculated;
-		return 0.f;
-	};
-
-	for (auto &pair : ests)
-	{
-		const ProbeTypePair &left = pair.first;
-		Eigen::MatrixXf rows = _correlative->rowsFor(left);
-		
-		float frax[2] = {0, 0};
-		for (const int &state : {1, 2})
-		{
-			float my_frac = fraction_for(_first, left, state);
-			float curr_frac = fraction_for(ests, left, state);
-
-			int idx = state - 1;
-			Eigen::VectorXf ccs = rows(idx, Eigen::all);
-			
-			int n = 0;
-			for (auto &next : ests)
-			{
-				for (const int &other_state : {1, 2})
-				{
-					const ProbeTypePair &right = next.first;
-					float cc = ccs[n];
-					float other_frac = fraction_for(_first, right, 
-					                                other_state); // urgh
-
-					float same = (1 - cc) * sqrt(my_frac * curr_frac);
-					float updated = (cc) * sqrt(my_frac * other_frac);
-
-					frax[state - 1] += (same + updated) * cc;
-					n++;
-				}
-			}
-		}
-		
-		ests[left].calculated = frax[1] / (frax[0] + frax[1]);
-	}
-}
-
 void OccupanciesView::occupancies()
 {
-	EstimateMap pass;
-	if (_estimates.size() == 0)
-	{
-		pass = estimates();
-		_first = pass;
-	}
-	else
-	{
-		pass = _estimates;
-		updateEstimates(pass);
-	}
-
-	EstimateMap copy = pass;
-	_estimates = pass;
+	EstimateMap pass = estimates();
 
 	deleteTemps();
 	CorrelData cd = empty_CD();
@@ -357,31 +234,21 @@ void OccupanciesView::occupancies()
 	graph->setAxisLabel('x', "Calculated occupancy");
 	graph->setAxisLabel('y', "Observed occupancy");
 
-	std::set<size_t> results;
-	for (auto &pair : pass)
-	{
-		results.insert(pair.second.samples);
-	}
-	std::vector<size_t> joined = {results.begin(), results.end()};
-	int pct90 = results.size() * 0.9;
-	float max_samples = joined[pct90];
-	
-	std::cout << "observed, calculated, samples, atom" <<  std::endl;
+	std::cout << "observed, calculated, samples, atom\n";
 	for (auto &pair : pass)
 	{
 		const ProbeTypePair &ptp = pair.first;
 		float &observed = pair.second.observed;
 		float &calculated = pair.second.calculated;
 		size_t &samples = pair.second.samples;
-		float alpha = (float)samples / max_samples;
-		alpha = 1.f;
 
-		graph->addPoint(0, calculated, observed, ptp.first->desc(), alpha);
+		graph->addPoint(0, calculated, observed, ptp.first->desc());
 		add_to_CD(&cd, calculated, observed);
 
 		std::cout << observed << " " << calculated << " " << samples << " " <<
-		ptp.first->atomConf() << std::endl;
+		ptp.first->atomConf() << "\n";
 	}
+	std::cout << std::flush;
 	
 	float cc = evaluate_CD(cd);
 	

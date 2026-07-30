@@ -20,14 +20,12 @@
 #define __vagabond__OccupanciesView__
 
 #include <vagabond/gui/elements/IndexResponseView.h>
-#include <vagabond/utils/Eigen/Dense>
 #include <vagabond/core/protonic/Energy.h>
 #include <unordered_map>
 
 class Graph;
 class Clique;
 class Network;
-class Correlative;
 struct ProbeTypePair;
 
 class OccupanciesView : public IndexResponseView
@@ -52,16 +50,11 @@ private:
 	void slider(std::string msg, const hnet::Energy::Source &src, float y);
 
 	typedef std::map<ProbeTypePair, OccData> EstimateMap;
-	void updateEstimates(EstimateMap &ests);
 	EstimateMap estimates();
 	Clique *_clique{};
-	Correlative *_correlative{};
 
-	EstimateMap _estimates;
-	EstimateMap _first;
 	Graph *_graph{};
 	Network &_network;
-	Eigen::MatrixXf _overall;
 };
 
 #endif
