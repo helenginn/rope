@@ -28,6 +28,7 @@
 #include <vagabond/gui/ProtonNetworkView.h>
 #include <vagabond/utils/DoJob.h>
 #include "CliqueView.h"
+#include <SDL2/SDL_clipboard.h>
 
 void CliqueView::insertClique(Clique *clique)
 {
@@ -99,12 +100,7 @@ void CliqueView::insertClique(Clique *clique)
 	{
 		return [this, reinsert, clique, scene](bool left)
 		{
-			if (_combine == clique)
-			{
-				_combine = nullptr;
-				return;
-			}
-			if (left && !_combine)
+			if (left)
 			{
 				if (_scene->controlPressed())
 				{
@@ -122,25 +118,6 @@ void CliqueView::insertClique(Clique *clique)
 				{
 					scene->shiftToCentre(clique->centroid(), 0);
 				}
-				return;
-			}
-			else if (left && _combine)
-			{
-				Clique *combined = _network.newClique({});
-				combined->add_clique(*_combine);
-				combined->add_clique(*clique);
-				std::string new_name = _combine->displayName();
-				new_name += " + " + clique->displayName();
-				insertClique(combined);
-				combined->setDisplayName(new_name);
-				
-				auto it = std::find(_cliques.begin(), _cliques.end(), clique);
-				if (it != _cliques.end())
-				{
-					_cliques.erase(it);
-				}
-
-				_combine = nullptr;
 				return;
 			}
 
@@ -191,19 +168,19 @@ void CliqueView::insertClique(Clique *clique)
 			};
 
 			Menu *menu = new Menu(scene);
-			if (!_combine)
+			menu->addOption("rename", change_name);
+			menu->addOption("analyse", analyse_bonds);
+
+			if (clique->planText().size())
 			{
-				menu->addOption("rename", change_name);
-				menu->addOption("analyse", analyse_bonds);
-				menu->addOption("combine with...", [this, clique]()
-				                { _combine = clique; });
-				menu->addOption("delete", delete_clique);
+				auto copy_plan = [clique]()
+				{
+					SDL_SetClipboardText(clique->planText().c_str());
+				};
+				menu->addOption("copy plan to clipboard", copy_plan);
 			}
-			else
-			{
-				menu->addOption("cancel combine", [this]() 
-				                { _combine = nullptr; });
-			}
+
+			menu->addOption("delete", delete_clique);
 
 			float x = 0.5; float y = 0.5;
 			if (_gl)

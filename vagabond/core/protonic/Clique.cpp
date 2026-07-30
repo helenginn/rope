@@ -208,24 +208,3 @@ void Clique::setStates(CertainStates *const &states)
 	_states = states;
 }
 
-void Clique::add_clique(const Clique &clique)
-{
-	add_probes(clique.probes());
-	
-	for (auto &pair : clique._communication)
-	{
-		_communication[pair.first] += pair.second;
-	}
-
-	for (const std::string &desc : clique._descs)
-	{
-		addProbeDesc(desc);
-	}
-
-	for (auto &pair : clique._descToCommune)
-	{
-		_descToCommune[pair.first] = pair.second;
-	}
-	
-
-}

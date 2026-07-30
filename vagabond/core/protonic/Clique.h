@@ -97,6 +97,20 @@ public:
 	{
 		return (_name.length());
 	}
+
+	/** the normalised "select using plan" search string that produced
+	 * this clique's selection (chain/residue ranges plus a "@N;" radius
+	 * prefix, always present even if the user didn't type one), or empty
+	 * for a clique that wasn't built from a plan. */
+	const std::string &planText() const
+	{
+		return _planText;
+	}
+
+	void setPlanText(const std::string &text)
+	{
+		_planText = text;
+	}
 	
 	bool is_certain() const;
 	
@@ -106,7 +120,6 @@ public:
 	friend void from_json(const json &j, Clique &value);
 	
 	void add_probes(const OpSet<Probe *> &probes);
-	void add_clique(const Clique &clique);
 	
 	const OpSet<Probe *> &probes() const
 	{
@@ -270,6 +283,7 @@ private:
 	ProbeKey _probes{};
 	
 	std::string _name{};
+	std::string _planText{};
 	std::map<std::string, OpSet<std::string>> _communication;
 	std::map<std::string, std::string> _descToCommune;
 	OpSet<std::string> _descs;
@@ -309,6 +323,11 @@ inline void to_json(json &j, const Clique &cl)
 	{
 		j["subdivisions"] = cl._subdivs;
 	}
+
+	if (cl._planText.size())
+	{
+		j["plan"] = cl._planText;
+	}
 }
 
 inline void from_json(const json &j, Clique &cl)
@@ -332,6 +351,11 @@ inline void from_json(const json &j, Clique &cl)
 	if (j.count("subdivisions"))
 	{
 		cl._subdivs = j.at("subdivisions");
+	}
+
+	if (j.count("plan"))
+	{
+		cl._planText = j.at("plan");
 	}
 }
 

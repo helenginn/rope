@@ -76,8 +76,6 @@ private:
 	LineGroup *_lg{};
 	
 	std::vector<Clique *> _cliques;
-
-	Clique *_combine = nullptr;
 };
 
 #endif

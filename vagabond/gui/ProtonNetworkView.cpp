@@ -269,57 +269,9 @@ void ProtonNetworkView::interactedWithNothing(bool left, bool hover)
 		
 		OpSet<Probe *> selected = selected_probes(_textProbes);
 		selected += selected_probes(_bondProbes);
-		if (selected.size() > 0)
-		{
-			// add option to remove
-			auto hide_selected = [this, selected]()
-			{
-				if (_shifter) { _shifter->pause(); }
-				for (Probe *probe : selected)
-				{
-					probe->setHide(-1, false);
-					
-					if (_textProbes.count(probe))
-					{
-						if (_shifter)
-						{
-							_shifter->removePointer(_textProbes[probe]);
-						}
-						_textProbes[probe]->selected(0, true);
-					}
-					else if (_bondProbes.count(probe))
-					{
-						if (_shifter)
-						{
-							_shifter->removePointer(_bondProbes[probe]);
-						}
-						_bondProbes[probe]->selected(0, true);
-					}
-				}
-				if (_shifter) { _shifter->unpause(); }
-			};
-
-			menu->addOption("hide selection", hide_selected);
-			
-			if (_analysing && _activeClique)
-			{
-				auto subnetwork = [this, selected]()
-				{
-					_activeClique->addSubdivision(Clique(selected));
-					deselect();
-				};
-
-				menu->addOption("make into subnetwork", subnetwork);
-			}
-		if (!_2D)
-		{
-			menu->addOption("arrange figure", [this]() { arrangeFigure(); });
-		}
-		else
+		if (selected.size() > 0 && _2D)
 		{
 			menu->addOption("add to figure", [this]() { arrangeFigure(); });
-		}
-
 		}
 
 		setMenu(menu);
@@ -809,7 +761,20 @@ void ProtonNetworkView::makeNewClique()
 		while (Subdivide::finish_ends(probes)) {};
 
 		Clique *clique = _network.newClique(probes);
-		clique->setDisplayName("Custom clique");
+
+		if (_lastPlanText.size())
+		{
+			clique->setPlanText(_lastPlanText);
+			clique->setDisplayName(_lastPlanName);
+		}
+		else
+		{
+			clique->setDisplayName("Custom clique");
+		}
+
+		_lastPlanText.clear();
+		_lastPlanName.clear();
+
 		_cv->insertClique(clique);
 	}
 
@@ -820,6 +785,10 @@ void ProtonNetworkView::askForSelectionPlan()
 	AskForText *aft = new AskForText(this, "Enter selection plan:",
 	                                 "", this);
 	aft->allowCapitals(true);
+	aft->setHelpText("Selection of residues by text input:\n\n"\
+	                 "e.g. A157,253,109-111,B145,153\n"\
+	                 "Comma-separated residues - a dash indicates a range,\n"\
+	                 "and a chain letter applies until you give a new one.");
 	aft->setReturnJob([this](std::string plan)
 	{
 		selectUsingPlan(plan);
@@ -853,7 +822,13 @@ void ProtonNetworkView::selectUsingPlan(std::string plan)
 		return;
 	}
 
-	auto build = [this, tokens](int n)
+	int numResidues = 0;
+	for (const ResidueRangeToken &token : tokens)
+	{
+		numResidues += (token.end - token.begin + 1);
+	}
+
+	auto build = [this, tokens, plan, numResidues](int n)
 	{
 		std::vector<OpSet<Probe *>> groups =
 		CliqueFinder::probeGroupsForResidues(_network, tokens);
@@ -874,6 +849,15 @@ void ProtonNetworkView::selectUsingPlan(std::string plan)
 		while (Subdivide::finish_ends(connected)) {}
 
 		selectProbes(connected);
+
+		// re-normalised with the radius that was actually used, whether
+		// that came from the "@N;" prefix or the ChooseRange fallback
+		// below - so the saved plan always reproduces this exact
+		// selection on its own, without depending on a slider default
+		// that could change later.
+		_lastPlanText = "@" + std::to_string(n) + ";" + plan;
+		_lastPlanName = std::to_string(numResidues) + " residues connected "\
+		"by up to " + std::to_string(n) + " nodes";
 	};
 
 	if (radius >= 0)
