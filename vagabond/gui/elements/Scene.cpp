@@ -243,8 +243,13 @@ void Scene::mousePressEvent(double x, double y, SDL_MouseButtonEvent button)
 	convertToGLCoords(&x, &y);
 	_moving = false;
 	_mouseDown = true;
+	
+	Renderable *chosen = Window::window()->findObject(x, y);
 
-	Renderable *chosen = findObject(x, y);
+	if (!chosen)
+	{
+		chosen = findObject(x, y);
+	}
 	_left = (button.button == SDL_BUTTON_LEFT);
 	_chosen = chosen;
 
@@ -277,7 +282,12 @@ void Scene::mouseMoveEvent(double x, double y)
 	_moving = true;
 
 	clearHighlights();
-	Renderable *chosen = findObject(tx, ty);
+	Renderable *chosen = Window::window()->findObject(tx, ty);
+	
+	if (!chosen)
+	{
+		chosen = findObject(tx, ty);
+	}
 
 	SDL_Cursor *cursor = nullptr;
 	bool arrow = true;

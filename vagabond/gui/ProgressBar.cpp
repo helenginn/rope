@@ -18,7 +18,7 @@
 
 #include "ProgressBar.h"
 #include <vagabond/gui/elements/Text.h>
-#include <vagabond/gui/elements/TextButton.h>
+#include <vagabond/gui/elements/ImageButton.h>
 #include <vagabond/gui/VagWindow.h>
 #include <vagabond/gui/elements/GLView.h>
 
@@ -59,9 +59,9 @@ void ProgressBar::setCancelJob(const std::function<void()> &job)
 		return;
 	}
 
-	TextButton *tb = new TextButton("x", nullptr);
-	tb->resize(0.4);
-	tb->setCentre(0.35, -0.03);
+	ImageButton *tb = new ImageButton("assets/images/cross.png", nullptr);
+	tb->resize(0.06);
+	tb->setCentre(0.6, 0.88);
 	tb->setReturnJob(job);
 	addObject(tb);
 	_cancelButton = tb;
