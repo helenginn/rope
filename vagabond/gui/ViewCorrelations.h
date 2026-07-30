@@ -24,6 +24,8 @@
 #include <vagabond/utils/Eigen/Dense>
 #include <vagabond/utils/svd/PCA.h>
 #include <mutex>
+#include <atomic>
+#include <memory>
 
 class Correlative;
 class Clique;
@@ -40,8 +42,24 @@ public:
 	void occupancies();
 	void viewAll();
 private:
+	// second half of viewAll() - runs once the (cancellable) assembly of
+	// _result/_correlative below has completed on the main thread.
+	void finishAssembly();
+
 	Clique *_clique{};
 	Correlative *_correlative{};
+
+	// shared with whichever background assembly is currently in flight (if
+	// any), so setBackJob() can flag it to stop early without needing to
+	// touch anything Scene-specific from that background thread.
+	std::shared_ptr<std::atomic<bool>> _cancelled;
+
+	// true from the moment viewAll() kicks off a background assembly
+	// until that assembly's last exit point (finishAssembly(), or one of
+	// the cancelled-early returns) - guards against a second overlapping
+	// run, e.g. from clicking the top clique's list entry while the
+	// auto-triggered assembly from setup() is still in flight.
+	bool _assembling = false;
 
 	// makeList() borrows _clique's and its subdivisions' select jobs
 	// (shared Item state, not view-local) for the duration this view is

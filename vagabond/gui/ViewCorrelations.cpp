@@ -50,6 +50,17 @@ void ViewCorrelations::setup()
 	addTitle("Sub-network correlations");
 
 	makeList();
+
+	setBackJob([this]()
+	{
+		if (_cancelled)
+		{
+			_cancelled->store(true);
+		}
+		VagWindow::window()->requestProgressBarRemoval();
+	});
+
+	viewAll();
 }
 
 ViewCorrelations::~ViewCorrelations()
@@ -80,9 +91,17 @@ void ViewCorrelations::makeList()
 	}
 
 	_clique->setSelectJob([this](bool left) { if (left) viewAll(); });
-	std::cout << ("Subgroups of " + 
+	std::cout << ("Subgroups of " +
 	                        std::to_string(_clique->probes().size())
 	                        + " nodes") << std::endl;
+
+	// collapsed by default - viewAll() now runs automatically on open (see
+	// setup()), so the master clique's own list entry is mostly redundant
+	// as a click target, and a clique with many subdivisions produces one
+	// ItemLine/LineGroup per subdivision, which is slow and overwhelming
+	// to render all expanded. Still just a toggle, not permanentCollapse()
+	// - clicking it un-collapses like any other entry.
+	_clique->collapse();
 
 	LineGroup *lg = new LineGroup(_clique, this);
 	lg->setLeft(-0.04, 0.2);
@@ -99,6 +118,12 @@ void ViewCorrelations::makeList()
 
 void ViewCorrelations::viewAll()
 {
+	if (_assembling)
+	{
+		return;
+	}
+	_assembling = true;
+
 	{
 		OpSet<Probe *> covered;
 		for (const Clique &sub : _clique->subdivisions())
@@ -115,32 +140,101 @@ void ViewCorrelations::viewAll()
 		          << covered.size() << " distinct probes" << std::endl;
 	}
 
-	float all_ave = 0;
-	OpSet<ProbeTypePair> all =
-	Correlative::probeTypePairs(_clique->subdivisions(), all_ave);
-
-	_correlative = new Correlative(all, all_ave, false);
-	Correlative &correl = *_correlative;
-
-	auto process_clique = [&correl](const Clique &clique)
-	{
-		if (!clique.states()) return;
-		const CertainStates &states = *clique.states();
-		correl.addStates(states);
-	};
-	
-	for (Clique &clique : _clique->subdivisions())
-	{
-		process_clique(clique);
-	}
-
-	_result = correl.acquireMatrix();
-	
 	deleteTemps();
+
+	// cancellable via the back button (see setup()) - a mis-click into
+	// this view shouldn't force the user to sit through assembling a
+	// large clique's correlations just to leave again.
+	auto cancelled = std::make_shared<std::atomic<bool>>(false);
+	_cancelled = cancelled;
+
+	struct AssemblyProgress : public Progressor {};
+	AssemblyProgress *progress = new AssemblyProgress();
+
+	auto cancelJob = [cancelled]()
+	{
+		cancelled->store(true);
+	};
+
+	Clique *clique = _clique;
+	int ticks = (int)clique->subdivisions().size();
+	VagWindow::window()->requestProgressBar(ticks, "Assembling correlations",
+	                                        progress, cancelJob);
+
+	auto assemble = [this, clique, cancelled, progress]()
+	{
+		float all_ave = 0;
+		OpSet<ProbeTypePair> all =
+		Correlative::probeTypePairs(clique->subdivisions(), all_ave);
+
+		Correlative *correl = new Correlative(all, all_ave, false);
+
+		for (Clique &sub : clique->subdivisions())
+		{
+			if (cancelled->load())
+			{
+				break;
+			}
+
+			if (sub.states())
+			{
+				correl->addStates(*sub.states());
+			}
+
+			progress->clickTicker();
+		}
+
+		progress->finishTicker();
+
+		if (cancelled->load())
+		{
+			delete progress;
+			delete correl;
+			_assembling = false;
+			return;
+		}
+
+		Eigen::MatrixXf result = correl->acquireMatrix();
+
+		// hands off to the main thread rather than touching this Scene's
+		// state directly from the background thread - VagWindow (unlike
+		// this Scene) is guaranteed to still be alive whenever this runs.
+		VagWindow::window()->addMainThreadJob(
+		[this, correl, result, cancelled, progress]()
+		{
+			delete progress;
+
+			// checked again: cancellation may have landed after the loop
+			// above finished but before this main-thread job got to run.
+			if (cancelled->load())
+			{
+				delete correl;
+				_assembling = false;
+				return;
+			}
+
+			_correlative = correl;
+			_result = result;
+			_assembling = false;
+			finishAssembly();
+		});
+	};
+
+	new DoJob(assemble);
+}
+
+void ViewCorrelations::finishAssembly()
+{
+	// bridges the gap between the "Assembling correlations" bar finishing
+	// and FloydWarshall's own "Deriving intermediate correlations" bar
+	// appearing (requested from its own background thread, so not
+	// instant) - without this, that gap has no visual feedback at all.
+	setInformation("Matrix assembled - preparing to derive correlations");
+
 	_matrix = PCA::Matrix(_result);
 	MatrixPlot *mp = new MatrixPlot(_matrix, _mutex);
-	
-	auto lookup = correl.matrixLookup();
+
+	auto lookup = _correlative->matrixLookup();
 	auto display_lookup = [this, lookup](float x, float y)
 	{
 		std::string info = lookup(x, y);
