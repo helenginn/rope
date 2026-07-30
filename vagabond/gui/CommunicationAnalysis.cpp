@@ -287,43 +287,57 @@ void CommunicationAnalysis::setup()
 	
 	svd();
 
-	std::vector<std::string> names = _clique->allCommsNames().toVector();
-
+	// a signal whose probe never made it into the assembled correlation
+	// matrix (_lookup) - e.g. filtered out upstream, or from a residue
+	// this clique's subdivisions never actually covered - would otherwise
+	// contribute an all-zero row/column (compare() short-circuits to 0
+	// whenever it finds nothing to correlate against), so it's dropped
+	// before the matrix is even built rather than just left empty.
+	auto has_usable_probe = [this](const std::string &name)
 	{
-		std::cout << "CommunicationAnalysis::setup(): per-group diagnostic "
-		          << "(only groups with 0 usable probes shown):" << std::endl;
-		for (const std::string &name : names)
-		{
-			const OpSet<std::string> &descs = _clique->nodeDescsForGroup(name);
-			int anyMatch = 0;
-			int typeMatch = 0;
+		const OpSet<std::string> &descs = _clique->nodeDescsForGroup(name);
 
-			for (auto it = _lookup.begin(); it != _lookup.end(); it++)
+		for (auto it = _lookup.begin(); it != _lookup.end(); it++)
+		{
+			const ProbeTypePair &ptp = it->first;
+			if (!descs.count(ptp.first->desc()))
 			{
-				const ProbeTypePair &ptp = it->first;
-				if (descs.count(ptp.first->desc()))
-				{
-					anyMatch++;
-					bool bondOk = ptp.first->is_bond() &&
-					ptp.second == hnet::Types::BondType;
-					bool atomOk = ptp.first->is_atom() &&
-					ptp.second == hnet::Types::ExistenceType;
-					if (bondOk || atomOk)
-					{
-						typeMatch++;
-					}
-				}
+				continue;
 			}
 
-			if (typeMatch == 0)
+			bool bondOk = ptp.first->is_bond() &&
+			ptp.second == hnet::Types::BondType;
+			bool atomOk = ptp.first->is_atom() &&
+			ptp.second == hnet::Types::ExistenceType;
+			if (bondOk || atomOk)
 			{
-				std::cout << "  \"" << name << "\": " << descs.size()
-				          << " descs assigned, " << anyMatch
-				          << " found in _lookup (any type), " << typeMatch
-				          << " passed the is_bond/is_atom type filter"
-				          << std::endl;
+				return true;
 			}
 		}
+
+		return false;
+	};
+
+	std::vector<std::string> names;
+	int excluded = 0;
+
+	for (const std::string &name : _clique->allCommsNames())
+	{
+		if (has_usable_probe(name))
+		{
+			names.push_back(name);
+		}
+		else
+		{
+			excluded++;
+		}
+	}
+
+	if (excluded)
+	{
+		std::cout << "CommunicationAnalysis::setup(): excluded " << excluded
+		          << " signal(s) with no probe found in the matrix"
+		          << std::endl;
 	}
 
 	Eigen::MatrixXf mat(names.size(), names.size());
