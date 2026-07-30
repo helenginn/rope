@@ -405,6 +405,7 @@ void CommunicationAnalysis::setup()
 	_cc = PCA::Matrix(mat);
 	MatrixPlot *mp = new MatrixPlot(_cc);
 	MatrixBox *mBox = new MatrixBox(mp, names, names, true);
-	mBox->setCentre(0.5, 0.5);
+	mBox->setCentre(0.5, 0.6);
+	mBox->resize(1.2);
 	addObject(mBox);
 }
