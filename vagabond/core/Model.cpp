@@ -28,10 +28,86 @@
 #include "EntityManager.h"
 #include "SequenceComparison.h"
 #include "../utils/FileReader.h"
+#include <vagabond/core/protonic/Clique.h>
 
 Model::Model()
 {
 	_loadMutex = new std::mutex();
+}
+
+// declared, not defaulted, in Model.h - see the comment there. Behaviour
+// is identical to the compiler-generated versions Model relied on before
+// (shallow-copies the raw _loadMutex/_currentFile/_currentAtoms pointers,
+// same as always); only the instantiation point has moved to this file,
+// where Clique's complete type is available.
+Model::~Model() = default;
+Model::Model(const Model &other) = default;
+Model::Model(Model &&other) noexcept = default;
+Model &Model::operator=(const Model &other) = default;
+Model &Model::operator=(Model &&other) noexcept = default;
+
+const std::list<Clique> &Model::cliques() const
+{
+	return _cliques;
+}
+
+void Model::setCliques(const std::list<Clique> &cliques)
+{
+	_cliques = cliques;
+}
+
+void to_json(json &j, const Model &value)
+{
+	j["name"] = value._name;
+	j["filename"] = value._filename;
+	j["chain_to_entity"] = value._chain2Entity;
+	j["molecules"] = value._polymers;
+	try
+	{
+		j["ligands"] = value._ligands;
+	}
+	catch (const json::exception &err)
+	{
+
+	}
+
+	if (value._cliques.size())
+	{
+		j["cliques"] = value._cliques;
+	}
+	j["datafile"] = value._dataFile;
+}
+
+void from_json(const json &j, Model &value)
+{
+	value._name = j.at("name");
+	value._filename = j.at("filename");
+
+	try
+	{
+        std::map<std::string, std::string> chain_to_entity = j.at("chain_to_entity");
+        value._chain2Entity = chain_to_entity;
+        std::list<Polymer> molecules = j.at("molecules");
+        value._polymers = molecules;
+        std::list<Ligand> ligands = j.at("ligands");
+        value._ligands = ligands;
+	}
+	catch (...)
+	{
+
+	}
+
+	if (j.count("cliques"))
+	{
+		value._cliques = j.at("cliques");
+	}
+
+	if (j.count("datafile"))
+	{
+		value._dataFile = j.at("datafile");
+	}
+
+	value.clickTicker();
 }
 
 void Model::setFilename(std::string file)

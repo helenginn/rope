@@ -24,8 +24,6 @@
 #include <mutex>
 #include <iostream>
 
-#include <vagabond/core/protonic/Clique.h>
-
 #include "HasMetadata.h"
 #include "Metadata.h"
 
@@ -44,12 +42,29 @@ class Diffraction;
 class AtomContent;
 class ArbitraryMap;
 
+// deliberately forward-declared, not #included: Clique.h pulls in Probe.h
+// and its heavy Connector/hnet chain, and Model.h is included almost
+// everywhere - see Model.cpp for the handful of methods that actually
+// need Clique's complete type.
+class Clique;
+
 class Model : public HasResponder<Responder<Model>>, Responder<AtomGroup>,
 public HasMetadata
 {
 public:
 	Model();
-	
+
+	// declared (not defaulted) here, defined in Model.cpp - _cliques is a
+	// std::list<Clique> held by value, and Clique is only forward-declared
+	// above, so the compiler-generated bodies for these (which need
+	// Clique's complete type to destroy/copy/move that member) must be
+	// instantiated in Model.cpp, where Clique.h is actually included.
+	~Model();
+	Model(const Model &other);
+	Model(Model &&other) noexcept;
+	Model &operator=(const Model &other);
+	Model &operator=(Model &&other) noexcept;
+
 	static Model autoModel(std::string filename);
 	
 	void setFilename(std::string file);
@@ -171,15 +186,8 @@ public:
 
 	void export_refined(std::string prefix = "rope", std::string suffix = "");
 
-	const std::list<Clique> &cliques() const
-	{
-		return _cliques;
-	}
-	
-	void setCliques(const std::list<Clique> &cliques)
-	{
-		_cliques = cliques;
-	}
+	const std::list<Clique> &cliques() const;
+	void setCliques(const std::list<Clique> &cliques);
 private:
 	void swapChainToEntity(std::string id, std::string entity);
 	void mergeAppropriatePolymers();
@@ -207,60 +215,9 @@ private:
 	AtomContent *_currentAtoms = nullptr;
 };
 
-inline void to_json(json &j, const Model &value)
-{
-	j["name"] = value._name;
-	j["filename"] = value._filename;
-	j["chain_to_entity"] = value._chain2Entity;
-	j["molecules"] = value._polymers;
-	try
-	{
-		j["ligands"] = value._ligands;
-	}
-	catch (const json::exception &err)
-	{
-
-	}
-	
-	if (value._cliques.size())
-	{
-		j["cliques"] = value._cliques;
-	}
-	j["datafile"] = value._dataFile;
-}
-
-inline void from_json(const json &j, Model &value)
-{
-	value._name = j.at("name");
-	value._filename = j.at("filename");
-	
-	try
-	{
-        std::map<std::string, std::string> chain_to_entity = j.at("chain_to_entity");
-        value._chain2Entity = chain_to_entity;
-        std::list<Polymer> molecules = j.at("molecules");
-        value._polymers = molecules;
-        std::list<Ligand> ligands = j.at("ligands");
-        value._ligands = ligands;
-	}
-	catch (...)
-	{
-
-	}
-	
-	if (j.count("cliques"))
-	{
-		value._cliques = j.at("cliques");
-	}
-
-	if (j.count("datafile"))
-	{
-		value._dataFile = j.at("datafile");
-	}
-	
-	value.clickTicker();
-}
-
-
+// defined in Model.cpp, not here - both touch value._cliques, which needs
+// Clique's complete type (see the forward declaration above).
+void to_json(json &j, const Model &value);
+void from_json(const json &j, Model &value);
 
 #endif
