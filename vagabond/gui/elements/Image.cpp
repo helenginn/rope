@@ -49,6 +49,24 @@ void Image::makeQuad()
 	_appliedAspect = Window::aspect();
 }
 
+void Image::rotateAspectCorrected(float degrees, glm::vec3 axis)
+{
+	// the same stretch makeQuad() bakes into this image's vertices -
+	// conjugating the rotation by the inverse of it (S^-1 * R * S) undoes
+	// the stretch, rotates the image's true (unstretched) shape, then
+	// reapplies the stretch, instead of shearing the already-stretched
+	// vertices with a plain rotation.
+	glm::mat3x3 s = glm::mat3(1.f);
+	s[0][0] = (double)Window::aspect();
+	s[1][1] = (double)_h / (double)_w;
+
+	glm::mat3x3 r = glm::mat3x3(glm::rotate(glm::mat4(1.),
+	                                        (float)deg2rad(degrees), axis));
+
+	glm::mat3x3 corrected = glm::inverse(s) * r * s;
+	rotateRoundCentre(corrected);
+}
+
 void Image::changeImage(std::string filename)
 {
 	if (_switches.size())

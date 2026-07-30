@@ -12,6 +12,13 @@ public:
 	
 	void changeImage(std::string filename);
 
+	/** rotateRoundCentre() alone shears this image, because makeQuad()
+	 * already bakes a non-uniform aspect/texture stretch into its
+	 * vertices (see makeQuad()) - this conjugates the rotation by that
+	 * same stretch so the image's true proportions survive the turn. */
+	void rotateAspectCorrected(float degrees,
+	                           glm::vec3 axis = glm::vec3(0, 0, -1));
+
 	void setQuickSwitch(const std::vector<std::string> &filenames);
 	virtual void makeQuad();
 protected:
