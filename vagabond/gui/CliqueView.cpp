@@ -26,6 +26,7 @@
 #include <vagabond/core/protonic/Network.h>
 #include <vagabond/core/protonic/CliqueFinder.h>
 #include <vagabond/gui/ProtonNetworkView.h>
+#include <vagabond/gui/HBondAnalysisControl.h>
 #include <vagabond/utils/DoJob.h>
 #include "CliqueView.h"
 #include <SDL2/SDL_clipboard.h>
@@ -145,6 +146,11 @@ void CliqueView::insertClique(Clique *clique)
 				scene->selectProbes(clique->probes());
 				scene->completeResidues(true);
 				scene->setActive(clique);
+
+				HBondAnalysisControl *hbac =
+				new HBondAnalysisControl(scene, clique, _network);
+				hbac->show();
+
 				_kill();
 			};
 
