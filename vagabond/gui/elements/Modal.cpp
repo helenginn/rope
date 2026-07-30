@@ -3,6 +3,8 @@
 #include "Modal.h"
 #include "Scene.h"
 #include "TextButton.h"
+#include "ImageButton.h"
+#include "InfoModal.h"
 #include <iostream>
 
 Modal::Modal(Scene *scene)
@@ -56,7 +58,7 @@ void Modal::conv_coords(double *fx, double *fy)
 
 void Modal::hide()
 {
-	_scene->removeModals();
+	_scene->removeModals(_stacked);
 }
 
 void Modal::dismiss()
@@ -64,6 +66,34 @@ void Modal::dismiss()
 	if (_dismissable)
 	{
 		hide();
+	}
+}
+
+void Modal::setHelpText(const std::string &text)
+{
+	_helpText = text;
+
+	if (!_help)
+	{
+		ImageButton *ib = new ImageButton("assets/images/question_mark.png",
+		                                  nullptr);
+		ib->resize(0.06);
+		// this box is centred on screen by default, spanning roughly
+		// [0.5 - _width/2, 0.5 + _width/2] x [0.5 - _height/2, 0.5 + _height/2]
+		// in the same full-screen fraction space setCentre()/setRight() use
+		// (see Renderable::setArbitrary()) - so a fixed inset from those
+		// edges lands just inside the top-right corner of any Modal,
+		// whatever its own width/height happen to be.
+		double right = 0.5 + _width / 2 - 0.02;
+		double top = 0.5 - _height / 2 + 0.06;
+		ib->setRight(right, top);
+		ib->setReturnJob([this]()
+		{
+			InfoModal *info = new InfoModal(_scene, _helpText);
+			_scene->setModal(info, false);
+		});
+		addObject(ib);
+		_help = ib;
 	}
 }
 
