@@ -18,6 +18,9 @@
 
 #include "CliqueFinder.h"
 #include "Probe.h"
+#include "Network.h"
+#include <vagabond/core/AtomGroup.h>
+#include <vagabond/core/ResidueRange.h>
 
 OpSet<Probe *> CliqueFinder::
 completeOnCondition(const OpSet<Probe *> &start,
@@ -102,6 +105,88 @@ CliqueFinder::expandSelectionToNeighbours(const OpSet<Probe *> &done,
 	                                  check_probe, max_jumps);
 	
 	return ps;
+}
+
+std::vector<OpSet<Probe *>>
+CliqueFinder::probeGroupsForResidues(Network &network,
+                                     const std::vector<ResidueRangeToken> &tokens)
+{
+	std::string firstChain;
+	if (network.atoms()->size() > 0)
+	{
+		firstChain = (*network.atoms())[0]->chain();
+	}
+
+	std::vector<OpSet<Probe *>> groups;
+
+	for (const ResidueRangeToken &token : tokens)
+	{
+		std::string chain = token.chain.empty() ? firstChain : token.chain;
+
+		for (int num = token.begin; num <= token.end; num++)
+		{
+			ResidueId id(num);
+			OpSet<Probe *> group;
+
+			for (AtomProbe *const &probe : network.atomProbes())
+			{
+				if (probe->atom() && probe->atom()->chain() == chain &&
+				    probe->atom()->residueId() == id)
+				{
+					group.insert(probe);
+				}
+			}
+
+			groups.push_back(group);
+		}
+	}
+
+	return groups;
+}
+
+OpSet<Probe *>
+CliqueFinder::connectGroups(const std::vector<OpSet<Probe *>> &groups,
+                            int max_jumps, bool with_covalent)
+{
+	std::vector<OpSet<Probe *>> reached;
+	reached.reserve(groups.size());
+
+	for (const OpSet<Probe *> &group : groups)
+	{
+		reached.push_back(expandSelectionToNeighbours(group, max_jumps,
+		                                              with_covalent));
+	}
+
+	OpSet<Probe *> result;
+	for (const OpSet<Probe *> &group : groups)
+	{
+		result += group;
+	}
+
+	OpSet<Probe *> all;
+	for (const OpSet<Probe *> &r : reached)
+	{
+		all += r;
+	}
+
+	for (Probe *const &probe : all)
+	{
+		int hits = 0;
+		for (const OpSet<Probe *> &r : reached)
+		{
+			if (r.count(probe))
+			{
+				hits++;
+			}
+		}
+
+		if (hits >= 2)
+		{
+			result.insert(probe);
+		}
+	}
+
+	return result;
 }
 
 OpSet<Probe *> CliqueFinder::findOneClique(const OpSet<Probe *> &all)

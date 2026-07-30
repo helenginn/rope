@@ -19,6 +19,7 @@
 #include "BallAndStickOptions.h"
 
 #include <vagabond/utils/FileReader.h>
+#include <vagabond/core/ResidueRange.h>
 
 #include <vagabond/core/Entity.h>
 
@@ -97,49 +98,21 @@ bool BallAndStickOptions::addResidue(int res)
 
 void BallAndStickOptions::addResidueRange(std::string range)
 {
-	bool failed = 0;
 	int count = 0;
 	int not_found = 0;
-	std::vector<std::string> bits = split(range, ',');
+	std::vector<ResidueRangeToken> tokens;
+	std::string error;
+	bool failed = !parseResidueRanges(range, tokens, error);
 
-	for (std::string &bit : bits)
+	for (const ResidueRangeToken &token : tokens)
 	{
-		std::vector<std::string> sides = split(bit, '-');
-		
-		if (sides.size() > 2)
-		{
-			failed = true;
-			break;
-		}
-		
-		for (std::string &side : sides)
-		{
-			trim(side);
-		}
-		
-		int begin = atoi(sides[0].c_str());
-		if (sides.size() == 1)
-		{
-			bool found = addResidue(begin);
-			found ? count++ : not_found++;
-			continue;
-		}
-		
-		int end = atoi(sides[1].c_str());
-		
-		if (end < begin)
-		{
-			failed = true;
-			break;
-		}
-
-		for (size_t res = begin; res <= end; res++)
+		for (int res = token.begin; res <= token.end; res++)
 		{
 			bool found = addResidue(res);
 			found ? count++ : not_found++;
 		}
 	}
-	
+
 	std::string str = "Added " + std::to_string(count) + ", missed "
 	+ std::to_string(not_found) + " residues.\n";
 	if (failed)
@@ -148,7 +121,7 @@ void BallAndStickOptions::addResidueRange(std::string range)
 	}
 	BadChoice *bc = new BadChoice(this, str);
 	setModal(bc);
-	
+
 	refresh();
 }
 

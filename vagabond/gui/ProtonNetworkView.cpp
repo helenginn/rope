@@ -28,12 +28,15 @@
 #include <vagabond/core/PositionShifter.h>
 #include <vagabond/core/AtomGroup.h>
 #include <vagabond/core/Environment.h>
+#include <vagabond/core/ResidueRange.h>
 #include <vagabond/utils/DoJob.h>
 #include <vagabond/gui/CliqueView.h>
 #include <vagabond/gui/ProblemReviewView.h>
 #include <vagabond/gui/HBondAnalysisControl.h>
 #include <vagabond/gui/elements/AskYesNo.h>
+#include <vagabond/gui/elements/AskForText.h>
 #include <vagabond/gui/elements/BadChoice.h>
+#include <vagabond/gui/elements/ChooseRange.h>
 #include <vagabond/gui/elements/ImageButton.h>
 #include <vagabond/gui/elements/FloatingText.h>
 #include <vagabond/gui/elements/TextButton.h>
@@ -259,11 +262,10 @@ void ProtonNetworkView::interactedWithNothing(bool left, bool hover)
 		                [this]() { completeResidues(false); });
 		menu->addOption("complete to C-alpha", 
 		                [this]() { completeResidues(true); });
-		if (_cv)
-		{
-			menu->addOption("make new clique", 
-			                [this]() { makeNewClique(); });
-		}
+		menu->addOption("make new clique",
+		                [this]() { ensureCliqueView(); makeNewClique(); });
+		menu->addOption("select using plan...",
+		                [this]() { askForSelectionPlan(); });
 		
 		OpSet<Probe *> selected = selected_probes(_textProbes);
 		selected += selected_probes(_bondProbes);
@@ -544,33 +546,38 @@ void ProtonNetworkView::sendObject(std::string tag, void *object)
 	main_job();
 }
 
+void ProtonNetworkView::ensureCliqueView()
+{
+	if (_cv)
+	{
+		// picks up subdivisions created (Exhaustive search) or whose
+		// select job was borrowed and restored (ViewCorrelations)
+		// since this cached view was last shown.
+		_cv->rewireSubdivisions();
+		addObject(_cv);
+	}
+	else
+	{
+		_cv = new CliqueView(this, _network, _hProbes);
+
+		auto kill = [this]()
+		{
+			removeObject(_cv);
+		};
+
+		_cv->setKillAndClean(kill);
+		highlightCliques();
+		addObject(_cv);
+	}
+}
+
 void ProtonNetworkView::makeMainMenu()
 {
 	auto browse_cliques = [this]()
 	{
-		if (_cv)
-		{
-			// picks up subdivisions created (Exhaustive search) or whose
-			// select job was borrowed and restored (ViewCorrelations)
-			// since this cached view was last shown.
-			_cv->rewireSubdivisions();
-			addObject(_cv);
-		}
-		else
-		{
-			_cv = new CliqueView(this, _network, _hProbes);
-
-			auto kill = [this]()
-			{
-				removeObject(_cv);
-			};
-
-			_cv->setKillAndClean(kill);
-			highlightCliques();
-			addObject(_cv);
-		}
+		ensureCliqueView();
 	};
-	
+
 	auto reset_cliques = [this]()
 	{
 		std::string text = "This will delete all cliques and recalculate\n"\
@@ -792,7 +799,84 @@ void ProtonNetworkView::makeNewClique()
 	}
 
 }
-	
+
+void ProtonNetworkView::askForSelectionPlan()
+{
+	AskForText *aft = new AskForText(this, "Enter selection plan:",
+	                                 "", this);
+	aft->allowCapitals(true);
+	aft->setReturnJob([this](std::string plan)
+	{
+		selectUsingPlan(plan);
+	});
+	setModal(aft);
+}
+
+void ProtonNetworkView::selectUsingPlan(std::string plan)
+{
+	if (!_cv)
+	{
+		return;
+	}
+
+	std::string displayName = "Selection plan: " + plan;
+	int radius = -1;
+
+	// optional "@N;" prefix overriding the search radius, stripped before
+	// the rest of the plan reaches parseResidueRanges() - '@' can never
+	// be confused with a chain letter the way e.g. "N15;" would be.
+	if (plan.size() > 0 && plan[0] == '@')
+	{
+		size_t semi = plan.find(';');
+		if (semi != std::string::npos)
+		{
+			radius = atoi(plan.substr(1, semi - 1).c_str());
+			plan = plan.substr(semi + 1);
+		}
+	}
+
+	std::vector<ResidueRangeToken> tokens;
+	std::string error;
+	if (!parseResidueRanges(plan, tokens, error))
+	{
+		BadChoice *bc = new BadChoice(this, error);
+		setModal(bc);
+		return;
+	}
+
+	auto build = [this, tokens, displayName](int n)
+	{
+		std::vector<OpSet<Probe *>> groups =
+		CliqueFinder::probeGroupsForResidues(_network, tokens);
+		OpSet<Probe *> connected =
+		CliqueFinder::connectGroups(groups, n, true);
+
+		while (Subdivide::finish_ends(connected)) {}
+		
+		selectProbes(connected);
+
+//		Clique *clique = _network.newClique(connected);
+//		clique->setDisplayName(displayName);
+//		_cv->insertClique(clique);
+	};
+
+	if (radius >= 0)
+	{
+		build(radius);
+		return;
+	}
+
+	ChooseRange *cr = new ChooseRange(this, "Choose search radius (nodes)",
+	                                  "", this);
+	cr->setDefault(15, 15);
+	cr->setRange(2, 50, 48);
+	cr->setReturn([build](float, float max)
+	{
+		build(lrint(max));
+	});
+	setModal(cr);
+}
+
 void ProtonNetworkView::highlightCliques()
 {
 	if (_cv)

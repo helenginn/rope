@@ -92,7 +92,10 @@ private:
 	virtual void sendObject(std::string tag, void *object);
 	virtual void interactedWithNothing(bool left, bool hover);
 	void findAtomProbes();
+	void ensureCliqueView();
 	void makeNewClique();
+	void askForSelectionPlan();
+	void selectUsingPlan(std::string plan);
 	void linkSymmetricAtomProbes(const hnet::AtomConf &ac);
 
 	
