@@ -25,7 +25,6 @@
 #include <vagabond/gui/elements/TextButton.h>
 #include <vagabond/gui/elements/ChooseRange.h>
 #include <vagabond/gui/elements/ImageButton.h>
-#include <vagabond/gui/elements/TickBoxes.h>
 #include <vagabond/core/protonic/Subdivide.h>
 #include <vagabond/core/protonic/SearchAll.h>
 #include <vagabond/core/protonic/Clique.h>
@@ -74,73 +73,81 @@ void HBondAnalysisControl::setup()
 		addObject(tb);
 	}
 	
-	auto subdivide_with_values = [this](int min, int max, Subdivide::Search s)
+	auto subdivide_with_values = [this](int max, int samples)
 	{
-		return [this, min, max, s]()
+		return [this, max, samples]()
 		{
-			Subdivide sd(_clique, min, max);
-			sd.search = s;
-			sd.subdivide();
+			Subdivide sd(_clique, max);
+			sd.subdivide(samples);
 			refresh();
 		};
 	};
 
 	auto dont_subdivide = [this]()
 	{
-		Subdivide sd(_clique, INT_MAX, INT_MAX);
+		Subdivide sd(_clique, INT_MAX);
 		sd.one();
 		refresh();
 	};
-	
-	auto ask_for_min_max = [this, subdivide_with_values]()
+
+	auto ask_for_samples = [this, subdivide_with_values](int guideSize)
 	{
-		TickBoxes *tb = new TickBoxes(this, this);
-		tb->setOneOnly(false);
-		tb->addOption("depth", "depth", true);
-		tb->addOption("breadth", "breadth");
-		tb->addOption("covalent", "covalent");
-		tb->arrange(0.3, 0.35, 0.7, 0.55);
-
-		auto convert = [subdivide_with_values, tb](float min, float max)
+		return [this, subdivide_with_values, guideSize]()
 		{
-			bool depth = (tb->isTicked("depth"));
-			bool spread = (tb->isTicked("breadth"));
-			bool cov = (tb->isTicked("covalent"));
-			Subdivide::Search s1 = (depth ? Subdivide::Depth : 
-			                        Subdivide::None);
-			Subdivide::Search s2 = (spread ? Subdivide::Breadth :
-			                        Subdivide::None);
-			Subdivide::Search s3 = (cov ? Subdivide::Covalent :
-			                        Subdivide::None);
+			ChooseRange *cr = new ChooseRange(this, "How many samples "\
+			                                  "per node?", "", this);
+			cr->setDefault(3, 3);
+			cr->setRange(1, 20, 19);
+			cr->setReturn([subdivide_with_values, guideSize]
+			              (float, float samples)
+			{
+				subdivide_with_values(guideSize, lrint(samples))();
+			});
 
-			Subdivide::Search s = Subdivide::Search(s1 | s2 | s3);
-			subdivide_with_values(min, max, s)();
+			setModal(cr);
 		};
+	};
 
-		ChooseRange *cr = new ChooseRange(this, "Set search size for "\
+	auto ask_for_guide_size = [this, ask_for_samples]()
+	{
+		ChooseRange *cr = new ChooseRange(this, "Set guide size for "\
 		                                  "hydrogen bond subnetwork", "",
-		                                  this, true);
-		cr->setDefault(8, 12);
+		                                  this);
+		cr->setDefault(12, 12);
 		cr->setRange(2, 50, 48);
-		cr->setReturn(convert);
-		
-		cr->addObject(tb);
+		cr->setReturn([this, ask_for_samples](float, float max)
+		{
+			int guideSize = lrint(max);
+
+			// ChooseRange::buttonPressed() calls this return callback
+			// and then unconditionally hide()s - which clears every
+			// modal on the scene (Modal::hide() -> Scene::removeModals()),
+			// not just this one. Opening the next ChooseRange here
+			// directly would show it and then have it wiped out by that
+			// same hide() call, all within this one call stack.
+			// Deferring to the next main-thread job runs it after that
+			// cleanup has finished.
+			addMainThreadJob([ask_for_samples, guideSize]()
+			{
+				ask_for_samples(guideSize)();
+			});
+		});
 
 		setModal(cr);
 	};
 
-	auto ask_to_brute_force = [this, ask_for_min_max, dont_subdivide]()
+	auto ask_to_brute_force = [this, ask_for_guide_size, dont_subdivide]()
 	{
 		AskYesNo *ayn = new AskYesNo(this, "Do entire network by brute force?");
 		ayn->addJob("yes", dont_subdivide);
-		ayn->addJob("no", ask_for_min_max);
+		ayn->addJob("no", ask_for_guide_size);
 		setModal(ayn);
 	};
-	
+
 	auto ask_to_subdivide = [this, ask_to_brute_force, subdivide_with_values]()
 	{
 		AskYesNo *ayn = new AskYesNo(this, "Subdivide network using defaults?");
-		ayn->addJob("yes", subdivide_with_values(10, 28, Subdivide::Depth));
+		ayn->addJob("yes", subdivide_with_values(12, 3));
 		ayn->addJob("no", ask_to_brute_force);
 		setModal(ayn);
 	};

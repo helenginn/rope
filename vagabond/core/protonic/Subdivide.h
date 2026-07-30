@@ -27,29 +27,18 @@ class Clique;
 class Subdivide
 {
 public:
-	Subdivide(Clique *clique, int min, int max);
-	
-	enum Search
-	{
-		None = 0,
-		Breadth = 1,
-		Depth = 2,
-		Covalent = 4,
-	};
-	Search search;
+	Subdivide(Clique *clique, int max);
 
-	void subdivide();
+	void subdivide(int samples = 3);
 	void one();
 
-	void spread(OpSet<Probe *> &chunk, bool force = false);
 	void shoot(OpSet<Probe *> &chunk);
 	void prune(OpSet<Probe *> &chunk);
 	static bool finish_ends(OpSet<Probe *> &chunk);
-	
+
 private:
 	Clique *_clique{};
 
-	int _min = 0;
 	int _max = 0;
 
 	// shoot() keeps every probe within this many hops of *some* shortest

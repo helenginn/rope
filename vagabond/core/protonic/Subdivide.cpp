@@ -23,9 +23,9 @@
 #include <random>
 #include <queue>
 
-Subdivide::Subdivide(Clique *clique, int min, int max) : _clique(clique)
+Subdivide::Subdivide(Clique *clique, int max) : _clique(clique)
 {
-	_min = min; _max = max;
+	_max = max;
 	int actual_max = _clique->probes().size();
 	if (_max > actual_max)
 	{
@@ -122,11 +122,15 @@ static int bounded_bfs(Probe *root, int radius, std::map<Probe *, int> &dist)
 }
 
 // Picks a probe roughly _max hops from the start (biased to the farthest
-// reachable layer, so chunks are deep chains rather than the old
+// layer at which another member of the clique being subdivided is
+// reached, so chunks are deep chains rather than the old
 // shuffle-and-backtrack random walk, which tended to meander), then keeps
 // the union of every probe within _slack hops of some shortest path
 // between the two - not just one arbitrary shortest path - since real
 // signalling paths fork and converge rather than being a single strand.
+// The path between them, and the kept "lens" around it, may still pass
+// through probes outside the clique (e.g. bridging waters) - only the
+// choice of endpoint itself is restricted to clique members.
 void Subdivide::shoot(OpSet<Probe *> &chunk)
 {
 	Probe *start = *chunk.begin();
@@ -137,17 +141,33 @@ void Subdivide::shoot(OpSet<Probe *> &chunk)
 	int radius = _max / 2;
 
 	std::map<Probe *, int> dist_start;
-	int d = bounded_bfs(start, radius, dist_start);
+	bounded_bfs(start, radius, dist_start);
+
+	// the chosen endpoint must itself belong to the clique being
+	// subdivided - the walk between start and end is still free to pass
+	// through probes outside it (bridging waters etc.), but the endpoint
+	// picked to aim at should not be one of those bridging probes. So
+	// take the farthest distance at which a clique-member probe was
+	// actually reached, rather than the farthest distance reached at
+	// all (bounded_bfs's own return value).
+	int d = 0;
+	for (const auto &entry : dist_start)
+	{
+		if (entry.second > d && _clique->probes().count(entry.first))
+		{
+			d = entry.second;
+		}
+	}
 
 	if (d == 0)
 	{
-		return; // nothing reachable within budget; chunk stays {start}
+		return; // no other clique member reachable within budget
 	}
 
 	std::vector<Probe *> farthest_layer;
 	for (const auto &entry : dist_start)
 	{
-		if (entry.second == d)
+		if (entry.second == d && _clique->probes().count(entry.first))
 		{
 			farthest_layer.push_back(entry.first);
 		}
@@ -203,52 +223,6 @@ void Subdivide::shoot(OpSet<Probe *> &chunk)
 	chunk = result;
 }
 
-void Subdivide::spread(OpSet<Probe *> &chunk, bool force)
-{
-	OpSet<Probe *> last = chunk;
-	while (chunk.size() < _min || force)
-	{
-		if (chunk.size() >= _max && !force)
-		{
-			break;
-		}
-
-		OpSet<Probe *> add = {};
-		for (Probe *const &current : last)
-		{
-			for (Probe *const &other : current->others())
-			{
-				if (chunk.size() + add.size() > _min)
-				{
-					return;
-				}
-
-				if (other->is_definitely_not_present())
-				{
-					continue;
-				}
-
-				if (chunk.count(other) == 0)
-				{
-					if (other->desc() == "W-HOH222:BULK")
-					{
-						std::cout << other->desc() << " " << other << std::endl;
-					}
-					add += other;
-				}
-			}
-		}
-		
-		if (add.size() == 0)
-		{
-			break;
-		}
-
-		chunk += add;
-		last = add;
-	}
-}
-
 bool has_non_water(const OpSet<Probe *> &chunk)
 {
 	for (Probe *const &probe : chunk)
@@ -273,175 +247,39 @@ void Subdivide::prune(OpSet<Probe *> &chunk)
 
 void Subdivide::one()
 {
-	_min = INT_MAX;
-	_max = INT_MAX;
-
 	OpSet<Probe *> expanded = _clique->probes();
-//	spread(expanded);
 	_clique->setSubdivisions({Clique(expanded)});
 }
 
-
-void expand_to_bonded(OpSet<Probe *> &chunk, bool same_residue = false,
-                      const OpSet<Probe *> &reference = {}, int max = INT_MAX)
+void Subdivide::subdivide(int samples)
 {
-	OpSet<Probe *> last = chunk;
-	OpSet<ResidueId> ids;
-	for (Probe *const &probe : reference)
-	{
-		if (probe->is_atom())
-		{
-			ids += probe->atom()->residueId();
-		}
-	}
-
-	while (true)
-	{
-		OpSet<Probe *> add = {};
-		for (Probe *const &current : last)
-		{
-			for (Probe *const &other : current->others())
-			{
-				if (!(other->is_atom() || other->is_covalent()))
-				{
-					continue;
-				}
-
-				if (same_residue && other->is_atom() &&
-				    ids.count(other->atom()->residueId()) == 0)
-				{
-					continue;
-				}
-				
-				if (other->is_atom() && other->atom()->symmetryCopyOf())
-				{
-					continue;
-				}
-				
-				if (other->is_certain())
-				{
-					continue;
-				}
-
-				if (chunk.count(other) == 0)
-				{
-					add += other;
-				}
-				
-			}
-		}
-		
-		if (chunk.size() > max)
-		{
-			break;
-		}
-		if (add.size() == 0)
-		{
-			break;
-		}
-
-		chunk += add;
-		last = add;
-	}
-}
-
-OpSet<Probe *> covalentProbes(const OpSet<Probe *> &check)
-{
-	OpSet<Probe *> covalents = check;
-	std::cout << "Checking " << check.size() << " in clique" << std::endl;
-	expand_to_bonded(covalents, true, check);
-	std::cout << "Expanded to " << covalents.size() << std::endl;
-
-	covalents.filter
-	([](Probe *probe)
-	 {
-		return probe->is_covalent() && !probe->is_certain();
-	});
-	std::cout << "Removed to leave " << covalents.size() << std::endl;
-
-	return covalents;
-}
-
-void Subdivide::subdivide()
-{
-	auto grow_clique = [this]<class Grow>(Probe *start, Grow &grow,
-	                                      Search method)
+	auto grow_clique = [this](Probe *start)
 	{
 		OpSet<Probe *> chunk = {start};
-		grow(chunk, method);
+		shoot(chunk);
 		while (finish_ends(chunk)) {}
 
 		prune(chunk);
 		return chunk;
 	};
-	
-	auto grow = [this](OpSet<Probe *> &chunk, Search method)
-	{
-		if (method == Depth)
-		{
-			return shoot(chunk);
-		}
-		else if (method == Breadth)
-		{
-			return spread(chunk);
-		}
-	};
 
 	OpSet<Probe *> to_chunk = _clique->probes();
-	int covs = 0;
-	for (Probe *p : to_chunk)
-	{
-		if (p->is_covalent())
-		{
-			covs++;
-		}
-	}
-	std::cout << "Covalent probes in clique: " << covs << std::endl;
 
 	OpSet<OpSet<Probe *>> chunks;
 	OpSet<Clique> cliques;
 
 	for (Probe *probe : to_chunk)
 	{
-		for (int i = 0; i < 3 && (search & Breadth); i++)
+		for (int i = 0; i < samples; i++)
 		{
-			OpSet<Probe *> chunk = grow_clique(probe, grow, Breadth);
-			if (chunk.size() > 0 && has_non_water(chunk))
-			{
-				chunks += chunk;
-			}
-		}
-		for (int i = 0; i < 3 && (search & Depth); i++)
-		{
-			OpSet<Probe *> chunk = grow_clique(probe, grow, Depth);
+			OpSet<Probe *> chunk = grow_clique(probe);
 			if (chunk.size() > 0 && has_non_water(chunk))
 			{
 				chunks += chunk;
 			}
 		}
 	}
-	
-	if (search & Covalent)
-	{
-		std::cout << "Doing covalents" << std::endl;
-		OpSet<Probe *> covalents = covalentProbes(to_chunk);
-		OpSet<Probe *> remaining = covalents;
-		while (remaining.size())
-		{
-			std::cout << "Remaining: " << remaining.size() << std::endl;
-			OpSet<Probe *> chunk;
-			chunk += *remaining.begin();
-			expand_to_bonded(chunk, true, to_chunk, _max);
-			remaining -= chunk;
-			
-			chunk = to_chunk.common_to_both(chunk);
-			if (chunk.size() >= 2)
-			{
-				cliques.insert(Clique(chunk));
-			}
-		}
-	}
-	
+
 	for (const OpSet<Probe *> &chunk : chunks)
 	{
 		if (chunk.size() >= 2)
