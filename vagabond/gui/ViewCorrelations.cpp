@@ -34,6 +34,8 @@
 #include <vagabond/gui/CommunicationAnalysis.h>
 #include <vagabond/gui/elements/ScrollBox.h>
 #include <vagabond/gui/elements/Window.h>
+#include <vagabond/gui/VagWindow.h>
+#include <vagabond/core/Progressor.h>
 
 using Eigen::seqN;
 
@@ -181,26 +183,44 @@ void ViewCorrelations::viewAll()
 		}
 	};
 	
-	auto fill_gaps = [this, mp]()
+	// not cancellable - the comparison matrix isn't usable until this
+	// finishes, so there is nothing sensible to fall back to if aborted.
+	struct GapFillProgress : public Progressor {};
+
+	auto fill_gaps = [this, mp, comm_analysis]()
 	{
 		auto combine = [](float x, float y)
 		{
 			return x * y;
 		};
-		
+
 		setInformation("Deriving intermediate correlations");
 
 		FloydWarshall fw(_result, combine, true);
 		fw.addDisplayMatrix(_matrix, _mutex, [mp]() { mp->update(); });
+
+		GapFillProgress *progress = new GapFillProgress();
+		fw.addTickJob([progress]() { progress->clickTicker(); });
+
+		VagWindow::window()->requestProgressBar((int)_result.rows(),
+		                                        "Deriving intermediate "\
+		                                        "correlations", progress);
+
 		fw.run();
+		progress->finishTicker();
+		delete progress;
+
 		setInformation("Finished deriving intermediates");
 		std::cout << "Done filling gaps" << std::endl;
+
+		addMainThreadJob([this, comm_analysis]()
+		{
+			TextButton *comm = new TextButton("Communication analysis", this);
+			comm->setCentre(0.55, 0.9);
+			comm->setReturnJob(comm_analysis);
+			addTempObject(comm);
+		});
 	};
-	
-	TextButton *comm = new TextButton("Communication analysis", this);
-	comm->setCentre(0.55, 0.9);
-	comm->setReturnJob(comm_analysis);
-	addTempObject(comm);
 
 	new DoJob(fill_gaps);
 

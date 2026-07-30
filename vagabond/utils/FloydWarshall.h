@@ -47,6 +47,14 @@ public:
 		_done = done;
 	}
 
+	// called once per outer-loop (k) iteration - i.e. _sqMat.rows() times
+	// in total - so a caller can drive a progress bar without run() itself
+	// needing to know anything about GUI/Progressor machinery.
+	void addTickJob(const VoidFunction &tick)
+	{
+		_tick = tick;
+	}
+
 	void run();
 private:
 	Eigen::MatrixXf &_sqMat;
@@ -57,6 +65,7 @@ private:
 	std::mutex *_mutex{};
 	VoidFunction _update{};
 	VoidFunction _done{};
+	VoidFunction _tick{};
 };
 
 #endif

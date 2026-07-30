@@ -106,6 +106,11 @@ void FloydWarshall::run() // symmetric matrix
 		{
 			refresh_display();
 		}
+
+		if (_tick)
+		{
+			_tick();
+		}
 	}
 
 	if (_update)
