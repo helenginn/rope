@@ -187,6 +187,12 @@ bool MatrixPlot::mouseOver()
 {
 	if (!_hoverJob) return false;
 
+	// _gl (Renderable::_gl) is only set inside render(GLView*) - a
+	// freshly-added MatrixPlot can already be spatially hit-testable
+	// (Scene::mouseMoveEvent's findObject()) before it has ever actually
+	// been rendered once, so this can legitimately still be null here.
+	if (!_gl) return false;
+
 	double x, y;
 	_gl->getMoveCoords(x, y);
 	
