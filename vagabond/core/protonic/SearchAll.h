@@ -20,6 +20,8 @@
 #define __vagabond__SearchAll__
 
 #include <vagabond/core/Progressor.h>
+#include <atomic>
+#include <memory>
 
 class Clique;
 class Network;
@@ -30,9 +32,18 @@ public:
 	SearchAll(Clique *parent, Network &network);
 
 	void run();
+
+	/** shared, not owned: this object is deleted by the worker thread as
+	 * soon as run() returns, which could race with a cancel button click
+	 * on the main thread if the flag lived here instead. */
+	void setCancelFlag(std::shared_ptr<std::atomic<bool>> flag)
+	{
+		_cancel = flag;
+	}
 private:
 	Clique *_clique{};
 	Network &_network;
+	std::shared_ptr<std::atomic<bool>> _cancel;
 
 };
 

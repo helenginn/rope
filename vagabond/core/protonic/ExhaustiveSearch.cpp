@@ -141,9 +141,14 @@ void ExhaustiveSearch::cleanup()
 void ExhaustiveSearch::search()
 {
 	setup();
-	
+
 	while (true)
 	{
+		if (_cancel && _cancel->load())
+		{
+			break;
+		}
+
 		if (!next())
 		{
 			break;

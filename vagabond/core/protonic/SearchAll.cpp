@@ -42,6 +42,11 @@ void SearchAll::run()
 
 	for (Clique &clique : subs)
 	{
+		if (_cancel && _cancel->load())
+		{
+			break;
+		}
+
 		if (clique.states() && clique.states()->state_count())
 		{
 			_clique->addItem(&clique);
@@ -49,6 +54,7 @@ void SearchAll::run()
 		}
 
 		ExhaustiveSearch search(clique.probes(), expanded);
+		search.setCancelFlag(_cancel);
 		search.search();
 		clickTicker();
 		clique.setStates(search.states());

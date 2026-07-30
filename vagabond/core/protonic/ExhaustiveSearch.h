@@ -24,6 +24,8 @@
 #include <string>
 #include <mutex>
 #include <condition_variable>
+#include <atomic>
+#include <memory>
 #include "Probe.h"
 //#include "Network.h"
 #include "Guilt.h"
@@ -49,10 +51,21 @@ public:
 	void setup();
 	bool next();
 	void cleanup();
-	
+
 	CertainStates *const &states() const
 	{
 		return _states;
+	}
+
+	/** checked once per next() call in search(), so a subnetwork's
+	 * combinatorial enumeration can be interrupted mid-way rather than
+	 * only between subnetworks - shared, not owned, so cancelling from a
+	 * button click on the main thread never touches this object's
+	 * lifetime, which is controlled by the worker thread running
+	 * search(). */
+	void setCancelFlag(std::shared_ptr<std::atomic<bool>> flag)
+	{
+		_cancel = flag;
 	}
 	
 	virtual void tick()
@@ -82,6 +95,7 @@ private:
 	std::mutex _m;
 	std::condition_variable _cv;
 	GuiltVersion _gv{0};
+	std::shared_ptr<std::atomic<bool>> _cancel;
 };
 
 #endif

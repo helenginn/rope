@@ -32,6 +32,8 @@
 #include <vagabond/core/protonic/CertainStates.h>
 #include <vagabond/utils/FileReader.h>
 #include <vagabond/utils/DoJob.h>
+#include <atomic>
+#include <memory>
 
 HBondAnalysisControl::HBondAnalysisControl(Scene *prev, Clique *clique,
                                            Network &network)
@@ -195,7 +197,10 @@ void HBondAnalysisControl::setup()
 	
 	auto start_subdivisions = [this]()
 	{
+		auto cancelled = std::make_shared<std::atomic<bool>>(false);
+
 		SearchAll *search = new SearchAll(_clique, _network);
+		search->setCancelFlag(cancelled);
 		new DoJob([search]()
 		{
 			search->run();
@@ -203,7 +208,14 @@ void HBondAnalysisControl::setup()
 		});
 		back();
 		int ticks = _clique->subdivisions().size();
-		VagWindow::window()->requestProgressBar(ticks, "Searching sub-networks");
+
+		auto cancelJob = [cancelled]()
+		{
+			cancelled->store(true);
+		};
+
+		VagWindow::window()->requestProgressBar(ticks, "Searching sub-networks",
+		                                        nullptr, cancelJob);
 	};
 	
 	{
