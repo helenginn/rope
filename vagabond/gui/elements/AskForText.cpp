@@ -48,6 +48,14 @@ AskForText::AskForText(Scene *scene, std::string text, std::string tag,
 	te->click(true);
 }
 
+void AskForText::setDefaultText(const std::string &text)
+{
+	_text->setScratch(text);
+	// matches TextEntry::showInsert()'s active-cursor rendering, since the
+	// entry is already active (see click(true) in the constructor above).
+	_text->setText(text + "_", true);
+}
+
 void AskForText::allowCapitals(bool capitals)
 {
 	_text->allowCapitals(capitals);

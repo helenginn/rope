@@ -40,6 +40,10 @@ public:
 	void allowCapitals(bool capitals);
 	void allowMultiLine(bool multiline);
 
+	/** pre-fills the entry with text the user can edit or accept as-is,
+	 * rather than starting from empty. */
+	void setDefaultText(const std::string &text);
+
 	virtual void respond();
 	
 	void setReturnJob(const std::function<void(std::string)> &job)
