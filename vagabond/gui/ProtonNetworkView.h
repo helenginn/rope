@@ -120,12 +120,6 @@ private:
 	
 	std::function<void()> _onClick{};
 	bool _analysing = false;
-
-	// set by selectUsingPlan() on a successful plan selection, consumed
-	// (and cleared) by makeNewClique() so the resulting Clique can be
-	// tagged with the plan that produced it - see Clique::planText().
-	std::string _lastPlanText{};
-	std::string _lastPlanName{};
 };
 
 #endif

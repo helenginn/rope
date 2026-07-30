@@ -752,32 +752,30 @@ void ProtonNetworkView::selectProbes(const OpSet<Probe *> &probes, bool on)
 
 void ProtonNetworkView::makeNewClique()
 {
-	if (_cv)
+	if (!_cv)
 	{
-//		completeResidues(true);
-		OpSet<Probe *> probes = selected_probes(_textProbes);
-		probes += selected_probes(_bondProbes);
-		
-		while (Subdivide::finish_ends(probes)) {};
-
-		Clique *clique = _network.newClique(probes);
-
-		if (_lastPlanText.size())
-		{
-			clique->setPlanText(_lastPlanText);
-			clique->setDisplayName(_lastPlanName);
-		}
-		else
-		{
-			clique->setDisplayName("Custom clique");
-		}
-
-		_lastPlanText.clear();
-		_lastPlanName.clear();
-
-		_cv->insertClique(clique);
+		return;
 	}
 
+	OpSet<Probe *> probes = selected_probes(_textProbes);
+	probes += selected_probes(_bondProbes);
+
+	while (Subdivide::finish_ends(probes)) {};
+
+	AskForText *aft = new AskForText(this, "Name for new clique:", "", this);
+	aft->setDefaultText("Custom clique");
+	aft->setReturnJob([this, probes](std::string name)
+	{
+		Clique *clique = _network.newClique(probes);
+		// setName(), not setDisplayName() - CliqueView::insertClique()
+		// re-derives displayName from name() on insertion (add_clique's
+		// clique->setDisplayName(clique->name())), which would otherwise
+		// immediately overwrite a plain setDisplayName() with the
+		// auto-generated "N protein atoms, M waters" fallback.
+		clique->setName(name);
+		_cv->insertClique(clique);
+	});
+	setModal(aft);
 }
 
 void ProtonNetworkView::askForSelectionPlan()
@@ -850,14 +848,37 @@ void ProtonNetworkView::selectUsingPlan(std::string plan)
 
 		selectProbes(connected);
 
+		if (connected.size() == 0)
+		{
+			return;
+		}
+
 		// re-normalised with the radius that was actually used, whether
 		// that came from the "@N;" prefix or the ChooseRange fallback
 		// below - so the saved plan always reproduces this exact
 		// selection on its own, without depending on a slider default
 		// that could change later.
-		_lastPlanText = "@" + std::to_string(n) + ";" + plan;
-		_lastPlanName = std::to_string(numResidues) + " residues connected "\
-		"by up to " + std::to_string(n) + " nodes";
+		std::string planText = "@" + std::to_string(n) + ";" + plan;
+		std::string defaultName = std::to_string(numResidues) + " residues "\
+		"connected by up to " + std::to_string(n) + " nodes";
+
+		AskForText *aft = new AskForText(this, "Name for new clique:", "",
+		                                 this);
+		aft->setDefaultText(defaultName);
+		aft->setReturnJob([this, connected, planText](std::string name)
+		{
+			ensureCliqueView();
+			Clique *clique = _network.newClique(connected);
+			clique->setPlanText(planText);
+			// setName(), not setDisplayName() - CliqueView::insertClique()
+		// re-derives displayName from name() on insertion (add_clique's
+		// clique->setDisplayName(clique->name())), which would otherwise
+		// immediately overwrite a plain setDisplayName() with the
+		// auto-generated "N protein atoms, M waters" fallback.
+		clique->setName(name);
+			_cv->insertClique(clique);
+		});
+		setModal(aft);
 	};
 
 	if (radius >= 0)
