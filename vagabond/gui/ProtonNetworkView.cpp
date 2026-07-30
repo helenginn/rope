@@ -548,25 +548,40 @@ void ProtonNetworkView::sendObject(std::string tag, void *object)
 
 void ProtonNetworkView::ensureCliqueView()
 {
+	// constructs _cv if needed, but does not show it - callers that just
+	// need somewhere to insert a Clique (e.g. makeNewClique()) shouldn't
+	// force the CliqueView on screen as a side effect. See
+	// showCliqueView() for construct-and-show.
 	if (_cv)
 	{
-		// picks up subdivisions created (Exhaustive search) or whose
-		// select job was borrowed and restored (ViewCorrelations)
-		// since this cached view was last shown.
-		_cv->rewireSubdivisions();
-		addObject(_cv);
+		return;
 	}
-	else
+
+	_cv = new CliqueView(this, _network, _hProbes);
+
+	auto kill = [this]()
 	{
-		_cv = new CliqueView(this, _network, _hProbes);
+		removeObject(_cv);
+	};
 
-		auto kill = [this]()
-		{
-			removeObject(_cv);
-		};
+	_cv->setKillAndClean(kill);
+	highlightCliques();
+}
 
-		_cv->setKillAndClean(kill);
-		highlightCliques();
+void ProtonNetworkView::showCliqueView()
+{
+	ensureCliqueView();
+
+	// picks up subdivisions created (Exhaustive search) or whose select
+	// job was borrowed and restored (ViewCorrelations) since this cached
+	// view was last shown.
+	_cv->rewireSubdivisions();
+
+	// addObject() now throws on a double-add, so a CliqueView that is
+	// already on screen (still in _objects - it isn't removed until
+	// killed) must not be re-added.
+	if (!hasObject(_cv))
+	{
 		addObject(_cv);
 	}
 }
@@ -575,7 +590,7 @@ void ProtonNetworkView::makeMainMenu()
 {
 	auto browse_cliques = [this]()
 	{
-		ensureCliqueView();
+		showCliqueView();
 	};
 
 	auto reset_cliques = [this]()
@@ -814,12 +829,6 @@ void ProtonNetworkView::askForSelectionPlan()
 
 void ProtonNetworkView::selectUsingPlan(std::string plan)
 {
-	if (!_cv)
-	{
-		return;
-	}
-
-	std::string displayName = "Selection plan: " + plan;
 	int radius = -1;
 
 	// optional "@N;" prefix overriding the search radius, stripped before
@@ -844,7 +853,7 @@ void ProtonNetworkView::selectUsingPlan(std::string plan)
 		return;
 	}
 
-	auto build = [this, tokens, displayName](int n)
+	auto build = [this, tokens](int n)
 	{
 		std::vector<OpSet<Probe *>> groups =
 		CliqueFinder::probeGroupsForResidues(_network, tokens);
@@ -852,12 +861,8 @@ void ProtonNetworkView::selectUsingPlan(std::string plan)
 		CliqueFinder::connectGroups(groups, n, true);
 
 		while (Subdivide::finish_ends(connected)) {}
-		
-		selectProbes(connected);
 
-//		Clique *clique = _network.newClique(connected);
-//		clique->setDisplayName(displayName);
-//		_cv->insertClique(clique);
+		selectProbes(connected);
 	};
 
 	if (radius >= 0)

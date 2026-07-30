@@ -93,6 +93,7 @@ private:
 	virtual void interactedWithNothing(bool left, bool hover);
 	void findAtomProbes();
 	void ensureCliqueView();
+	void showCliqueView();
 	void makeNewClique();
 	void askForSelectionPlan();
 	void selectUsingPlan(std::string plan);
