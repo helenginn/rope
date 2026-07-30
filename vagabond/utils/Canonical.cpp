@@ -114,7 +114,7 @@ void Canonical::run()
 
 	int dm = get_last_col(msvd.singularValues());
 	int dn = get_last_col(nsvd.singularValues());
-	
+
 	if (dm == 0 || dn == 0)
 	{
 		throw 1;
@@ -481,6 +481,9 @@ double Canonical::correlation()
 	float result = num / sqrt(bleft * bright);
 	if (result != result)
 	{
+		std::cout << "Canonical::correlation(): result is NaN "
+		          << "(num=" << num << " bleft=" << bleft
+		          << " bright=" << bright << "), forcing to 0" << std::endl;
 		return 0;
 	}
 	return result;
