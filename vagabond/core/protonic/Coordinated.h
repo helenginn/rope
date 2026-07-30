@@ -71,8 +71,8 @@ public:
 	                               const glm::vec3 &v, 
 	                               float distance, bool one_sided);
 
-	void attachToNeighbours(AtomGroup *searchGroup);
-	void mutualExclusions(AtomGroup *clashCheck);
+	void attachToNeighbours(const OpSet<AtomConf> &searchSet);
+	void mutualExclusions(const OpSet<AtomConf> &baseClashCheck);
 	void attachAdderConstraints();
 	void clashLogic(OpSet<AtomConf> &clash_check);
 	void findSymmetricallyRelatedBonds();

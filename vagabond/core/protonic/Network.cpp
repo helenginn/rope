@@ -812,23 +812,32 @@ Network::Network(AtomGroup *group, const std::string &spg_name,
 	std::cout << "==      FIND NEIGHBOURS       ==" << std::endl;
 	std::cout << "================================" << std::endl;
 
+	// Expanded once and shared across every atom's call below, rather
+	// than each of the (up to) thousands of donor atoms re-expanding the
+	// same AtomGroup into a fresh OpSet from scratch - this dominated
+	// initial network setup time.
+	OpSet<AtomConf> symDonorSet = Coordinated::expandGroupToSet(symDonors);
+	OpSet<AtomConf> originalAndMatesSet =
+	Coordinated::expandGroupToSet(_originalAndMates);
+
 	// record the hydrogen-bonding neighbours for each atom
 	// generate connectors for each acquired bond
-	donors->do_op(on_each_conf([this, symDonors](::Atom *a, char conf)
+	donors->do_op(on_each_conf([this, &symDonorSet](::Atom *a, char conf)
 	{
-		_atomMap[{a, conf}]->attachToNeighbours(symDonors);
+		_atomMap[{a, conf}]->attachToNeighbours(symDonorSet);
 	}));
 
 
 	// find sets of bonds which can/cannot participate in bonding together
-	donors->do_op(on_each_conf([this](::Atom *a, char conf)
+	donors->do_op(on_each_conf([this, &originalAndMatesSet]
+	                           (::Atom *a, char conf)
 	{
-		_atomMap[{a, conf}]->mutualExclusions(_originalAndMates);
+		_atomMap[{a, conf}]->mutualExclusions(originalAndMatesSet);
 	}));
 
-	// add clash logic
-	OpSet<AtomConf> searchGroup = 
-	Coordinated::expandGroupToSet(_originalAndMates);
+	// add clash logic - reuses the same expansion of _originalAndMates
+	// computed above instead of redoing it a third time.
+	OpSet<AtomConf> searchGroup = originalAndMatesSet;
 	searchGroup += Coordinated::expandGroupToSet(_hAtoms);
 	
 	std::cout << "================================" << std::endl;

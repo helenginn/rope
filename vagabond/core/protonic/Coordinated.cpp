@@ -1157,14 +1157,20 @@ OpSet<PairSet> convert_pair_set_to_all_relationships(const PairSet &start)
 	return relationships;
 }
 
-void Coordinated::mutualExclusions(AtomGroup *toClashCheck)
+void Coordinated::mutualExclusions(const OpSet<AtomConf> &baseClashCheck)
 {
 	if (!_unbroken_bonds)
 	{
 		return;
 	}
 
-	OpSet<AtomConf> clashCheck = expandGroupToSet(toClashCheck);
+	// baseClashCheck is expanded once by the caller and shared across
+	// every atom's call here (see attachToNeighbours() for why that
+	// matters) - still copied locally, not used directly, since this is
+	// threaded through as a mutable OpSet<AtomConf>& below and it's not
+	// established that nothing downstream (expandAllSeeds()/
+	// developSeed()) mutates it.
+	OpSet<AtomConf> clashCheck = baseClashCheck;
 
 	uninvolvedCoordinators();
 
@@ -1356,9 +1362,13 @@ OpSet<AtomConf> Coordinated::expandGroupToSet(AtomGroup *group)
 	return result;
 }
 
-void Coordinated::attachToNeighbours(AtomGroup *searchGroup)
+void Coordinated::attachToNeighbours(const OpSet<AtomConf> &searchSet)
 {
-	OpSet<AtomConf> searchSet = expandGroupToSet(searchGroup);
+	// searchSet is expanded once by the caller (Network::Network()) and
+	// shared across every atom's call here - expandGroupToSet() used to
+	// be redone from scratch on every single call, which dominated setup
+	// time since this runs once per donor atom against every symmetry
+	// donor.
 	OpSet<AtomConf> rough = findNeighbours(searchSet, atomic_position(),
 	                                        HYDROGEN_MAX_DISTANCE, true);
 	_neighbours = rough;
