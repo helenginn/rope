@@ -27,6 +27,7 @@
 #include <vagabond/core/protonic/ProbeResult.h>
 #include <vagabond/utils/FileReader.h>
 #include <vagabond/utils/Canonical.h>
+#include <cmath>
 
 using Eigen::seqN;
 using Eigen::seq;
@@ -144,8 +145,10 @@ float CommunicationAnalysis::compare(const std::string &first,
 	
 	if (ln == 0 || rn == 0)
 	{
+		_emptyPairs++;
 		return 0;
 	}
+	_ranPairs++;
 
 	_lMat = MatrixXf(_overOne, ln);
 	_lMat.setZero();
@@ -226,7 +229,7 @@ float CommunicationAnalysis::compare(const std::string &first,
 		return _w[idx];
 	};
 	cc.addWeights(get_weight);
-	
+
 	float result = 0;
 	try
 	{
@@ -238,6 +241,9 @@ float CommunicationAnalysis::compare(const std::string &first,
 	}
 	catch (int e)
 	{
+		std::cout << "CommunicationAnalysis::compare(" << first << ", "
+		          << second << "): Canonical::run() threw - bailing out, "
+		          << "result forced to 0" << std::endl;
 //		setInformation("Failed correlation");
 	}
 	return result;
@@ -283,6 +289,43 @@ void CommunicationAnalysis::setup()
 
 	std::vector<std::string> names = _clique->allCommsNames().toVector();
 
+	{
+		std::cout << "CommunicationAnalysis::setup(): per-group diagnostic "
+		          << "(only groups with 0 usable probes shown):" << std::endl;
+		for (const std::string &name : names)
+		{
+			const OpSet<std::string> &descs = _clique->nodeDescsForGroup(name);
+			int anyMatch = 0;
+			int typeMatch = 0;
+
+			for (auto it = _lookup.begin(); it != _lookup.end(); it++)
+			{
+				const ProbeTypePair &ptp = it->first;
+				if (descs.count(ptp.first->desc()))
+				{
+					anyMatch++;
+					bool bondOk = ptp.first->is_bond() &&
+					ptp.second == hnet::Types::BondType;
+					bool atomOk = ptp.first->is_atom() &&
+					ptp.second == hnet::Types::ExistenceType;
+					if (bondOk || atomOk)
+					{
+						typeMatch++;
+					}
+				}
+			}
+
+			if (typeMatch == 0)
+			{
+				std::cout << "  \"" << name << "\": " << descs.size()
+				          << " descs assigned, " << anyMatch
+				          << " found in _lookup (any type), " << typeMatch
+				          << " passed the is_bond/is_atom type filter"
+				          << std::endl;
+			}
+		}
+	}
+
 	Eigen::MatrixXf mat(names.size(), names.size());
 	mat.setZero();
 
@@ -298,8 +341,65 @@ void CommunicationAnalysis::setup()
 		}
 		m++;
 	}
-	
-	Eigen::JacobiSVD<MatrixXf> svd(mat, Eigen::ComputeFullU | 
+
+	{
+		int n = names.size();
+		int diagBad = 0;
+		int offDiag = 0;
+		int nanOrInf = 0;
+		int above01 = 0, above03 = 0, above05 = 0;
+		float offMin = 1e9, offMax = -1e9, offSum = 0;
+
+		for (int i = 0; i < n; i++)
+		{
+			for (int j = 0; j < n; j++)
+			{
+				float v = mat(i, j);
+
+				if (v != v || std::isinf(v))
+				{
+					nanOrInf++;
+					continue;
+				}
+
+				if (i == j)
+				{
+					if (fabs(v - 1.f) > 1e-2)
+					{
+						diagBad++;
+					}
+					continue;
+				}
+
+				offDiag++;
+				offSum += v;
+				offMin = std::min(offMin, v);
+				offMax = std::max(offMax, v);
+				if (v > 0.1) above01++;
+				if (v > 0.3) above03++;
+				if (v > 0.5) above05++;
+			}
+		}
+
+		std::cout << "CommunicationAnalysis::setup(): " << n << "x" << n
+		          << " groups (" << (n * n) << " pairs), "
+		          << diagBad << " self-pairs not ~1, "
+		          << nanOrInf << " NaN/Inf entries" << std::endl;
+		std::cout << "CommunicationAnalysis::setup(): " << _ranPairs
+		          << " pairs reached Canonical::run(), " << _emptyPairs
+		          << " short-circuited before it (ln==0 or rn==0 in "
+		          << "compare() - no matching probes in one/both groups)"
+		          << std::endl;
+		std::cout << "CommunicationAnalysis::setup(): off-diagonal ("
+		          << offDiag << " pairs): min=" << offMin
+		          << " max=" << offMax
+		          << " mean=" << (offDiag ? offSum / offDiag : 0)
+		          << " | >0.1: " << above01
+		          << " >0.3: " << above03
+		          << " >0.5: " << above05 << std::endl;
+	}
+
+	Eigen::JacobiSVD<MatrixXf> svd(mat, Eigen::ComputeFullU |
 	                               Eigen::ComputeFullV);
 	
 	_cc = PCA::Matrix(mat);

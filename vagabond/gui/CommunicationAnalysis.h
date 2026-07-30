@@ -56,6 +56,11 @@ private:
 	MatrixXf _rMat{};
 	PCA::Matrix _cc;
 
+	// diagnostic counters, reported once as a summary at the end of
+	// setup() rather than per-pair - see compare().
+	int _emptyPairs{};
+	int _ranPairs{};
+
 	std::map<ProbeTypePair, std::pair<int, int>> _lookup;
 	
 	LineGroup *_lg{};

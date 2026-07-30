@@ -97,8 +97,24 @@ void ViewCorrelations::makeList()
 
 void ViewCorrelations::viewAll()
 {
+	{
+		OpSet<Probe *> covered;
+		for (const Clique &sub : _clique->subdivisions())
+		{
+			covered += sub.probes();
+		}
+
+		std::cout << "ViewCorrelations::viewAll(): clique has "
+		          << _clique->probes().size() << " probes ("
+		          << _clique->nonWaterProbes().size() << " non-water - "
+		          << "the pool CommunicationChoice draws group members "
+		          << "from), " << _clique->subdivisions().size()
+		          << " subdivisions collectively covering "
+		          << covered.size() << " distinct probes" << std::endl;
+	}
+
 	float all_ave = 0;
-	OpSet<ProbeTypePair> all = 
+	OpSet<ProbeTypePair> all =
 	Correlative::probeTypePairs(_clique->subdivisions(), all_ave);
 
 	_correlative = new Correlative(all, all_ave, false);
