@@ -40,10 +40,20 @@ public:
 	{
 		_cancel = flag;
 	}
+
+	/** set to false as the last thing run() does, regardless of whether
+	 * it finished normally or was cancelled - lets a caller tell "search
+	 * requested to stop" apart from "search has actually stopped
+	 * touching this clique's subdivisions". */
+	void setRunningFlag(std::shared_ptr<std::atomic<bool>> flag)
+	{
+		_running = flag;
+	}
 private:
 	Clique *_clique{};
 	Network &_network;
 	std::shared_ptr<std::atomic<bool>> _cancel;
+	std::shared_ptr<std::atomic<bool>> _running;
 
 };
 

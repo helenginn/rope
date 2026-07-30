@@ -71,4 +71,13 @@ void SearchAll::run()
 	}
 	
 	finishTicker();
+
+	// last thing done, regardless of whether the loop above ran to
+	// completion or broke out early via cancellation - only after this
+	// is it safe for something else to delete/replace _clique's
+	// subdivisions again.
+	if (_running)
+	{
+		_running->store(false);
+	}
 }

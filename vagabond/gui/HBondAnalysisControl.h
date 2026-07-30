@@ -32,6 +32,12 @@ public:
 	virtual void setup();
 	virtual void refresh();
 private:
+	// true while a SearchAll worker thread may still be iterating/
+	// mutating _clique's subdivisions - anything that would delete or
+	// replace them (the cross button, re-subdividing, starting a second
+	// search) must stay disabled until this is false.
+	bool searchIsRunning();
+
 	Clique *_clique{};
 	Network &_network;
 

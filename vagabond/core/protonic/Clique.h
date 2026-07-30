@@ -22,6 +22,8 @@
 #include <vagabond/utils/OpSet.h>
 #include "Probe.h"
 #include <vagabond/core/Item.h>
+#include <atomic>
+#include <memory>
 
 #include <nlohmann/json.hpp>
 using nlohmann::json;
@@ -172,6 +174,20 @@ public:
 
 	void setSubdivisions(const OpSet<Clique> &cliques)
 	{
+		// SearchAll::run() registers searched subdivisions as Items of
+		// this Clique (addItem(&clique), where &clique is the address of
+		// the Clique living inside _subdivs). Item::~Item() does not
+		// self-deregister, so replacing _subdivs without first removing
+		// those entries here would leave this->_items holding dangling
+		// pointers into the about-to-be-destroyed old list - only
+		// noticed later, whenever something (e.g. browsing cliques)
+		// walks this Clique's items. removeItem() is a harmless no-op
+		// for any subdivision that was never actually registered.
+		for (Clique &old : _subdivs)
+		{
+			removeItem(&old);
+		}
+
 		_subdivs = std::list(cliques.begin(), cliques.end());
 	}
 	
@@ -179,7 +195,19 @@ public:
 	{
 		_subdivs.push_back(sub);
 	}
-	
+
+	/** shared with whichever SearchAll is currently iterating/mutating
+	 * this Clique's subdivisions on a worker thread (if any), so any
+	 * long-lived view (e.g. HBondAnalysisControl, which may be destroyed
+	 * and recreated between opening and returning to this clique) can
+	 * check whether it is still unsafe to delete/replace those
+	 * subdivisions from the main thread. Not serialized - purely runtime
+	 * bookkeeping. */
+	std::shared_ptr<std::atomic<bool>> &searchRunning()
+	{
+		return _searchRunning;
+	}
+
 	CertainStates *const &states() const
 	{
 		return _states;
@@ -230,6 +258,7 @@ private:
 	OpSet<std::string> _descs;
 	CertainStates *_states{};
 	std::list<Clique> _subdivs;
+	std::shared_ptr<std::atomic<bool>> _searchRunning;
 };
 
 inline void to_json(json &j, const Clique &cl)

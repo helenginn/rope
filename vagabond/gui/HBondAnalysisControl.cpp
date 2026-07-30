@@ -150,7 +150,12 @@ void HBondAnalysisControl::setup()
 		tb->setLeft(left, 0.4);
 		tb->setReturnJob(ask_to_subdivide);
 		addObject(tb);
-		
+
+		auto enable_subdivide_button = [this, tb]()
+		{
+			tb->setInert(searchIsRunning(), true);
+		};
+
 		auto add_subdiv_summary = [this, right]()
 		{
 			const std::list<Clique> &subs = _clique->subdivisions();
@@ -181,7 +186,7 @@ void HBondAnalysisControl::setup()
 				refresh();
 			};
 
-			if (_clique->subdivisions().size())
+			if (_clique->subdivisions().size() && !searchIsRunning())
 			{
 				ImageButton *ib = new ImageButton("assets/images/cross.png", this);
 				ib->resize(0.06);
@@ -190,7 +195,8 @@ void HBondAnalysisControl::setup()
 				addTempObject(ib);
 			}
 		};
-		
+
+		_refreshes.push_back(enable_subdivide_button);
 		_refreshes.push_back(add_subdiv_summary);
 		_refreshes.push_back(delete_subdiv_button);
 	}
@@ -198,9 +204,18 @@ void HBondAnalysisControl::setup()
 	auto start_subdivisions = [this]()
 	{
 		auto cancelled = std::make_shared<std::atomic<bool>>(false);
+		auto running = std::make_shared<std::atomic<bool>>(true);
+
+		// kept on the Clique itself, not a local/member of this Scene -
+		// start_subdivisions() calls back() below, and this view may be
+		// destroyed and freshly reconstructed by the time the user
+		// returns to this clique, long before the search actually
+		// finishes on its worker thread.
+		_clique->searchRunning() = running;
 
 		SearchAll *search = new SearchAll(_clique, _network);
 		search->setCancelFlag(cancelled);
+		search->setRunningFlag(running);
 		new DoJob([search]()
 		{
 			search->run();
@@ -239,7 +254,10 @@ void HBondAnalysisControl::setup()
 		auto enable_with_divisions = [this, tb]()
 		{
 			const std::list<Clique> &subs = _clique->subdivisions();
-			if (subs.size() == 0)
+			// also disabled while already running - starting a second
+			// SearchAll on the same clique would race the first one over
+			// the same subdivisions list.
+			if (subs.size() == 0 || searchIsRunning())
 			{
 				tb->setInert(true, true);
 			}
@@ -285,6 +303,12 @@ void HBondAnalysisControl::setup()
 	}
 	
 	refresh();
+}
+
+bool HBondAnalysisControl::searchIsRunning()
+{
+	auto &flag = _clique->searchRunning();
+	return flag && flag->load();
 }
 
 void HBondAnalysisControl::refresh()
