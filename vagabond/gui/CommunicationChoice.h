@@ -41,11 +41,10 @@ public:
 	}
 private:
 	Clique *_clique{};
-	void chooseReporters();
+	void chooseReporters(bool includeWater);
 
-	std::set<int> _selected;
 	std::vector<Probe *> _candidates;
-	
+
 };
 
 #endif

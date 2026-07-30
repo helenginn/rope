@@ -172,7 +172,13 @@ public:
 			_descToCommune[desc] = name;
 		}
 	}
-	
+
+	void clearCommunicationPoints()
+	{
+		_communication.clear();
+		_descToCommune.clear();
+	}
+
 	const OpSet<std::string> &nodeDescsForGroup(const std::string &name)
 	{
 		return _communication[name];

@@ -1,26 +1,29 @@
 // vagabond
 // Copyright (C) 2022 Helen Ginn
-// 
+//
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-// 
+//
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-// 
+//
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
-// 
+//
 // Please email: vagabond @ hginn.co.uk for more details.
 
 #include "CommunicationChoice.h"
 #include <vagabond/gui/elements/TextButton.h>
-#include <vagabond/gui/elements/AskMultipleChoice.h>
+#include <vagabond/gui/elements/ImageButton.h>
+#include <vagabond/gui/elements/AskYesNo.h>
 #include <vagabond/gui/elements/AskForText.h>
 #include <vagabond/core/protonic/Clique.h>
+#include <vagabond/utils/FileReader.h>
+#include <cctype>
 
 CommunicationChoice::CommunicationChoice(Scene *prev, Clique *clique)
 : ListView(prev), _clique(clique)
@@ -29,14 +32,53 @@ CommunicationChoice::CommunicationChoice(Scene *prev, Clique *clique)
 
 }
 
+namespace
+{
+	// "A-Asn65" - chain, title-cased three-letter code, residue number -
+	// short enough to read cleanly as an axis label in the matrix plot,
+	// unlike the full probe desc ("A-ASN65:CA,A").
+	std::string short_residue_name(Atom *atom)
+	{
+		std::string code = atom->code();
+		to_lower(code);
+		if (code.size())
+		{
+			code[0] = std::toupper((unsigned char)code[0]);
+		}
+
+		std::string name;
+		if (atom->chain().length())
+		{
+			name += atom->chain() + "-";
+		}
+		name += code + i_to_str(atom->residueNumber());
+		return name;
+	}
+}
+
 void CommunicationChoice::setup()
 {
-	addTitle("Choose communication groups");
-	
+	addTitle("Choose signals");
+
 	TextButton *tb = new TextButton("Automatic");
 	tb->setRight(0.9, 0.1);
-	tb->setReturnJob([this]() { chooseReporters(); refresh(); });
+	tb->setReturnJob([this]()
+	{
+		AskYesNo *ayn = new AskYesNo(this, "Include waters as signals?");
+		ayn->addJob("yes", [this]() { chooseReporters(true); refresh(); });
+		ayn->addJob("no", [this]() { chooseReporters(false); refresh(); });
+		setModal(ayn);
+	});
 	addObject(tb);
+
+	TextButton *clear = new TextButton("Clear all");
+	clear->setRight(0.9, 0.2);
+	clear->setReturnJob([this]()
+	{
+		_clique->clearCommunicationPoints();
+		refresh();
+	});
+	addObject(clear);
 
 	ListView::setup();
 }
@@ -44,109 +86,6 @@ void CommunicationChoice::setup()
 void CommunicationChoice::refresh()
 {
 	ListView::refresh();
-	
-	auto to_descs = [this]()
-	{
-		OpSet<std::string> descs;
-		for (const int &sel : _selected)
-		{
-			descs += _candidates[sel]->desc();
-		}
-		return descs;
-	};
-	
-	auto assign_to = [this, to_descs](const std::string &name)
-	{
-		return [this, to_descs, name]()
-		{
-			_clique->addCommunicationPoints(name, to_descs());
-			_selected = {};
-			refresh();
-		};
-	};
-	
-	auto assign_individuals = [this, to_descs]()
-	{
-		auto make_new = [this](std::string new_name)
-		{
-			_clique->addCommunicationPoints(new_name, {new_name});
-			_selected = {};
-		};
-
-		OpSet<std::string> descs = to_descs();
-		for (const std::string &desc : descs)
-		{
-			make_new(desc);
-		}
-		
-		refresh();
-	};
-	
-	auto assign = [this, assign_to, to_descs]()
-	{
-		AskMultipleChoice *amc = new AskMultipleChoice(this, "Assign to group", 
-		                                               true);
-		OpSet<std::string> names = _clique->allCommsNames();
-
-		for (const std::string &name : names)
-		{
-			amc->addChoice(name, assign_to(name));
-		}
-		
-		auto make_new = [this, to_descs](std::string new_name)
-		{
-			_clique->addCommunicationPoints(new_name, to_descs());
-			_selected = {};
-			refresh();
-		};
-		
-		auto ask_for_new = [this, make_new]()
-		{
-			AskForText *aft = new AskForText(this, "New group name:", "", this);
-			aft->setReturnJob(make_new);
-			setModal(aft);
-		};
-		
-		amc->addChoice("New group", ask_for_new);
-		
-		setModal(amc);
-	};
-	
-	auto deassign = [this, to_descs]()
-	{
-		_clique->removeCommunicationPoints(to_descs());
-		_selected = {};
-		refresh();
-	};
-
-	if (_selected.size())
-	{
-		TextButton *tb = new TextButton("assign to group", this);
-		tb->setCentre(0.3, 0.2);
-		tb->setReturnJob(assign);
-		tb->resize(0.6);
-		addTempObject(tb);
-		
-		tb = new TextButton("assign as individuals", this);
-		tb->setCentre(0.5, 0.2);
-		tb->setReturnJob(assign_individuals);
-		tb->resize(0.6);
-		addTempObject(tb);
-		
-		for (const int &sel : _selected)
-		{
-			if (_clique->groupOfNode(_candidates[sel]->desc()).length() > 0)
-			{
-				TextButton *tb = new TextButton("clear assignment", this);
-				tb->setCentre(0.7, 0.2);
-				tb->setReturnJob(deassign);
-				tb->resize(0.6);
-				addTempObject(tb);
-
-				break;
-			}
-		}
-	}
 }
 
 size_t CommunicationChoice::lineCount()
@@ -157,57 +96,100 @@ size_t CommunicationChoice::lineCount()
 Renderable *CommunicationChoice::getLine(int i)
 {
 	Box *box = new Box();
-	
-	auto select_candidate = [this, i]()
-	{
-		if (_selected.count(i))
-		{
-			_selected.erase(i);
-		}
-		else
-		{
-			_selected.insert(i);
-		}
 
-		refresh();
-	};
-	
+	Probe *probe = _candidates[i];
+	std::string desc = probe->desc();
+	std::string group = _clique->groupOfNode(desc);
+
+	if (group.length())
 	{
-		std::string str = (_selected.count(i) ? "* " : "");
-		str += _candidates[i]->desc();
-		TextButton *tb = new TextButton(str, this);
-		tb->setLeft(0., 0.);
-		tb->resize(0.6);
-		tb->setReturnJob(select_candidate);
-		box->addObject(tb);
-	}
-	
-	{
-		std::string desc = _candidates[i]->desc();
-		Text *t = new Text(_clique->groupOfNode(desc));
-		t->setRight(0.6, 0.);
+		Text *t = new Text(desc);
+		t->setLeft(0., 0.);
 		t->resize(0.6);
 		box->addObject(t);
+
+		Text *name = new Text(group);
+		name->setLeft(0.5, 0.);
+		name->resize(0.6);
+		box->addObject(name);
+
+		auto clear_one = [this, desc]()
+		{
+			_clique->removeCommunicationPoints({desc});
+			refresh();
+		};
+
+		ImageButton *ib = new ImageButton("assets/images/cross.png", this);
+		ib->resize(0.06);
+		ib->setRight(1.0, 0.);
+		ib->setReturnJob(clear_one);
+		box->addObject(ib);
+	}
+	else
+	{
+		// abandoned: a "group" used to be able to hold several signals at
+		// once, but that turned out not to be useful - each row here now
+		// becomes exactly one named signal (one probe, one display name).
+		auto make_signal = [this, desc]()
+		{
+			AskForText *aft = new AskForText(this, "Display name for signal:",
+			                                 "", this);
+			aft->setReturnJob([this, desc](std::string name)
+			{
+				if (name.length())
+				{
+					_clique->addCommunicationPoints(name, {desc});
+				}
+				refresh();
+			});
+			setModal(aft);
+		};
+
+		TextButton *tb = new TextButton(desc, this);
+		tb->setLeft(0., 0.);
+		tb->resize(0.6);
+		tb->setReturnJob(make_signal);
+		box->addObject(tb);
 	}
 
 	return box;
 }
 
-void CommunicationChoice::chooseReporters()
+void CommunicationChoice::chooseReporters(bool includeWater)
 {
 	OpSet<std::pair<std::string, ResidueId>> done;
+
+	auto is_water = [](Probe *probe)
+	{
+		return probe->atom()->code() == "HOH";
+	};
 
 	for (Probe *probe : _candidates)
 	{
 		if (probe->is_atom() && probe->atom()->isReporterAtom())
 		{
-			std::pair<std::string, ResidueId> id = 
+			// bulk water is a synthetic pseudo-atom standing in for the
+			// disordered/liberated fraction of a partially-occupied water
+			// (see Network.cpp's setBulk(true)) - it has no real position
+			// of its own, so it should never be picked as a signal, even
+			// when explicit (fully real) waters are allowed.
+			if (probe->is_bulk())
+			{
+				continue;
+			}
+
+			if (!includeWater && is_water(probe))
+			{
+				continue;
+			}
+
+			std::pair<std::string, ResidueId> id =
 			{probe->atom()->chain(), probe->atom()->residueId()};
 
 			if (done.count(id) == 0)
 			{
-				_clique->addCommunicationPoints(probe->atomConf().desc(),
-				                                probe->desc());
+				_clique->addCommunicationPoints(
+				short_residue_name(probe->atom()), probe->desc());
 				done += id;
 			}
 		}
@@ -217,13 +199,23 @@ void CommunicationChoice::chooseReporters()
 	{
 		if (probe->is_atom())
 		{
-			std::pair<std::string, ResidueId> id = 
+			if (probe->is_bulk())
+			{
+				continue;
+			}
+
+			if (!includeWater && is_water(probe))
+			{
+				continue;
+			}
+
+			std::pair<std::string, ResidueId> id =
 			{probe->atom()->chain(), probe->atom()->residueId()};
 
 			if (done.count(id) == 0)
 			{
-				_clique->addCommunicationPoints(probe->atomConf().desc(),
-				                                probe->desc());
+				_clique->addCommunicationPoints(
+				short_residue_name(probe->atom()), probe->desc());
 				done += id;
 			}
 
