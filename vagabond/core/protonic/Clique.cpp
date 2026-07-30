@@ -183,14 +183,23 @@ glm::vec3 Clique::centroid()
 	float count = 0;
 	for (Probe *pr : _probes)
 	{
-		if (pr->is_atom())
+		if (pr->is_atom() && !pr->is_bulk())
 		{
 			Atom *atom = pr->atom();
 			sum += atom->initialPosition();
 			count++;
 		}
 	}
-	
+
+	if (count == 0)
+	{
+		// no atom probes to average (e.g. an empty clique) - sum / 0
+		// would be NaN, and every caller feeds this straight into a
+		// camera shift, so a NaN here silently corrupts the view
+		// transform rather than failing visibly.
+		return glm::vec3{};
+	}
+
 	return sum / count;
 }
 

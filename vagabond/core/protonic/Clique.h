@@ -58,6 +58,23 @@ public:
 	}
 	
 	glm::vec3 centroid();
+
+	/** false when centroid() has nothing to average (e.g. an empty
+	 * clique) and would just return the {0,0,0} fallback - callers that
+	 * recentre a view on centroid() should check this first rather than
+	 * refocusing on that arbitrary fallback position. */
+	bool hasCentroid() const
+	{
+		for (Probe *const &pr : _probes)
+		{
+			if (pr->is_atom() && !pr->is_bulk())
+			{
+				return true;
+			}
+		}
+
+		return false;
+	}
 	
 	void housekeeping(Network &network);
 
