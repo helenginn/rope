@@ -210,25 +210,6 @@ void HBondAnalysisControl::setup()
 		Clique *clique = _clique;
 		Network *network = &_network;
 
-		new DoJob([search, clique, network]()
-		{
-			search->run();
-			delete search;
-
-			// reopen the overview once the search actually stops (whether
-			// finished or cancelled) - on top of whatever's currently
-			// showing, not necessarily the scene this was started from,
-			// since the user may have navigated elsewhere while it ran.
-			VagWindow::window()->addMainThreadJob([clique, network]()
-			{
-				Scene *current = Window::currentScene();
-				HBondAnalysisControl *hbac =
-				new HBondAnalysisControl(current, clique, *network);
-				hbac->show();
-			});
-		});
-		back();
-
 		// matches exactly what SearchAll::run() will call clickTicker()
 		// for - it skips subdivisions that already have cached states
 		// (e.g. left over from an earlier, cancelled run), so counting
@@ -248,8 +229,47 @@ void HBondAnalysisControl::setup()
 			cancelled->store(true);
 		};
 
-		VagWindow::window()->requestProgressBar(ticks, "Searching sub-networks",
-		                                        nullptr, cancelJob);
+		// search itself is a Progressor - passed as caller here (instead
+		// of nullptr) so its responder is registered synchronously, right
+		// now, on this thread, before the DoJob below can possibly start
+		// ticking. With caller == nullptr, that registration only happens
+		// inside a deferred main-thread job (requestProgressBar's own),
+		// so a fast-finishing search (e.g. every subdivision already
+		// cached, ticks == 0) could call finishTicker() before the bar
+		// existed to hear it - the "done" event would be silently lost,
+		// leaving a bar that gets created afterward but never completes.
+		//
+		// skipped entirely when there's nothing new to search (every
+		// subdivision already cached, e.g. re-running on an already-
+		// complete clique) - ProgressBar::setMaxTicks(0) calls finish()
+		// synchronously, which queues its own removal within the same
+		// job-queue drain that creates the bar, so it would be added and
+		// removed again before a single frame ever rendered it.
+		if (ticks > 0)
+		{
+			VagWindow::window()->requestProgressBar(ticks,
+			                                        "Searching sub-networks",
+			                                        search, cancelJob);
+		}
+
+		new DoJob([search, clique, network]()
+		{
+			search->run();
+			delete search;
+
+			// reopen the overview once the search actually stops (whether
+			// finished or cancelled) - on top of whatever's currently
+			// showing, not necessarily the scene this was started from,
+			// since the user may have navigated elsewhere while it ran.
+			VagWindow::window()->addMainThreadJob([clique, network]()
+			{
+				Scene *current = Window::currentScene();
+				HBondAnalysisControl *hbac =
+				new HBondAnalysisControl(current, clique, *network);
+				hbac->show();
+			});
+		});
+		back();
 	};
 
 	// has_results()/comms_chosen() drive the enable-chain below: subdivide

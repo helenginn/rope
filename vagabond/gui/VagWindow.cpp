@@ -107,6 +107,14 @@ void VagWindow::prepareProgressBar(int ticks, std::string text)
 
 	removeProgressBar();
 
+	// removeProgressBar() only resets _bar when _bar.ptr was non-null, so
+	// a pending tick/done that arrived while no bar existed at all (e.g.
+	// a "done" event processed after some unrelated removal already blew
+	// _bar back to defaults) would otherwise survive here unconsumed and
+	// wrongly finish the *next* bar the moment it's created.
+	_bar.pendingTicks = 0;
+	_bar.pendingDone = false;
+
 	ProgressBar *pb = new ProgressBar(text);
 
 	// only fall back to Environment's global responder for jobs that were
@@ -144,6 +152,18 @@ void VagWindow::prepareProgressBar(int ticks, std::string text)
 			pb->sendObject("tick", nullptr);
 		}
 	}
+
+	// pb is a window-level object, not part of the current scene's own
+	// object list, so nothing about adding it marks that scene dirty -
+	// Window::render() skips both the scene AND every window-level object
+	// entirely whenever the current scene thinks nothing changed. Without
+	// this, the bar sits in the object list correctly but is never
+	// actually painted until something unrelated (mouse movement, a scene
+	// animation) happens to trigger a redraw first.
+	if (Window::currentScene())
+	{
+		Window::currentScene()->viewChanged();
+	}
 }
 
 void VagWindow::sendObject(std::string tag, void *object)
@@ -174,6 +194,14 @@ void VagWindow::handleProgressEvent(std::string tag)
 		else if (tag == "tick")
 		{
 			_bar.ptr->sendObject("tick", nullptr);
+		}
+
+		// same reasoning as prepareProgressBar() - a live tick/done needs
+		// to force a repaint, or the fill amount (or removal) can sit
+		// unpainted until something unrelated marks the scene dirty.
+		if (Window::currentScene())
+		{
+			Window::currentScene()->viewChanged();
 		}
 
 		return;
