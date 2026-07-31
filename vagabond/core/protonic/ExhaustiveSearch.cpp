@@ -19,7 +19,6 @@
 #include "ExhaustiveSearch.h"
 #include "CertainStates.h"
 #include "Network.h"
-#include <unistd.h>
 #include <random>
 #include <algorithm>
 
