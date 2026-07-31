@@ -9,6 +9,9 @@ build
 data
 doc/
 tags
+result
+result-*
+.direnv
 
 *.sw?
 
