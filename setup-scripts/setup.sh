@@ -314,6 +314,9 @@ fi
 
 section "Done!"
 ok "RoPE succesfully built in $BUILDDIR"
+section "Notes"
+info "Before using meson, make sure to source the conan-controlled meson via"
+print "${BOLD}${YELLOW}source $BUILDDIR/conanbuild.sh${RESET} to prevent version mismatches"
 info "Run RoPE locally by starting"
 print "${BOLD}${YELLOW}$BUILDDIR/rope.gui${RESET} from the terminal"
 info "Install RoPE globally by running"

@@ -265,6 +265,9 @@ CompileFlags:
 
 Section "Done!"
 Ok "RoPE succesfully built in $BUILDDIR"
+Section "Notes"
+Info "Before using meson, make sure to source the conan-controlled meson via"
+Print "${BOLD}${YELLOW}. $BUILDDIR/conanbuild.ps1${RESET} to prevent version mismatches"
 Info "Run RoPE locally by starting"
 Print "${BOLD}${YELLOW}$BUILDDIR\rope.gui${RESET} from the terminal"
 Info "Install RoPE globally by running"
