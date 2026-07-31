@@ -122,4 +122,9 @@ void FloydWarshall::run() // symmetric matrix
 	{
 		_done();
 	}
+
+	// PCA::Matrix has no destructor of its own (see PCA.h) - copy's
+	// vals/ptrs buffers (a full size x size double-precision matrix)
+	// would otherwise leak on every single call to run().
+	PCA::freeMatrix(&copy);
 }

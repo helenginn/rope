@@ -69,6 +69,14 @@ ViewCorrelations::~ViewCorrelations()
 	{
 		pair.first->setSelectJob(pair.second);
 	}
+
+	// _overall/_written inside here are full N x N matrices (N = summed
+	// dim_for_type() over every distinct ProbeTypePair across all
+	// subdivisions) - never freed otherwise, so every visit to this view
+	// on a clique with many subdivisions leaked several hundred MB to
+	// low-GB permanently once the view closed.
+	delete _correlative;
+	PCA::freeMatrix(&_matrix);
 }
 
 void ViewCorrelations::makeList()
@@ -213,6 +221,10 @@ void ViewCorrelations::viewAll()
 				return;
 			}
 
+			// viewAll() can run again on the same open Scene (e.g. the
+			// list entry re-clicked) - free whatever the previous run
+			// left behind rather than leaking its _overall/_written.
+			delete _correlative;
 			_correlative = correl;
 			_result = result;
 			_assembling = false;
@@ -231,6 +243,11 @@ void ViewCorrelations::finishAssembly()
 	// instant) - without this, that gap has no visual feedback at all.
 	setInformation("Matrix assembled - preparing to derive correlations");
 
+	// deleteTemps() (called at the top of viewAll(), before assembly even
+	// starts) has already destroyed any previous mp that referenced the
+	// old _matrix buffer by this point, so freeing it here is safe - PCA
+	// ::Matrix has no destructor of its own (see PCA.h).
+	PCA::freeMatrix(&_matrix);
 	_matrix = PCA::Matrix(_result);
 	MatrixPlot *mp = new MatrixPlot(_matrix, _mutex);
 

@@ -41,6 +41,14 @@ CommunicationAnalysis::CommunicationAnalysis(Scene *scene, Clique *clique,
 
 }
 
+CommunicationAnalysis::~CommunicationAnalysis()
+{
+	// PCA::Matrix has no destructor of its own (see PCA.h) - _cc's
+	// buffer (a full names.size() x names.size() double-precision
+	// matrix) would otherwise leak every time this Scene closes.
+	PCA::freeMatrix(&_cc);
+}
+
 void CommunicationAnalysis::prepareGroups()
 {
 	OpSet<std::string> names = _clique->allCommsNames();

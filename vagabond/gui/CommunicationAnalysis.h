@@ -35,8 +35,9 @@ class CommunicationAnalysis : public Scene
 {
 public:
 	CommunicationAnalysis(Scene *scene, Clique *clique, const MatrixXf &mat,
-	                      const std::map<ProbeTypePair, 
+	                      const std::map<ProbeTypePair,
 	                      std::pair<int, int>> &insertions);
+	~CommunicationAnalysis();
 
 	virtual void setup();
 private:
