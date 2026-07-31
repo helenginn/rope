@@ -146,6 +146,16 @@ void ModelManager::autoModel()
 
 	fm->setFilterType(File::Nothing);
 	housekeeping();
+
+	// insertIfUnique()'s own triggerResponse() fires before
+	// autoAssignEntities()/findInteractions() run for that same model, so
+	// each notification during the loop reflects the previous model, not
+	// the one that was just inserted - and nothing notifies again after
+	// the last iteration's autoAssignEntities()/findInteractions()
+	// complete, so the final model's entity assignment never reaches
+	// responders (e.g. EntityMenu's "N models" counts) without this.
+	Manager::triggerResponse();
+
 	finishTicker();
 	_mutex->unlock();
 }
