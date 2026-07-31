@@ -22,10 +22,10 @@
 #include <vagabond/gui/elements/Scene.h>
 #include <vagabond/core/Item.h>
 #include <vagabond/utils/Eigen/Dense>
-#include <vagabond/utils/svd/PCA.h>
 #include <mutex>
 #include <atomic>
 #include <memory>
+#include <list>
 
 class Correlative;
 class Clique;
@@ -67,9 +67,18 @@ private:
 	// destructor so nothing is left pointing at this Scene once it closes.
 	std::map<Clique *, std::function<void(bool)>> _prevJobs;
 
-	PCA::Matrix _matrix{};
+	Eigen::MatrixXf _matrix{};
 	std::mutex _mutex{};
 	Eigen::MatrixXf _result{};
+
+	// viewSubnetwork()'s grid of per-pair MatrixPlots each hold a live
+	// reference into one of these - a std::list so pushing new entries
+	// during that loop never invalidates references already handed out
+	// to earlier MatrixPlots (unlike std::vector, which can reallocate).
+	// Cleared alongside deleteTemps() at the top of viewSubnetwork(),
+	// once the MatrixPlots referencing the previous run's entries are
+	// themselves gone.
+	std::list<Eigen::MatrixXf> _subnetworkMats;
 };
 
 #endif

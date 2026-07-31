@@ -19,7 +19,6 @@
 #ifndef __vagabond__FloydWarshall__
 #define __vagabond__FloydWarshall__
 
-#include "svd/PCA.h"
 #include <functional>
 #include <mutex>
 #include "Eigen/Dense"
@@ -34,7 +33,7 @@ public:
 	
 	typedef std::function<void()> VoidFunction;
 	
-	void addDisplayMatrix(PCA::Matrix &mat, std::mutex &mutex,
+	void addDisplayMatrix(Eigen::MatrixXf &mat, std::mutex &mutex,
 	                      const VoidFunction &update)
 	{
 		_mat = &mat;
@@ -61,7 +60,7 @@ private:
 	CombineWeight _combineWeight{};
 	bool _maximise{};
 
-	PCA::Matrix *_mat{};
+	Eigen::MatrixXf *_mat{};
 	std::mutex *_mutex{};
 	VoidFunction _update{};
 	VoidFunction _done{};

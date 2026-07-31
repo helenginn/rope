@@ -36,8 +36,6 @@ void FloydWarshall::run() // symmetric matrix
 		update = 10;
 	}
 	
-	PCA::Matrix copy = PCA::Matrix(_sqMat);
-	
 	auto find_best = [&](float x, float y)
 	{
 		if (fabs(x) > fabs(y))
@@ -55,12 +53,11 @@ void FloydWarshall::run() // symmetric matrix
 		if (_mat && _mutex)
 		{
 			// only synced right before an actual GUI refresh, not on
-			// every (i, j, k) triple - dropFromEigen() is one O(n^2)
-			// pass instead of doing the same n^2 writes redundantly on
-			// every one of the n k-iterations in between refreshes.
-			copy.dropFromEigen(_sqMat);
+			// every (i, j, k) triple - one O(n^2) copy instead of doing
+			// the same n^2 writes redundantly on every one of the n
+			// k-iterations in between refreshes.
 			std::unique_lock<std::mutex> lock(*_mutex);
-			copyMatrix(*_mat, copy);
+			*_mat = _sqMat;
 		}
 		_update();
 	};
@@ -122,9 +119,4 @@ void FloydWarshall::run() // symmetric matrix
 	{
 		_done();
 	}
-
-	// PCA::Matrix has no destructor of its own (see PCA.h) - copy's
-	// vals/ptrs buffers (a full size x size double-precision matrix)
-	// would otherwise leak on every single call to run().
-	PCA::freeMatrix(&copy);
 }

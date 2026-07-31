@@ -43,10 +43,7 @@ CommunicationAnalysis::CommunicationAnalysis(Scene *scene, Clique *clique,
 
 CommunicationAnalysis::~CommunicationAnalysis()
 {
-	// PCA::Matrix has no destructor of its own (see PCA.h) - _cc's
-	// buffer (a full names.size() x names.size() double-precision
-	// matrix) would otherwise leak every time this Scene closes.
-	PCA::freeMatrix(&_cc);
+
 }
 
 void CommunicationAnalysis::prepareGroups()
@@ -424,7 +421,7 @@ void CommunicationAnalysis::setup()
 	Eigen::JacobiSVD<MatrixXf> svd(mat, Eigen::ComputeFullU |
 	                               Eigen::ComputeFullV);
 	
-	_cc = PCA::Matrix(mat);
+	_cc = mat;
 	MatrixPlot *mp = new MatrixPlot(_cc);
 	MatrixBox *mBox = new MatrixBox(mp, names, names, true);
 	mBox->setCentre(0.5, 0.6);

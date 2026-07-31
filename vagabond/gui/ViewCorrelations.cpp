@@ -19,7 +19,6 @@
 #include "ViewCorrelations.h"
 
 #include <vagabond/utils/Eigen/Core>
-#include <vagabond/utils/svd/PCA.h>
 #include <vagabond/utils/FloydWarshall.h>
 #include <vagabond/utils/DoJob.h>
 #include <fstream>
@@ -76,7 +75,6 @@ ViewCorrelations::~ViewCorrelations()
 	// on a clique with many subdivisions leaked several hundred MB to
 	// low-GB permanently once the view closed.
 	delete _correlative;
-	PCA::freeMatrix(&_matrix);
 }
 
 void ViewCorrelations::makeList()
@@ -243,12 +241,7 @@ void ViewCorrelations::finishAssembly()
 	// instant) - without this, that gap has no visual feedback at all.
 	setInformation("Matrix assembled - preparing to derive correlations");
 
-	// deleteTemps() (called at the top of viewAll(), before assembly even
-	// starts) has already destroyed any previous mp that referenced the
-	// old _matrix buffer by this point, so freeing it here is safe - PCA
-	// ::Matrix has no destructor of its own (see PCA.h).
-	PCA::freeMatrix(&_matrix);
-	_matrix = PCA::Matrix(_result);
+	_matrix = _result;
 	MatrixPlot *mp = new MatrixPlot(_matrix, _mutex);
 
 	auto lookup = _correlative->matrixLookup();
@@ -341,7 +334,8 @@ void ViewCorrelations::viewSubnetwork(Clique &clique)
 {
 	setInformation(clique.name());
 	deleteTemps();
-	
+	_subnetworkMats.clear();
+
 	if (!clique.states()) return;
 	const CertainStates &states = *clique.states();
 
@@ -428,8 +422,13 @@ void ViewCorrelations::viewSubnetwork(Clique &clique)
 		{
 			ProbeCorrelation corr = states.correlate(left, right, probs, true);
 
-			PCA::Matrix pca = PCA::Matrix(corr.mat);
-			MatrixPlot *mp = new MatrixPlot(pca);
+			// corr (and corr.mat with it) is loop-local and would
+			// otherwise be gone by the time this MatrixPlot - added to
+			// the grid below and outliving this iteration - next reads
+			// from it. _subnetworkMats keeps a copy alive for as long as
+			// the plot referencing it lives.
+			_subnetworkMats.push_back(corr.mat);
+			MatrixPlot *mp = new MatrixPlot(_subnetworkMats.back());
 			mp->resize(xdim * 3);
 			if (corr.mat.rows() == 2 && corr.mat.cols() == 2)
 			{
