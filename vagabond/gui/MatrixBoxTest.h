@@ -20,7 +20,7 @@
 #define __vagabond__MatrixBoxTest__
 
 #include <vagabond/gui/elements/Scene.h>
-#include <vagabond/utils/svd/PCA.h>
+#include <vagabond/utils/Eigen/Dense>
 
 class MatrixPlot;
 class MatrixBox;
@@ -40,8 +40,8 @@ private:
 	std::vector<std::string> _rowNames;
 	std::vector<std::string> _colNames;
 
-	PCA::Matrix _squareData;
-	PCA::Matrix _rectData;
+	Eigen::MatrixXf _squareData;
+	Eigen::MatrixXf _rectData;
 
 	MatrixPlot *_squarePlot{};
 	MatrixPlot *_rectPlot{};

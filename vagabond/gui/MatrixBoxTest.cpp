@@ -25,7 +25,7 @@ MatrixBoxTest::MatrixBoxTest(Scene *prev) : Scene(prev)
 {
 	_squareNames = {"Alpha", "Beta", "Gamma", "Delta"};
 	int n = (int)_squareNames.size();
-	PCA::setupMatrix(&_squareData, n, n);
+	_squareData = Eigen::MatrixXf(n, n);
 
 	for (int i = 0; i < n; i++)
 	{
@@ -33,20 +33,19 @@ MatrixBoxTest::MatrixBoxTest(Scene *prev) : Scene(prev)
 		{
 			// distinguishable per-cell values so a dragged row/column's
 			// values can be visually traced to where they end up.
-			_squareData[i][j] = i * 0.1 + j * 0.1;
+			_squareData(i, j) = i * 0.1 + j * 0.1;
 		}
 	}
 
 	_rowNames = {"Row0", "Row1", "Row2"};
 	_colNames = {"Col0", "Col1", "Col2", "Col3", "Col4"};
-	PCA::setupMatrix(&_rectData, (int)_rowNames.size(),
-	                 (int)_colNames.size());
+	_rectData = Eigen::MatrixXf((int)_rowNames.size(), (int)_colNames.size());
 
 	for (size_t i = 0; i < _rowNames.size(); i++)
 	{
 		for (size_t j = 0; j < _colNames.size(); j++)
 		{
-			_rectData[i][j] = i * 0.1 + j * 0.1;
+			_rectData(i, j) = i * 0.1 + j * 0.1;
 		}
 	}
 }

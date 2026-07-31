@@ -19,35 +19,42 @@
 #ifndef __vagabond__MatrixPlot__
 #define __vagabond__MatrixPlot__
 
+#include <vagabond/utils/Eigen/Dense>
 #include <vagabond/utils/svd/PCA.h>
 #include <vagabond/gui/elements/Image.h>
 #include <functional>
 #include <mutex>
 
 class ColourLegend;
-class MatrixBox;
 
 class MatrixPlot : public Image
 {
 public:
-	friend MatrixBox;
+	MatrixPlot(Eigen::MatrixXf &mat, std::mutex &mutex);
+	MatrixPlot(Eigen::MatrixXf &mat);
+
+	// PCA::Matrix compatibility for callers not yet migrated to
+	// Eigen::MatrixXf directly - remove once every caller in the repo has
+	// moved over and PCA::Matrix itself can be expunged.
 	MatrixPlot(PCA::Matrix &mat, std::mutex &mutex);
 	MatrixPlot(PCA::Matrix &mat);
 
 	virtual void update();
 	virtual bool mouseOver();
-	
+
 	void setHoverJob(const std::function<void(float, float)> &job)
 	{
 		_hoverJob = job;
 		setSelectable(true);
 	}
 
-	const PCA::Matrix &mat() const
-	{
-		return _mat;
-	}
-	
+	// full-matrix read/write regardless of which backing storage this
+	// instance holds - used by MatrixBox to permute/reorder for display
+	// without needing to know whether this plot is Eigen- or
+	// PCA::Matrix-backed.
+	Eigen::MatrixXf toEigen() const;
+	void dropFromEigen(const Eigen::MatrixXf &m);
+
 	ColourLegend *const legend() const
 	{
 		return _legend;
@@ -61,7 +68,15 @@ private:
 	void updateColours();
 	void setup();
 
-	PCA::Matrix &_mat;
+	int matRows() const;
+	int matCols() const;
+	float valueAt(int i, int j) const;
+
+	Eigen::MatrixXf *_eigenMat = nullptr;
+
+	// back-compat only, see constructor comment above.
+	PCA::Matrix *_pcaMat = nullptr;
+
 	std::mutex *_mutex{};
 
 	float _xProp = 1;

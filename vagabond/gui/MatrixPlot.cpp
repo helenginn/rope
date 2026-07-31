@@ -23,8 +23,28 @@
 #include <vagabond/gui/ColourLegend.h>
 #include <vagabond/core/Environment.h>
 
-MatrixPlot::MatrixPlot(PCA::Matrix &mat) 
-: Image(Environment::matrixBackgroundFilename()), _mat(mat)
+MatrixPlot::MatrixPlot(Eigen::MatrixXf &mat)
+: Image(Environment::matrixBackgroundFilename()), _eigenMat(&mat)
+{
+	_legend = new ColourLegend(Cluster4x, true, nullptr);
+	_legend->disableButtons();
+
+	clearVertices();
+	setup();
+}
+
+MatrixPlot::MatrixPlot(Eigen::MatrixXf &mat, std::mutex &mutex)
+: Image(Environment::matrixBackgroundFilename()), _eigenMat(&mat), _mutex(&mutex)
+{
+	_legend = new ColourLegend(Cluster4x, true, nullptr);
+	_legend->disableButtons();
+
+	clearVertices();
+	setup();
+}
+
+MatrixPlot::MatrixPlot(PCA::Matrix &mat)
+: Image(Environment::matrixBackgroundFilename()), _pcaMat(&mat)
 {
 	_legend = new ColourLegend(Cluster4x, true, nullptr);
 	_legend->disableButtons();
@@ -34,14 +54,46 @@ MatrixPlot::MatrixPlot(PCA::Matrix &mat)
 }
 
 
-MatrixPlot::MatrixPlot(PCA::Matrix &mat, std::mutex &mutex) 
-: Image(Environment::matrixBackgroundFilename()), _mat(mat), _mutex(&mutex)
+MatrixPlot::MatrixPlot(PCA::Matrix &mat, std::mutex &mutex)
+: Image(Environment::matrixBackgroundFilename()), _pcaMat(&mat), _mutex(&mutex)
 {
 	_legend = new ColourLegend(Cluster4x, true, nullptr);
 	_legend->disableButtons();
 
 	clearVertices();
 	setup();
+}
+
+int MatrixPlot::matRows() const
+{
+	return _eigenMat ? (int)_eigenMat->rows() : _pcaMat->rows;
+}
+
+int MatrixPlot::matCols() const
+{
+	return _eigenMat ? (int)_eigenMat->cols() : _pcaMat->cols;
+}
+
+float MatrixPlot::valueAt(int i, int j) const
+{
+	return _eigenMat ? (*_eigenMat)(i, j) : (float)(*_pcaMat)[i][j];
+}
+
+Eigen::MatrixXf MatrixPlot::toEigen() const
+{
+	return _eigenMat ? *_eigenMat : _pcaMat->toEigen();
+}
+
+void MatrixPlot::dropFromEigen(const Eigen::MatrixXf &m)
+{
+	if (_eigenMat)
+	{
+		*_eigenMat = m;
+	}
+	else
+	{
+		_pcaMat->dropFromEigen(m);
+	}
 }
 
 glm::vec4 MatrixPlot::colourForValue(float val)
@@ -77,9 +129,11 @@ void MatrixPlot::updateColours()
 {
 	for (auto it = _index2Vertex.begin(); it != _index2Vertex.end(); it++)
 	{
-		float val = _mat.vals[it->first];
+		int row = it->first / _cols;
+		int col = it->first % _cols;
+		float val = valueAt(row, col);
 		int idx = it->second;
-		
+
 		for (size_t i = 0; i < 4; i++)
 		{
 			_vertices[idx + i].color = colourForValue(val);
@@ -102,9 +156,9 @@ void MatrixPlot::prepareSmallVertices()
 	// row index -> vertical (y), column index -> horizontal (x) - matches
 	// how row/column labels get placed by callers like MatrixBox (rows
 	// down the left, columns across the bottom).
-	for (int i = 0; i < _mat.rows; i++)
+	for (int i = 0; i < _rows; i++)
 	{
-		for (int j = 0; j < _mat.cols; j++)
+		for (int j = 0; j < _cols; j++)
 		{
 			glm::vec3 pos{};
 			pos.x = j * _xProp;
@@ -124,7 +178,7 @@ void MatrixPlot::prepareSmallVertices()
 					v.tex.x = 1 - base.x;
 					v.tex.y = 1 - base.y;
 
-					float val = _mat[i][j];
+					float val = valueAt(i, j);
 					v.color = colourForValue(val);
 					vertNum++;
 				}
@@ -143,8 +197,8 @@ void MatrixPlot::prepareSmallVertices()
 
 void MatrixPlot::setup()
 {
-	_cols = _mat.cols;
-	_rows = _mat.rows;
+	_cols = matCols();
+	_rows = matRows();
 	
 	// x spans columns, y spans rows - see prepareSmallVertices().
 	_xProp = 1 / (float)_cols;
@@ -167,7 +221,7 @@ void MatrixPlot::setup()
 
 bool MatrixPlot::checkDimensions()
 {
-	if (_cols == _mat.cols && _rows == _mat.rows)
+	if (_cols == matCols() && _rows == matRows())
 	{
 		return false;
 	}

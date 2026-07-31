@@ -33,7 +33,7 @@ MatrixBox::MatrixBox(MatrixPlot *mp, const std::vector<std::string> &rowNames,
 
 	// capture before anything else touches _plot's matrix - this is the
 	// one copy that never gets permuted.
-	_original = _plot->_mat.toEigen();
+	_original = _plot->toEigen();
 
 	// MatrixPlot renders row index along +y in raw OpenGL space, and +y is
 	// up - so a row list in natural order renders bottom-up. Compensate
@@ -76,7 +76,7 @@ void MatrixBox::refreshDisplay()
 		}
 	}
 
-	_plot->_mat.dropFromEigen(display);
+	_plot->dropFromEigen(display);
 	_plot->update();
 }
 
@@ -398,7 +398,7 @@ void MatrixBox::guessReordering()
 	// flip) - logicalOrder accumulates the reordering relative to *that*
 	// starting arrangement, then gets composed onto _rowPerm/_colPerm
 	// below, rather than being written to _plot's matrix directly.
-	Eigen::MatrixXf A = _plot->_mat.toEigen();
+	Eigen::MatrixXf A = _plot->toEigen();
 	OpSet<int> row_list;
 	for (int i = 0; i < A.rows(); i++)
 	{
