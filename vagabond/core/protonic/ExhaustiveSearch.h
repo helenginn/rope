@@ -52,7 +52,7 @@ public:
 	bool next();
 	void cleanup();
 
-	CertainStates *const &states() const
+	const std::shared_ptr<CertainStates> &states() const
 	{
 		return _states;
 	}
@@ -86,7 +86,7 @@ private:
 
 	int _total = 0;
 	std::vector<ProbeResult> _results;
-	CertainStates *_states{};
+	std::shared_ptr<CertainStates> _states{};
 	std::list<IteratedProbe *> _iterations;
 	OpSet<Probe *> _all;
 	OpSet<Probe *> _wider;

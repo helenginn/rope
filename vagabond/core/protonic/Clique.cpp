@@ -203,7 +203,7 @@ glm::vec3 Clique::centroid()
 	return sum / count;
 }
 
-void Clique::setStates(CertainStates *const &states)
+void Clique::setStates(const std::shared_ptr<CertainStates> &states)
 {
 	_states = states;
 }

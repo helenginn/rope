@@ -127,7 +127,7 @@ void ExhaustiveSearch::setup()
 	
 void ExhaustiveSearch::cleanup()
 {
-	_states = new CertainStates(_results);
+	_states = std::make_shared<CertainStates>(_results);
 	_results.clear();
 
 	for (IteratedProbe *it : _iterations)

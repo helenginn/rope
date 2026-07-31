@@ -244,12 +244,12 @@ public:
 		return _searchRunning;
 	}
 
-	CertainStates *const &states() const
+	const std::shared_ptr<CertainStates> &states() const
 	{
 		return _states;
 	}
-	
-	void setStates(CertainStates *const &states);
+
+	void setStates(const std::shared_ptr<CertainStates> &states);
 private:
 	class ProbeKey : public OpSet<Probe *>
 	{
@@ -293,7 +293,7 @@ private:
 	std::map<std::string, OpSet<std::string>> _communication;
 	std::map<std::string, std::string> _descToCommune;
 	OpSet<std::string> _descs;
-	CertainStates *_states{};
+	std::shared_ptr<CertainStates> _states{};
 	std::list<Clique> _subdivs;
 	std::shared_ptr<std::atomic<bool>> _searchRunning;
 };
