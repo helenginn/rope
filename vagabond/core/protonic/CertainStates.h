@@ -72,13 +72,31 @@ public:
 	// staleness - it is fresh for exactly as long as the run that made it.
 	std::vector<float> probsForAve(float ave) const;
 
+	// for callers that need both the average and the probs vector for
+	// the same (local, this-clique-only) ave, e.g. OccupanciesView,
+	// ViewCorrelations - average_score() followed by probsForAve(ave)
+	// would call the live score(i) callback for every state twice over
+	// (once to sum for the average, again inside probsForAve()). This
+	// calls it once per state, fills ave by reference from that same
+	// pass, and derives probs from the cached values instead of calling
+	// score(i) again. Not a fit for Correlative, which needs probs for
+	// a *global* ave pooled across many cliques rather than each
+	// clique's own local one - see probsForAve() there.
+	std::vector<float> probsForLocalAve(float &ave) const;
+
 	ProbeCorrelation correlate(const ProbeTypePair &left,
 	                           const ProbeTypePair &right,
 	                           const std::vector<float> &probs,
 	                           bool norm = true) const;
 
-	std::map<int, float> proportions(ProbeTypePair ptp, float &sum, 
-	                                 float ave) const;
+	// takes a pre-computed probs vector (see probsForAve() above) rather
+	// than ave directly, for the same reason correlate() does - callers
+	// looping over ptps() all share the same ave, so computing this once
+	// up front avoids redoing an O(state_count) pass (including a call
+	// to the potentially-expensive live score() callback per state) on
+	// every single call.
+	std::map<int, float> proportions(ProbeTypePair ptp, float &sum,
+	                                 const std::vector<float> &probs) const;
 private:
 	// a set, not a vector, so header (row) order is a deterministic
 	// function of which probes are present - not of the order they

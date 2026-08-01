@@ -129,12 +129,19 @@ OccupanciesView::EstimateMap OccupanciesView::estimates()
 	{
 		if (!clique.states()) return;
 		const CertainStates &states = *clique.states();
-		float ave = states.average_score();
+
+		// computed once per clique, not per ptp - see proportions()'s own
+		// comment for why (score() is a live callback, and every ptp in
+		// this loop shares the same ave). probsForLocalAve() also avoids
+		// calling score(i) a second time just to get ave, unlike the
+		// average_score() + probsForAve(ave) pair this used to be.
+		float ave = 0;
+		std::vector<float> probs = states.probsForLocalAve(ave);
 
 		for (const ProbeTypePair &ptp : states.ptps())
 		{
 			float sum = 0; // sum of all energy contributions, populated next
-			std::map<int, float> occs = states.proportions(ptp, sum, ave);
+			std::map<int, float> occs = states.proportions(ptp, sum, probs);
 			occupancies[ptp].push_back({occs, sum, states.state_count()});
 		}
 	};

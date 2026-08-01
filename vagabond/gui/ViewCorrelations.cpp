@@ -146,8 +146,6 @@ void ViewCorrelations::viewAll()
 		          << covered.size() << " distinct probes" << std::endl;
 	}
 
-	deleteTemps();
-
 	// cancellable via the back button (see setup()) - a mis-click into
 	// this view shouldn't force the user to sit through assembling a
 	// large clique's correlations just to leave again.
@@ -258,6 +256,7 @@ void ViewCorrelations::finishAssembly()
 	Renderable::Alignment align = Renderable::Alignment
 	(Renderable::Alignment::Left | Renderable::Alignment::Top);
 	mp->setArbitrary(0.4, 0.25, align);
+	deleteTemps();
 	addTempObject(mp);
 	
 	auto choose_groups = [this]()
@@ -321,6 +320,7 @@ void ViewCorrelations::finishAssembly()
 			TextButton *comm = new TextButton("Communication analysis", this);
 			comm->setCentre(0.55, 0.9);
 			comm->setReturnJob(comm_analysis);
+
 			addTempObject(comm);
 			viewChanged();
 		});
@@ -411,8 +411,11 @@ void ViewCorrelations::viewSubnetwork(Clique &clique)
 	// computed once for this run, not cached on states itself - score(i)
 	// is a live callback that can change if enabled energy terms change
 	// between separate runs, so this must be fresh every call.
-	float ave = states.average_score();
-	std::vector<float> probs = states.probsForAve(ave);
+	// probsForLocalAve() computes score(i) once per state and derives
+	// both ave and probs from that same pass, instead of average_score()
+	// and probsForAve() each calling it separately.
+	float ave = 0;
+	std::vector<float> probs = states.probsForLocalAve(ave);
 
 	int m = 0;
 	for (const ProbeTypePair &left : states.ptps())

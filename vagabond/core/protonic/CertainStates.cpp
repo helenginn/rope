@@ -120,6 +120,29 @@ std::vector<float> CertainStates::probsForAve(float ave) const
 	return probs;
 }
 
+std::vector<float> CertainStates::probsForLocalAve(float &ave) const
+{
+	float rt = 2.57;
+	std::vector<float> scores(state_count());
+	float sum = 0;
+
+	for (size_t i = 0; i < state_count(); i++)
+	{
+		scores[i] = score(i);
+		sum += scores[i];
+	}
+
+	ave = sum / (float)state_count();
+
+	std::vector<float> probs(state_count());
+	for (size_t i = 0; i < state_count(); i++)
+	{
+		probs[i] = exp((ave - scores[i]) / rt);
+	}
+
+	return probs;
+}
+
 ProbeCorrelation CertainStates::correlate(const ProbeTypePair &left,
                                           const ProbeTypePair &right,
                                           const std::vector<float> &probs,
@@ -231,8 +254,9 @@ ProbeCorrelation CertainStates::correlate(const ProbeTypePair &left,
 	return corr;
 }
 
-std::map<int, float> CertainStates::proportions(ProbeTypePair ptp, 
-                                                float &sum, float ave) const
+std::map<int, float> CertainStates::proportions(ProbeTypePair ptp,
+                                                float &sum,
+                                                const std::vector<float> &probs) const
 {
 	if (state_count() == 0 || probe_count() == 0)
 	{
@@ -241,7 +265,6 @@ std::map<int, float> CertainStates::proportions(ProbeTypePair ptp,
 
 	int n = (*this)(ptp);
 
-	float rt = 2.57;
 	std::map<int, float> totals;
 	std::map<int, int> counts;
 	sum = 0;
@@ -249,12 +272,11 @@ std::map<int, float> CertainStates::proportions(ProbeTypePair ptp,
 	for (int i = 0; i < state_count(); i++)
 	{
 		int nv = value(i, n);
-		float sc = score(i);
-		float contrib = exp((ave - sc) / rt);
+		float contrib = probs[i];
 		totals[nv] += contrib;
 		counts[nv]++;
 		sum += contrib;
-		
+
 	}
 
 	if (false && ptp.first->atom() && ptp.first->atom()->residueId() == 74 && false)
