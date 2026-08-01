@@ -21,8 +21,10 @@
 
 #include <vagabond/gui/elements/Scene.h>
 #include <vagabond/utils/Eigen/Dense>
+#include <vagabond/utils/Canonical.h>
 #include <vagabond/core/protonic/ProbeResult.h>
 #include <vagabond/core/Item.h>
+#include <optional>
 
 using Eigen::MatrixXf;
 using Eigen::VectorXf;
@@ -41,7 +43,19 @@ public:
 	virtual void setup();
 private:
 	void prepareGroups();
-	float compare(const std::string &first, const std::string &second);
+
+	// builds and prepare()s a CanonicalGroup for a single signal's
+	// probes - the expensive part of what used to happen inside
+	// compare() itself, once per pair it appeared in. std::nullopt
+	// means the signal has no matching probes (mirrors the old
+	// ln == 0 / rn == 0 short-circuit in compare()).
+	std::optional<CanonicalGroup> prepareGroup(const std::string &name);
+
+	// combines two already-prepared groups - the only part that
+	// actually needs redoing per pair.
+	float compare(const std::optional<CanonicalGroup> &m,
+	             const std::optional<CanonicalGroup> &n,
+	             const std::string &first, const std::string &second);
 
 	void svd();
 
@@ -51,9 +65,7 @@ private:
 	MatrixXf _wU;
 	VectorXf _w;
 	int _overOne{};
-	
-	MatrixXf _lMat{};
-	MatrixXf _rMat{};
+
 	MatrixXf _cc;
 
 	// diagnostic counters, reported once as a summary at the end of

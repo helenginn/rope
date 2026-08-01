@@ -89,13 +89,13 @@ void CommunicationAnalysis::prepareGroups()
 
 }
 
-float CommunicationAnalysis::compare(const std::string &first,
-                                     const std::string &second)
+std::optional<CanonicalGroup>
+CommunicationAnalysis::prepareGroup(const std::string &name)
 {
-	auto check_pair = [this](const ProbeTypePair &ptp, const std::string &check,
-	                         OpSet<ProbeTypePair> &which)
+	auto check_pair = [this, &name](const ProbeTypePair &ptp,
+	                                OpSet<ProbeTypePair> &which)
 	{
-		const OpSet<std::string> &descs = _clique->nodeDescsForGroup(check);
+		const OpSet<std::string> &descs = _clique->nodeDescsForGroup(name);
 
 		if (descs.count(ptp.first->desc()))
 		{
@@ -103,132 +103,81 @@ float CommunicationAnalysis::compare(const std::string &first,
 			{
 				which += ptp;
 			}
-			else if (ptp.first->is_atom() && ptp.second == 
+			else if (ptp.first->is_atom() && ptp.second ==
 			         hnet::Types::ExistenceType)
 			{
 				which += ptp;
 			}
 		}
 	};
-	
-	OpSet<ProbeTypePair> lefts{}, rights{};
+
+	OpSet<ProbeTypePair> members{};
 
 	for (auto it = _lookup.begin(); it != _lookup.end(); it++)
 	{
-		const ProbeTypePair &ptp = it->first;
-		check_pair(ptp, first, lefts);
-		check_pair(ptp, second, rights);
+		check_pair(it->first, members);
 	}
-	
-	auto add_to_size = [this](int &size)
+
+	int dim = 0;
+	for (const ProbeTypePair &ptp : members)
 	{
-		return [this, &size](const ProbeTypePair &ptp)
-		{
-			size += _lookup[ptp].second;
-		};
-	};
-	
-	int ln{}, rn{};
-	deleteTemps();
-	
-	auto add_to_matrix = [this](MatrixXf &mat, int &inc, float &drop)
+		dim += _lookup[ptp].second;
+	}
+
+	// matches the old ln == 0 / rn == 0 short-circuit in compare() -
+	// no matching probes for this signal, so any pair involving it
+	// must be skipped rather than attempting to build/prepare a group.
+	if (dim == 0)
 	{
-		return [this, &inc, &mat](const ProbeTypePair &ptp)
+		return std::nullopt;
+	}
+
+	MatrixXf mat(_overOne, dim);
+	mat.setZero();
+
+	int inc = 0;
+	for (const ProbeTypePair &ptp : members)
+	{
+		int ins = _lookup[ptp].first;
+		int pdim = _lookup[ptp].second;
+
+		MatrixXf tmp = _wU(Eigen::all, seqN(ins, pdim));
+		mat(Eigen::all, seqN(inc, pdim)) = tmp;
+
+		inc += pdim;
+	}
+
+	CanonicalGroup group(dim);
+	group.sizeHint(_overOne);
+
+	std::vector<double> vec(dim);
+	for (int r = 0; r < mat.rows(); r++)
+	{
+		for (int c = 0; c < dim; c++)
 		{
-			int ins = _lookup[ptp].first;
-			int dim = _lookup[ptp].second;
+			vec[c] = mat(r, c);
+		}
+		group.addVec(vec);
+	}
 
-			MatrixXf tmp = _wU(Eigen::all, seqN(ins, dim));
-			mat(Eigen::all, seqN(inc, dim)) = tmp;
+	group.prepare();
+	return group;
+}
 
-			inc += dim;
-		};
-	};
-
-	std::for_each(lefts.begin(), lefts.end(), add_to_size(ln));
-	std::for_each(rights.begin(), rights.end(), add_to_size(rn));
-	
-	if (ln == 0 || rn == 0)
+float CommunicationAnalysis::compare(const std::optional<CanonicalGroup> &m,
+                                     const std::optional<CanonicalGroup> &n,
+                                     const std::string &first,
+                                     const std::string &second)
+{
+	if (!m || !n)
 	{
 		_emptyPairs++;
 		return 0;
 	}
 	_ranPairs++;
 
-	_lMat = MatrixXf(_overOne, ln);
-	_lMat.setZero();
-	_rMat = MatrixXf(_overOne, rn);
-	_rMat.setZero();
+	Canonical cc(*m, *n);
 
-	Eigen::MatrixXf cMat = MatrixXf(ln, rn);
-	cMat.setZero();
-	
-	int linc{}, rinc{};
-	float drop{};
-
-	std::for_each(lefts.begin(), lefts.end(), add_to_matrix(_lMat, linc, drop));
-	std::for_each(rights.begin(), rights.end(), add_to_matrix(_rMat, rinc, drop));
-	/*
-	std::cout << linc << " and " << drop << std::endl;
-	
-	std::cout << "Left matrix: " << std::endl;
-	std::cout << _lMat << std::endl;
-	std::cout << "Right matrix: " << std::endl;
-	std::cout << _rMat << std::endl;
-	*/
-	
-	for (int j = 0; j < ln; j++)
-	{
-		for (int i = 0; i < rn; i++)
-		{
-			float cc = 0;
-			for (int k = 0; k < _overOne; k++)
-			{
-				cc += _lMat(k, j) * _rMat(k, i);
-			}
-			cMat(j, i) = cc;
-		}
-	}
-
-	float sum = 0;
-	for (int j = 0; j < ln; j++)
-	{
-		for (int i = 0; i < ln; i++)
-		{
-			float diffsq = 0;
-//			float lsq = 0;
-//			float rsq = 0;
-			for (int k = 0; k < rn; k++)
-			{
-				float contrib = cMat(i, k) - cMat(j, k);
-				diffsq += contrib * contrib;
-//				lsq += cMat(i, k) * cMat(i, k);
-//				rsq += cMat(j, k) * cMat(j, k);
-			}
-			sum += sqrt(diffsq);
-		}
-	}
-	
-	float r = sum;
-
-	auto to_vector = [](MatrixXf &mat, int r)
-	{
-		std::vector<double> ret(mat.cols());
-		for (int i = 0; i < mat.cols(); i++)
-		{
-			ret[i] = mat(r, i);
-		}
-		return ret;
-	};
-	
-	Canonical cc(ln, rn);
-	cc.sizeHint(_lMat.rows());
-
-	for (int r = 0; r < _lMat.rows(); r++)
-	{
-		cc.addVecs(to_vector(_lMat, r), to_vector(_rMat, r));
-	}
-	
 	auto get_weight = [this](const int &idx)
 	{
 		return _w[idx];
@@ -240,16 +189,12 @@ float CommunicationAnalysis::compare(const std::string &first,
 	{
 		cc.run();
 		result = fabs(cc.correlation());
-//		setInformation("Comparing " + first + " to " + second + ", correl: " +
-//		               std::to_string(r));
-//		std::cout << "Correlation: " << r << std::endl;
 	}
 	catch (int e)
 	{
 		std::cout << "CommunicationAnalysis::compare(" << first << ", "
 		          << second << "): Canonical::run() threw - bailing out, "
 		          << "result forced to 0" << std::endl;
-//		setInformation("Failed correlation");
 	}
 	return result;
 }
@@ -348,17 +293,39 @@ void CommunicationAnalysis::setup()
 	Eigen::MatrixXf mat(names.size(), names.size());
 	mat.setZero();
 
-	int m = 0;
-	for (const std::string &first : names)
+	// used to live inside the old per-pair compare() (called O(names^2)
+	// times, clearing nothing new each time since compare() never adds
+	// temp objects of its own) - moved out here to run once instead.
+	deleteTemps();
+
+	// prepared once per signal and reused across every pair it appears
+	// in, instead of being rebuilt (and re-SVD'd) once per pair - see
+	// prepareGroup()'s own comment for why this is safe (a group's
+	// preparation depends only on its own name, never on which other
+	// signal it is being compared against).
+	std::vector<std::optional<CanonicalGroup>> groups;
+	groups.reserve(names.size());
+	for (const std::string &name : names)
 	{
-		int n = 0;
-		for (const std::string &second : names)
+		groups.push_back(prepareGroup(name));
+	}
+
+	// compare(A, B) and compare(B, A) are the same canonical correlation
+	// (symmetric in the two groups being compared), so only the upper
+	// triangle (including the diagonal) is actually computed - the
+	// lower triangle is filled by mirroring instead of repeating the
+	// work.
+	for (size_t m = 0; m < names.size(); m++)
+	{
+		for (size_t n = m; n < names.size(); n++)
 		{
-			float r = compare(first, second);
+			float r = compare(groups[m], groups[n], names[m], names[n]);
 			mat(m, n) = r;
-			n++;
+			if (n != m)
+			{
+				mat(n, m) = r;
+			}
 		}
-		m++;
 	}
 
 	{
