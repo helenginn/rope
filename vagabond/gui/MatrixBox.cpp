@@ -16,18 +16,20 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#include <climits>
+#include <cmath>
+#include <algorithm>
 #include <iostream>
 #include <vagabond/utils/OpSet.h>
 #include "MatrixBox.h"
 #include <vagabond/gui/MatrixPlot.h>
 #include <vagabond/gui/elements/TextButton.h>
 #include <vagabond/gui/elements/Window.h>
+#include <vagabond/gui/elements/Scene.h>
 
 MatrixBox::MatrixBox(MatrixPlot *mp, const std::vector<std::string> &rowNames,
                      const std::vector<std::string> &colNames,
-                     bool reorder)
-: _plot(mp), _rowNames(rowNames), _colNames(colNames)
+                     bool reorder, Scene *scene)
+: _plot(mp), _scene(scene), _rowNames(rowNames), _colNames(colNames)
 {
 	_identical = (&rowNames == &colNames);
 
@@ -78,6 +80,11 @@ void MatrixBox::refreshDisplay()
 
 	_plot->dropFromEigen(display);
 	_plot->update();
+
+	// a reorder can move an already-selected row to a new display
+	// position - keep the highlight following it rather than leaving it
+	// pointing at whatever now occupies the old slot.
+	updateSelectionHighlight();
 }
 
 void MatrixBox::syncCoupledPerm(bool rowsChanged)
@@ -131,6 +138,338 @@ auto MatrixBox::create_order_function(int coord)
 	};
 };
 
+int MatrixBox::displayRowAtY(double glY) const
+{
+	if (_rowPerm.empty())
+	{
+		return 0;
+	}
+
+	glm::vec3 minC, maxC;
+	_plot->bounds(minC, maxC);
+
+	if (maxC.y == minC.y)
+	{
+		return 0;
+	}
+
+	// _plot's own rendered rows are an even division of its true extent
+	// (see MatrixPlot::rebuildPixels()) - matching that directly, rather
+	// than going via the row label buttons' positions, sidesteps whatever
+	// the labels' own placement formula happens to be (see draw()).
+	// _rowPerm[0] is the *bottom* row, not the top - confirmed by the
+	// original single-row drag path (create_order_function() sorts
+	// buttons ascending by y, and that sorted order is what gets composed
+	// straight into _rowPerm) - fraction 0 at the plot's bottom edge.
+	float frac = ((float)glY - minC.y) / (maxC.y - minC.y);
+	int row = (int)std::floor(frac * (float)_rowPerm.size());
+	row = std::max(0, std::min((int)_rowPerm.size() - 1, row));
+	return row;
+}
+
+int MatrixBox::insertionBoundaryAtY(double glY) const
+{
+	if (_rowPerm.empty())
+	{
+		return 0;
+	}
+
+	glm::vec3 minC, maxC;
+	_plot->bounds(minC, maxC);
+
+	if (maxC.y == minC.y)
+	{
+		return 0;
+	}
+
+	// same bottom-is-0 orientation as displayRowAtY(), but rounded to the
+	// nearest boundary *line* between rows (0..N inclusive) rather than
+	// floored to a row band (0..N-1) - see the comment in MatrixBox.h.
+	float frac = ((float)glY - minC.y) / (maxC.y - minC.y);
+	int boundary = (int)std::round(frac * (float)_rowPerm.size());
+	boundary = std::max(0, std::min((int)_rowPerm.size(), boundary));
+	return boundary;
+}
+
+void MatrixBox::updateSelectionHighlight()
+{
+	for (Box *quad : _highlightQuads)
+	{
+		removeObject(quad);
+		delete quad;
+	}
+	_highlightQuads.clear();
+
+	if (_selectedRows.size() == 0)
+	{
+		return;
+	}
+
+	// invert _rowPerm (original index -> display position) so a selection
+	// stored by original index - stable across reorders - can be drawn at
+	// wherever those rows currently sit on screen.
+	std::vector<int> displayPosForOriginal(_rowPerm.size());
+	for (size_t i = 0; i < _rowPerm.size(); i++)
+	{
+		displayPosForOriginal[_rowPerm[i]] = (int)i;
+	}
+
+	std::vector<bool> selectedAtDisplay(_rowPerm.size(), false);
+	for (int orig : _selectedRows)
+	{
+		selectedAtDisplay[displayPosForOriginal[orig]] = true;
+	}
+
+	// _plot's own rendered rows are an even division of its true extent
+	// (see MatrixPlot::rebuildPixels() and displayRowAtY()) - matching
+	// that directly keeps the highlight pinned to the actual heatmap
+	// rows regardless of the row labels' own placement.
+	glm::vec3 minC, maxC;
+	_plot->bounds(minC, maxC);
+	float halfWidth = fabs(maxC.x - minC.x) / 2.f;
+	float centreX = (maxC.x + minC.x) / 2.f;
+	float rowSpan = (maxC.y - minC.y) / (float)_rowPerm.size();
+
+	// merge consecutive selected display rows into a single quad rather
+	// than one per row.
+	size_t i = 0;
+	while (i < selectedAtDisplay.size())
+	{
+		if (!selectedAtDisplay[i])
+		{
+			i++;
+			continue;
+		}
+
+		size_t runStart = i;
+		while (i < selectedAtDisplay.size() && selectedAtDisplay[i])
+		{
+			i++;
+		}
+		size_t runEnd = i - 1;
+
+		// display position 0 is the bottom row - see displayRowAtY().
+		float bottomY = minC.y + (float)runStart * rowSpan;
+		float topY = minC.y + (float)(runEnd + 1) * rowSpan;
+		float centreY = (topY + bottomY) / 2.f;
+		float halfHeight = fabs(topY - bottomY) / 2.f;
+
+		Box *quad = new Box();
+		quad->makeQuad();
+		quad->rescale(halfWidth, halfHeight);
+		quad->setPosition(glm::vec3(centreX, centreY, minC.z + 0.05f));
+		quad->setColour(1.00, 1.00, 0.0);
+		quad->setAlpha(0.45);
+		addObject(quad);
+		_highlightQuads.push_back(quad);
+	}
+}
+
+auto MatrixBox::create_plot_select_function()
+{
+	return [this](double x, double y, bool lastOne)
+	{
+		if (lastOne)
+		{
+			// x/y are not meaningful on this call (see Renderable::undrag())
+			// - whatever the last real move event computed already stands.
+			_selectAnchorRow = -1;
+			return;
+		}
+
+		if (!_scene || !_scene->shiftPressed())
+		{
+			return;
+		}
+
+		int row = displayRowAtY(y);
+
+		if (_selectAnchorRow < 0)
+		{
+			_selectAnchorRow = row;
+		}
+
+		int lo = std::min(_selectAnchorRow, row);
+		int hi = std::max(_selectAnchorRow, row);
+
+		_selectedRows.clear();
+		for (int i = lo; i <= hi; i++)
+		{
+			_selectedRows.insert(_rowPerm[i]);
+		}
+
+		updateSelectionHighlight();
+	};
+}
+
+void MatrixBox::beginBlockDrag(TextButton *handle)
+{
+	_blockDrag.active = true;
+	_blockDrag.handle = handle;
+	_blockDrag.offsetFromHandle.clear();
+	_blockDrag.lastInsertAt = -1;
+
+	float handleY = handle->centroid().y;
+
+	for (auto &pair : _rowOriginalIndex)
+	{
+		TextButton *other = pair.first;
+		if (other == handle || !_selectedRows.count(pair.second))
+		{
+			continue;
+		}
+
+		_blockDrag.offsetFromHandle[other] = other->centroid().y - handleY;
+	}
+}
+
+void MatrixBox::applyBlockMove(int insertAt)
+{
+	// selected original rows, in their current (pre-move) display order -
+	// preserves their relative order within the moved block.
+	std::vector<int> selectedInOrder;
+	std::vector<int> remaining;
+	for (int orig : _rowPerm)
+	{
+		if (_selectedRows.count(orig))
+		{
+			selectedInOrder.push_back(orig);
+		}
+		else
+		{
+			remaining.push_back(orig);
+		}
+	}
+
+	insertAt = std::max(0, std::min(insertAt, (int)remaining.size()));
+
+	std::vector<int> updated;
+	updated.reserve(_rowPerm.size());
+	updated.insert(updated.end(), remaining.begin(), remaining.begin() + insertAt);
+	updated.insert(updated.end(), selectedInOrder.begin(), selectedInOrder.end());
+	updated.insert(updated.end(), remaining.begin() + insertAt, remaining.end());
+
+	_rowPerm = updated;
+
+	if (_identical)
+	{
+		syncCoupledPerm(true);
+	}
+
+	refreshDisplay();
+}
+
+void MatrixBox::snapRowButtons(bool includeSelected)
+{
+	// signed y-delta per slot increase and the y for slot 0 - slot 0 is
+	// the *bottom* row, not the top (see displayRowAtY()), matching
+	// _plot's own even row division rather than the row labels' own
+	// placement.
+	glm::vec3 minC, maxC;
+	_plot->bounds(minC, maxC);
+	size_t n = std::max((size_t)1, _rowPerm.size());
+	float rowHeight = fabs(maxC.y - minC.y) / (float)n;
+	float slot0Y = minC.y + rowHeight / 2.f;
+
+	// _identical: a row's coupled column label (see draw()'s _couples,
+	// matched by shared name) needs to track _colPerm too, since
+	// syncCoupledPerm() reorders the underlying data columns right along
+	// with the rows - the original single-row drag path does this via
+	// steal_coordinate_from_other(), which block-drag has no equivalent
+	// of, so it has to happen here instead or the column labels are left
+	// pointing at the wrong data columns after any row block-move.
+	float colSpan = 0.f;
+	float slot0X = 0.f;
+	if (_identical && _colPerm.size() > 0)
+	{
+		colSpan = fabs(maxC.x - minC.x) / (float)_colPerm.size();
+		slot0X = minC.x + colSpan / 2.f;
+	}
+
+	for (auto &pair : _rowOriginalIndex)
+	{
+		TextButton *button = pair.first;
+		int orig = pair.second;
+
+		// still under direct cursor control mid-drag - see
+		// updateBlockDrag() - but its coupled column below is
+		// repositioned regardless, since that one isn't being dragged.
+		if (includeSelected || !_selectedRows.count(orig))
+		{
+			auto it = std::find(_rowPerm.begin(), _rowPerm.end(), orig);
+			int displayPos = (int)std::distance(_rowPerm.begin(), it);
+
+			glm::vec3 pos = button->centroid();
+			pos.y = slot0Y + (float)displayPos * rowHeight;
+			button->setPosition(pos);
+		}
+
+		if (_identical)
+		{
+			auto coupleIt = _couples.find(button);
+			if (coupleIt != _couples.end() && coupleIt->second)
+			{
+				auto colIt = std::find(_colPerm.begin(), _colPerm.end(), orig);
+				int colPos = (int)std::distance(_colPerm.begin(), colIt);
+
+				glm::vec3 cpos = coupleIt->second->centroid();
+				cpos.x = slot0X + (float)colPos * colSpan;
+				coupleIt->second->setPosition(cpos);
+			}
+		}
+	}
+}
+
+void MatrixBox::updateBlockDrag(double y)
+{
+	glm::vec3 pos = _blockDrag.handle->centroid();
+	pos.y = y;
+	_blockDrag.handle->setPosition(pos);
+
+	for (auto &pair : _blockDrag.offsetFromHandle)
+	{
+		glm::vec3 opos = pair.first->centroid();
+		opos.y = y + pair.second;
+		pair.first->setPosition(opos);
+	}
+
+	// re-splice _rowPerm live as the block crosses other rows, same as
+	// the single-row drag path does - only when the target slot actually
+	// changes, to avoid redundant refreshDisplay()/reposition work on
+	// every mouse-move event.
+	int targetBoundary = insertionBoundaryAtY(y);
+
+	int insertAt = 0;
+	for (int p = 0; p < targetBoundary && p < (int)_rowPerm.size(); p++)
+	{
+		if (!_selectedRows.count(_rowPerm[p]))
+		{
+			insertAt++;
+		}
+	}
+
+	if (insertAt != _blockDrag.lastInsertAt)
+	{
+		applyBlockMove(insertAt);
+		snapRowButtons(false);
+		updateSelectionHighlight();
+		_blockDrag.lastInsertAt = insertAt;
+	}
+}
+
+void MatrixBox::finishBlockDrag()
+{
+	// _rowPerm is already up to date from the live re-splicing in
+	// updateBlockDrag() - just settle every button (including the
+	// selected ones, still under direct cursor control until now) onto
+	// its final slot.
+	snapRowButtons(true);
+
+	_blockDrag = BlockDrag();
+
+	updateSelectionHighlight();
+}
+
 void MatrixBox::draw()
 {
 
@@ -140,7 +479,27 @@ void MatrixBox::draw()
 	float ystep = -height / (float)_rowNames.size();
 	float x = -width / 2 + xstep / 2;
 	float y = +height / 2 + ystep / 2;
-	
+
+	if (_scene)
+	{
+		// setDragFunction() alone only makes _plot draggable - hit-testing
+		// in HasRenderables::findObject() gates on isSelectable() first
+		// (Image/MatrixPlot isn't a Button, so unlike the row/col labels
+		// it isn't selectable by default), so without this the plot is
+		// never even found by a mouse press and nothing fires at all.
+		_plot->setSelectable(true);
+		_plot->setDragFunction(create_plot_select_function());
+		_plot->setClickJob([this]()
+		{
+			if (_scene->shiftPressed())
+			{
+				_selectedRows.clear();
+				updateSelectionHighlight();
+				_scene->viewChanged();
+			}
+		});
+	}
+
 	auto drag_button = [this](TextButton *tb, int coord)
 	{
 		_info[tb] = {};
@@ -210,6 +569,32 @@ void MatrixBox::draw()
 		(double x, double y, bool lastOne)
 		{
 			Status &status = _info[tb];
+
+			// dragging a row that's part of a multi-row selection moves
+			// the whole selection together instead of swapping individual
+			// rows - see beginBlockDrag()/updateBlockDrag()/
+			// finishBlockDrag(). Columns are unaffected (rows-only, see
+			// MatrixBox.h).
+			if (coord == 1 && !_blockDrag.active && !status.dragging
+			    && _selectedRows.size() > 1
+			    && _rowOriginalIndex.count(tb)
+			    && _selectedRows.count(_rowOriginalIndex.at(tb)))
+			{
+				beginBlockDrag(tb);
+			}
+
+			if (_blockDrag.active && _blockDrag.handle == tb)
+			{
+				if (lastOne)
+				{
+					finishBlockDrag();
+				}
+				else
+				{
+					updateBlockDrag(y);
+				}
+				return;
+			}
 
 			if (!status.dragging)
 			{
@@ -314,6 +699,7 @@ void MatrixBox::draw()
 		t->setArbitrary(-width / 2, y, row_align);
 		t->setDragFunction(drag_button(t, 1));
 		addObject(t);
+		_rowOriginalIndex[t] = _rowPerm[i];
 		y += ystep;
 		rowButtons[i] = t;
 	}

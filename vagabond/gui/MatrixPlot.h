@@ -51,12 +51,41 @@ public:
 		setSelectable(true);
 	}
 
+	// fires on a stationary press+release (as opposed to drag()/undrag(),
+	// which fire when the mouse moved in between) - see Scene::
+	// mouseReleaseEvent(). MatrixBox uses this for shift+click-to-clear
+	// a row selection, since there's otherwise no gesture for it.
+	void setClickJob(const std::function<void()> &job)
+	{
+		_clickJob = job;
+	}
+
+	virtual void click(bool left = true);
+
 	// full-matrix read/write regardless of which backing storage this
 	// instance holds - used by MatrixBox to permute/reorder for display
 	// without needing to know whether this plot is Eigen- or
 	// PCA::Matrix-backed.
 	Eigen::MatrixXf toEigen() const;
 	void dropFromEigen(const Eigen::MatrixXf &m);
+
+	// converts a raw GL-space (x, y) coordinate into a fractional position
+	// (0 at the quad's min corner, 1 at its max corner) within this plot's
+	// quad - shared by mouseOver()'s hover job and MatrixBox's row-range
+	// selection drag, which needs to turn a drag's GL y-coordinate into a
+	// display row index.
+	void fractionalPos(double glX, double glY, float &cx, float &cy) const;
+
+	// the plot quad's two opposite corners, in whatever fully-composed
+	// vertex space its own _vertices currently sit in (post setPosition/
+	// setArbitrary/addAlign - i.e. the real on-screen extent, not a
+	// pre-alignment local value) - see fractionalPos()'s use of the same
+	// two corners.
+	void bounds(glm::vec3 &minCorner, glm::vec3 &maxCorner) const
+	{
+		minCorner = _vertices[0].pos;
+		maxCorner = vertices().back().pos;
+	}
 
 	ColourLegend *const legend() const
 	{
@@ -93,6 +122,7 @@ private:
 	bool _textureDirty = false;
 
 	std::function<void(float, float)> _hoverJob;
+	std::function<void()> _clickJob;
 	ColourLegend *_legend{};
 };
 

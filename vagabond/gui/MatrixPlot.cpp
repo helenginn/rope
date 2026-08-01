@@ -218,6 +218,25 @@ bool MatrixPlot::checkDimensions()
 	return true;
 }
 
+void MatrixPlot::click(bool left)
+{
+	if (_clickJob)
+	{
+		_clickJob();
+	}
+}
+
+void MatrixPlot::fractionalPos(double glX, double glY, float &cx, float &cy) const
+{
+	const float &minx = _vertices[0].pos.x;
+	const float &miny = _vertices[0].pos.y;
+	float maxx = vertices().back().pos.x;
+	float maxy = vertices().back().pos.y;
+
+	cx = (glX - minx) / (maxx - minx);
+	cy = (glY - miny) / (maxy - miny);
+}
+
 bool MatrixPlot::mouseOver()
 {
 	if (!_hoverJob) return false;
@@ -231,13 +250,8 @@ bool MatrixPlot::mouseOver()
 	double x, y;
 	_gl->getMoveCoords(x, y);
 
-	float &minx = _vertices[0].pos.x;
-	float &miny = _vertices[0].pos.y;
-	float maxx = vertices().back().pos.x;
-	float maxy = vertices().back().pos.y;
-
-	float cx = (x - minx) / (maxx - minx);
-	float cy = (y - miny) / (maxy - miny);
+	float cx, cy;
+	fractionalPos(x, y, cx, cy);
 
 	_hoverJob(cx, cy);
 

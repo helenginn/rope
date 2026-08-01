@@ -63,12 +63,12 @@ void MatrixBoxTest::setup()
 
 	_squarePlot = new MatrixPlot(_squareData);
 	_squareBox = new MatrixBox(_squarePlot, _squareNames, _squareNames,
-	                          false);
+	                          false, this);
 	_squareBox->setCentre(0.25, 0.5);
 	addObject(_squareBox);
 
 	_rectPlot = new MatrixPlot(_rectData);
-	_rectBox = new MatrixBox(_rectPlot, _rowNames, _colNames, false);
+	_rectBox = new MatrixBox(_rectPlot, _rowNames, _colNames, false, this);
 	_rectBox->setCentre(0.75, 0.5);
 	addObject(_rectBox);
 

@@ -390,7 +390,7 @@ void CommunicationAnalysis::setup()
 	
 	_cc = mat;
 	MatrixPlot *mp = new MatrixPlot(_cc);
-	MatrixBox *mBox = new MatrixBox(mp, names, names, true);
+	MatrixBox *mBox = new MatrixBox(mp, names, names, true, this);
 	mBox->setCentre(0.5, 0.6);
 	mBox->resize(1.2);
 	addObject(mBox);
