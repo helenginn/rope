@@ -54,6 +54,17 @@ namespace
 		name += code + i_to_str(atom->residueNumber());
 		return name;
 	}
+
+	// short_residue_name() plus the specific atom name ("A-Val109:O") -
+	// only meaningful when naming a single manually-picked atom signal
+	// (make_signal() below); chooseReporters()'s automatic path names by
+	// residue only (one name shared by every atom in that residue), so
+	// it has no single atom to append here and keeps calling
+	// short_residue_name() directly instead of this.
+	std::string default_signal_name(Atom *atom)
+	{
+		return short_residue_name(atom) + ":" + atom->atomName();
+	}
 }
 
 void CommunicationChoice::setup()
@@ -103,15 +114,39 @@ Renderable *CommunicationChoice::getLine(int i)
 
 	if (group.length())
 	{
-		Text *t = new Text(desc);
-		t->setLeft(0., 0.);
+		// clicking the current name reopens the same naming dialog,
+		// pre-filled with it, so it can be edited instead of only ever
+		// being set once at creation - see make_signal()'s dialog below,
+		// which this mirrors, plus a remove-then-add to move desc from
+		// its old group to the new one instead of leaving it in both.
+		auto rename_signal = [this, desc, group]()
+		{
+			AskForText *aft = new AskForText(this, "Display name for signal:",
+			                                 "", this);
+			aft->setDefaultText(group);
+			aft->allowCapitals(true);
+			aft->setReturnJob([this, desc](std::string name)
+			{
+				if (name.length())
+				{
+					_clique->removeCommunicationPoints({desc});
+					_clique->addCommunicationPoints(name, {desc});
+				}
+				refresh();
+			});
+			setModal(aft);
+		};
+
+		TextButton *name = new TextButton(desc, this);
+		name->setLeft(0., 0.);
+		name->resize(0.6);
+		name->setReturnJob(rename_signal);
+		box->addObject(name);
+
+		Text *t = new Text(group);
+		t->setLeft(0.5, 0.);
 		t->resize(0.6);
 		box->addObject(t);
-
-		Text *name = new Text(group);
-		name->setLeft(0.5, 0.);
-		name->resize(0.6);
-		box->addObject(name);
 
 		auto clear_one = [this, desc]()
 		{
@@ -121,7 +156,7 @@ Renderable *CommunicationChoice::getLine(int i)
 
 		ImageButton *ib = new ImageButton("assets/images/cross.png", this);
 		ib->resize(0.06);
-		ib->setRight(1.0, 0.);
+		ib->setRight(0.6, 0.);
 		ib->setReturnJob(clear_one);
 		box->addObject(ib);
 	}
@@ -130,10 +165,23 @@ Renderable *CommunicationChoice::getLine(int i)
 		// abandoned: a "group" used to be able to hold several signals at
 		// once, but that turned out not to be useful - each row here now
 		// becomes exactly one named signal (one probe, one display name).
-		auto make_signal = [this, desc]()
+		auto make_signal = [this, desc, probe]()
 		{
 			AskForText *aft = new AskForText(this, "Display name for signal:",
 			                                 "", this);
+			if (probe->is_atom())
+			{
+				// reporter atoms keep the plain residue-only default
+				// (matches chooseReporters()'s automatic naming) - the
+				// atom name is only appended when manually adding some
+				// other, non-reporter atom, where residue name alone
+				// wouldn't distinguish which atom on it was picked.
+				Atom *atom = probe->atom();
+				std::string def = atom->isReporterAtom() ?
+				                   short_residue_name(atom) :
+				                   default_signal_name(atom);
+				aft->setDefaultText(def);
+			}
 			aft->setReturnJob([this, desc](std::string name)
 			{
 				if (name.length())
