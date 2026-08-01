@@ -51,9 +51,25 @@ AskForText::AskForText(Scene *scene, std::string text, std::string tag,
 void AskForText::setDefaultText(const std::string &text)
 {
 	_text->setScratch(text);
-	// matches TextEntry::showInsert()'s active-cursor rendering, since the
-	// entry is already active (see click(true) in the constructor above).
-	_text->setText(text + "_", true);
+
+	// showInsert() (not a plain setText() call - see there) both
+	// rebuilds the correctly-sized quad AND re-snapshots
+	// _unselectedVertices to match it. Skipping the second part (as a
+	// bare setText() call would) leaves _unselectedVertices holding
+	// whatever the entry looked like when click(true) highlighted it in
+	// the constructor above - back when _scratch was still empty, i.e.
+	// a single "_" cursor's width. That stale snapshot is invisible
+	// until the next unMouseOver() (Renderable::setHighlighted(false))
+	// restores _vertices from it, which is why this bug only shows up
+	// after the mouse moves off the entry, not immediately.
+	_text->showInsert();
+
+	// showInsert() rebuilds the geometry correctly, but this typically
+	// runs before the scene has ever rendered this brand new modal even
+	// once, so there is no dirty/repaint flag telling it to actually
+	// redraw yet - without this, the correct geometry sits unpainted
+	// until some unrelated event forces a repaint.
+	_scene->viewChanged();
 }
 
 void AskForText::allowCapitals(bool capitals)

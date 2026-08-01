@@ -70,10 +70,15 @@ public:
 	virtual void click(bool left = true);
 	virtual void finish();
 	bool validateKey(char key);
-	
+
+	// re-derives the displayed quad (cursor-appended if active) from
+	// _scratch and, if currently highlighted, correctly re-snapshots
+	// _unselectedVertices to match - see AskForText::setDefaultText()
+	// for why calling setText() directly instead is not enough.
+	void showInsert();
+
 	float as_num() const;
 private:
-	void showInsert();
 	void shiftKey(char &key);
 
 	std::string _scratch;
