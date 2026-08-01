@@ -24,6 +24,7 @@
 #include "Connector.h"
 #include "Superpose.h"
 #include <vagabond/utils/OpSet.h>
+#include <algorithm>
 
 class Atom;
 
@@ -439,7 +440,13 @@ inline std::vector<glm::vec3> align(int coordNum, const glm::vec3 &centre,
 	glm::vec3 blueprint_centre = {};
 	pose.addPositionPair(blueprint_centre, blueprint_centre); // centre
 
-	for (size_t i = 0; i < some.size(); i++)
+	// some.size() (the number of coordinating atoms actually found by the
+	// caller, e.g. inflated by duplicate-named alternate conformers) is
+	// not guaranteed to fit the fixed-size template for this coordNum -
+	// indexing blueprint[i] past its end for the surplus entries would
+	// read out of bounds, so only pair up as many as the template has.
+	size_t pairs = std::min(some.size(), blueprint.size());
+	for (size_t i = 0; i < pairs; i++)
 	{
 		glm::vec3 dir = glm::normalize(some[i] - centre);
 		glm::vec3 expected = glm::normalize(blueprint[i]);
@@ -451,9 +458,9 @@ inline std::vector<glm::vec3> align(int coordNum, const glm::vec3 &centre,
 	
 	std::vector<glm::vec3> to_return;
 	
-	if (coordNum > 10)
+	if (coordNum >= 10)
 	{
-		coordNum -= 9;
+		coordNum -= 10;
 	}
 
 	for (size_t i = 0; i < coordNum; i++)

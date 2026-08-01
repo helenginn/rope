@@ -89,7 +89,7 @@ void Hydrogenate::operator()()
 	
 	if (coordNum > 10)
 	{
-		coordNum -= 9;
+		coordNum -= 10;
 	}
 
 	if (names.size() != (coordNum - to_align.size()))
