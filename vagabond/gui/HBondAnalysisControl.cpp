@@ -405,7 +405,7 @@ void HBondAnalysisControl::setup()
 
 		_refreshes.push_back(enable_signals);
 
-		auto add_num_groups = [this]()
+		auto add_num_groups = [this, has_results]()
 		{
 			int num = _clique->allCommsNames().size();
 			if (num > 0)
@@ -415,6 +415,14 @@ void HBondAnalysisControl::setup()
 				Text *num = new Text(str);
 				num->setCentre(0.64, 0.86);
 				num->resize(0.6);
+
+				// Text isn't a Button, so it has no setInert() of its own -
+				// same alpha values Button::setInert(!ok, true) applies,
+				// so this tracks "Choose signals" (enable_signals above)
+				// instead of staying opaque regardless of search state.
+				bool ok = has_results() && !searchIsRunning();
+				num->setAlpha(ok ? 0.f : -0.5f);
+
 				addTempObject(num);
 			}
 		};
