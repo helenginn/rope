@@ -315,7 +315,6 @@ void ViewCorrelations::finishAssembly()
 		delete progress;
 
 		setInformation("Finished deriving intermediates");
-		std::cout << "Done filling gaps" << std::endl;
 
 		addMainThreadJob([this, comm_analysis]()
 		{
@@ -323,6 +322,7 @@ void ViewCorrelations::finishAssembly()
 			comm->setCentre(0.55, 0.9);
 			comm->setReturnJob(comm_analysis);
 			addTempObject(comm);
+			viewChanged();
 		});
 	};
 
