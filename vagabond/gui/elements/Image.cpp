@@ -88,3 +88,23 @@ void Image::changeImage(std::string filename)
 	_texid = tex;
 	setName("Image: " + filename);
 }
+
+void Image::changeImage(const unsigned char *pixels, int w, int h)
+{
+	if (_texid > 0)
+	{
+		Library::getLibrary()->dropTexture(_texid);
+		_texid = 0;
+	}
+
+	_texid = Library::getLibrary()->bindBytes(
+	const_cast<unsigned char *>(pixels), w, h);
+
+	// see retainTexture()'s comment - without this, dropTexture() can
+	// never actually free this texture.
+	Library::getLibrary()->retainTexture(_texid);
+
+	_w = w;
+	_h = h;
+	setName("Image texid: " + std::to_string(_texid));
+}

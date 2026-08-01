@@ -218,6 +218,11 @@ GLuint Library::loadSurface(SDL_Surface *image, std::string filename,
 	return texid;
 }
 
+void Library::retainTexture(GLuint id)
+{
+	_counts[id]++;
+}
+
 void Library::dropTexture(GLuint tex)
 {
 	if (tex == 0)

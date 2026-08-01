@@ -12,6 +12,11 @@ public:
 	
 	void changeImage(std::string filename);
 
+	// same as changeImage(filename) but for a caller-generated RGBA
+	// buffer (w*h*4 bytes) instead of a file on disk - see MatrixPlot
+	// for the motivating use case (a dynamically-rendered data texture).
+	void changeImage(const unsigned char *pixels, int w, int h);
+
 	/** rotateRoundCentre() alone shears this image, because makeQuad()
 	 * already bakes a non-uniform aspect/texture stretch into its
 	 * vertices (see makeQuad()) - this conjugates the rotation by that

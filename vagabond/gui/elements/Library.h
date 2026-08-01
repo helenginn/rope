@@ -44,6 +44,18 @@ public:
 	GLuint bindBytes(unsigned char *bytes, int w, int h);
 	void textureDetails(GLuint id, int *w, int *h);
 
+	// bindBytes() alone registers with an empty key internally, which is
+	// a deliberate no-op for refcounting (see registerTexture()) -
+	// existing callers that want a cacheable/shared texture (loadText())
+	// follow up with their own registerTexture(key, ...) call. For a
+	// texture with no meaningful cache key (content changes every call,
+	// e.g. a dynamically-regenerated data texture), call this instead
+	// right after bindBytes() so dropTexture() can actually free it
+	// later - without it, _counts[id] never leaves 0 and dropTexture()'s
+	// decrement takes it to -1, never matching the == 0 deletion check,
+	// leaking the texture forever.
+	void retainTexture(GLuint id);
+
 	void dropTexture(GLuint tex);
 	static void correctFilename(std::string &filename);
 private:
