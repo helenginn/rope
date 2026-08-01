@@ -21,27 +21,25 @@
 
 #include <vector>
 #include <functional>
-#include "svd/PCA.h"
+#include "Eigen/Dense"
 
 class Canonical
 {
 public:
 	Canonical(int m, int n);
-	
+
 	void sizeHint(int n);
 	void addVecs(const std::vector<double> &ms, const std::vector<double> &ns);
 	typedef std::function<float(const int &idx)> GetWeight;
 	void run();
-	void old_run();
 	double correlation();
-	double old_correlation();
 
-	PCA::Matrix &u()
+	Eigen::MatrixXf &u()
 	{
 		return _uDisplay;
 	}
 
-	PCA::Matrix &v()
+	Eigen::MatrixXf &v()
 	{
 		return _vDisplay;
 	}
@@ -50,24 +48,16 @@ public:
 	{
 		_getWeight = get_weight;
 	}
-
-	~Canonical();
 private:
-	void transformVectors(std::vector<double> &vals, int total,
-	                      int chosen, PCA::Matrix &basis);
 	int _nSamples;
 	int _m;
 	int _n;
-	int _d;
-	
-	PCA::SVD _mmCC, _nnCC;
-	PCA::Matrix _mBasis, _nBasis;
-	PCA::Matrix _u, _v;
-	PCA::Matrix _uDisplay, _vDisplay;
+
+	Eigen::MatrixXf _u, _v;
+	Eigen::MatrixXf _uDisplay, _vDisplay;
 	std::vector<float> _rs;
-	bool _run;
 	GetWeight _getWeight;
-	
+
 	std::vector<double> _mVecs;
 	std::vector<double> _nVecs;
 };

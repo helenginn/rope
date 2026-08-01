@@ -16,21 +16,17 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#include "maths.h"
 #include "Canonical.h"
 #include <iomanip>
 #include <iostream>
 #include <algorithm>
 #include <fstream>
 #include "Eigen/Dense"
-#include "svd/svdcmp.h"
 
-using namespace PCA;
 using Eigen::MatrixXf;
 
 Canonical::Canonical(int m, int n)
 {
-	_run = false;
 	if (m <= 1 || n <= 1)
 	{
 		throw -1;
@@ -257,212 +253,37 @@ void Canonical::run()
 	std::cout << "Test: U^T * V" << std::endl;
 	std::cout << u.transpose() * v << std::endl;
 	*/
-	_u = PCA::Matrix(u);
-	_v = PCA::Matrix(v);
-	_uDisplay = PCA::Matrix(u.transpose());
-	_vDisplay = PCA::Matrix(v.transpose());
-	
-	for (int i = 0; i < _uDisplay.rows; i++)
+	_u = u;
+	_v = v;
+	_uDisplay = u.transpose();
+	_vDisplay = v.transpose();
+
+	for (int i = 0; i < _uDisplay.rows(); i++)
 	{
-		for (int j = 0; j < _uDisplay.cols && _getWeight; j++)
+		for (int j = 0; j < _uDisplay.cols() && _getWeight; j++)
 		{
-			_uDisplay[i][j] *= _getWeight(j);
-			_vDisplay[i][j] *= _getWeight(j);
+			_uDisplay(i, j) *= _getWeight(j);
+			_vDisplay(i, j) *= _getWeight(j);
 		}
 	}
-	
-}
-
-void Canonical::old_run()
-{
-	int mSize = _mVecs.size();
-	int size = mSize / _m;
-
-	setupSVD(&_mmCC, size, _m);
-	setupSVD(&_nnCC, size, _n);
-	SVD x, y;
-	setupSVD(&x, size, _m);
-	setupSVD(&y, size, _n);
-	
-	for (size_t i = 0; i < size; i++)
-	{
-		for (size_t j = 0; j < _m; j++)
-		{
-			_mmCC.u.ptrs[i][j] = _mVecs[i * _m + j];
-			x.u.ptrs[i][j] = _mVecs[i * _m + j];
-		}
-
-		for (size_t j = 0; j < _n; j++)
-		{
-			_nnCC.u.ptrs[i][j] = _nVecs[i * _n + j];
-			y.u.ptrs[i][j] = _nVecs[i * _n + j];
-		}
-	}
-	
-	runSVD(&_mmCC);
-	runSVD(&_nnCC);
-
-	reorderSVD(&_mmCC);
-	reorderSVD(&_nnCC);
-	
-	int d1 = _m;
-	int d2 = _n;
-	
-	for (size_t i = 0; i < _m; i++)
-	{
-		if (_mmCC.w[i] < 1e-6)
-		{
-			d1 = i;
-			break;
-		}
-	}
-
-	for (size_t i = 0; i < _n; i++)
-	{
-		if (_nnCC.w[i] < 1e-6)
-		{
-			d2 = i;
-			break;
-		}
-	}
-	
-	if (d1 == 0 || d2 == 0)
-	{
-		throw 1;
-	}
-
-	SVD tmp;
-	setupSVD(&tmp, d1, d2);
-	/* form the cross-covariance matrix */
-
-	for (size_t i = 0; i < d1; i++)
-	{
-		for (size_t j = 0; j < d2; j++)
-		{
-			double sum = 0;
-			for (size_t k = 0; k < size; k++)
-			{
-				/* -- u_mmT * u_nn --  */
-				double add = _mmCC.u.ptrs[k][i] * _nnCC.u.ptrs[k][j];
-				sum += add;
-			}
-
-			tmp.u.ptrs[i][j] = sum;
-		}
-	}
-	
-	runSVD(&tmp);
-	reorderSVD(&tmp);
-	
-	_d = std::min(d1, d2);
-
-	setupMatrix(&_mBasis, _m, _d);
-	setupMatrix(&_nBasis, _n, _d);
-
-	for (size_t i = 0; i < _m; i++)
-	{
-		for (size_t j = 0; j < _d; j++)
-		{
-			double m_sum = 0;
-			for (size_t k = 0; k < d1; k++)
-			{
-				/* -- u_mmT * u_nn --  */
-				double w = 1 / _mmCC.w[k];
-				double m_add = _mmCC.v.ptrs[i][k] * w * tmp.u.ptrs[k][j];
-				m_sum += m_add;
-			}
-
-			_mBasis.ptrs[i][j] = m_sum;
-		}
-	}
-
-	for (size_t i = 0; i < _n; i++)
-	{
-		for (size_t j = 0; j < _d; j++)
-		{
-			double n_sum = 0;
-			for (size_t k = 0; k < d2; k++)
-			{
-				/* -- u_mmT * u_nn --  */
-				double w = 1 / _nnCC.w[k];
-				double n_add = _nnCC.v.ptrs[i][k] * w * tmp.v.ptrs[k][j];
-				n_sum += n_add;
-			}
-
-			_nBasis.ptrs[i][j] = n_sum;
-		}
-	}
-	
-	setupMatrix(&_u, size, _d);
-	setupMatrix(&_v, size, _d);
-	
-	for (size_t i = 0; i < size; i++)
-	{
-		for (size_t j = 0; j < _d; j++)
-		{
-			double sum1 = 0; double sum2 = 0;
-			for (size_t k = 0; k < _m; k++)
-			{
-				sum1 += x.u.ptrs[i][k] * _mBasis.ptrs[k][j];
-			}
-
-			for (size_t k = 0; k < _n; k++)
-			{
-				sum2 += y.u.ptrs[i][k] * _nBasis.ptrs[k][j];
-			}
-			
-			_u.ptrs[i][j] = sum1;
-			_v.ptrs[i][j] = sum2;
-		}
-	}
-	
-	freeSVD(&tmp);
-	
-	Matrix diag;
-	setupMatrix(&diag, _d);
-	
-	for (size_t i = 0; i < _d; i++)
-	{
-		for (size_t j = 0; j < _d; j++)
-		{
-			double sum = 0;
-			for (size_t k = 0; k < size; k++)
-			{
-				double first = _u.ptrs[k][i];
-				double second = _v.ptrs[k][j];
-				sum += first * second;
-			}
-
-			diag.ptrs[i][j] = sum;
-		}
-	}
-	
-	freeMatrix(&diag);
-	freeMatrix(&_mBasis);
-	freeMatrix(&_nBasis);
-	freeSVD(&_mmCC);
-	freeSVD(&_nnCC);
-	
-	_run = true;
 }
 
 double Canonical::correlation()
 {
 	_nSamples = _mVecs.size() / _m;
 
-//	CorrelData cd = empty_CD();
 	float num = 0;
 	float bleft = 0;
 	float bright = 0;
-	int j = 0;//_u.cols - 1;
+	int j = 0;
 	std::ofstream file;
 	file.open("canon-data.csv");
-	
+
 	for (size_t i = 0; i < _nSamples; i++)
 	{
-		double x = _u.ptrs[i][j];
-		double y = _v.ptrs[i][j];
-		
+		double x = _u(i, j);
+		double y = _v(i, j);
+
 		if (_getWeight)
 		{
 			x *= _getWeight(i);
@@ -472,10 +293,9 @@ double Canonical::correlation()
 		num += x * y;
 		bleft += x * x;
 		bright += y * y;
-//		add_to_CD(&cd, x, y);
 		file << x << ", " << y << std::endl;
 	}
-	
+
 	file.close();
 
 	float result = num / sqrt(bleft * bright);
@@ -487,37 +307,4 @@ double Canonical::correlation()
 		return 0;
 	}
 	return result;
-//	double cc = evaluate_CD(cd);
-//	return cc;
-}
-
-double Canonical::old_correlation()
-{
-	_nSamples = _mVecs.size() / _m;
-	double best = 0;
-
-	for (size_t j = 0; j < 1; j++)
-	{
-		CorrelData cd = empty_CD();
-		std::cout << std::endl;
-		for (size_t i = 0; i < _nSamples; i++)
-		{
-			double x = _u.ptrs[i][j];
-			double y = _v.ptrs[i][j];
-			add_to_CD(&cd, x, y);
-		}
-
-		if (j == 0) best = evaluate_CD(cd);
-	}
-
-	return best;
-}
-
-Canonical::~Canonical()
-{
-	if (_run)
-	{
-		freeMatrix(&_u);
-		freeMatrix(&_v);
-	}
 }
