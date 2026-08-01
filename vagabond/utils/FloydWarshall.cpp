@@ -18,6 +18,7 @@
 
 #include "FloydWarshall.h"
 #include <iostream>
+#include <vector>
 
 FloydWarshall::FloydWarshall(Eigen::MatrixXf &sqMat, const CombineWeight &cw, 
                              bool maximise) 
@@ -62,6 +63,17 @@ void FloydWarshall::run() // symmetric matrix
 		_update();
 	};
 
+	// _combineWeight is pluggable in principle, but its only current
+	// caller (ViewCorrelations.cpp) is plain multiplication - under
+	// that (and any other "zero absorbs" combine function), a
+	// near-zero operand guarantees a near-zero candidate regardless of
+	// the other operand, so those (i, j, k) triples can be skipped
+	// outright instead of computing and comparing them. If a future
+	// caller ever passes a combine function without this property
+	// (e.g. addition, where x + 0 = x), this skip would silently drop
+	// real updates - worth revisiting this assumption if that happens.
+	const float epsilon = 1e-6f;
+
 	for (int k = 0; k < size; k++)
 	{
 		// row k and column k are never written to during this k-iteration
@@ -72,6 +84,22 @@ void FloydWarshall::run() // symmetric matrix
 		Eigen::VectorXf colK = _sqMat.col(k);
 		Eigen::VectorXf rowK = _sqMat.row(k);
 
+		// cached once per k-iteration and reused across every j below,
+		// instead of re-scanning colK's zero/non-zero pattern from
+		// scratch (or worse, paying for a combineWeight() call and a
+		// comparison) for every single (i, j) pair - most entries are
+		// ~0 for the correlation matrices this is actually run on, so
+		// this list ends up far shorter than `size`.
+		std::vector<int> nonzeroI;
+		nonzeroI.reserve(size);
+		for (int i = 0; i < size; i++)
+		{
+			if (i != k && fabs(colK(i)) > epsilon)
+			{
+				nonzeroI.push_back(i);
+			}
+		}
+
 		for (int j = 0; j < size; j++)
 		{
 			if (k == j)
@@ -81,12 +109,21 @@ void FloydWarshall::run() // symmetric matrix
 
 			float kj = rowK(j);
 
+			if (fabs(kj) < epsilon)
+			{
+				// every candidate for this j would combine to ~0 (see
+				// the assumption noted above) and could never beat a
+				// non-negligible current, so the entire inner loop
+				// below is a no-op - skip straight to the next j.
+				continue;
+			}
+
 			// i innermost to match _sqMat's column-major storage -
 			// _sqMat(i, j) for fixed j, increasing i, is a contiguous
 			// scan rather than a strided one.
-			for (int i = 0; i < size; i++)
+			for (int i : nonzeroI)
 			{
-				if (i == j || k == i)
+				if (i == j)
 				{
 					continue;
 				}
