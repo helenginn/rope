@@ -233,6 +233,13 @@ void ViewCorrelations::viewAll()
 
 void ViewCorrelations::finishAssembly()
 {
+	// wipes whatever the user was looking at while the "Assembling
+	// correlations" bar was running (e.g. a subnetwork opened via
+	// viewSubnetwork() while waiting) - placed first, before this
+	// function builds any of its own temp objects below, so it can
+	// never end up wiping mp/comm instead.
+	deleteTemps();
+
 	// bridges the gap between the "Assembling correlations" bar finishing
 	// and FloydWarshall's own "Deriving intermediate correlations" bar
 	// appearing (requested from its own background thread, so not
@@ -256,7 +263,6 @@ void ViewCorrelations::finishAssembly()
 	Renderable::Alignment align = Renderable::Alignment
 	(Renderable::Alignment::Left | Renderable::Alignment::Top);
 	mp->setArbitrary(0.4, 0.25, align);
-	deleteTemps();
 	addTempObject(mp);
 	
 	auto choose_groups = [this]()
