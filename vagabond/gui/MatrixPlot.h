@@ -24,8 +24,10 @@
 #include <vagabond/gui/elements/Image.h>
 #include <functional>
 #include <mutex>
+#include <vector>
 
 class ColourLegend;
+class GLView;
 
 class MatrixPlot : public Image
 {
@@ -41,6 +43,7 @@ public:
 
 	virtual void update();
 	virtual bool mouseOver();
+	virtual void render(GLView *sender);
 
 	void setHoverJob(const std::function<void(float, float)> &job)
 	{
@@ -59,13 +62,10 @@ public:
 	{
 		return _legend;
 	}
-protected:
-	std::map<int, int> _index2Vertex;
 private:
 	glm::vec4 colourForValue(float val);
-	void prepareSmallVertices();
 	bool checkDimensions();
-	void updateColours();
+	void rebuildPixels();
 	void setup();
 
 	int matRows() const;
@@ -81,10 +81,17 @@ private:
 
 	float _xProp = 1;
 	float _yProp = 1;
-	
+
 	int _rows = 0;
 	int _cols = 0;
-	
+
+	// _pixels/_textureDirty are guarded by the inherited _buffLock -
+	// rebuildPixels() can run on whatever thread calls update() (e.g. a
+	// worker thread driving a live-updating plot), but the actual GL
+	// texture upload only ever happens from render() (see there for why).
+	std::vector<unsigned char> _pixels;
+	bool _textureDirty = false;
+
 	std::function<void(float, float)> _hoverJob;
 	ColourLegend *_legend{};
 };

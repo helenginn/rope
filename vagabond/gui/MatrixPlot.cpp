@@ -1,19 +1,19 @@
 // vagabond
 // Copyright (C) 2022 Helen Ginn
-// 
+//
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-// 
+//
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-// 
+//
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
-// 
+//
 // Please email: vagabond @ hginn.co.uk for more details.
 
 #include "MatrixPlot.h"
@@ -29,7 +29,6 @@ MatrixPlot::MatrixPlot(Eigen::MatrixXf &mat)
 	_legend = new ColourLegend(Cluster4x, true, nullptr);
 	_legend->disableButtons();
 
-	clearVertices();
 	setup();
 }
 
@@ -39,7 +38,6 @@ MatrixPlot::MatrixPlot(Eigen::MatrixXf &mat, std::mutex &mutex)
 	_legend = new ColourLegend(Cluster4x, true, nullptr);
 	_legend->disableButtons();
 
-	clearVertices();
 	setup();
 }
 
@@ -49,7 +47,6 @@ MatrixPlot::MatrixPlot(PCA::Matrix &mat)
 	_legend = new ColourLegend(Cluster4x, true, nullptr);
 	_legend->disableButtons();
 
-	clearVertices();
 	setup();
 }
 
@@ -60,7 +57,6 @@ MatrixPlot::MatrixPlot(PCA::Matrix &mat, std::mutex &mutex)
 	_legend = new ColourLegend(Cluster4x, true, nullptr);
 	_legend->disableButtons();
 
-	clearVertices();
 	setup();
 }
 
@@ -105,102 +101,82 @@ glm::vec4 MatrixPlot::colourForValue(float val)
 void MatrixPlot::update()
 {
 	std::unique_lock<std::mutex> lock(_buffLock);
-	
-	if (!checkDimensions())
-	{
-		lock.unlock();
-	}
+
+	checkDimensions();
 
 	if (_mutex)
 	{
 		std::unique_lock<std::mutex> datalock(*_mutex, std::defer_lock);
 		if (datalock.try_lock())
 		{
-			updateColours();
+			rebuildPixels();
 		}
 	}
 	else
 	{
-		updateColours();
+		rebuildPixels();
 	}
 }
 
-void MatrixPlot::updateColours()
+void MatrixPlot::rebuildPixels()
 {
-	for (auto it = _index2Vertex.begin(); it != _index2Vertex.end(); it++)
-	{
-		int row = it->first / _cols;
-		int col = it->first % _cols;
-		float val = valueAt(row, col);
-		int idx = it->second;
+	// _buffLock is already held by update() - rebuildPixels() only ever
+	// touches CPU-side data (this buffer, not GL state), so it is safe
+	// to call from whichever thread called update() (e.g. a worker
+	// thread driving a live-updating plot). The actual texture upload
+	// only ever happens from render() - see there for why.
+	_pixels.resize((size_t)_rows * _cols * 4);
 
-		for (size_t i = 0; i < 4; i++)
+	for (int i = 0; i < _rows; i++)
+	{
+		for (int j = 0; j < _cols; j++)
 		{
-			_vertices[idx + i].color = colourForValue(val);
+			glm::vec4 colour = colourForValue(valueAt(i, j));
+
+			// row 0 needs to land in the texture's LAST row: Box::addQuad()
+			// maps world y=-1 (bottom, where the old per-cell grid put row
+			// 0 - pos.y = i * _yProp increases with i) to texcoord v=1,
+			// i.e. the far end of the buffer, not the start of it.
+			size_t bufRow = (size_t)(_rows - 1 - i);
+			size_t idx = (bufRow * _cols + j) * 4;
+			_pixels[idx + 0] = (unsigned char)(colour.r * 255.f);
+			_pixels[idx + 1] = (unsigned char)(colour.g * 255.f);
+			_pixels[idx + 2] = (unsigned char)(colour.b * 255.f);
+			_pixels[idx + 3] = (unsigned char)(colour.a * 255.f);
 		}
 	}
 
-	forceRender(true, false);
+	_textureDirty = true;
+
 	if (_gl)
 	{
 		_gl->viewChanged();
 	}
 }
 
-void MatrixPlot::prepareSmallVertices()
+void MatrixPlot::render(GLView *sender)
 {
-	_index2Vertex.clear();
-	int matNum = 0;
-	int vertNum = 0;
-
-	// row index -> vertical (y), column index -> horizontal (x) - matches
-	// how row/column labels get placed by callers like MatrixBox (rows
-	// down the left, columns across the bottom).
-	for (int i = 0; i < _rows; i++)
 	{
-		for (int j = 0; j < _cols; j++)
+		std::unique_lock<std::mutex> lock(_buffLock);
+		if (_textureDirty)
 		{
-			glm::vec3 pos{};
-			pos.x = j * _xProp;
-			pos.y = i * _yProp;
-
-			for (int m = 0; m < 2; m++)
-			{
-				for (int n = 0; n < 2; n++)
-				{
-					glm::vec3 base = pos;
-					base.x += m * _xProp;
-					base.y += n * _yProp;
-					glm::vec3 tmp = base;
-					tmp.x -= 0.5; tmp.y -= 0.5;
-					Snow::Vertex &v = addVertex(tmp);
-
-					v.tex.x = 1 - base.x;
-					v.tex.y = 1 - base.y;
-
-					float val = valueAt(i, j);
-					v.color = colourForValue(val);
-					vertNum++;
-				}
-			}
-
-			addIndices(-4, -3, -2);
-			addIndices(-3, -2, -1);
-
-			_index2Vertex[matNum] = vertNum - 4;
-			matNum++;
+			changeImage(_pixels.data(), _cols, _rows);
+			_textureDirty = false;
 		}
 	}
 
-	forceRender(true, true);
+	Image::render(sender);
 }
 
 void MatrixPlot::setup()
 {
 	_cols = matCols();
 	_rows = matRows();
-	
-	// x spans columns, y spans rows - see prepareSmallVertices().
+
+	// x spans columns, y spans rows - fit the matrix's true row:col
+	// aspect ratio into a unit box while keeping cells square, same
+	// arithmetic this class has always used (previously applied per
+	// cell, now applied once to the single quad below).
 	_xProp = 1 / (float)_cols;
 	_yProp = 1 / (float)_rows;
 
@@ -212,11 +188,17 @@ void MatrixPlot::setup()
 	{
 		_yProp *= _rows / (float)_cols;
 	}
-	
-	prepareSmallVertices();
 
+	// Box::makeQuad() spans -1..+1 (size 2) in both axes, so halving the
+	// target span gets the same absolute cols*_xProp x rows*_yProp size
+	// the old per-cell geometry naturally produced, before the same
+	// separate window-aspect correction the old code applied via its own
+	// rescale(Window::aspect(), 1.) call after building geometry.
+	Box::makeQuad();
+	rescale(_xProp * _cols / 2., _yProp * _rows / 2.);
 	rescale(Window::aspect(), 1.);
-	updateColours();
+
+	rebuildPixels();
 }
 
 bool MatrixPlot::checkDimensions()
@@ -226,14 +208,13 @@ bool MatrixPlot::checkDimensions()
 		return false;
 	}
 
-	clearVertices();
 	setup();
 	realign();
-	
+
 	float scale = resizeScale();
 	resize(scale);
 	setResizeScale(scale);
-	
+
 	return true;
 }
 
@@ -249,16 +230,16 @@ bool MatrixPlot::mouseOver()
 
 	double x, y;
 	_gl->getMoveCoords(x, y);
-	
+
 	float &minx = _vertices[0].pos.x;
 	float &miny = _vertices[0].pos.y;
 	float maxx = vertices().back().pos.x;
 	float maxy = vertices().back().pos.y;
-	
+
 	float cx = (x - minx) / (maxx - minx);
 	float cy = (y - miny) / (maxy - miny);
-	
+
 	_hoverJob(cx, cy);
-	
+
 	return true;
 }
