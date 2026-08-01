@@ -171,21 +171,34 @@ void VagWindow::sendObject(std::string tag, void *object)
 	// Responder<Progressor>::sendObject - reached only for jobs that were
 	// given directly to requestProgressBar() as caller, via
 	// caller->setResponder(this) above. object (the Progressor*) is
-	// deliberately not touched: the job may delete itself immediately
-	// after finishing (see e.g. SearchAll's DoJob lambda), so nothing
-	// here may dereference it, even later on the main thread. Deferred
-	// through the same main-thread job queue prepareProgressBar() uses,
-	// so ordering between "create the bar" and "handle this event" is
-	// always resolved in true call order, not left to thread scheduling.
-	addMainThreadJob([this, tag]()
+	// threaded through as a bare pointer VALUE, never dereferenced (the
+	// job may delete itself immediately after finishing - see e.g.
+	// SearchAll's DoJob lambda) - handleProgressEvent() only ever
+	// compares it against _bar.caller by identity. Deferred through the
+	// same main-thread job queue prepareProgressBar() uses, so ordering
+	// between "create the bar" and "handle this event" is always
+	// resolved in true call order, not left to thread scheduling.
+	addMainThreadJob([this, tag, object]()
 	                 {
-		                handleProgressEvent(tag);
+		                handleProgressEvent(tag, object);
 	});
 }
 
-void VagWindow::handleProgressEvent(std::string tag)
+void VagWindow::handleProgressEvent(std::string tag, void *sender)
 {
-	if (_bar.ptr)
+	// a search's finishTicker() (the "done" event) fires once,
+	// unconditionally, after its own tick loop - so it can arrive after
+	// that same search's ticks already reached max and finished/removed
+	// the bar on their own. Without this check, that straggler would be
+	// applied to (or buffered for) whatever bar a completely unrelated
+	// later request creates, silently killing it the instant it's made -
+	// and that later request's own eventual "done" would do the same to
+	// the request after it, and so on indefinitely. Comparing by pointer
+	// VALUE only (never dereferenced) is safe even if sender has already
+	// been deleted by the time this runs.
+	bool current = (sender == (void *)_bar.caller);
+
+	if (_bar.ptr && current)
 	{
 		if (tag == "done")
 		{
@@ -208,14 +221,18 @@ void VagWindow::handleProgressEvent(std::string tag)
 	}
 
 	// no bar exists yet - remember this until prepareProgressBar() creates
-	// one (see there for where this is applied).
-	if (tag == "done")
+	// one (see there for where this is applied), but only if it belongs
+	// to the request that bar will actually be for.
+	if (!_bar.ptr && current)
 	{
-		_bar.pendingDone = true;
-	}
-	else if (tag == "tick")
-	{
-		_bar.pendingTicks++;
+		if (tag == "done")
+		{
+			_bar.pendingDone = true;
+		}
+		else if (tag == "tick")
+		{
+			_bar.pendingTicks++;
+		}
 	}
 }
 

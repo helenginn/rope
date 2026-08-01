@@ -81,7 +81,16 @@ public:
 private:
 	void prepareProgressBar(int ticks, std::string text);
 	void removeProgressBar();
-	void handleProgressEvent(std::string tag);
+	// sender is the raw Progressor* pointer VALUE that sent this event
+	// (see sendObject()'s comment - never dereferenced, may already be
+	// deleted) - compared against _bar.caller so a straggler tick/done
+	// from an already-superseded request can never be misapplied to
+	// (or buffered for) a different, unrelated request's bar. See
+	// sendObject() for why this matters: a search's finishTicker() can
+	// arrive after its own bar already finished naturally via ticks
+	// alone, and that "done" has nothing to do with whichever request
+	// creates the next bar.
+	void handleProgressEvent(std::string tag, void *sender);
 
 	static Dictator *_dictator;
 	MainMenu *_menu = nullptr;
@@ -94,8 +103,12 @@ private:
 		std::function<void()> cancelJob;
 
 		// set by handleProgressEvent() when a tick/done arrives before
-		// ptr exists yet - prepareProgressBar() applies these the moment
-		// it creates the bar, instead of the event being lost.
+		// ptr exists yet, from whichever Progressor caller currently is
+		// - prepareProgressBar() applies these the moment it creates the
+		// bar, instead of the event being lost. Only ever set for events
+		// matching the current caller (see handleProgressEvent()), so a
+		// straggler from an already-superseded request can never end up
+		// buffered here for an unrelated later request to inherit.
 		int pendingTicks = 0;
 		bool pendingDone = false;
 	};
