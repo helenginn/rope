@@ -68,6 +68,7 @@ void HeatMapView::redrawHeatMap(double num)
     deleteTemps();
 
     int t = (int) num;
+    static std::vector<std::vector<PathGroup>> matricise(const std::vector<PathGroup>& paths);
 
     int rows = _entropy->rows();
     int cols = _entropy->cols();

@@ -20,6 +20,7 @@
 #include "PathGroup.h"
 #include "PathData.h"
 #include "Path.h"
+#include <vector>
 
 PathData *PathGroup::preparePathData()
 {
@@ -88,3 +89,7 @@ Metadata *PathGroup::prepareMetadata(bool force)
 	return metadata;
 }
 
+static std::vector<std::vector<PathGroup>> matricise(const std::vector<PathGroup>& paths)
+{
+    std::vector
+}
