@@ -152,6 +152,12 @@ void MatrixPlot::rebuildPixels()
 	{
 		_gl->viewChanged();
 	}
+
+			glm::vec4 colour = colourForValue(val);
+			_vertices[idx + i].color = colour;
+
+	std::cout << _vertices.size() << std::endl;
+	forceRender(true, false);
 }
 
 void MatrixPlot::render(GLView *sender)

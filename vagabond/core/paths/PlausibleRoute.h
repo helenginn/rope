@@ -115,7 +115,6 @@ protected:
 	getMultiResult(const std::vector<float> &all, 
 	               MultiEngineBase *caller);
 
-
 	virtual void finishedKey(const ScoreBucket &key);
 
 	virtual size_t parameterCount(Engine *caller = nullptr);

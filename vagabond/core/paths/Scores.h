@@ -43,7 +43,6 @@ struct ScoreBucket
 	
 	bool operator<(const ScoreBucket &other) const;
 	bool operator==(const ScoreBucket &other) const;
-
 	bool operator!=(const ScoreBucket &other) const
 	{
 		return !(*this == other);
@@ -65,6 +64,7 @@ struct ScoreBucket
 	}
 
 	ScoreBucket(Atom *atom);
+
 	ScoreBucket(int res)
 	{
 		chain = "";
