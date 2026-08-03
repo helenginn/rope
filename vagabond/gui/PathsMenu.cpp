@@ -1,4 +1,3 @@
-// vagabond
 // Copyright (C) 2022 Helen Ginn
 // 
 // This program is free software: you can redistribute it and/or modify
@@ -39,6 +38,7 @@
 #include "paths/Entropy.h"
 #include "PathThermodynamics.h"
 #include "HeatMapOptions.h"
+#include "HeatMapVDW.h"
 #include <functional>
 
 PathsMenu::PathsMenu(Scene *prev, Entity *entity,
@@ -344,6 +344,8 @@ void PathsMenu::buttonPressed(std::string tag, Button *button)
         else
         {
             m->addOption("Map entropy", "map_entropy");
+            //Rename "path values compare" when other options added
+            m->addOption("VdW compare","map_path_values" );
         }
 		
 		if (_selected.size() > 0)
@@ -491,6 +493,28 @@ void PathsMenu::buttonPressed(std::string tag, Button *button)
 
     }
 	
+    if (tag == "menu_map_path_values")
+    {
+        std::vector<PathGroup> groups;
+
+        if(_selected.size() > 0)
+        {
+            for (const int &idx : _selected)
+			{
+				groups.push_back(_paths[idx]);
+			}
+        }
+        else
+        {
+            groups = _paths;
+        }
+
+	    HeatMapVDW *hmv = new HeatMapVDW(this, groups);
+
+	    hmv->show();
+	    return;
+    }
+
     ListView::buttonPressed(tag, button);
 }
 
