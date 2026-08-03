@@ -333,7 +333,6 @@ void HeatMapView::showMatBox(Eigen::MatrixXf matrix)
 	printMatrix(&_displayMatrix);
 
     _plot = new MatrixPlot(_displayMatrix);
-    _plot->setColourScheme(ZScore);
 
     std::vector<std::string> rowNames = _entropy->startNames();
     std::vector<std::string> colNames = _entropy->endNames();
