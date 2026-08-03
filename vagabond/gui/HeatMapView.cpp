@@ -68,7 +68,6 @@ void HeatMapView::redrawHeatMap(double num)
     deleteTemps();
 
     int t = (int) num;
-    static std::vector<std::vector<PathGroup>> matricise(const std::vector<PathGroup>& paths);
 
     int rows = _entropy->rows();
     int cols = _entropy->cols();
@@ -162,7 +161,6 @@ void HeatMapView::showMatBox(Eigen::MatrixXf matrix)
 	printMatrix(&_displayMatrix);
 
     _plot = new MatrixPlot(_displayMatrix);
-    _plot->setColourScheme(ZScore);
 
     std::vector<std::string> rowNames = _entropy->startNames();
     std::vector<std::string> colNames = _entropy->endNames();

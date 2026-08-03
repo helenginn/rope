@@ -49,7 +49,6 @@ public:
 	virtual PathData *preparePathData();
 	virtual Metadata *prepareMetadata(bool force = false);
 
-	static std::vector<std::vector<PathGroup>> matricise(const std::vector<PathGroup>& paths);
 private:
 
 };

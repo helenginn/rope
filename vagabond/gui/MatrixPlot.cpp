@@ -152,12 +152,6 @@ void MatrixPlot::rebuildPixels()
 	{
 		_gl->viewChanged();
 	}
-
-			glm::vec4 colour = colourForValue(val);
-			_vertices[idx + i].color = colour;
-
-	std::cout << _vertices.size() << std::endl;
-	forceRender(true, false);
 }
 
 void MatrixPlot::render(GLView *sender)
@@ -262,10 +256,4 @@ bool MatrixPlot::mouseOver()
 	_hoverJob(cx, cy);
 
 	return true;
-}
-
-void MatrixPlot::setColourScheme(const Scheme &scheme)
-{
-	legend()->setScheme(scheme);
-	updateColours();
 }

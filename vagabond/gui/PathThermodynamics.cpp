@@ -110,7 +110,7 @@ void PathThermodynamics::buttonPressed(std::string tag, Button *button)
 		std::string str = "Choose number of paths (\"frames\") to utilise";
 		
 		ChooseRange *cr = new ChooseRange(this, str, "choose_paths", this);
-		cr->setDefault(flagPar.n);
+		cr->setDefault(flagPar.n, flagPar.n);
 		cr->setRange(flagPar.n, _paths.size(), (_paths.size()-flagPar.n));
 
 		auto respondToVal = [this, flagPar](float min, float max)
@@ -150,7 +150,7 @@ void PathThermodynamics::buttonPressed(std::string tag, Button *button)
 		std::string str = "Choose number of paths (\"frames\") to utilise";
 		
 		ChooseRange *cr = new ChooseRange(this, str, "choose_paths", this);
-		cr->setDefault(flagPar.n);
+		cr->setDefault(flagPar.n, flagPar.n);
 		cr->setRange(flagPar.n, _paths.size(), (_paths.size()-flagPar.n));
 
 		auto respondToVal = [this, flagPar](float min, float max)
