@@ -88,6 +88,8 @@ guifiles = [
 'HBondDiagram.h',
 'HeatMapOptions.cpp',
 'HeatMapOptions.h',
+'HeatMapVDW.cpp',
+'HeatMapVDW.h',
 'HeatMapView.cpp',
 'HeatMapView.h',
 'IconLegend.cpp',
