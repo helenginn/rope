@@ -55,10 +55,19 @@ public:
 	void addToGraphPosition(float cx, float cy);
 	
 	void setSeriesColour(int series, glm::vec3 colour);
-	
+
 	void setAxisLabel(char axis, std::string name);
 	void plotData(float width, float height);
+
+	// debounced - see .cpp for why: a single stray "nothing under the
+	// mouse" read right at a point's own antialiased edge shouldn't
+	// instantly wipe a label that a following, equally valid mouse-move
+	// poll would just recreate.
 	void clearLabels();
+
+	// called by Scatter::interacted() whenever it (re)draws a label -
+	// cancels whatever run of clearLabels() misses had built up so far.
+	void noteLabelShown();
 	void clear();
 private:
 	struct DataPoint
@@ -88,6 +97,12 @@ private:
 	std::map<int, glm::vec3> _colours;
 	
 	std::vector<Scatter *> _scatters;
+
+	// see clearLabels()/noteLabelShown() - counts consecutive clearLabels()
+	// calls since the last noteLabelShown(), so a lone stray miss (mouse
+	// jitter right at a point's own rendered edge) doesn't instantly hide
+	// the label the previous, equally valid poll just showed.
+	int _missesSinceShown = 0;
 };
 
 #endif

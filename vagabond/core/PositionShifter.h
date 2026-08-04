@@ -38,9 +38,38 @@ public:
 	typedef std::function<glm::vec3()> Getter;
 	typedef std::function<void(const glm::vec3 &)> Setter;
 	typedef std::function<void()> Tidy;
+	typedef std::function<float(void *left, void *right)> TargetFn;
 
 	void addPosition(void *ptr, const Getter &init,
 	                 const Getter &getter, const Setter &setter);
+
+	// overrides the default spring target (Euclidean distance between two
+	// elements' init positions, gradient()'s get_target) with an
+	// externally supplied distance - e.g. a precomputed dissimilarity
+	// matrix that has no underlying "real" coordinates to derive init
+	// from. Unset by default, so existing callers (init-distance-based
+	// layouts, e.g. ProtonNetworkView's 2D arrangement) are unaffected.
+	void setTargetFn(const TargetFn &fn)
+	{
+		_targetFn = fn;
+	}
+
+	// per-pair spring weight, multiplied into that pair's contribution in
+	// gradient() (never into repulsion - see gradient()'s comment). Unset
+	// by default (every pair equally stiff, and fully connected - no
+	// pair is ever skipped). The sole mechanism now for "how related are
+	// these two elements" - e.g. ProtonNetworkView uses 1.0/0.0 for
+	// "within 2 covalent bonds" vs not (replacing this class's former,
+	// separate limitSensitivity()/depth=2 relay mechanism), while
+	// ClusterPlot uses a continuous 1/target^2 (Kamada-Kawai-style)
+	// weight so a fully-connected graph of very unevenly-scaled targets
+	// doesn't let the sheer number and magnitude of long-range pairs
+	// dominate the gradient and flatten out local structure.
+	void setWeightFn(const TargetFn &fn)
+	{
+		_weightFn = fn;
+	}
+
 	void removePointer(void *ptr);
 	
 	void includePointer(void *ptr)
@@ -48,12 +77,6 @@ public:
 		_ptrs.insert(ptr);
 	}
 
-	void limitSensitivity(void *ptr, OpSet<void *> &white_list)
-	{
-		std::unique_lock<std::mutex> lock(_pauseMutex);
-		_sensitivities[ptr] = white_list;
-	}
-	
 	glm::vec3 getPosition(void *ptr);
 	void setPosition(void *ptr, glm::vec3 pos);
 	
@@ -103,23 +126,40 @@ private:
 	
 	int _num = 0;
 	void move();
-	glm::vec3 gradient(Element *ele);
+
+	// idx indexes into elePtrs/positions, a snapshot of every element's
+	// CURRENT getter() (see move()'s own comment on why this is taken
+	// once per tick rather than left for gradient() to call getter()
+	// itself, which it used to do, redundantly, for the same element up
+	// to N times over within a single tick).
+	glm::vec3 gradient(size_t idx, const std::vector<Element *> &elePtrs,
+	                   const std::vector<glm::vec3> &positions);
 
 	void setupGetterSetters(Element &ele);
 	void adjustZ(Element &ele);
 	std::map<void *, Element *> _map;
-	std::map<void *, OpSet<void *>> _sensitivities;
 	std::set<void *> _ptrs;
 
 	std::list<Element> _objects;
-	
+
 	void *_skip = nullptr; // not allowed to set/get.
-	
+
 	float _z = 0;
 	int _n = 0;
 
 	glm::mat4x4 _model;
 	glm::mat4x4 _inv;
+
+	// true if _model (fixed for this instance's whole lifetime - nothing
+	// ever updates it after construction) is exactly the identity matrix,
+	// letting every getter()/setter() skip an otherwise-pointless 4x4
+	// matrix-vector multiply per call. Common for 2D-only consumers (e.g.
+	// ClusterPlot) whose Scene never rotates/pans/zooms; essentially
+	// never true for ProtonNetworkView's real 3D camera.
+	bool _modelIsIdentity = false;
+
+	TargetFn _targetFn{};
+	TargetFn _weightFn{};
 
 	bool _stop{false};
 	std::thread *_worker = nullptr;

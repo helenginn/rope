@@ -81,6 +81,7 @@ void Scatter::interacted(int idx, bool hover, bool left)
 {
 	if (hover)
 	{
+		_graph->noteLabelShown();
 		deleteTemps();
 		std::string str = _graph->data_label(_index, idx);
 		Text *t = new Text(str);

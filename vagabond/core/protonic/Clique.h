@@ -161,6 +161,11 @@ public:
 		{
 			_descToCommune.erase(desc);
 		}
+
+		if (set.count(_watchedDesc))
+		{
+			_watchedDesc.clear();
+		}
 	}
 	
 	void addCommunicationPoints(const std::string &name,
@@ -177,6 +182,7 @@ public:
 	{
 		_communication.clear();
 		_descToCommune.clear();
+		_watchedDesc.clear();
 	}
 
 	const OpSet<std::string> &nodeDescsForGroup(const std::string &name)
@@ -250,6 +256,22 @@ public:
 	}
 
 	void setStates(const std::shared_ptr<CertainStates> &states);
+
+	/** desc of the single assigned communication-point signal currently
+	 * "watched" in CommunicationChoice (empty if none) - runtime-only
+	 * session state, not serialized: lives here (rather than as a member
+	 * of CommunicationChoice itself) purely so it survives closing and
+	 * reopening that scene for as long as this Clique stays in memory,
+	 * same idiom as searchRunning() above. */
+	const std::string &watchedSignal() const
+	{
+		return _watchedDesc;
+	}
+
+	void setWatchedSignal(const std::string &desc)
+	{
+		_watchedDesc = desc;
+	}
 private:
 	class ProbeKey : public OpSet<Probe *>
 	{
@@ -296,6 +318,7 @@ private:
 	std::shared_ptr<CertainStates> _states{};
 	std::list<Clique> _subdivs;
 	std::shared_ptr<std::atomic<bool>> _searchRunning;
+	std::string _watchedDesc;
 };
 
 inline void to_json(json &j, const Clique &cl)

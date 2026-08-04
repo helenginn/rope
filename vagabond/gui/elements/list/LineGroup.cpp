@@ -276,5 +276,16 @@ void LineGroup::updateHeights()
 	resetGroups();
 	reorganiseGroups();
 	fixUpperCorner(this, tmp.x, tmp.y);
+
+	// reorganiseGroups() above can change the visible content height (e.g.
+	// a collapse toggle further down the tree) - updateGroups() already
+	// re-checks the slider after its own layout pass, but this is the only
+	// other path that can change that height, and it had no equivalent
+	// check at all.
+	if (_scroll)
+	{
+		_scroll->addSliderIfNeeded();
+	}
+
 	_updateTop = false;
 }

@@ -43,8 +43,30 @@ private:
 	Clique *_clique{};
 	void chooseReporters(bool includeWater);
 
+	// recomputes _ordered from _candidates/current assignment state -
+	// called by refresh(), so every assign/unassign (which all already
+	// call refresh() themselves) picks it up.
+	void updateOrder();
+
+	// fixed at construction, never reordered afterwards: the canonical
+	// "nothing assigned yet" order - atom alt-confs first, half H-bonds
+	// second (see the constructor) - that unassigned signals fall back
+	// to once unassigned again.
 	std::vector<Probe *> _candidates;
 
+	// display order, recomputed by updateOrder(): every currently-
+	// assigned signal (in _candidates' own relative order), followed by
+	// every unassigned one (ditto) - i.e. assigned signals move to the
+	// front as a group, and settle back into their original relative
+	// position among the unassigned ones the moment they're unassigned,
+	// rather than e.g. wherever they'd fall if appended at the end.
+	std::vector<Probe *> _ordered;
+
+	// eye.png column-header label above the per-row watch tickboxes -
+	// re-added every refresh() (mirrors TableView::displayHeaders()),
+	// since ListView::refresh()/loadFilesFrom() deleteTemps()s everything
+	// including this each time.
+	void makeWatchHeader();
 };
 
 #endif

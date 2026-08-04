@@ -340,9 +340,28 @@ void ProtonNetworkView::arrangeFigure()
 	if (!_shifter)
 	{
 		_shifter = new PositionShifter(getModel());
+
+		// replaces PositionShifter's own former limitSensitivity()/depth=2
+		// relay mechanism: _reach[atom] is precomputed below (1 AND 2
+		// covalent bonds away, matching that mechanism's exact former
+		// reach) once per atom, the moment it's added to the shifter -
+		// this just looks it up. Weight 0 (unrelated/further away) makes
+		// the spring term a no-op for that pair; repulsion is unaffected
+		// either way (see gradient()'s own comment on why it's never
+		// weighted).
+		_shifter->setWeightFn([this](void *left, void *right) -> float
+		{
+			auto found = _reach.find(left);
+			if (found == _reach.end())
+			{
+				return 0.f;
+			}
+			return found->second.count(right) ? 1.f : 0.f;
+		});
+
 		_shifter->run();
 	}
-	
+
 	std::function<void(Probe *, OpSet<void *> &)> get_probes_as_set;
 	get_probes_as_set = [this, &get_probes_as_set]
 	(Probe *base, OpSet<void *> &growing)
@@ -387,9 +406,23 @@ void ProtonNetworkView::arrangeFigure()
 			                      make_getter(probe),
 			                      make_setter(probe));
 
-			OpSet<void *> set;
-			get_probes_as_set(probe->probe(), set);
-			_shifter->limitSensitivity(probe, set);
+			// 1 bond away...
+			OpSet<void *> reach;
+			get_probes_as_set(probe->probe(), reach);
+
+			// ...plus 2 bonds away - matches PositionShifter's former
+			// depth=2 relay exactly: a snapshot of the 1-hop set first,
+			// since extending `reach` while iterating it directly would
+			// let newly-inserted 2-hop atoms also get walked as if they
+			// were 1-hop, silently reaching 3+ bonds out.
+			OpSet<void *> hopOne = reach;
+			for (void *other : hopOne)
+			{
+				ProbeAtom *otherAtom = static_cast<ProbeAtom *>(other);
+				get_probes_as_set(otherAtom->probe(), reach);
+			}
+
+			_reach[probe] = reach;
 
 			_shifter->addTidy(make_tidy_atom(probe));
 		}
@@ -427,6 +460,10 @@ void ProtonNetworkView::leave2D()
 		delete _shifter;
 		_shifter = nullptr;
 	}
+
+	// entries are ProbeAtom* pointers only valid for the 2D session that
+	// built them (see the member's own comment) - stale otherwise.
+	_reach.clear();
 
 	// resync every render position back from the (untouched throughout)
 	// physics position, undoing the 2D placement - atoms first, since

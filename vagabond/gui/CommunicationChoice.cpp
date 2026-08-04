@@ -19,17 +19,29 @@
 #include "CommunicationChoice.h"
 #include <vagabond/gui/elements/TextButton.h>
 #include <vagabond/gui/elements/ImageButton.h>
+#include <vagabond/gui/elements/TickBoxes.h>
+#include <vagabond/gui/elements/Image.h>
 #include <vagabond/gui/elements/AskYesNo.h>
 #include <vagabond/gui/elements/AskForText.h>
 #include <vagabond/core/protonic/Clique.h>
 #include <vagabond/utils/FileReader.h>
 #include <cctype>
+#include <algorithm>
 
 CommunicationChoice::CommunicationChoice(Scene *prev, Clique *clique)
 : ListView(prev), _clique(clique)
 {
 	_candidates = clique->nonWaterProbes().toVector();
 
+	// atom alt-confs first, half H-bonds second: nonWaterProbes() already
+	// only ever inserts one of two things (see its own comment) - an
+	// uncertain atom probe directly, or an uncertain, non-covalent
+	// (H-bond) BondProbe reached from a certain atom's neighbours - but
+	// toVector() dumps them in OpSet's own sorted order, which
+	// interleaves the two rather than grouping them. stable_partition
+	// keeps each group in that same relative order, just grouped.
+	std::stable_partition(_candidates.begin(), _candidates.end(),
+	                      [](Probe *p) { return p->is_atom(); });
 }
 
 namespace
@@ -96,19 +108,56 @@ void CommunicationChoice::setup()
 
 void CommunicationChoice::refresh()
 {
+	updateOrder();
 	ListView::refresh();
+	makeWatchHeader();
+}
+
+void CommunicationChoice::makeWatchHeader()
+{
+	// aligned with the watch TickBoxes column added in getLine() below
+	// (leftMargin() 0.2 + that column's own local 0.0) - just above where
+	// ListView::loadFilesFrom() starts placing rows (pos = 0.3). Plain
+	// Image, not ImageButton - purely a column label, nothing to click.
+	Image *eye = new Image("assets/images/eye.png");
+	eye->resize(0.05);
+	eye->setCentre(0.2, 0.25);
+	addTempObject(eye);
+}
+
+void CommunicationChoice::updateOrder()
+{
+	_ordered.clear();
+	_ordered.reserve(_candidates.size());
+
+	std::vector<Probe *> unassigned;
+	unassigned.reserve(_candidates.size());
+
+	for (Probe *p : _candidates)
+	{
+		if (_clique->groupOfNode(p->desc()).length())
+		{
+			_ordered.push_back(p);
+		}
+		else
+		{
+			unassigned.push_back(p);
+		}
+	}
+
+	_ordered.insert(_ordered.end(), unassigned.begin(), unassigned.end());
 }
 
 size_t CommunicationChoice::lineCount()
 {
-	return _candidates.size();
+	return _ordered.size();
 }
 
 Renderable *CommunicationChoice::getLine(int i)
 {
 	Box *box = new Box();
 
-	Probe *probe = _candidates[i];
+	Probe *probe = _ordered[i];
 	std::string desc = probe->desc();
 	std::string group = _clique->groupOfNode(desc);
 
@@ -137,26 +186,47 @@ Renderable *CommunicationChoice::getLine(int i)
 			setModal(aft);
 		};
 
+		// which of this row's watch options is ticked lives on the Clique
+		// itself (Clique::watchedSignal(), a runtime-only session field -
+		// see its own comment) rather than here, so it survives closing
+		// and reopening this scene. The tickbox here is rebuilt from that
+		// every refresh(), so ticking a different row's box automatically
+		// shows this one unticked next refresh() without any cross-row
+		// bookkeeping.
+		bool watched = (desc == _clique->watchedSignal());
+		TickBoxes *watch = new TickBoxes(this, this);
+		watch->addOption("", desc, watched);
+		watch->arrange(0., 0., 0.06, 0.06);
+		watch->setReturnJob([this, watch, desc]()
+		{
+			bool nowTicked = watch->isTicked(desc);
+			_clique->setWatchedSignal(nowTicked ? desc : "");
+			refresh();
+		});
+		box->addObject(watch);
+
 		TextButton *name = new TextButton(desc, this);
-		name->setLeft(0., 0.);
+		name->setLeft(0.08, 0.);
 		name->resize(0.6);
 		name->setReturnJob(rename_signal);
 		box->addObject(name);
 
 		Text *t = new Text(group);
-		t->setLeft(0.5, 0.);
+		t->setLeft(0.58, 0.);
 		t->resize(0.6);
 		box->addObject(t);
 
 		auto clear_one = [this, desc]()
 		{
+			// also clears watchedSignal() itself if desc was the watched
+			// one - see Clique::removeCommunicationPoints().
 			_clique->removeCommunicationPoints({desc});
 			refresh();
 		};
 
 		ImageButton *ib = new ImageButton("assets/images/cross.png", this);
 		ib->resize(0.06);
-		ib->setRight(0.6, 0.);
+		ib->setRight(0.68, 0.);
 		ib->setReturnJob(clear_one);
 		box->addObject(ib);
 	}
@@ -193,8 +263,11 @@ Renderable *CommunicationChoice::getLine(int i)
 			setModal(aft);
 		};
 
+		// no watch tickbox here (only assigned signals can be watched) but
+		// still shifted right to 0.08 to keep this column aligned with the
+		// assigned-row name button above.
 		TextButton *tb = new TextButton(desc, this);
-		tb->setLeft(0., 0.);
+		tb->setLeft(0.08, 0.);
 		tb->resize(0.6);
 		tb->setReturnJob(make_signal);
 		box->addObject(tb);

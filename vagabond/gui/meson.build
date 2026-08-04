@@ -96,6 +96,8 @@ guifiles = [
 'MatrixBoxTest.h',
 'MatrixPlot.cpp',
 'MatrixPlot.h',
+'ClusterPlot.cpp',
+'ClusterPlot.h',
 'MetadataView.cpp',
 'ModelMenu.cpp',
 'ModelMetadataView.cpp',

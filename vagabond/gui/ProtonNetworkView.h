@@ -108,6 +108,18 @@ private:
 	OpSet<Probe *> _hProbes;
 
 	PositionShifter *_shifter{};
+
+	// per-atom "reach" for 2D layout - which other atoms (1 or 2 covalent
+	// bonds away, see arrangeFigure()) get a real distance-matching spring
+	// force from _shifter, via setWeightFn(), rather than PositionShifter's
+	// own now-removed limitSensitivity()/relay mechanism. Owned here
+	// rather than by PositionShifter since it's specific to this view's
+	// bond-graph notion of "related", not something PositionShifter itself
+	// should know about. Cleared in leave2D() alongside _shifter itself,
+	// since entries are ProbeAtom* pointers only valid for the 2D session
+	// that built them.
+	std::map<void *, OpSet<void *>> _reach;
+
 	ProbeAtom *_manual{};
 
 	Network &_network;

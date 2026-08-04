@@ -27,16 +27,96 @@
 #include <vagabond/core/protonic/CertainStates.h>
 #include <vagabond/gui/elements/list/LineGroup.h>
 #include <vagabond/gui/elements/AskYesNo.h>
+#include <vagabond/gui/elements/AskForText.h>
+#include <vagabond/gui/elements/BadChoice.h>
+#include <vagabond/gui/elements/ImageButton.h>
 #include <vagabond/gui/elements/TextButton.h>
 #include <vagabond/gui/MatrixPlot.h>
+#include <vagabond/gui/ClusterPlot.h>
 #include <vagabond/gui/CommunicationChoice.h>
 #include <vagabond/gui/CommunicationAnalysis.h>
 #include <vagabond/gui/elements/ScrollBox.h>
 #include <vagabond/gui/elements/Window.h>
 #include <vagabond/gui/VagWindow.h>
 #include <vagabond/core/Progressor.h>
+#include <vagabond/core/protonic/Probe.h>
+#include <vagabond/core/Atom.h>
+#include <set>
+#include <map>
+#include <cctype>
 
 using Eigen::seqN;
+
+namespace
+{
+	// re-maps every distinct value in dist so that, sorted ascending, no
+	// two consecutive distinct values are more than maxJump apart - only
+	// display-shaping, done here rather than inside ClusterPlot itself
+	// (which deliberately has no notion of what a distance matrix means,
+	// per its own header comment) or CertainStates::distanceMatrix()
+	// (whose raw label-difference counts other callers, e.g. correlate(),
+	// still need untouched).
+	//
+	// Label-difference counts can span a huge range once a subnetwork has
+	// many states (most pairs sharing almost nothing in common vs. a few
+	// near-identical pairs), and ClusterPlot's own target scaling
+	// (_displayScale, picked so the single widest pairwise distance maps
+	// to about half a screen unit) means a handful of extreme outlier
+	// pairs squash every other, closer pair down towards the same tiny
+	// on-screen separation - exactly the "hard to distinguish internal
+	// features" this compresses away. Shrinking any gap wider than
+	// maxJump down to exactly maxJump (by subtracting the same running
+	// excess from every value beyond it) leaves already-small gaps
+	// (<= maxJump) completely untouched and keeps the whole mapping
+	// strictly order-preserving - it just stops one or two very distant
+	// pairs from dominating the scale the rest get squeezed into.
+	Eigen::MatrixXf capDistanceJumps(const Eigen::MatrixXf &dist,
+	                                 float maxJump)
+	{
+		std::set<float> uniqueVals;
+		for (int i = 0; i < dist.rows(); i++)
+		{
+			for (int j = 0; j < dist.cols(); j++)
+			{
+				uniqueVals.insert(dist(i, j));
+			}
+		}
+
+		std::map<float, float> remap;
+		float prevOld = 0.f;
+		float prevNew = 0.f;
+		bool first = true;
+
+		for (float v : uniqueVals)
+		{
+			if (first)
+			{
+				remap[v] = v;
+				prevOld = v;
+				prevNew = v;
+				first = false;
+				continue;
+			}
+
+			float gap = v - prevOld;
+			float cappedGap = std::min(gap, maxJump);
+			prevNew += cappedGap;
+			remap[v] = prevNew;
+			prevOld = v;
+		}
+
+		Eigen::MatrixXf result(dist.rows(), dist.cols());
+		for (int i = 0; i < dist.rows(); i++)
+		{
+			for (int j = 0; j < dist.cols(); j++)
+			{
+				result(i, j) = remap[dist(i, j)];
+			}
+		}
+
+		return result;
+	}
+}
 
 ViewCorrelations::ViewCorrelations(Scene *prev, Clique *clique)
 : Scene(prev), _clique(clique)
@@ -115,11 +195,245 @@ void ViewCorrelations::makeList()
 
 	ScrollBox *sb = new ScrollBox();
 	sb->setContent(lg);
+	lg->setScrollBox(sb);
 	sb->setBounds(glm::vec4(0.15, 0.0, 0.9, 0.28));
 	addObject(sb);
 
 	lg->refreshGroups();
 	sb->addSliderIfNeeded();
+
+	makeSearchButton(lg);
+}
+
+void ViewCorrelations::makeSearchButton(LineGroup *lg)
+{
+	// everything this search needs to remember between separate clicks
+	// (the current query text, and the label/cross widgets while a search
+	// is active) lives in this closure rather than as ViewCorrelations
+	// members - nothing outside this wiring ever needs to reach it.
+	struct SearchState
+	{
+		std::string text;
+		Text *label = nullptr;
+		ImageButton *cancel = nullptr;
+	};
+	auto state = std::make_shared<SearchState>();
+
+	// declared before it's assigned so the body below - which needs to
+	// hand a way of re-invoking itself (with "") to the cross button it
+	// creates - can capture it by value.
+	auto apply = std::make_shared<std::function<void(std::string)>>();
+
+	*apply = [this, lg, state, apply](std::string text)
+	{
+		std::vector<ResidueRangeToken> tokens;
+
+		if (text.size())
+		{
+			std::string error;
+			if (!parseResidueRanges(text, tokens, error))
+			{
+				BadChoice *bc = new BadChoice(this, error);
+				setModal(bc);
+				return;
+			}
+		}
+
+		state->text = text;
+
+		tokens = resolveChains(tokens);
+		filterSubdivisions(*_clique, tokens);
+		lg->refreshGroups();
+
+		if (state->text.empty())
+		{
+			if (state->label)
+			{
+				removeObject(state->label);
+				delete state->label;
+				state->label = nullptr;
+			}
+
+			if (state->cancel)
+			{
+				removeObject(state->cancel);
+				delete state->cancel;
+				state->cancel = nullptr;
+			}
+		}
+		else
+		{
+			if (!state->label)
+			{
+				state->label = new Text(state->text);
+				state->label->resize(0.6);
+				state->label->setRight(0.90, 0.06);
+				addObject(state->label);
+			}
+			else
+			{
+				state->label->setText(state->text);
+			}
+
+			if (!state->cancel)
+			{
+				state->cancel = new ImageButton("assets/images/cross.png",
+				                                this);
+				state->cancel->resize(0.06);
+				state->cancel->setRight(0.93, 0.06);
+				state->cancel->setReturnJob([apply]() { (*apply)(""); });
+				addObject(state->cancel);
+			}
+		}
+
+		viewChanged();
+	};
+
+	ImageButton *b = new ImageButton("assets/images/search.png", this);
+	b->resize(0.1);
+	b->setRight(0.97, 0.06);
+	b->setReturnJob([this, state, apply]()
+	{
+		AskForText *aft = new AskForText(this, "Search for residue(s):",
+		                                 "", this);
+		aft->allowCapitals(true);
+		aft->setHelpText("Hide sub-networks not containing a residue:\n\n"\
+		                 "e.g. 115, A115, B145, 109-111\n"\
+		                 "Comma-separated residues - a dash indicates a "\
+		                 "range,\nand a chain letter applies until you "\
+		                 "give a new one.\nNo chain letter defaults to "\
+		                 "the first chain.\n\n"\
+		                 "Leave blank and confirm to clear the search.");
+		aft->setDefaultText(state->text);
+		aft->setReturnJob([apply](std::string text) { (*apply)(text); });
+		setModal(aft);
+	});
+	addObject(b);
+}
+
+std::vector<ResidueRangeToken> ViewCorrelations::resolveChains(
+const std::vector<ResidueRangeToken> &tokens)
+{
+	// std::map keeps chain names in sorted (alphabetical) order, which is
+	// relied on below for "first chain that actually has this residue".
+	std::map<std::string, std::set<int>> residuesByChain;
+
+	for (Probe *const &probe : _clique->probes())
+	{
+		if (probe->is_atom() && probe->atom())
+		{
+			Atom *atom = probe->atom();
+			residuesByChain[atom->chain()].insert(atom->residueNumber());
+		}
+	}
+
+	auto sameIgnoreCase = [](const std::string &a, const std::string &b)
+	{
+		if (a.size() != b.size())
+		{
+			return false;
+		}
+
+		for (size_t i = 0; i < a.size(); i++)
+		{
+			if (std::tolower((unsigned char)a[i]) !=
+			    std::tolower((unsigned char)b[i]))
+			{
+				return false;
+			}
+		}
+
+		return true;
+	};
+
+	// first chain (alphabetically) with an atom whose residue number
+	// falls in [begin, end] - not just the first chain outright, which
+	// may never reach that residue at all (e.g. a water chain). "" (never
+	// equal to a real chain) if no chain has it.
+	auto firstChainWithResidue = [&residuesByChain](int begin, int end)
+	{
+		for (const auto &entry : residuesByChain)
+		{
+			for (int res = begin; res <= end; res++)
+			{
+				if (entry.second.count(res))
+				{
+					return entry.first;
+				}
+			}
+		}
+
+		return std::string();
+	};
+
+	std::vector<ResidueRangeToken> resolved = tokens;
+
+	for (ResidueRangeToken &token : resolved)
+	{
+		if (token.chain.empty())
+		{
+			token.chain = firstChainWithResidue(token.begin, token.end);
+			continue;
+		}
+
+		if (residuesByChain.count(token.chain))
+		{
+			continue;
+		}
+
+		// user-proofing: e.g. typed "a115" but the structure only has
+		// chain "A" - correct to the chain that actually exists rather
+		// than silently matching nothing.
+		for (const auto &entry : residuesByChain)
+		{
+			if (sameIgnoreCase(entry.first, token.chain))
+			{
+				token.chain = entry.first;
+				break;
+			}
+		}
+	}
+
+	return resolved;
+}
+
+bool ViewCorrelations::cliqueMatchesTokens(Clique &clique,
+                                           const std::vector<ResidueRangeToken>
+                                           &tokens)
+{
+	for (Probe *const &probe : clique.probes())
+	{
+		if (!probe->is_atom() || !probe->atom())
+		{
+			continue;
+		}
+
+		const std::string &probeChain = probe->atom()->chain();
+		int resNum = probe->atom()->residueNumber();
+
+		for (const ResidueRangeToken &token : tokens)
+		{
+			if (probeChain == token.chain && resNum >= token.begin
+			    && resNum <= token.end)
+			{
+				return true;
+			}
+		}
+	}
+
+	return false;
+}
+
+void ViewCorrelations::filterSubdivisions(Clique &clique,
+                                          const std::vector<ResidueRangeToken>
+                                          &tokens)
+{
+	for (Clique &sub : clique.subdivisions())
+	{
+		bool visible = tokens.empty() || cliqueMatchesTokens(sub, tokens);
+		sub.setHidden(!visible);
+		filterSubdivisions(sub, tokens);
+	}
 }
 
 void ViewCorrelations::viewAll()
@@ -129,6 +443,30 @@ void ViewCorrelations::viewAll()
 		return;
 	}
 	_assembling = true;
+
+	// wipes whatever the user was looking at before (e.g. a subnetwork's
+	// own view, or a previous "All" screen) and shows the toggle right
+	// away, rather than only once assembly finishes - stage 1 below is
+	// already safely cancellable (see makeTopLevelViewToggle()'s own
+	// comment on why stage 2 is handled differently).
+	deleteTemps();
+	_correlationMatrixButton = nullptr;
+	_subnetworkClusteringButton = nullptr;
+	_matrixComplete = false;
+
+	// this (and finishAssembly(), further down) is what displays the
+	// correlation matrix grid - but this is also the parent clique's own
+	// list-entry click handler (see makeList()), reachable again later
+	// even after the user had switched to Subnetwork clustering
+	// (_topLevelView left stale at that value otherwise). Without this,
+	// makeTopLevelViewToggle()'s active/inert computation (keyed off
+	// _topLevelView) kept marking "Subnetwork clustering" as the current
+	// (inert, unclickable) view even once this finished and the screen
+	// was actually showing the correlation matrix - i.e. the toggle
+	// looked stuck on "Subnetwork clustering" and refused to switch back
+	// to it, despite that view no longer being shown at all.
+	_topLevelView = TopLevelView::CorrelationMatrix;
+	makeTopLevelViewToggle();
 
 	{
 		OpSet<Probe *> covered;
@@ -231,22 +569,8 @@ void ViewCorrelations::viewAll()
 	new DoJob(assemble);
 }
 
-void ViewCorrelations::finishAssembly()
+MatrixPlot *ViewCorrelations::buildCorrelationMatrixUI()
 {
-	// wipes whatever the user was looking at while the "Assembling
-	// correlations" bar was running (e.g. a subnetwork opened via
-	// viewSubnetwork() while waiting) - placed first, before this
-	// function builds any of its own temp objects below, so it can
-	// never end up wiping mp/comm instead.
-	deleteTemps();
-
-	// bridges the gap between the "Assembling correlations" bar finishing
-	// and FloydWarshall's own "Deriving intermediate correlations" bar
-	// appearing (requested from its own background thread, so not
-	// instant) - without this, that gap has no visual feedback at all.
-	setInformation("Matrix assembled - preparing to derive correlations");
-
-	_matrix = _result;
 	MatrixPlot *mp = new MatrixPlot(_matrix, _mutex);
 
 	auto lookup = _correlative->matrixLookup();
@@ -264,19 +588,19 @@ void ViewCorrelations::finishAssembly()
 	(Renderable::Alignment::Left | Renderable::Alignment::Top);
 	mp->setArbitrary(0.4, 0.25, align);
 	addTempObject(mp);
-	
+
 	auto choose_groups = [this]()
 	{
 		CommunicationChoice *cc = new CommunicationChoice(this, _clique);
 		cc->show();
 	};
-	
+
 	auto comm_analysis = [this, choose_groups]()
 	{
 		int num = _clique->allCommsNames().size();
 		if (num <= 1)
 		{
-			AskYesNo *ayn = 
+			AskYesNo *ayn =
 			new AskYesNo(this, "Need to define at least two communication "\
 			             "groups before analysis. Choose them now?", "", this);
 
@@ -285,18 +609,40 @@ void ViewCorrelations::finishAssembly()
 		}
 		else
 		{
-			CommunicationAnalysis *ca = 
-			new CommunicationAnalysis(this, _clique, _result, 
+			CommunicationAnalysis *ca =
+			new CommunicationAnalysis(this, _clique, _result,
 			                          _correlative->insertions());
 			ca->show();
 		}
 	};
-	
+
+	TextButton *comm = new TextButton("Communication analysis", this);
+	comm->setCentre(0.55, 0.9);
+	comm->setReturnJob(comm_analysis);
+	addTempObject(comm);
+
+	return mp;
+}
+
+void ViewCorrelations::finishAssembly()
+{
+	// bridges the gap between the "Assembling correlations" bar finishing
+	// and FloydWarshall's own "Deriving intermediate correlations" bar
+	// appearing (requested from its own background thread, so not
+	// instant) - without this, that gap has no visual feedback at all.
+	setInformation("Matrix assembled - preparing to derive correlations");
+
+	_matrix = _result;
+	MatrixPlot *mp = buildCorrelationMatrixUI();
+
 	// not cancellable - the comparison matrix isn't usable until this
 	// finishes, so there is nothing sensible to fall back to if aborted.
+	// makeTopLevelViewToggle() disables "Subnetwork clustering" for
+	// exactly this window (see its own comment) so the user can't switch
+	// away while fw's background thread still holds a raw pointer to mp.
 	struct GapFillProgress : public Progressor {};
 
-	auto fill_gaps = [this, mp, comm_analysis]()
+	auto fill_gaps = [this, mp]()
 	{
 		auto combine = [](float x, float y)
 		{
@@ -321,27 +667,471 @@ void ViewCorrelations::finishAssembly()
 
 		setInformation("Finished deriving intermediates");
 
-		addMainThreadJob([this, comm_analysis]()
+		addMainThreadJob([this]()
 		{
-			TextButton *comm = new TextButton("Communication analysis", this);
-			comm->setCentre(0.55, 0.9);
-			comm->setReturnJob(comm_analysis);
+			// lets showTopLevelView() reuse this run's _matrix/_correlative
+			// instantly instead of re-running the whole assembly if the
+			// user switches to subnetwork clustering and back - also
+			// re-enables the "Subnetwork clustering" button, disabled
+			// until now (see makeTopLevelViewToggle()).
+			_matrixComplete = true;
+			makeTopLevelViewToggle();
 
-			addTempObject(comm);
 			viewChanged();
 		});
 	};
 
 	new DoJob(fill_gaps);
-
 }
 
 void ViewCorrelations::viewSubnetwork(Clique &clique)
 {
+	// unlike the top-level toggle buttons (see makeTopLevelViewToggle()),
+	// the subnetwork list itself (makeList()) is a persistent object,
+	// never gated on _assembling/_matrixComplete - reachable at any time,
+	// including mid-assembly. Without cancelling here too, an in-flight
+	// stage 1 run (viewAll()'s "assemble" DoJob) would keep computing in
+	// the background and still land later via finishAssembly(), adding
+	// its own MatrixPlot/button on top of whatever this subnetwork's own
+	// view is showing by then - same mechanism the toggle buttons and
+	// back button already use; a no-op if nothing is currently running.
+	if (_cancelled)
+	{
+		_cancelled->store(true);
+	}
+	VagWindow::window()->requestProgressBarRemoval();
+
+	// stage 2 (FloydWarshall gap-filling, "fill_gaps" in finishAssembly())
+	// has no cancellation support at all, and its background thread holds
+	// a raw pointer to the MatrixPlot finishAssembly() already added,
+	// calling update() on it for as long as it runs - deleteTemps()-ing
+	// that same MatrixPlot below would race that still-live thread. The
+	// toggle buttons already refuse to switch away for exactly this
+	// window (see their own stage2Running comment); do the same here
+	// rather than let this list bypass it.
+	bool stage2Running = (!_assembling && !_matrixComplete);
+	if (stage2Running)
+	{
+		return;
+	}
+
+	_viewedSubnetwork = &clique;
+
 	setInformation(clique.name());
 	deleteTemps();
 	_subnetworkMats.clear();
 
+	// defensive: if a background FloydWarshall pass (see finishAssembly())
+	// is still running when the user navigates here, its completion will
+	// still fire makeTopLevelViewToggle() later regardless of what's on
+	// screen by then - without this, it would try to double-delete the
+	// buttons deleteTemps() just queued above.
+	_correlationMatrixButton = nullptr;
+	_subnetworkClusteringButton = nullptr;
+
+	makeSubnetworkViewToggle();
+	showSubnetworkView(clique);
+}
+
+void ViewCorrelations::makeSubnetworkViewToggle()
+{
+	auto make_button = [this](const std::string &label,
+	                          SubnetworkView mode, float x)
+	{
+		TextButton *tb = new TextButton(label, this);
+		tb->resize(0.45);
+		tb->setCentre(x, 0.205);
+
+		bool active = (_subnetworkView == mode);
+		tb->setInert(active, true);
+
+		tb->setReturnJob([this, mode]()
+		{
+			if (_subnetworkView == mode || !_viewedSubnetwork)
+			{
+				return;
+			}
+
+			_subnetworkView = mode;
+			viewSubnetwork(*_viewedSubnetwork);
+		});
+
+		addTempObject(tb);
+	};
+
+	make_button("Correlation matrix", SubnetworkView::CorrelationMatrix,
+	           0.38);
+	make_button("State clustering", SubnetworkView::StateClustering, 0.58);
+}
+
+void ViewCorrelations::showSubnetworkView(Clique &clique)
+{
+	switch (_subnetworkView)
+	{
+		case SubnetworkView::CorrelationMatrix:
+		showCorrelationMatrix(clique);
+		break;
+
+		case SubnetworkView::StateClustering:
+		showStateClustering(clique);
+		break;
+	}
+}
+
+void ViewCorrelations::showStateClustering(Clique &clique)
+{
+	if (!clique.states())
+	{
+		return;
+	}
+
+	Eigen::MatrixXf dist = clique.states()->distanceMatrix().cast<float>();
+	dist = capDistanceJumps(dist, 5.f);
+
+	float ave = 0;
+	std::vector<float> probs = clique.states()->probsForLocalAve(ave);
+
+	int n = (int)clique.states()->state_count();
+
+	// default (unset) colour - box.fsh ADDS vertex colour to the texture
+	// sample (result = texture(...) + vColor), and every vertex's colour
+	// defaults to (0,0,0,0) (Vertex::color is zero-initialised) until
+	// something calls setColour() - so (0,0,0) here is a true no-op,
+	// leaving dot.png's own raw colour exactly as it renders everywhere
+	// else. (1,1,1) was wrong: adding white brightens every channel
+	// towards saturation regardless of the texture's actual colour.
+	std::vector<glm::vec3> colours(n, glm::vec3(0.f));
+
+	// only ever overwritten for a subnetwork whose own CertainStates
+	// actually tracks the watched signal (_clique->watchedSignal(), set
+	// via CommunicationChoice - _clique is the top-level clique this
+	// whole screen was opened on, not this subnetwork), and even then
+	// only for states that assign it a value at all - states().value()
+	// returning -1 (this state's own local search never reached that
+	// probe) leaves that state's colour at the default above, same
+	// skip-logic CertainStates::distance() already uses.
+	std::string watched = _clique->watchedSignal();
+	if (watched.length())
+	{
+		const CertainStates &states = *clique.states();
+
+		for (const ProbeTypePair &ptp : states.ptps())
+		{
+			if (!ptp.first || ptp.first->desc() != watched)
+			{
+				continue;
+			}
+
+			int row = states(ptp);
+			if (row < 0)
+			{
+				break;
+			}
+
+			const glm::vec3 purple(0.4f, 0.f, 0.4f);
+			const glm::vec3 orange(0.8f, 0.4f, 0.f);
+			const glm::vec3 blue(0.2f, 0.2f, 0.8f);
+
+			for (int i = 0; i < n; i++)
+			{
+				int raw = states.value(i, row);
+				if (raw < 0)
+				{
+					continue;
+				}
+
+				// raw is a bit-flag (Absent = 1<<0, Weak/Present = 1<<1,
+				// Strong/Donor = 1<<2 - see hnet::Existence::Values/
+				// hnet::Bond::Values) rather than already a plain 0/1/2
+				// label - same decode CertainStates::correlate() uses
+				// (its get_index lambda).
+				int label = -1;
+				for (int bit = 0; bit <= 2; bit++)
+				{
+					if (raw & (1 << bit))
+					{
+						label = bit;
+						break;
+					}
+				}
+
+				if (ptp.second == hnet::Types::ExistenceType)
+				{
+					if (label == 0) colours[i] = purple; // Absent
+					else if (label == 1) colours[i] = orange; // Present
+				}
+				else if (ptp.second == hnet::Types::BondType)
+				{
+					if (label == 0) colours[i] = purple; // Absent
+					else if (label == 1) colours[i] = orange; // Acceptor
+					else if (label == 2) colours[i] = blue; // Donor
+				}
+			}
+
+			break;
+		}
+	}
+
+	ClusterPlot *cp = new ClusterPlot(dist, probs, getModel(), {}, colours);
+	placeClusterPlot(cp);
+}
+
+void ViewCorrelations::placeClusterPlot(ClusterPlot *cp)
+{
+	// NOT setCentre()/setArbitrary(): its recursive addAlign()->realign()
+	// cascade calls setPosition() directly on every child too, using each
+	// child's own (uninitialized, default 0/0) _x/_y fraction fields -
+	// harmless for children that manage layout via those fields (e.g.
+	// ItemLine), but ClusterPlot's dots are positioned purely by
+	// PositionShifter via raw setPosition() calls of their own, so every
+	// single one was getting forced to the exact same computed screen
+	// position, destroying the physics-driven layout entirely.
+	// setPosition() alone computes one shared delta from the group's
+	// current centroid and applies it via addToVertices() - a genuine
+	// rigid group translation that preserves relative spread.
+	glm::vec3 target(2.f * 0.5f - 1.f + 0.15f, -(2.f * 0.6f - 1.f), 0.f);
+	cp->setPosition(target);
+
+	addTempObject(cp);
+	cp->start();
+}
+
+void ViewCorrelations::makeTopLevelViewToggle()
+{
+	// stage 1 (the correlation assembly itself, DoJob "assemble" in
+	// viewAll() - typically the slower of the two) is already safely
+	// cancellable via the same _cancelled flag the back button uses, so
+	// switching away from it is fine. Stage 2 (FloydWarshall gap-filling
+	// in finishAssembly()'s "fill_gaps") has no cancellation support at
+	// all, and its background thread holds a raw MatrixPlot* it keeps
+	// calling update() on for as long as it runs - switching away and
+	// deleteTemps()-ing that same MatrixPlot while stage 2 is still
+	// running would race exactly the class of bug fixed for
+	// StateClusterPlot/ThickLine earlier (a background thread touching a
+	// Renderable the main thread is concurrently freeing). So: disabled
+	// only in the one specific window where stage 1 has hand off to
+	// finishAssembly() (_assembling false) but stage 2 hasn't fully
+	// finished yet (_matrixComplete false).
+	// see this method's own comment (header) - cleans up whichever pair
+	// it previously built itself, if a caller hasn't already wiped them
+	// via deleteTemps() (and nulled these two members) since. Without
+	// this, calling this a second time (e.g. from fill_gaps's completion,
+	// purely to refresh "Subnetwork clustering"'s enabled state, with no
+	// deleteTemps() in between since that would also wipe the matrix
+	// plot/comm button) duplicated both buttons instead of replacing them.
+	if (_correlationMatrixButton)
+	{
+		removeObject(_correlationMatrixButton);
+		delete _correlationMatrixButton;
+		_correlationMatrixButton = nullptr;
+	}
+
+	if (_subnetworkClusteringButton)
+	{
+		removeObject(_subnetworkClusteringButton);
+		delete _subnetworkClusteringButton;
+		_subnetworkClusteringButton = nullptr;
+	}
+
+	// stage 1 (the correlation assembly itself, DoJob "assemble" in
+	// viewAll() - typically the slower of the two) is already safely
+	// cancellable via the same _cancelled flag the back button uses, so
+	// switching away from it is fine. Stage 2 (FloydWarshall gap-filling
+	// in finishAssembly()'s "fill_gaps") has no cancellation support at
+	// all, and its background thread holds a raw MatrixPlot* it keeps
+	// calling update() on for as long as it runs - switching away and
+	// deleteTemps()-ing that same MatrixPlot while stage 2 is still
+	// running would race exactly the class of bug fixed for
+	// StateClusterPlot/ThickLine earlier (a background thread touching a
+	// Renderable the main thread is concurrently freeing). So: disabled
+	// only in the one specific window where stage 1 has hand off to
+	// finishAssembly() (_assembling false) but stage 2 hasn't fully
+	// finished yet (_matrixComplete false).
+	bool stage2Running = (!_assembling && !_matrixComplete);
+
+	auto make_button = [this, stage2Running](const std::string &label,
+	                          TopLevelView mode, float x) -> TextButton *
+	{
+		TextButton *tb = new TextButton(label, this);
+		tb->resize(0.45);
+		tb->setCentre(x, 0.205);
+
+		bool active = (_topLevelView == mode);
+		bool blocked = (!active && mode == TopLevelView::SubnetworkClustering
+		               && stage2Running);
+		tb->setInert(active || blocked, true);
+
+		if (!blocked)
+		{
+			tb->setReturnJob([this, mode]()
+			{
+				if (_topLevelView == mode)
+				{
+					return;
+				}
+
+				// same mechanism the back button uses (see setup()) - a
+				// no-op if nothing is currently assembling.
+				if (_cancelled)
+				{
+					_cancelled->store(true);
+				}
+				VagWindow::window()->requestProgressBarRemoval();
+
+				_topLevelView = mode;
+				showTopLevelView();
+			});
+		}
+
+		addTempObject(tb);
+		return tb;
+	};
+
+	_correlationMatrixButton = make_button("Correlation matrix",
+	                                       TopLevelView::CorrelationMatrix,
+	                                       0.38);
+	_subnetworkClusteringButton = make_button("Subnetwork clustering",
+	                                          TopLevelView::SubnetworkClustering,
+	                                          0.58);
+}
+
+void ViewCorrelations::showTopLevelView()
+{
+	deleteTemps();
+	_correlationMatrixButton = nullptr;
+	_subnetworkClusteringButton = nullptr;
+	makeTopLevelViewToggle();
+
+	if (_topLevelView == TopLevelView::CorrelationMatrix)
+	{
+		if (_matrixComplete)
+		{
+			// already fully assembled and gap-filled by a previous run -
+			// just rebuild the display from it rather than re-running the
+			// whole (potentially slow) assembly again.
+			buildCorrelationMatrixUI();
+		}
+		else
+		{
+			viewAll();
+		}
+	}
+	else
+	{
+		showSubnetworkClustering();
+	}
+}
+
+void ViewCorrelations::showSubnetworkClustering()
+{
+	std::vector<Clique *> subs;
+	for (Clique &sub : _clique->subdivisions())
+	{
+		if (sub.states())
+		{
+			subs.push_back(&sub);
+		}
+	}
+
+	int n = (int)subs.size();
+	Eigen::MatrixXi overlap = Eigen::MatrixXi::Zero(n, n);
+	int maxOverlap = 0;
+
+	// distance derived from shared nodes between two subnetworks' own
+	// CertainStates::ptps() - not just each subnetwork's own core probes,
+	// since ptps() already includes whatever peripheral nodes that
+	// subnetwork's own analysis pulled in, which is what actually makes
+	// this an accurate correlation between subnetworks rather than just
+	// their nominal membership.
+	for (int i = 0; i < n; i++)
+	{
+		for (int j = i + 1; j < n; j++)
+		{
+			OpSet<ProbeTypePair> common = subs[i]->states()->ptps()
+			.common_to_both(subs[j]->states()->ptps());
+
+			int shared = (int)common.size();
+			overlap(i, j) = shared;
+			overlap(j, i) = shared;
+
+			if (shared > maxOverlap)
+			{
+				maxOverlap = shared;
+			}
+		}
+	}
+
+	// exp(-overlap^2 / scale): 0 shared nodes -> distance 1 (the maximum,
+	// same as any other unrelated pair); overlap rising towards
+	// maxOverlap pulls distance down towards exp(-1) =~ 0.37, a smooth,
+	// continuous falloff rather than the previous linear
+	// "maxOverlap - overlap", which put every pair on an evenly-spaced
+	// integer ladder regardless of how the actual overlap counts were
+	// distributed (e.g. all-or-nothing when most pairs shared ~0 nodes).
+	// scale = maxOverlap^2 is a self-normalising bandwidth: it's tied to
+	// this clique's own most-correlated pair rather than a fixed
+	// constant, so the curve is meaningful whether overlaps typically run
+	// to single digits or the hundreds.
+	float scale = (float)maxOverlap * (float)maxOverlap;
+	if (scale < 1.f)
+	{
+		scale = 1.f;
+	}
+
+	Eigen::MatrixXf dist = Eigen::MatrixXf::Zero(n, n);
+	for (int i = 0; i < n; i++)
+	{
+		for (int j = 0; j < n; j++)
+		{
+			if (i == j)
+			{
+				continue;
+			}
+
+			float o = (float)overlap(i, j);
+			dist(i, j) = expf(-(o * o) / scale);
+		}
+	}
+
+	// sized by how many nodes each subnetwork's own CertainStates spans -
+	// no obvious energy analogue at this level (unlike
+	// showStateClustering()'s per-state Boltzmann weight); a subnetwork
+	// touching more of the structure is the closest stand-in for
+	// "prominent" here.
+	std::vector<float> sizeWeights(n);
+	for (int i = 0; i < n; i++)
+	{
+		sizeWeights[i] = (float)subs[i]->states()->ptps().size();
+	}
+
+	// flags every subnetwork whose ptps() (own core probes plus whatever
+	// peripheral nodes its analysis pulled in - same set used for the
+	// overlap distance above) includes the signal currently watched via
+	// CommunicationChoice, so ClusterPlot can draw it as a star instead of
+	// a plain dot.
+	std::string watched = _clique->watchedSignal();
+	std::vector<bool> starred(n, false);
+	if (watched.length())
+	{
+		for (int i = 0; i < n; i++)
+		{
+			for (const ProbeTypePair &ptp : subs[i]->states()->ptps())
+			{
+				if (ptp.first && ptp.first->desc() == watched)
+				{
+					starred[i] = true;
+					break;
+				}
+			}
+		}
+	}
+
+	ClusterPlot *cp = new ClusterPlot(dist, sizeWeights, getModel(), starred);
+	placeClusterPlot(cp);
+}
+
+void ViewCorrelations::showCorrelationMatrix(Clique &clique)
+{
 	if (!clique.states()) return;
 	const CertainStates &states = *clique.states();
 

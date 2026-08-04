@@ -58,8 +58,22 @@ public:
 	
 	int value(int r, int p) const; // indices for state, probe
 	float score(int r) const; // indices for state
-	
+
 	float average_score() const;
+
+	// similarity score for state clustering: the number of nodes where
+	// stateA and stateB disagree, restricted to nodes both states
+	// actually recorded a value for (skips -1/"not recorded" on either
+	// side, as correlate() does). E.g. states 1-2-1-1-4 and 1-1-2-2-4
+	// (all five nodes recorded on both sides) differ at three of them, so
+	// distance() is 3.
+	int distance(int stateA, int stateB) const;
+
+	// full state_count() x state_count() pairwise distance() matrix, e.g.
+	// for feeding a state-clustering layout its spring targets directly
+	// (see PositionShifter::setTargetFn()) rather than computing distance()
+	// pair-by-pair as needed.
+	Eigen::MatrixXi distanceMatrix() const;
 
 	// score(i) is a live callback (see GetScore in ProbeResult.h) that can
 	// change value if the enabled energy terms change between calls -

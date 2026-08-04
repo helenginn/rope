@@ -280,9 +280,28 @@ void Subdivide::subdivide(int samples)
 		}
 	}
 
+	auto is_subset_of_another = [&chunks](const OpSet<Probe *> &chunk)
+	{
+		for (const OpSet<Probe *> &other : chunks)
+		{
+			if (&other == &chunk || other.size() <= chunk.size())
+			{
+				continue;
+			}
+
+			if (std::includes(other.begin(), other.end(),
+			                  chunk.begin(), chunk.end()))
+			{
+				return true;
+			}
+		}
+
+		return false;
+	};
+
 	for (const OpSet<Probe *> &chunk : chunks)
 	{
-		if (chunk.size() >= 2)
+		if (chunk.size() >= 2 && !is_subset_of_another(chunk))
 		{
 			cliques.insert(Clique(chunk));
 		}

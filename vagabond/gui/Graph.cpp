@@ -357,6 +357,7 @@ void Graph::clear()
 {
 	clearObjects();
 	_scatters.clear();
+	_missesSinceShown = 0;
 }
 
 void Graph::setup(float width, float height)
@@ -398,11 +399,34 @@ void Graph::setIndexResponder(IndexResponseView *irv)
 
 }
 
+void Graph::noteLabelShown()
+{
+	_missesSinceShown = 0;
+}
+
 void Graph::clearLabels()
 {
+	// IndexResponseView::checkIndexBuffer() picks per-pixel, straight off
+	// the point's own rendered (antialiased, discard-edged - see
+	// point.fsh) footprint, with no positional tolerance at all - so
+	// ordinary mouse jitter right at a point's visible edge oscillates
+	// between "over the point" (Scatter::interacted(), draws the label)
+	// and "over nothing" (this) on essentially every mouse-move poll,
+	// which without this debounce wiped and immediately redrew the label
+	// every single time, i.e. visible flicker. Only actually clearing
+	// once a few misses have happened in a row - reset the moment
+	// interacted() fires again via noteLabelShown() - absorbs that edge
+	// jitter (which never strings together this many consecutive misses
+	// without an intervening hit) while still clearing promptly once the
+	// mouse has genuinely moved away from every point.
+	_missesSinceShown++;
+	if (_missesSinceShown < 3)
+	{
+		return;
+	}
+
 	for (Scatter *sc : _scatters)
 	{
 		sc->deleteTemps();
 	}
-
 }

@@ -108,6 +108,47 @@ float CertainStates::average_score() const
 	return sum / (float)state_count();
 }
 
+int CertainStates::distance(int stateA, int stateB) const
+{
+	int changes = 0;
+
+	for (int row = 0; row < (int)probe_count(); row++)
+	{
+		int a = value(stateA, row);
+		int b = value(stateB, row);
+
+		if (a < 0 || b < 0)
+		{
+			continue;
+		}
+
+		if (a != b)
+		{
+			changes++;
+		}
+	}
+
+	return changes;
+}
+
+Eigen::MatrixXi CertainStates::distanceMatrix() const
+{
+	int n = (int)state_count();
+	Eigen::MatrixXi dist = Eigen::MatrixXi::Zero(n, n);
+
+	for (int i = 0; i < n; i++)
+	{
+		for (int j = i + 1; j < n; j++)
+		{
+			int d = distance(i, j);
+			dist(i, j) = d;
+			dist(j, i) = d;
+		}
+	}
+
+	return dist;
+}
+
 std::vector<float> CertainStates::probsForAve(float ave) const
 {
 	float rt = 2.57;

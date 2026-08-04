@@ -21,14 +21,20 @@
 
 #include <vagabond/gui/elements/Scene.h>
 #include <vagabond/core/Item.h>
+#include <vagabond/core/ResidueRange.h>
 #include <vagabond/utils/Eigen/Dense>
 #include <mutex>
 #include <atomic>
 #include <memory>
 #include <list>
+#include <vector>
 
 class Correlative;
 class Clique;
+class LineGroup;
+class ClusterPlot;
+class MatrixPlot;
+class TextButton;
 
 class ViewCorrelations : public Scene
 {
@@ -42,9 +48,140 @@ public:
 	void occupancies();
 	void viewAll();
 private:
+	// which of a subnetwork's views is currently showing - persists as
+	// the default for the next subnetwork clicked, not reset per-click.
+	enum class SubnetworkView
+	{
+		CorrelationMatrix,
+		StateClustering,
+	};
+
+	// builds the "Correlation matrix" / "State clustering" toggle directly
+	// underneath the subnetwork name set by setInformation() in
+	// viewSubnetwork() - the currently-active mode's button is shown
+	// inert (Button::setInert(true, true)) as the "you are here"
+	// indicator, matching the toggle idiom already used in
+	// DisplayOptions::refresh().
+	void makeSubnetworkViewToggle();
+
+	// dispatches to showCorrelationMatrix()/showStateClustering() per
+	// _subnetworkView.
+	void showSubnetworkView(Clique &clique);
+
+	// the pre-existing aligned-MatrixPlot-grid view (all of the old
+	// viewSubnetwork() body).
+	void showCorrelationMatrix(Clique &clique);
+
+	// clusters this subnetwork's own CertainStates by per-state distance
+	// (see CertainStates::distance()/distanceMatrix()), sized by each
+	// state's Boltzmann weight (probsForLocalAve()).
+	void showStateClustering(Clique &clique);
+
+	SubnetworkView _subnetworkView = SubnetworkView::CorrelationMatrix;
+
+	// non-owning - the subnetwork last opened via viewSubnetwork(), so the
+	// view-mode toggle buttons can redraw it when clicked without needing
+	// the clique passed back in from outside.
+	Clique *_viewedSubnetwork{};
+
+	// which of the top-level (whole-clique, viewAll()) views is currently
+	// showing - persists as the default for the next time this clique is
+	// (re-)viewed, mirroring _subnetworkView above.
+	enum class TopLevelView
+	{
+		CorrelationMatrix,
+		SubnetworkClustering,
+	};
+
+	// builds the "Correlation matrix" / "Subnetwork clustering" toggle for
+	// the top-level (viewAll()) screen - shown from the moment stage 1
+	// (assembly) starts, not gated behind full completion, since stage 1
+	// is safely cancellable (same _cancelled flag the back button uses).
+	// "Subnetwork clustering" is temporarily disabled only while stage 2
+	// (FloydWarshall gap-filling) is running, since that has no
+	// cancellation support - see the .cpp for why that specific window
+	// is unsafe to switch away from.
+	//
+	// Idempotent - safe to call again later purely to refresh which
+	// button looks active/enabled (e.g. once stage 2 finishes and
+	// "Subnetwork clustering" should re-enable), without an intervening
+	// deleteTemps(): cleans up whichever pair it previously built itself
+	// (_correlationMatrixButton/_subnetworkClusteringButton) first.
+	// Callers that deleteTemps() the whole screen first (viewAll(),
+	// showTopLevelView(), viewSubnetwork()) null those two members out
+	// themselves right after, since deleteTemps() only queues the
+	// underlying Renderables for deletion without telling this class -
+	// leaving them set would make this function try to double-delete
+	// buttons deleteTemps() already queued.
+	void makeTopLevelViewToggle();
+
+	// deleteTemps() + rebuild whichever top-level view is now active. If
+	// switching to CorrelationMatrix and a previous run already fully
+	// completed (_matrixComplete), reuses that cached _matrix/_correlative
+	// via buildCorrelationMatrixUI() instead of re-running the whole
+	// assembly.
+	void showTopLevelView();
+
+	// (re)builds the MatrixPlot + "Communication analysis" button from
+	// the current _matrix/_correlative/_result - shared by finishAssembly()
+	// (first run) and showTopLevelView()'s cached-reuse path (subsequent
+	// switches back from subnetwork clustering).
+	MatrixPlot *buildCorrelationMatrixUI();
+
+	// one node per subdivision of _clique with a CertainStates, distance
+	// derived from how many nodes (CertainStates::ptps(), not just each
+	// subnetwork's own core probes - ptps() already includes whatever
+	// peripheral nodes that subnetwork's own analysis pulled in, which is
+	// what makes this accurate) two subnetworks have in common: more
+	// shared nodes -> lower distance. Mirrors showStateClustering()'s
+	// use of ClusterPlot, one level up (subnetworks instead of states).
+	void showSubnetworkClustering();
+
+	// shared by showStateClustering() and showSubnetworkClustering():
+	// positions a freshly-built ClusterPlot at this view's standard
+	// content spot and starts its physics.
+	void placeClusterPlot(ClusterPlot *cp);
+
+	TopLevelView _topLevelView = TopLevelView::CorrelationMatrix;
+
+	// non-null only between a makeTopLevelViewToggle() call and whatever
+	// next wipes the screen (deleteTemps()) - see that method's own
+	// comment.
+	TextButton *_correlationMatrixButton = nullptr;
+	TextButton *_subnetworkClusteringButton = nullptr;
+
 	// second half of viewAll() - runs once the (cancellable) assembly of
 	// _result/_correlative below has completed on the main thread.
 	void finishAssembly();
+
+	// builds the search.png icon in the top-right corner and wires up the
+	// modal/cross-to-clear/refresh behaviour, all as closures local to this
+	// call (see the .cpp) - lg is captured rather than stashed in a member,
+	// since nothing outside this wiring ever needs to reach it again.
+	void makeSearchButton(LineGroup *lg);
+
+	// hides (Item::setHidden()) every subdivision of clique - and recurses
+	// into their own subdivisions, since the list is a full tree - whose
+	// probes don't touch any of tokens; un-hides the rest. Empty tokens
+	// means "show everything". Expects tokens to already have gone through
+	// resolveChains() - it does no chain defaulting/correction itself.
+	void filterSubdivisions(Clique &clique,
+	                        const std::vector<ResidueRangeToken> &tokens);
+
+	bool cliqueMatchesTokens(Clique &clique,
+	                         const std::vector<ResidueRangeToken> &tokens);
+
+	// fills in each token's chain against the chains actually present
+	// among _clique's probes: a token with no chain prefix (e.g. plain
+	// "115") gets the alphabetically-first chain that actually has a
+	// residue in that token's range - not just the alphabetically-first
+	// chain outright, which may be e.g. a water chain that never reaches
+	// residue 115 at all. A token whose chain doesn't exist but matches
+	// an existing one case-insensitively (e.g. user typed "a115",
+	// structure only has chain "A") gets corrected to that chain's actual
+	// casing, rather than silently matching nothing.
+	std::vector<ResidueRangeToken>
+	resolveChains(const std::vector<ResidueRangeToken> &tokens);
 
 	Clique *_clique{};
 	Correlative *_correlative{};
@@ -60,6 +197,15 @@ private:
 	// run, e.g. from clicking the top clique's list entry while the
 	// auto-triggered assembly from setup() is still in flight.
 	bool _assembling = false;
+
+	// true once finishAssembly()'s FloydWarshall pass has fully finished
+	// for the current _matrix/_correlative/_result - lets
+	// showTopLevelView() reuse them instantly instead of re-running the
+	// whole assembly, and also gates makeTopLevelViewToggle()'s
+	// "Subnetwork clustering" button (see its own comment). Reset false
+	// at the start of every fresh viewAll() run, since _result is about
+	// to be replaced and won't have been gap-filled yet.
+	bool _matrixComplete = false;
 
 	// makeList() borrows _clique's and its subdivisions' select jobs
 	// (shared Item state, not view-local) for the duration this view is
