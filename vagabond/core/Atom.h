@@ -151,7 +151,13 @@ public:
 	}
 	
 	const std::string desc() const;
-	
+
+	/** "A-Asn65" - chain, title-cased three-letter code, residue number -
+	 *  short enough to read cleanly as an axis/legend label, unlike the
+	 *  full desc() ("A-ASN65:CA,A" - includes the atom name and any
+	 *  symmetry note). */
+	const std::string shortResidueName() const;
+
 	/** @param num residue number within chain */
 	void setResidueId(ResidueId num)
 	{

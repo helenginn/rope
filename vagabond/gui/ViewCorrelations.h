@@ -22,6 +22,7 @@
 #include <vagabond/gui/elements/Scene.h>
 #include <vagabond/core/Item.h>
 #include <vagabond/core/ResidueRange.h>
+#include <vagabond/core/protonic/hnet.h>
 #include <vagabond/utils/Eigen/Dense>
 #include <mutex>
 #include <atomic>
@@ -30,9 +31,11 @@
 #include <vector>
 
 class Correlative;
+class Probe;
 class Clique;
 class LineGroup;
 class ClusterPlot;
+class HBondDiagram;
 class MatrixPlot;
 class TextButton;
 
@@ -54,18 +57,19 @@ private:
 	{
 		CorrelationMatrix,
 		StateClustering,
+		HydrogenBondDiagram,
 	};
 
-	// builds the "Correlation matrix" / "State clustering" toggle directly
-	// underneath the subnetwork name set by setInformation() in
-	// viewSubnetwork() - the currently-active mode's button is shown
-	// inert (Button::setInert(true, true)) as the "you are here"
-	// indicator, matching the toggle idiom already used in
-	// DisplayOptions::refresh().
+	// builds the "Correlation matrix" / "State clustering" /
+	// "Hydrogen-bonding diagram" toggle directly underneath the
+	// subnetwork name set by setInformation() in viewSubnetwork() - the
+	// currently-active mode's button is shown inert (Button::setInert
+	// (true, true)) as the "you are here" indicator, matching the toggle
+	// idiom already used in DisplayOptions::refresh().
 	void makeSubnetworkViewToggle();
 
-	// dispatches to showCorrelationMatrix()/showStateClustering() per
-	// _subnetworkView.
+	// dispatches to showCorrelationMatrix()/showStateClustering()/
+	// showHydrogenBondDiagram() per _subnetworkView.
 	void showSubnetworkView(Clique &clique);
 
 	// the pre-existing aligned-MatrixPlot-grid view (all of the old
@@ -76,6 +80,30 @@ private:
 	// (see CertainStates::distance()/distanceMatrix()), sized by each
 	// state's Boltzmann weight (probsForLocalAve()).
 	void showStateClustering(Clique &clique);
+
+	// colour-swatch + meaning legend down the side of the state
+	// clustering plot, for whichever colours showStateClustering() just
+	// used - only called when a watched signal was actually found and
+	// coloured (see its own call site). type picks the ExistenceType
+	// (Absent/Present) vs BondType (Absent/Acceptor/Donor) wording, and
+	// always includes the default (unassigned) colour/meaning too.
+	// labelSums (index 0 = Unassigned, 1..3 = label 0..2) is each
+	// option's total probability mass, shown as a percentage of
+	// totalProbSum (the sum over every state, so all entries add to
+	// 100%).
+	void makeStateClusteringLegend(Probe *probe, hnet::Types type,
+	                               const std::vector<float> &labelSums,
+	                               float totalProbSum);
+
+	// 2D chemical-diagram-style layout (see HBondDiagram) of every node
+	// this subnetwork's CertainStates touches (CertainStates::ptps() -
+	// atoms plus the non-covalent bonds between them; ptps() only ever
+	// holds non-covalent bonds/uncertain atoms in the first place, see
+	// ExhaustiveSearch, so this is naturally a hydrogen-bonding diagram
+	// without needing to filter out the covalent skeleton itself).
+	// Independent of any live ProtonNetworkView - see HBondDiagram's own
+	// header comment for why that is safe even over overlapping atoms.
+	void showHydrogenBondDiagram(Clique &clique);
 
 	SubnetworkView _subnetworkView = SubnetworkView::CorrelationMatrix;
 
@@ -206,6 +234,20 @@ private:
 	// at the start of every fresh viewAll() run, since _result is about
 	// to be replaced and won't have been gap-filled yet.
 	bool _matrixComplete = false;
+
+	// true only for the exact duration of finishAssembly()'s "fill_gaps"
+	// DoJob (FloydWarshall, which has no cancellation support and holds a
+	// raw MatrixPlot* it keeps calling update() on) - NOT simply derived
+	// from (!_assembling && !_matrixComplete), which is also true after a
+	// stage 1 run gets cancelled before ever reaching finishAssembly() (a
+	// perfectly safe state to navigate away from, no background thread
+	// involved at all) and would otherwise stay stuck indistinguishable
+	// from "stage 2 genuinely running" until the next full viewAll() -
+	// exactly the bug that made viewSubnetwork() silently refuse to
+	// navigate at all after switching to Subnetwork clustering mid-
+	// assembly. Both makeTopLevelViewToggle() and viewSubnetwork() gate
+	// on this directly instead.
+	bool _stage2Running = false;
 
 	// makeList() borrows _clique's and its subdivisions' select jobs
 	// (shared Item state, not view-local) for the duration this view is

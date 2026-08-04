@@ -1,5 +1,6 @@
 #include <sstream>
 #include <set>
+#include <cctype>
 #include "matrix_functions.h"
 #include "Atom.h"
 #include "BondLength.h"
@@ -456,6 +457,24 @@ const std::string Atom::desc() const
 	}
 
 	return str;
+}
+
+const std::string Atom::shortResidueName() const
+{
+	std::string str = code();
+	to_lower(str);
+	if (str.size())
+	{
+		str[0] = std::toupper((unsigned char)str[0]);
+	}
+
+	std::string name;
+	if (_chain.length())
+	{
+		name += _chain + "-";
+	}
+	name += str + i_to_str(residueNumber());
+	return name;
 }
 
 bool Atom::isMainChain(std::string atomName)

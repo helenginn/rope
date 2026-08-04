@@ -31,8 +31,11 @@
 #include <vagabond/gui/elements/BadChoice.h>
 #include <vagabond/gui/elements/ImageButton.h>
 #include <vagabond/gui/elements/TextButton.h>
+#include <vagabond/gui/elements/Text.h>
+#include <vagabond/gui/elements/Image.h>
 #include <vagabond/gui/MatrixPlot.h>
 #include <vagabond/gui/ClusterPlot.h>
+#include <vagabond/gui/HBondDiagram.h>
 #include <vagabond/gui/CommunicationChoice.h>
 #include <vagabond/gui/CommunicationAnalysis.h>
 #include <vagabond/gui/elements/ScrollBox.h>
@@ -44,6 +47,7 @@
 #include <set>
 #include <map>
 #include <cctype>
+#include <cmath>
 
 using Eigen::seqN;
 
@@ -453,6 +457,7 @@ void ViewCorrelations::viewAll()
 	_correlationMatrixButton = nullptr;
 	_subnetworkClusteringButton = nullptr;
 	_matrixComplete = false;
+	_stage2Running = false;
 
 	// this (and finishAssembly(), further down) is what displays the
 	// correlation matrix grid - but this is also the parent clique's own
@@ -637,9 +642,12 @@ void ViewCorrelations::finishAssembly()
 
 	// not cancellable - the comparison matrix isn't usable until this
 	// finishes, so there is nothing sensible to fall back to if aborted.
-	// makeTopLevelViewToggle() disables "Subnetwork clustering" for
-	// exactly this window (see its own comment) so the user can't switch
-	// away while fw's background thread still holds a raw pointer to mp.
+	// makeTopLevelViewToggle() and viewSubnetwork() both refuse to
+	// navigate away for exactly this window (see _stage2Running's own
+	// comment) so nothing deletes mp while fw's background thread still
+	// holds a raw pointer to it, calling update() on it.
+	_stage2Running = true;
+
 	struct GapFillProgress : public Progressor {};
 
 	auto fill_gaps = [this, mp]()
@@ -675,6 +683,7 @@ void ViewCorrelations::finishAssembly()
 			// re-enables the "Subnetwork clustering" button, disabled
 			// until now (see makeTopLevelViewToggle()).
 			_matrixComplete = true;
+			_stage2Running = false;
 			makeTopLevelViewToggle();
 
 			viewChanged();
@@ -707,10 +716,9 @@ void ViewCorrelations::viewSubnetwork(Clique &clique)
 	// calling update() on it for as long as it runs - deleteTemps()-ing
 	// that same MatrixPlot below would race that still-live thread. The
 	// toggle buttons already refuse to switch away for exactly this
-	// window (see their own stage2Running comment); do the same here
-	// rather than let this list bypass it.
-	bool stage2Running = (!_assembling && !_matrixComplete);
-	if (stage2Running)
+	// window (see _stage2Running's own comment); do the same here rather
+	// than let this list bypass it.
+	if (_stage2Running)
 	{
 		return;
 	}
@@ -739,7 +747,7 @@ void ViewCorrelations::makeSubnetworkViewToggle()
 	                          SubnetworkView mode, float x)
 	{
 		TextButton *tb = new TextButton(label, this);
-		tb->resize(0.45);
+		tb->resize(0.38);
 		tb->setCentre(x, 0.205);
 
 		bool active = (_subnetworkView == mode);
@@ -760,8 +768,10 @@ void ViewCorrelations::makeSubnetworkViewToggle()
 	};
 
 	make_button("Correlation matrix", SubnetworkView::CorrelationMatrix,
-	           0.38);
-	make_button("State clustering", SubnetworkView::StateClustering, 0.58);
+	           0.425);
+	make_button("Hydrogen-bonding diagram",
+	           SubnetworkView::HydrogenBondDiagram, 0.55);
+	make_button("State clustering", SubnetworkView::StateClustering, 0.69);
 }
 
 void ViewCorrelations::showSubnetworkView(Clique &clique)
@@ -774,6 +784,10 @@ void ViewCorrelations::showSubnetworkView(Clique &clique)
 
 		case SubnetworkView::StateClustering:
 		showStateClustering(clique);
+		break;
+
+		case SubnetworkView::HydrogenBondDiagram:
+		showHydrogenBondDiagram(clique);
 		break;
 	}
 }
@@ -811,6 +825,22 @@ void ViewCorrelations::showStateClustering(Clique &clique)
 	// probe) leaves that state's colour at the default above, same
 	// skip-logic CertainStates::distance() already uses.
 	std::string watched = _clique->watchedSignal();
+	bool foundWatched = false;
+	Probe *watchedProbe = nullptr;
+	hnet::Types watchedType = hnet::Types::Unassigned;
+
+	// index 0 = Unassigned, 1..3 = label 0..2 (Absent/Present-or-Acceptor/
+	// Donor) - probability mass (probs[i], the same per-state weight
+	// ClusterPlot sizes dots by) summed per legend entry, so
+	// makeStateClusteringLegend() can show what fraction of the total
+	// each option accounts for.
+	std::vector<float> labelSums(4, 0.f);
+	float totalProbSum = 0.f;
+	for (float p : probs)
+	{
+		totalProbSum += p;
+	}
+
 	if (watched.length())
 	{
 		const CertainStates &states = *clique.states();
@@ -828,6 +858,10 @@ void ViewCorrelations::showStateClustering(Clique &clique)
 				break;
 			}
 
+			foundWatched = true;
+			watchedProbe = ptp.first;
+			watchedType = ptp.second;
+
 			const glm::vec3 purple(0.4f, 0.f, 0.4f);
 			const glm::vec3 orange(0.8f, 0.4f, 0.f);
 			const glm::vec3 blue(0.2f, 0.2f, 0.8f);
@@ -837,6 +871,7 @@ void ViewCorrelations::showStateClustering(Clique &clique)
 				int raw = states.value(i, row);
 				if (raw < 0)
 				{
+					labelSums[0] += probs[i];
 					continue;
 				}
 
@@ -853,6 +888,11 @@ void ViewCorrelations::showStateClustering(Clique &clique)
 						label = bit;
 						break;
 					}
+				}
+
+				if (label >= 0)
+				{
+					labelSums[label + 1] += probs[i];
 				}
 
 				if (ptp.second == hnet::Types::ExistenceType)
@@ -874,6 +914,121 @@ void ViewCorrelations::showStateClustering(Clique &clique)
 
 	ClusterPlot *cp = new ClusterPlot(dist, probs, getModel(), {}, colours);
 	placeClusterPlot(cp);
+
+	if (foundWatched)
+	{
+		makeStateClusteringLegend(watchedProbe, watchedType, labelSums,
+		                         totalProbSum);
+	}
+}
+
+void ViewCorrelations::makeStateClusteringLegend(Probe *probe,
+                                                 hnet::Types type,
+                                                 const std::vector<float> &labelSums,
+                                                 float totalProbSum)
+{
+	struct LegendEntry
+	{
+		glm::vec3 colour;
+		std::string meaning;
+	};
+
+	// (0,0,0) first, matching showStateClustering()'s own default colour
+	// (a true no-op against box.fsh's additive blend, i.e. dot.png's own
+	// raw - dark - colour) - always shown, regardless of type, since any
+	// state can fail to assign the watched signal at all.
+	std::vector<LegendEntry> entries;
+	entries.push_back({glm::vec3(0.f), "Unassigned"});
+
+	if (type == hnet::Types::ExistenceType)
+	{
+		entries.push_back({glm::vec3(0.4f, 0.f, 0.4f), "Absent"});
+		entries.push_back({glm::vec3(0.8f, 0.4f, 0.f), "Present"});
+	}
+	else if (type == hnet::Types::BondType)
+	{
+		entries.push_back({glm::vec3(0.4f, 0.f, 0.4f), "Absent"});
+		entries.push_back({glm::vec3(0.8f, 0.4f, 0.f), "Acceptor"});
+		entries.push_back({glm::vec3(0.2f, 0.2f, 0.8f), "Donor"});
+	}
+
+	// "A-Asn65 altconf A" for an atom (existence) signal - short_desc
+	// format (Atom::shortResidueName()) plus which conformer this
+	// specific Probe's existence is being watched for, since several
+	// conformers of the same residue can each carry their own
+	// independent uncertain existence. Bond signals have no single atom
+	// to name this way - desc() is the closest stable identifier.
+	std::string name;
+	if (probe->is_atom() && probe->atom())
+	{
+		name = probe->atom()->shortResidueName() + " altconf " +
+		std::string(1, probe->_conf);
+	}
+	else
+	{
+		name = probe->desc();
+	}
+
+	float y = 0.32f;
+	Text *header = new Text(name);
+	header->resize(0.5);
+	header->setLeft(0.86, y);
+	addTempObject(header);
+	y += 0.045f;
+
+	for (size_t i = 0; i < entries.size(); i++)
+	{
+		const LegendEntry &entry = entries[i];
+
+		Image *swatch = new Image("assets/images/dot.png");
+		swatch->resize(0.018);
+		swatch->setLeft(0.86, y);
+		swatch->setColour(entry.colour.x, entry.colour.y, entry.colour.z);
+		addTempObject(swatch);
+
+		// entries[] is built in exactly the same order as labelSums
+		// (index 0 = Unassigned, 1..3 = label 0..2), so its own loop
+		// index doubles as the labelSums lookup.
+		std::string meaning = entry.meaning;
+		if (totalProbSum > 0.f)
+		{
+			int pct = (int)std::round(100.f * labelSums[i] / totalProbSum);
+			meaning += " (" + std::to_string(pct) + "%)";
+		}
+
+		Text *label = new Text(meaning);
+		label->resize(0.45);
+		label->setLeft(0.89, y);
+		addTempObject(label);
+
+		y += 0.04f;
+	}
+}
+
+void ViewCorrelations::showHydrogenBondDiagram(Clique &clique)
+{
+	if (!clique.states())
+	{
+		return;
+	}
+
+	// ptps() already only ever holds uncertain atoms plus non-covalent
+	// bonds (ExhaustiveSearch skips is_covalent() probes entirely before
+	// they ever reach CertainStates) - so this is naturally a hydrogen-
+	// bonding diagram, with no separate filtering needed here.
+	HBondDiagram *diagram = new HBondDiagram(clique.states()->ptps(),
+	                                         getModel());
+
+	// same spot/positioning idiom as placeClusterPlot() (NOT setCentre()/
+	// setArbitrary() - see that method's own comment on why) - HBondDiagram
+	// isn't a ClusterPlot, so this doesn't go through that shared helper,
+	// but uses the exact same target so all three subnetwork tabs land in
+	// the same place.
+	glm::vec3 target(2.f * 0.5f - 1.f + 0.2, -(2.f * 0.6f - 1.f), 0.f);
+	diagram->setPosition(target);
+
+	addTempObject(diagram);
+	diagram->start();
 }
 
 void ViewCorrelations::placeClusterPlot(ClusterPlot *cp)
@@ -944,10 +1099,9 @@ void ViewCorrelations::makeTopLevelViewToggle()
 	// running would race exactly the class of bug fixed for
 	// StateClusterPlot/ThickLine earlier (a background thread touching a
 	// Renderable the main thread is concurrently freeing). So: disabled
-	// only in the one specific window where stage 1 has hand off to
-	// finishAssembly() (_assembling false) but stage 2 hasn't fully
-	// finished yet (_matrixComplete false).
-	bool stage2Running = (!_assembling && !_matrixComplete);
+	// only while _stage2Running is true (see its own comment on why that
+	// is not simply derived from _assembling/_matrixComplete).
+	bool stage2Running = _stage2Running;
 
 	auto make_button = [this, stage2Running](const std::string &label,
 	                          TopLevelView mode, float x) -> TextButton *

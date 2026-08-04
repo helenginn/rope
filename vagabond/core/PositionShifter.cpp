@@ -185,7 +185,8 @@ glm::vec3 PositionShifter::gradient(size_t idx,
 		float weight = _weightFn ? _weightFn(left.reference, right.reference)
 		: 1.f;
 
-		if (weight != 0.f)
+		bool sprang = (weight != 0.f);
+		if (sprang)
 		{
 			float target = _targetFn
 			? _targetFn(left.reference, right.reference)
@@ -195,16 +196,20 @@ glm::vec3 PositionShifter::gradient(size_t idx,
 			dir += contribution_from(motion, actual, target) * weight;
 		}
 
-		// never weighted, unlike the spring term above - repulsion's job
-		// is purely to stop elements physically overlapping, regardless
-		// of how related they are. Weighting it down for distant/
-		// unrelated pairs would remove the only force keeping them apart
-		// once they happen to end up close on screen, letting them drift
-		// onto an identical coordinate with nothing to push them back
-		// apart - a self-reinforcing collapse, since two elements sharing
-		// a coordinate exactly zeroes that axis's contribution for every
+		// not weighted, unlike the spring term above - repulsion's job is
+		// purely to stop elements physically overlapping, regardless of
+		// how related they are. Weighting it down for distant/unrelated
+		// pairs would remove the only force keeping them apart once they
+		// happen to end up close on screen, letting them drift onto an
+		// identical coordinate with nothing to push them back apart - a
+		// self-reinforcing collapse, since two elements sharing a
+		// coordinate exactly zeroes that axis's contribution for every
 		// pair forever after (motion in that axis is then always 0).
-		if (actual < 2)
+		// Skipped entirely for a pair that just sprang, if the caller
+		// opted into that (see setExemptWeightedFromRepulsion()) - a
+		// spring already holding two elements at a precise target
+		// distance doesn't also need repulsion fighting it.
+		if (!(_exemptWeightedFromRepulsion && sprang) && actual < 2)
 		{
 			repelled++;
 			repulsion += contribution_from(motion, actual, 2.f);

@@ -70,6 +70,27 @@ public:
 		_weightFn = fn;
 	}
 
+	// if true, a pair that got a nonzero spring weight above is exempted
+	// from repulsion entirely for that pair - repulsion only ever applies
+	// between pairs weightFn calls unrelated (weight 0). Restores this
+	// class's pre-refactor behaviour (the old depth=2 relay: repulsion
+	// only ran over "remaining = all - done", the set NOT reached by the
+	// relay), needed by consumers with a strictly binary "related or not"
+	// weightFn (ProtonNetworkView, HBondDiagram - both 1.0/0.0 covalent-
+	// bond reach): without this, two covalently-bonded atoms - already
+	// held at a precise distance by their spring - also got a repulsion
+	// kick they never had before, which can drive `actual` towards
+	// gradient()'s NaN-guard floor and permanently poison momentum,
+	// observed as a dragged atom's position abruptly "snapping" then
+	// freezing solid. Left false by default - ClusterPlot's continuous
+	// 1/target^2 weight is (in practice) never exactly 0, so it would
+	// otherwise lose repulsion for every pair and collapse; it relies on
+	// unconditional repulsion, unaffected unless a caller opts in here.
+	void setExemptWeightedFromRepulsion(bool exempt)
+	{
+		_exemptWeightedFromRepulsion = exempt;
+	}
+
 	void removePointer(void *ptr);
 	
 	void includePointer(void *ptr)
@@ -160,6 +181,7 @@ private:
 
 	TargetFn _targetFn{};
 	TargetFn _weightFn{};
+	bool _exemptWeightedFromRepulsion = false;
 
 	bool _stop{false};
 	std::thread *_worker = nullptr;

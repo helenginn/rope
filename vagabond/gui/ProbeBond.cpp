@@ -27,49 +27,6 @@
 
 using namespace hnet;
 
-void ProbeBond::fixVertices(const glm::vec3 &start, const glm::vec3 &dir)
-{
-	Image::_vertices.resize(4);
-
-	{
-		Snow::Vertex &v = Image::_vertices[0];
-		v.pos = start;
-		v.normal = dir;
-		v.tex[0] = -0.5;
-		v.tex[1] = 0;
-	}
-
-	{
-		Snow::Vertex &v = Image::_vertices[1];
-		v.pos = start + dir;
-		v.normal = dir;
-		v.tex[0] = -0.5;
-		v.tex[1] = 1;
-	}
-
-	{
-		Snow::Vertex &v = Image::_vertices[2];
-		v.pos = start;
-		v.normal = dir;
-		v.tex[0] = +0.5;
-		v.tex[1] = 0;
-	}
-
-	{
-		Snow::Vertex &v = Image::_vertices[3];
-		v.pos = start + dir;
-		v.normal = dir;
-		v.tex[0] = +0.5;
-		v.tex[1] = 1;
-	}
-
-	if (Image::_indices.size() == 0)
-	{
-		Image::addIndices(-4, -3, -2);
-		Image::addIndices(-3, -2, -1);
-	}
-}
-
 template <class Value>
 void populate_menu(Menu *m, const std::vector<Value> &options)
 {
@@ -189,20 +146,16 @@ void ProbeBond::fullUpdate()
 }
 
 ProbeBond::ProbeBond(ProtonNetworkView *view, BondProbe *probe)
-: Image("assets/images/" + probe->display() + ".png")
+: BondRod("assets/images/" + probe->display() + ".png")
 {
-	setQuickSwitch({"assets/images/weak_bond.png", 
-		            "assets/images/strong_bond.png", 
-		            "assets/images/transparency.png", 
-		            "assets/images/present_bond.png", 
-		            "assets/images/lone_pair.png", 
+	setQuickSwitch({"assets/images/weak_bond.png",
+		            "assets/images/strong_bond.png",
+		            "assets/images/transparency.png",
+		            "assets/images/present_bond.png",
+		            "assets/images/lone_pair.png",
 		            "assets/images/unassigned_bond.png"});
 	_view = view;
 	_probe = probe;
-
-	Image::setVertexShaderFile("assets/shaders/axes.vsh");
-	Image::setFragmentShaderFile("assets/shaders/axes.fsh");
-	Image::setUsesProjection(true);
 
 	fullUpdate();
 	

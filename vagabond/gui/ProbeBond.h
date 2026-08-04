@@ -19,7 +19,7 @@
 #ifndef __vagabond__ProbeBond__
 #define __vagabond__ProbeBond__
 
-#include <vagabond/gui/elements/Image.h>
+#include <vagabond/gui/BondRod.h>
 #include <vagabond/gui/elements/IndexResponder.h>
 #include <vagabond/core/protonic/Probe.h>
 
@@ -27,7 +27,7 @@ class BondProbe;
 class ProbeAtom;
 class ProtonNetworkView;
 
-class ProbeBond : public Image, public ButtonResponder,
+class ProbeBond : public BondRod, public ButtonResponder,
 virtual public IndexResponder
 {
 public:
@@ -36,8 +36,7 @@ public:
 	void updateProbe();
 	void updatePosition();
 	void fullUpdate();
-	void fixVertices(const glm::vec3 &start, const glm::vec3 &dir);
-	
+
 	virtual size_t requestedIndices();
 
 	BondProbe *bondProbe()

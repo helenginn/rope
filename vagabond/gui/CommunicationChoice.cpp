@@ -46,36 +46,15 @@ CommunicationChoice::CommunicationChoice(Scene *prev, Clique *clique)
 
 namespace
 {
-	// "A-Asn65" - chain, title-cased three-letter code, residue number -
-	// short enough to read cleanly as an axis label in the matrix plot,
-	// unlike the full probe desc ("A-ASN65:CA,A").
-	std::string short_residue_name(Atom *atom)
-	{
-		std::string code = atom->code();
-		to_lower(code);
-		if (code.size())
-		{
-			code[0] = std::toupper((unsigned char)code[0]);
-		}
-
-		std::string name;
-		if (atom->chain().length())
-		{
-			name += atom->chain() + "-";
-		}
-		name += code + i_to_str(atom->residueNumber());
-		return name;
-	}
-
-	// short_residue_name() plus the specific atom name ("A-Val109:O") -
+	// Atom::shortResidueName() plus the specific atom name ("A-Val109:O") -
 	// only meaningful when naming a single manually-picked atom signal
 	// (make_signal() below); chooseReporters()'s automatic path names by
 	// residue only (one name shared by every atom in that residue), so
 	// it has no single atom to append here and keeps calling
-	// short_residue_name() directly instead of this.
+	// shortResidueName() directly instead of this.
 	std::string default_signal_name(Atom *atom)
 	{
-		return short_residue_name(atom) + ":" + atom->atomName();
+		return atom->shortResidueName() + ":" + atom->atomName();
 	}
 }
 
@@ -248,7 +227,7 @@ Renderable *CommunicationChoice::getLine(int i)
 				// wouldn't distinguish which atom on it was picked.
 				Atom *atom = probe->atom();
 				std::string def = atom->isReporterAtom() ?
-				                   short_residue_name(atom) :
+				                   atom->shortResidueName() :
 				                   default_signal_name(atom);
 				aft->setDefaultText(def);
 			}
@@ -310,7 +289,7 @@ void CommunicationChoice::chooseReporters(bool includeWater)
 			if (done.count(id) == 0)
 			{
 				_clique->addCommunicationPoints(
-				short_residue_name(probe->atom()), probe->desc());
+				probe->atom()->shortResidueName(), probe->desc());
 				done += id;
 			}
 		}
@@ -336,7 +315,7 @@ void CommunicationChoice::chooseReporters(bool includeWater)
 			if (done.count(id) == 0)
 			{
 				_clique->addCommunicationPoints(
-				short_residue_name(probe->atom()), probe->desc());
+				probe->atom()->shortResidueName(), probe->desc());
 				done += id;
 			}
 
