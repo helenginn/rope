@@ -36,7 +36,20 @@ Subdivide::Subdivide(Clique *clique, int max) : _clique(clique)
 bool Subdivide::finish_ends(OpSet<Probe *> &chunk)
 {
 	bool follow_hydrogens = true;
-	bool add_alt_confs = true;
+
+	// catches every direct (non-bond-mediated) atom<->atom edge on an
+	// atom already in the chunk - not just alt-conf siblings despite the
+	// name (Network::establishAtom()), but also steric clashes
+	// (Coordinated::clashLogic()) and charge-sharing/tautomer partners
+	// (Network::shareProperty()), all of which are registered the same
+	// way. All three need joint existence-constraint resolution the same
+	// way alt-conf siblings do, so all three belong in the same
+	// subdivision chunk together - deliberately NOT narrowed to
+	// alt-confs specifically. This is separate from, and much broader
+	// than, Probe::bondedNeighbours() (the GUI's 2D-layout weighting),
+	// which deliberately excludes every one of these same edges - see
+	// its own comment for why.
+	bool add_alt_confs_and_clashes = true;
 
 	for (Probe *const &probe : chunk)
 	{
@@ -56,7 +69,7 @@ bool Subdivide::finish_ends(OpSet<Probe *> &chunk)
 				}
 			}
 		}
-		if (add_alt_confs && probe->is_atom()) // add the alt confs
+		if (add_alt_confs_and_clashes && probe->is_atom())
 		{
 			for (Probe *const &other : probe->others())
 			{

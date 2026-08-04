@@ -120,6 +120,59 @@ public:
 	{
 		return _others;
 	}
+
+	/** collects every Probe reached from a BondProbe's own others() (which
+	 *  only ever holds its endpoints - see the BondProbe constructor)
+	 *  that is not itself another bond - i.e. its endpoint atom(s). Used
+	 *  only by bondedNeighbours() below, to make sure a neighbour is only
+	 *  ever counted as "bonded" once actually reached via crossing a real
+	 *  bond probe, never via a direct (non-bond-mediated) registration on
+	 *  the atom itself. */
+	static void bondEndpoints(Probe *bondProbe, OpSet<Probe *> &growing)
+	{
+		for (Probe *other : bondProbe->others())
+		{
+			if (!other->is_bond())
+			{
+				growing.insert(other);
+			}
+		}
+	}
+
+	/** one hop of "bonded" reach from `base` - covalent bonds AND
+	 *  hydrogen-bond halves both count (both are is_bond()), since you
+	 *  want H-bonded atoms pulled close on screen too (a bond line gets
+	 *  drawn between them) - but, critically, ONLY atoms reached by
+	 *  actually crossing one of those bond probes. others() also carries
+	 *  several kinds of direct (non-bond-mediated) atom<->atom edges -
+	 *  alt-conformer siblings, steric clashes, charge-sharing/tautomer
+	 *  partners, bulk-liberated-water pseudo-conformers, crystallographic
+	 *  symmetry mates (see Network::establishAtom/shareProperty,
+	 *  Coordinated::clashLogic, ProtonNetworkView::linkSymmetricAtomProbes)
+	 *  - none of which are a real bonded neighbour, and none of which
+	 *  should make two Probes spring together in a 2D layout (that
+	 *  coupling was the actual bug this method exists to avoid - see
+	 *  Subdivide.cpp for the very different, and correct, place those
+	 *  other kinds of edges DO matter). Shared by ProtonNetworkView::
+	 *  arrangeFigure() and HBondDiagram::makeAtoms(), which both build a
+	 *  "1 and 2 bonds away" reach set from this (called twice, once per
+	 *  hop, snapshotting the 1-hop result first so 2-hop atoms are not
+	 *  themselves re-walked as if they were 1-hop) to weight
+	 *  PositionShifter's 2D-layout springs - they differ only in which of
+	 *  the returned Probes they actually keep (already displayed, not
+	 *  hidden, etc.), so this deliberately returns everything reachable
+	 *  and leaves that filtering to the caller rather than taking a
+	 *  membership test itself. */
+	static void bondedNeighbours(Probe *base, OpSet<Probe *> &growing)
+	{
+		for (Probe *other : base->others())
+		{
+			if (other->is_bond())
+			{
+				bondEndpoints(other, growing);
+			}
+		}
+	}
 	
 	virtual bool is_text() = 0;
 	virtual std::string display() = 0;

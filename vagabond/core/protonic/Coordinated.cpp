@@ -1765,6 +1765,39 @@ void Coordinated::clashLogic(OpSet<AtomConf> &clash_check)
 		try
 		{
 			add_constraint(new MaxOne(*left, *right));
+
+			// registered into the same others()/register_probe() graph
+			// Network::establishAtom() already uses for alt-conf siblings
+			// - Subdivide::finish_ends()'s add_alt_confs block walks any
+			// direct atom<->atom edge regardless of what it represents,
+			// so a clashing pair now gets pulled into the same subdivision
+			// chunk together the same way alt-conf siblings already are.
+			// Never mistaken for a real bonded neighbour by the GUI's
+			// Probe::bondedNeighbours() (see its own comment), since that
+			// only ever follows edges reached by crossing an actual bond
+			// probe, never a direct registration like this one.
+			//
+			// probeForAtom() returns nullptr for anything not tracked as
+			// an AtomProbe - notably a hydrogen causing the clash, which
+			// lives in the separate probeForHydrogen() map instead (also
+			// possible: an atom findNeighbours() reached before its own
+			// establishAtom() has run yet, mid-construction, still
+			// nullptr either way) - clashLogic() runs during Network's
+			// own constructor, so this is a real, not just theoretical,
+			// case. Fall back to probeForHydrogen() rather than silently
+			// dropping the edge, since a hydrogen clash needs following
+			// too; only skip registering entirely if neither map has it.
+			Probe *rightProbe = _network.probeForAtom(hit);
+			if (!rightProbe)
+			{
+				rightProbe = _network.probeForHydrogen(hit);
+			}
+
+			if (rightProbe)
+			{
+				_probe->register_probe(rightProbe);
+				rightProbe->register_probe(_probe);
+			}
 		}
 		catch (const std::runtime_error &err)
 		{

@@ -346,9 +346,7 @@ void ProtonNetworkView::arrangeFigure()
 		// covalent bonds away, matching that mechanism's exact former
 		// reach) once per atom, the moment it's added to the shifter -
 		// this just looks it up. Weight 0 (unrelated/further away) makes
-		// the spring term a no-op for that pair; repulsion is unaffected
-		// either way (see gradient()'s own comment on why it's never
-		// weighted).
+		// the spring term a no-op for that pair.
 		_shifter->setWeightFn([this](void *left, void *right) -> float
 		{
 			auto found = _reach.find(left);
@@ -359,30 +357,19 @@ void ProtonNetworkView::arrangeFigure()
 			return found->second.count(right) ? 1.f : 0.f;
 		});
 
+		// this weightFn is strictly binary (1.0 = within 2 covalent
+		// bonds, 0.0 = not) - matches the old depth=2 relay's own
+		// "remaining = all - done" repulsion exemption exactly (see
+		// setExemptWeightedFromRepulsion()'s own comment for why this
+		// matters: without it, two already-spring-held bonded atoms also
+		// got an unrelated repulsion kick, which could NaN-poison an
+		// atom's momentum and freeze it - most visible as a dragged atom
+		// snapping then refusing to move).
+		_shifter->setExemptWeightedFromRepulsion(true);
+
 		_shifter->run();
 	}
 
-	std::function<void(Probe *, OpSet<void *> &)> get_probes_as_set;
-	get_probes_as_set = [this, &get_probes_as_set]
-	(Probe *base, OpSet<void *> &growing)
-	{
-		for (Probe *other : base->others())
-		{
-			if (_bondProbes.count(other))
-			{
-				Probe *deeper = _bondProbes[other]->probe();
-				get_probes_as_set(deeper, growing);
-			}
-			if (_textProbes.count(other))
-			{
-				if (!other->is_absent())
-				{
-					growing.insert(_textProbes[other]);
-				}
-			}
-		}
-	};
-	
 	std::vector<std::function<void()>> tidyJobs;
 
 	for (auto it = _countProbes.begin(); it != _countProbes.end(); it++)
@@ -406,20 +393,34 @@ void ProtonNetworkView::arrangeFigure()
 			                      make_getter(probe),
 			                      make_setter(probe));
 
-			// 1 bond away...
-			OpSet<void *> reach;
-			get_probes_as_set(probe->probe(), reach);
+			// 1 bond away, via the graph walk shared with HBondDiagram::
+			// makeAtoms() (Probe::bondedNeighbours() - see its own
+			// comment)...
+			OpSet<Probe *> neighbours;
+			Probe::bondedNeighbours(probe->probe(), neighbours);
 
 			// ...plus 2 bonds away - matches PositionShifter's former
 			// depth=2 relay exactly: a snapshot of the 1-hop set first,
-			// since extending `reach` while iterating it directly would
-			// let newly-inserted 2-hop atoms also get walked as if they
-			// were 1-hop, silently reaching 3+ bonds out.
-			OpSet<void *> hopOne = reach;
-			for (void *other : hopOne)
+			// since extending `neighbours` while iterating it directly
+			// would let newly-inserted 2-hop atoms also get walked as if
+			// they were 1-hop, silently reaching 3+ bonds out.
+			OpSet<Probe *> hopOne = neighbours;
+			for (Probe *other : hopOne)
 			{
-				ProbeAtom *otherAtom = static_cast<ProbeAtom *>(other);
-				get_probes_as_set(otherAtom->probe(), reach);
+				Probe::bondedNeighbours(other, neighbours);
+			}
+
+			// only atoms actually displayed (this view's own _textProbes)
+			// and not logically absent get a real spring weight - the
+			// shared walk above returns everything reachable regardless,
+			// leaving this filtering to the caller (see its own comment).
+			OpSet<void *> reach;
+			for (Probe *other : neighbours)
+			{
+				if (_textProbes.count(other) && !other->is_absent())
+				{
+					reach.insert(_textProbes[other]);
+				}
 			}
 
 			_reach[probe] = reach;
@@ -1035,10 +1036,20 @@ void ProtonNetworkView::mouseMoveEvent(double x, double y)
 		glm::vec4 end = _proj * glm::vec4(dx, -dy, -1, 1);
 		glm::vec3 move = end - start;
 
+		// NOT _manual->updatePosition() - that resyncs the render position
+		// from _probe->position(), the physics position, which 2D mode
+		// never touches (see arrangeFigure()'s own comment: PositionShifter
+		// must never write Probe::_pos) and so stays frozen at wherever it
+		// was before 2D mode was entered. Calling it here immediately
+		// overwrote the position setPosition() just wrote, undoing every
+		// single drag step - visible as the dragged atom snapping once (to
+		// that frozen position) then staying frozen there for the rest of
+		// the drag. forceRender() alone gets the redraw updatePosition()
+		// was also providing, without the harmful resync.
 		glm::vec3 curr = _shifter->getPosition(_manual);
 		curr += move * 12.f;
 		_shifter->setPosition(_manual, curr);
-		_manual->updatePosition();
+		_manual->FloatingText::forceRender(true, false);
 		_lastX = x;
 		_lastY = y;
 	}
