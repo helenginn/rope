@@ -246,7 +246,7 @@ Energy::energy_wrapper_for_liberated_bulk(AtomProbe &bulk)
 		}
 
 		// bulk solvent will provide 3.6 hydrogen bonds on average
-		float contrib = -base * 1.0;
+		float contrib = -base * 3.6;
 		return contrib;
 	};
 	
