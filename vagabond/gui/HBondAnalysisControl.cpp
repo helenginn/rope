@@ -211,18 +211,10 @@ void HBondAnalysisControl::setup()
 		Network *network = &_network;
 
 		// matches exactly what SearchAll::run() will call clickTicker()
-		// for - it skips subdivisions that already have cached states
-		// (e.g. left over from an earlier, cancelled run), so counting
-		// every subdivision here would leave the bar short of its own
-		// max on a re-run and never look like it finishes.
-		int ticks = 0;
-		for (const Clique &sub : _clique->subdivisions())
-		{
-			if (!(sub.states() && sub.states()->state_count()))
-			{
-				ticks++;
-			}
-		}
+		// for - every subdivision, unconditionally (it no longer skips
+		// ones that already have cached states from an earlier run;
+		// this drill re-searches everything every time it is clicked).
+		int ticks = (int)_clique->subdivisions().size();
 
 		auto cancelJob = [cancelled]()
 		{
@@ -234,17 +226,16 @@ void HBondAnalysisControl::setup()
 		// now, on this thread, before the DoJob below can possibly start
 		// ticking. With caller == nullptr, that registration only happens
 		// inside a deferred main-thread job (requestProgressBar's own),
-		// so a fast-finishing search (e.g. every subdivision already
-		// cached, ticks == 0) could call finishTicker() before the bar
-		// existed to hear it - the "done" event would be silently lost,
-		// leaving a bar that gets created afterward but never completes.
+		// so a fast-finishing search (ticks == 0, e.g. no subdivisions at
+		// all) could call finishTicker() before the bar existed to hear
+		// it - the "done" event would be silently lost, leaving a bar
+		// that gets created afterward but never completes.
 		//
-		// skipped entirely when there's nothing new to search (every
-		// subdivision already cached, e.g. re-running on an already-
-		// complete clique) - ProgressBar::setMaxTicks(0) calls finish()
-		// synchronously, which queues its own removal within the same
-		// job-queue drain that creates the bar, so it would be added and
-		// removed again before a single frame ever rendered it.
+		// skipped entirely when there's nothing to search (no
+		// subdivisions at all) - ProgressBar::setMaxTicks(0) calls
+		// finish() synchronously, which queues its own removal within
+		// the same job-queue drain that creates the bar, so it would be
+		// added and removed again before a single frame ever rendered it.
 		if (ticks > 0)
 		{
 			VagWindow::window()->requestProgressBar(ticks,

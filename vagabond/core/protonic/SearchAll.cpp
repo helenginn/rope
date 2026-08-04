@@ -47,12 +47,10 @@ void SearchAll::run()
 			break;
 		}
 
-		if (clique.states() && clique.states()->state_count())
-		{
-			_clique->addItem(&clique);
-			continue;
-		}
-
+		// always recalculated, even if this subdivision already has
+		// states cached from an earlier run - clicking the drill
+		// (HBondAnalysisControl's "Exhaustive search") is an explicit
+		// ask to redo everything, not just fill in whatever is missing.
 		ExhaustiveSearch search(clique.probes(), expanded);
 		search.setCancelFlag(_cancel);
 		search.search();
