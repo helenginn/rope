@@ -257,7 +257,7 @@ if ($USE_CLANGD) {
   Section "Setup .clangd"
 $clangdContent = @"
 CompileFlags:
-  CompilationDatabase: "$BUILDDIR"
+  CompilationDatabase: "$($BUILDDIR.Replace('\','/'))"
 "@
   Set-Content -Path ".clangd" -Value $clangdContent -Encoding UTF8
   Ok "Compilation database points at $BUILDDIR"
@@ -267,7 +267,7 @@ Section "Done!"
 Ok "RoPE succesfully built in $BUILDDIR"
 Section "Notes"
 Info "Before using meson, make sure to source the conan-controlled meson via"
-Print "${BOLD}${YELLOW}. $BUILDDIR/conanbuild.ps1${RESET} to prevent version mismatches"
+Print "${BOLD}${YELLOW}. $BUILDDIR\conanbuild.ps1${RESET} to prevent version mismatches"
 Info "Install RoPE globally by running"
 Print "${BOLD}${YELLOW}meson install -C $BUILDDIR${RESET}"
 Info "Run RoPE locally by starting"
