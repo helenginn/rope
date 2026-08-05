@@ -28,6 +28,7 @@ Energy::Energy()
 	_sources[Bulk] = false;
 	_sources[Distance] = false;
 	_sources[Angle] = false;
+	_sources[Repulsion] = false;
 }
 
 hnet::EnergyWrapper
@@ -254,9 +255,94 @@ Energy::energy_wrapper_for_liberated_bulk(AtomProbe &bulk)
 }
 
 hnet::EnergyWrapper
+Energy::energy_wrapper_for_clash_repulsion(
+    ExistenceConnector &groupExist,
+    const std::vector<Probe::PendingRepulsion> &pairs,
+    std::shared_ptr<GuiltVersion> lastRound)
+{
+	auto func = [&groupExist, pairs]()
+	{
+		// every pair's own "left" atom belongs to this same mutual-
+		// existence group, so their existence is guaranteed correlated -
+		// checked once here (via any representative member's connector)
+		// instead of once per pair, short-circuiting the whole sum
+		// immediately if the group is absent.
+		if (groupExist.value() != hnet::Existence::Present)
+		{
+			return 0.f;
+		}
+
+		// sums every pair's own existence-gated contribution, rather than
+		// picking a single "worst" one - a mutual-existence group's
+		// members can each genuinely be clashing with a different
+		// neighbour at once, and none of that should be silently dropped
+		// just because they now share one wrapper. Only targetExist -
+		// unrelated between pairs, unlike selfExist above - still needs
+		// checking individually.
+		float total = 0.f;
+
+		for (const Probe::PendingRepulsion &p : pairs)
+		{
+			if (p.dist <= 0.f || p.dist != p.dist || p.sigma <= 0.f)
+			{
+				continue;
+			}
+
+			if (!p.targetExist ||
+			    p.targetExist->value() != hnet::Existence::Present)
+			{
+				continue;
+			}
+
+			// repulsive half only of the usual 12-6 Lennard-Jones form
+			// (see BundleBonds.cpp's own vdw_energy() for the full
+			// version with the attractive term, once that gets added
+			// here too) - sigma is the sum of the pair's real van der
+			// Waals radii (gemmi), so this is epsilon right at the point
+			// the two atoms nominally touch, climbing steeply inside it
+			// and negligible beyond. Positive (a cost), unlike the
+			// negative/favourable contributions elsewhere in this file.
+			float ratio = p.sigma / p.dist;
+			float r2 = ratio * ratio;
+			float r4 = r2 * r2;
+			float r6 = r4 * r2;
+			float r12 = r6 * r6;
+			total += p.epsilon * r12;
+		}
+
+		return total;
+	};
+
+	hnet::EnergyWrapper inner = modulate({{func, Repulsion}});
+
+	// lastRound is shared across the whole group (not per pair), so a
+	// scoring round only counts this combined term once even if several
+	// group members end up in the same _wider set - GuiltVersion
+	// doubling as a round id here, not a blame tag (see EnergyWrapper's
+	// own comment).
+	return [inner, lastRound](GuiltVersion gv) -> hnet::GetEnergy
+	{
+		if (lastRound)
+		{
+			if (*lastRound == gv)
+			{
+				return {};
+			}
+			*lastRound = gv;
+		}
+
+		return inner(gv);
+	};
+}
+
+hnet::EnergyWrapper
 Energy::modulate(const std::vector<SourcedEnergy> &sources)
 {
-	return [this, sources]() -> hnet::GetEnergy
+	// gv (the current scoring round) is unused here - modulate() combines
+	// per-source contributions the same way regardless of round; only
+	// energy_wrapper_for_clash_repulsion's own memo (wrapped around this
+	// function's result) cares which round it's being called in.
+	return [this, sources](GuiltVersion gv) -> hnet::GetEnergy
 	{
 		struct Cached
 		{

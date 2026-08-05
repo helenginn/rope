@@ -152,12 +152,17 @@ void ExhaustiveSearch::search()
 
 GetScore ExhaustiveSearch::score_wider_clique()
 {
-	GuiltVersion gv = _gv;
-	
+	// a fresh id per call (not the fixed, never-updated _gv) - this is
+	// what lets a shared, memoised EnergyWrapper (e.g. a repulsion term
+	// bundled across alt-conf siblings) tell "still the same scoring
+	// round, a different sibling already counted this" apart from "a
+	// new round, count it again".
+	GuiltVersion gv = Guilt::issueNext();
+
 	std::vector<hnet::GetEnergy> jobs;
 	for (Probe *const &probe : _wider)
 	{
-		hnet::GetEnergy contrib = probe->energy();
+		hnet::GetEnergy contrib = probe->energy(gv);
 		if (contrib)
 		{
 			jobs.push_back(contrib);

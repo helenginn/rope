@@ -21,6 +21,9 @@
 
 #define Z_DEF (-0)
 #include "Connector.h"
+#include "Guilt.h"
+#include <memory>
+#include <optional>
 #include <string>
 #include <vagabond/core/Atom.h>
 #include <vagabond/core/Responder.h>
@@ -28,7 +31,14 @@
 namespace hnet
 {
 	typedef std::function<float()> GetEnergy;
-	typedef std::function<GetEnergy()> EnergyWrapper;
+
+	// GuiltVersion here is a round identifier, not a blame tag as
+	// elsewhere - a wrapper that wants to be counted at most once per
+	// scoring round (e.g. a repulsion term shared across alt-conf
+	// siblings) can compare it against a memoised "last round I fired
+	// in" to tell a fresh round apart from a repeat call within the same
+	// one. Every other wrapper is free to ignore it.
+	typedef std::function<GetEnergy(GuiltVersion)> EnergyWrapper;
 };
 
 class Probe : public HasResponder<Responder<Probe>>
@@ -110,15 +120,78 @@ public:
 	}
 
 	virtual std::string desc() = 0;
-	
+
 	void register_probe(Probe *other)
 	{
 		_others.push_back(other);
 	}
-	
+
 	std::vector<Probe *> &others()
 	{
 		return _others;
+	}
+
+	/** side-channel only - deliberately does NOT also call register_probe()
+	 * / touch others(), unlike a plain tag would. Network::
+	 * setupInactiveAtom()'s make_certain_covalent_bond() is the one
+	 * caller: when a covalent bond's matching-letter conformer resolves
+	 * unambiguously AND occupancies agree (diff < 0.05), it uses
+	 * hnet::MutualExistence rather than SubExistence, meaning both atoms'
+	 * existence is tied together - unlike a bond-probe-mediated edge
+	 * (already in others(), reached one hop further out through the
+	 * BondProbe), this is a genuinely new direct atom<->atom link that
+	 * would otherwise perturb hop-based traversal (Subdivide/
+	 * CliqueFinder/ExhaustiveSearch's _wider expansion) by one hop for no
+	 * reason relevant to any of them - so it stays out of others()
+	 * entirely, visible only via mutualExistenceNeighbours(), for the one
+	 * thing that needs it: bundling a shared clash-repulsion term
+	 * (Coordinated::add_repulsion) so a scoring round only counts it
+	 * once. Unlike alt-conf siblings (mutually EXCLUSIVE existence, so
+	 * their own repulsion wrappers already can't double-count each
+	 * other), several mutual-existence neighbours really can be
+	 * simultaneously Present and each independently contribute a full
+	 * closure to every ProbeResult unless bundled. */
+	void registerMutualExistence(Probe *other)
+	{
+		_mutualExistenceNeighbours.push_back(other);
+	}
+
+	/** atoms whose existence is unambiguously tied to this one - see
+	 * registerMutualExistence()'s own comment for exactly which bonds
+	 * qualify. First-order only: this is not transitive (a neighbour's
+	 * own further neighbours are not included). */
+	std::vector<Probe *> &mutualExistenceNeighbours()
+	{
+		return _mutualExistenceNeighbours;
+	}
+
+	/** this atom's own closest clash-repulsion candidate, staged by
+	 * Coordinated::clashLogic() (Coordinated::add_repulsion) rather than
+	 * built into an EnergyWrapper immediately - Network::
+	 * bundleRepulsionTerms() runs once after every atom's clashLogic()
+	 * has had a turn, groups atoms by mutualExistenceNeighbours()
+	 * connectivity, and builds exactly one shared wrapper per group from
+	 * whichever member's candidate is closest, rather than one wrapper
+	 * per atom. selfExist/targetExist are captured here (rather than
+	 * re-derived from a Probe* later) since is_atom()/is_bond() Probe
+	 * subtypes don't share a common virtual existence() accessor. */
+	struct PendingRepulsion
+	{
+		hnet::ExistenceConnector *selfExist = nullptr;
+		hnet::ExistenceConnector *targetExist = nullptr;
+		float dist = 0;
+		float sigma = 0;
+		float epsilon = 0;
+	};
+
+	void setPendingRepulsion(const PendingRepulsion &pending)
+	{
+		_pendingRepulsion = pending;
+	}
+
+	std::optional<PendingRepulsion> &pendingRepulsion()
+	{
+		return _pendingRepulsion;
 	}
 
 	/** collects every Probe reached from a BondProbe's own others() (which
@@ -245,18 +318,44 @@ public:
 		return _mult;
 	}
 
-	void setEnergyWrapper(const hnet::EnergyWrapper &f)
+	// appends rather than replaces - a probe can pick up more than one
+	// independent energy contribution (e.g. an atom clashing with
+	// several neighbours each gets its own repulsion wrapper added via
+	// Coordinated::clashLogic()), all summed together by energy() below.
+	void addEnergyWrapper(const hnet::EnergyWrapper &f)
 	{
-		_energy = f;
+		if (f)
+		{
+			_energy.push_back(f);
+		}
 	}
-	
-	hnet::GetEnergy energy()
+
+	hnet::GetEnergy energy(GuiltVersion gv)
 	{
-		if (!_energy)
+		std::vector<hnet::GetEnergy> jobs;
+		for (const hnet::EnergyWrapper &wrapper : _energy)
+		{
+			hnet::GetEnergy job = wrapper(gv);
+			if (job)
+			{
+				jobs.push_back(job);
+			}
+		}
+
+		if (jobs.size() == 0)
 		{
 			return {};
 		}
-		return _energy();
+
+		return [jobs]()
+		{
+			float total = 0;
+			for (const hnet::GetEnergy &job : jobs)
+			{
+				total += job();
+			}
+			return total;
+		};
 	}
 
 	void realign()
@@ -282,11 +381,13 @@ public:
 	glm::vec4 _glow = {};
 	
 	std::vector<Probe *> _others;
+	std::vector<Probe *> _mutualExistenceNeighbours;
+	std::optional<PendingRepulsion> _pendingRepulsion;
 	glm::vec3 _colour = {};
 	float _mult = 25;
 	float _hide = 0.f;
 	bool _bulk = false;
-	hnet::EnergyWrapper _energy;
+	std::vector<hnet::EnergyWrapper> _energy;
 
 	std::function<void()> _realign{};
 };

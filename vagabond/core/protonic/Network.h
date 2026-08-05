@@ -169,6 +169,16 @@ public:
 private:
 	void establishAtom(::Atom *atom);
 
+	/** runs once, after every atom's Coordinated::clashLogic() has had a
+	 * turn (each staging at most one candidate via Probe::
+	 * setPendingRepulsion() rather than building an EnergyWrapper
+	 * directly) - groups atoms by Probe::mutualExistenceNeighbours()
+	 * connectivity, and for each connected group with at least one
+	 * pending candidate, builds exactly one shared clash-repulsion
+	 * wrapper (from whichever member's candidate is closest) and attaches
+	 * the identical wrapper to every member of the group. */
+	void bundleRepulsionTerms();
+
 	void setupInactiveAtom(hnet::AtomConf atom);
 	bool setupAmineNitrogen(hnet::AtomConf atom);
 	bool setupGuessLigand(hnet::AtomConf atom);

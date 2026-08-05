@@ -34,6 +34,7 @@
 #include "AtomGroup.h"
 #include "Energy.h"
 #include "Guilt.h"
+#include <gemmi/elem.hpp>
 
 using namespace hnet;
 
@@ -1627,10 +1628,10 @@ void Coordinated::attachToNeighbours(const OpSet<AtomConf> &searchSet)
 
 		float dist = glm::length(pos1 - pos2);
 		Energy &e = _network.energy();
-		b1.setEnergyWrapper(e.energy_wrapper_for_half_hbond(&hProbe, b1, pos1));
-		b2.setEnergyWrapper(e.energy_wrapper_for_half_hbond(&hProbe, b2, pos2));
+		b1.addEnergyWrapper(e.energy_wrapper_for_half_hbond(&hProbe, b1, pos1));
+		b2.addEnergyWrapper(e.energy_wrapper_for_half_hbond(&hProbe, b2, pos2));
 
-		hProbe.setEnergyWrapper
+		hProbe.addEnergyWrapper
 		(e.energy_wrapper_for_hbond_angle(&hProbe, b1, b2, *_probe, *other));
 
 		add_constraint(new HydrogenBond(left, h, right));
@@ -1695,11 +1696,46 @@ bool Coordinated::hasHBondTo(const AtomConf &other) const
 	return false;
 }
 
+// eyeballed to roughly match published epsilon tables (kcal/mol) - same
+// values BundleBonds.cpp's own findCoefficients() already uses for its
+// unrelated vdw_energy() term, kept consistent here rather than inventing
+// a second table.
+static float vdw_epsilon_for_element(const gemmi::Element &ele)
+{
+	switch (ele.atomic_number())
+	{
+		case 1: return 0.0037f; // H
+		case 6: return 0.0205f; // C
+		case 7: return 0.0407f; // N
+		case 8: return 0.0502f; // O
+		case 16: return 0.0600f; // S
+		default: return 0.07f;
+	}
+}
+
 void Coordinated::clashLogic(OpSet<AtomConf> &clash_check)
 {
+	// per-atom upper bound rather than one flat distance for every atom -
+	// this atom's own van der Waals radius plus the largest radius any
+	// realistic partner could have (sulphur, ~1.8 A) - refined per-pair
+	// below to each pair's own actual radius sum (gemmi), the real
+	// cutoff for the soft repulsion term. A flat search distance generous
+	// enough to cover S + S pairs was needlessly wide for every smaller
+	// atom (most of them - a hydrogen's own plausible partners top out
+	// far below that), pulling in far more neighbours than the repulsion
+	// term could ever actually use and slowing this down a lot.
+	const float MAX_PARTNER_VDW_RADIUS = 1.85f; // sulphur
+	gemmi::Element selfEle(_atomConf.ptr->elementSymbol());
+	float searchDistance = selfEle.vdw_r() + MAX_PARTNER_VDW_RADIUS;
+
 	OpSet<AtomConf> hits = findNeighbours(clash_check, atomic_position(),
-	                                      2.0, false);
-	
+	                                      searchDistance, false);
+
+	// temporary diagnostic - just the CHOSEN candidate and what
+	// add_repulsion actually did with it, for PHE158 only.
+	bool trace = (_atomConf.ptr->chain() == "B" &&
+	             _atomConf.ptr->residueId().as_num() == 158);
+
 	auto is_twirling_hydrogen = [this](const ::Atom *q)
 	{
 		if (q->elementSymbol() != "H" || q->bondLengthCount() != 1)
@@ -1708,7 +1744,7 @@ void Coordinated::clashLogic(OpSet<AtomConf> &clash_check)
 		}
 
 		::Atom *p = q->connectedAtom(0);
-		
+
 		int hcount = 0;
 		for (int i = 0; i < p->bondLengthCount(); i++)
 		{
@@ -1717,20 +1753,94 @@ void Coordinated::clashLogic(OpSet<AtomConf> &clash_check)
 				hcount++;
 			}
 		}
-		
+
 		return (hcount == 3);
 	};
-	
+
+	// this atom's own single worst (closest) offender only, not one term
+	// per neighbour in range - keeping every candidate was adding far
+	// more energy terms than this could comfortably afford. A
+	// simplification to build on later, not a final model.
+	AtomConf closestCandidate{};
+	ExistenceConnector *closestRight = nullptr;
+	float closestDist = FLT_MAX;
+	bool haveCandidate = false;
+
+	// sigma is the sum of the pair's actual van der Waals radii - the
+	// real distance a full (attraction included) Lennard-Jones potential
+	// would settle at, and so the sensible maximum distance for a
+	// repulsion-only term to reach out to, even though we're not yet
+	// adding the attractive London dispersion half.
+	auto add_repulsion = [this, &selfEle, trace](const AtomConf &hit, float dist,
+	                                             ExistenceConnector *rightExist)
+	{
+		gemmi::Element rightEle(hit.ptr->elementSymbol());
+		float sigma = selfEle.vdw_r() + rightEle.vdw_r();
+
+		if (dist > sigma - 0.1)
+		{
+			return;
+		}
+
+		if (!_probe || !rightExist)
+		{
+			return;
+		}
+
+		// if both atoms' existence is already certain, this term is a
+		// constant for every remaining search outcome - not worth an
+		// energy wrapper at all, same reasoning ExhaustiveSearch's own
+		// _wider filter already applies (see its constructor).
+		if (_existence->is_certain() && rightExist->is_certain())
+		{
+			return;
+		}
+
+		float epsilon = sqrtf(vdw_epsilon_for_element(selfEle) *
+		                      vdw_epsilon_for_element(rightEle));
+
+		// staged, not built into an EnergyWrapper yet - Network::
+		// bundleRepulsionTerms() runs once after every atom's
+		// clashLogic() has had a turn, groups atoms by
+		// mutualExistenceNeighbours() connectivity, and builds exactly
+		// one shared wrapper per group from whichever member's candidate
+		// is closest, instead of one wrapper per atom.
+		_probe->setPendingRepulsion({_existence, rightExist, dist, sigma, epsilon});
+
+		if (trace)
+		{
+			// temporary - calling wrapper() here would just show 0, since
+			// existence hasn't resolved to Present yet at this point in
+			// the pipeline (clashLogic() runs during Network construction)
+			// and energy_wrapper_for_clash_repulsion gates on that -
+			// duplicating the raw Lennard-Jones repulsive term itself
+			// (see its own comment) so the geometry-driven magnitude is
+			// visible regardless of existence state.
+			float ratio = sigma / dist;
+			float r2 = ratio * ratio;
+			float r4 = r2 * r2;
+			float r6 = r4 * r2;
+			float r12 = r6 * r6;
+			float rawEnergy = epsilon * r12;
+
+			std::cout << "[clashLogic] " << _atomConf << " ("
+			<< _atomConf.ptr->atomName() << ") -> " << hit << " ("
+			<< hit.ptr->atomName() << ") dist=" << dist << " sigma="
+			<< sigma << " epsilon=" << epsilon << " rawEnergy=" << rawEnergy
+			<< std::endl;
+		}
+	};
+
 	ExistenceConnector *&left = _existence;
 	for (const AtomConf &hit : hits)
 	{
 		ExistenceConnector *right = existMap()[hit];
-		
+
 		if (hit.ptr->elementSymbol() == "NA") // not a proper handling of metals
 		{
 			continue;
 		}
-		
+
 		// we do not care about two symmetry-related atoms
 		if (hit.ptr->symmetryCopyOf() && _atomConf.ptr->symmetryCopyOf())
 		{
@@ -1739,19 +1849,35 @@ void Coordinated::clashLogic(OpSet<AtomConf> &clash_check)
 
 		float l = glm::length(_atomConf.position() - hit.position());
 
+		bool involvesHydrogen = (_atomConf.ptr->elementSymbol() == "H" ||
+		                          hit.ptr->elementSymbol() == "H");
+
+		// same boundaries the hard clash logic has always used, just
+		// named now so the gap beyond it (out to the pair's own van der
+		// Waals radius sum - see add_repulsion) can get a softer
+		// repulsion term instead of being ignored outright.
+		float strict_cutoff = involvesHydrogen ? 1.5f : 2.0f;
+
 		// assume freely rotatable hydrogens will find a way not to clash
-		if ((is_twirling_hydrogen(hit.ptr) || 
-		     is_twirling_hydrogen(_atomConf.ptr)) && l > 1.0)
+		if (is_twirling_hydrogen(hit.ptr) || is_twirling_hydrogen(_atomConf.ptr))
 		{
+			strict_cutoff = 1.0f;
+		}
+
+		if (l > strict_cutoff)
+		{
+			bool becameClosest = (l < closestDist);
+
+			if (becameClosest)
+			{
+				closestDist = l;
+				closestCandidate = hit;
+				closestRight = right;
+				haveCandidate = true;
+			}
 			continue;
 		}
-		
-		if ((_atomConf.ptr->elementSymbol() == "H" ||
-		     hit.ptr->elementSymbol() == "H") && l > 1.5)
-		{
-			continue;
-		}
-		
+
 		// problem - could be deprotonated...
 		Existence::Values left_before = left->value();
 		Existence::Values right_before = right->value();
@@ -1840,6 +1966,11 @@ void Coordinated::clashLogic(OpSet<AtomConf> &clash_check)
 		{
 			_network.addImpromptuCollapse(result.str());
 		}
+	}
+
+	if (haveCandidate)
+	{
+		add_repulsion(closestCandidate, closestDist, closestRight);
 	}
 }
 

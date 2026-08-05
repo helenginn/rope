@@ -22,11 +22,11 @@
 #include "hnet.h"
 #include "Probe.h"
 #include <map>
+#include <memory>
 
 namespace hnet
 {
-	typedef std::function<float()> GetEnergy;
-	typedef std::function<GetEnergy()> EnergyWrapper;
+	// GetEnergy/EnergyWrapper already declared by Probe.h (included above)
 
 class Energy
 {
@@ -40,6 +40,7 @@ public:
 		Distance,
 		Angle,
 		Bulk,
+		Repulsion,
 		Unknown,
 	};
 
@@ -75,6 +76,33 @@ public:
 	                                             BondProbe &right,
 	                                             AtomProbe &lAtom,
 	                                             AtomProbe &rAtom);
+
+	/** soft steric repulsion, one shared wrapper covering an entire
+	 * mutual-existence-connected group's worth of {left, right} clash
+	 * candidates (Network::bundleRepulsionTerms()) rather than one
+	 * wrapper per atom - every pair's own existence-gated contribution is
+	 * summed internally each time this is evaluated, so no group
+	 * member's genuine clash gets silently dropped the way picking only
+	 * the single closest one would. dist/sigma/epsilon per pair are
+	 * captured by value at clashLogic() setup time, since atom positions
+	 * do not move once a Network is built. Repulsive term only (no
+	 * London dispersion/attractive term yet - deliberately deferred).
+	 * groupExist is checked once, not once per pair - every pair's own
+	 * "left" atom belongs to the same mutual-existence group, so their
+	 * existence is guaranteed correlated (any representative member's
+	 * connector will do), letting the whole sum short-circuit
+	 * immediately if the group is absent instead of redundantly
+	 * rechecking the same fact once per pair. Each pair's own
+	 * targetExist is unrelated to the others and still checked
+	 * individually. The identical wrapper is handed to every member of
+	 * the group (see Network::bundleRepulsionTerms()); lastRound (shared
+	 * across the whole group, not per pair) makes sure a scoring round
+	 * only counts it once even if several members end up in the same
+	 * _wider set. */
+	EnergyWrapper energy_wrapper_for_clash_repulsion(
+	    ExistenceConnector &groupExist,
+	    const std::vector<Probe::PendingRepulsion> &pairs,
+	    std::shared_ptr<GuiltVersion> lastRound);
 private:
 	
 	typedef std::pair<GetEnergy, Source> SourcedEnergy;

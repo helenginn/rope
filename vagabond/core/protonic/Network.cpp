@@ -30,6 +30,8 @@
 #include "CovalentProbe.h"
 #include "Covalent2Count.h"
 #include "And.h"
+#include <queue>
+#include <memory>
 
 using namespace hnet;
 
@@ -376,6 +378,25 @@ void Network::setupInactiveAtom(AtomConf atom)
 			add_constraint(new MutualExistence(covalent, left));
 			add_constraint(new MutualExistence(covalent, right));
 			add_constraint(new MutualExistence(right, covalent));
+
+			// both atoms' existence is unambiguously tied together here
+			// (matching-letter conformer, matching occupancy) - lets
+			// Coordinated::add_repulsion bundle a shared clash-repulsion
+			// term across them instead of each independently carrying
+			// its own (see registerMutualExistence()'s own comment). Only
+			// worth recording where there is actual alt-conf ambiguity
+			// nearby (at least one side has more than one conformer) -
+			// diff < 0.05 is trivially true for any ordinary
+			// single-conformer bond (occupancy always 1.0), so without
+			// this every covalent bond in the whole structure would
+			// qualify, turning mutualExistenceNeighbours() into the
+			// entire covalent backbone as one connected component.
+			if (atom.ptr->conformerList().size() > 1 ||
+			    connected.ptr->conformerList().size() > 1)
+			{
+				probe->registerMutualExistence(other);
+				other->registerMutualExistence(probe);
+			}
 		}
 		else
 		{
@@ -407,7 +428,7 @@ void Network::setupInactiveAtom(AtomConf atom)
 		add_constraint(new CovalentConstant(cov, status));
 		BondProbe &bp = add_probe(new CovalentProbe(*probe, *other, 
 		                                             covalent, cov));
-		bp.setEnergyWrapper(energy().energy_wrapper_for_covalent(bp));
+		bp.addEnergyWrapper(energy().energy_wrapper_for_covalent(bp));
 
 		if (atom.ptr->elementSymbol() == "H" || 
 		    connected.ptr->elementSymbol() == "H")
@@ -689,7 +710,7 @@ void Network::establishAtom(::Atom *atom)
 		AtomProbe *probe = &(add_probe(new AtomProbe(*bulkAtom, *bulkExist,
 		                                             bulk)));
 		probe->setBulk(true);
-		probe->setEnergyWrapper
+		probe->addEnergyWrapper
 		(energy().energy_wrapper_for_liberated_bulk(*probe));
 		
 		for (Coordinated *coord : these_coords)
@@ -701,6 +722,105 @@ void Network::establishAtom(::Atom *atom)
 
 		connections.push_back(bulkExist);
 		add_constraint(new OnlyOne(connections));
+	}
+}
+
+void Network::bundleRepulsionTerms()
+{
+	OpSet<Probe *> visited;
+
+	for (const auto &pair : _atomMap)
+	{
+		// pair.second itself can be null - some key gets looked up via
+		// operator[] elsewhere before (or without) a Coordinated for it
+		// ever being constructed, silently inserting a null entry - has
+		// never mattered before since nothing else blindly dereferenced
+		// every value in this map.
+		if (!pair.second)
+		{
+			continue;
+		}
+
+		Probe *probe = pair.second->probe();
+		if (!probe || visited.count(probe))
+		{
+			continue;
+		}
+
+		if (!probe->pendingRepulsion())
+		{
+			// not marked visited - may still be a necessary bridge to
+			// reach further group members via another atom's BFS below.
+			continue;
+		}
+
+		// walk the whole mutual-existence-connected component regardless
+		// of which members have their own pending candidate - a member
+		// without one may still be a bridge to reach further ones.
+		std::vector<Probe *> group;
+		std::queue<Probe *> frontier;
+		frontier.push(probe);
+		visited.insert(probe);
+
+		while (!frontier.empty())
+		{
+			Probe *current = frontier.front();
+			frontier.pop();
+			group.push_back(current);
+
+			for (Probe *neighbour : current->mutualExistenceNeighbours())
+			{
+				if (visited.count(neighbour))
+				{
+					continue;
+				}
+				visited += neighbour;
+				frontier.push(neighbour);
+			}
+		}
+
+		// every group member's own candidate, not just the closest one -
+		// each may genuinely be clashing with a different neighbour, and
+		// none of that should be silently dropped just because they now
+		// share one wrapper.
+		std::vector<Probe::PendingRepulsion> pairs;
+		for (Probe *member : group)
+		{
+			auto &pending = member->pendingRepulsion();
+			if (pending)
+			{
+				pairs.push_back(*pending);
+			}
+		}
+
+		if (pairs.empty())
+		{
+			continue;
+		}
+
+		// any pair's own selfExist will do - every group member's
+		// existence is guaranteed correlated (that's what makes this a
+		// mutual-existence group in the first place), so one
+		// representative connector speaks for the whole group.
+		ExistenceConnector *groupExist = pairs.front().selfExist;
+		if (!groupExist)
+		{
+			continue;
+		}
+
+		// shared once per group - if several members end up in the same
+		// _wider set for a scoring round, this memo (not a fresh one per
+		// member) keeps the shared wrapper from being counted twice.
+		auto lastRound = std::make_shared<GuiltVersion>(0);
+
+		hnet::EnergyWrapper wrapper =
+		energy().energy_wrapper_for_clash_repulsion(*groupExist, pairs,
+		                                            lastRound);
+
+		for (Probe *member : group)
+		{
+			member->addEnergyWrapper(wrapper);
+		}
 	}
 }
 
@@ -849,7 +969,13 @@ Network::Network(AtomGroup *group, const std::string &spg_name,
 	{
 		_atomMap[{a, conf}]->clashLogic(searchGroup);
 	}));
-	
+
+	// every atom has now staged at most one candidate (Coordinated::
+	// clashLogic() -> add_repulsion -> Probe::setPendingRepulsion()) -
+	// this turns those into actual EnergyWrapper objects, one per
+	// mutual-existence-connected group rather than one per atom.
+	bundleRepulsionTerms();
+
 	std::cout << "================================" << std::endl;
 	std::cout << "==  FINALISING BOND COUNTERS  ==" << std::endl;
 	std::cout << "================================" << std::endl;
