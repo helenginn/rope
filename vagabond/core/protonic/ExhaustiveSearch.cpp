@@ -21,6 +21,7 @@
 #include "Network.h"
 #include <random>
 #include <algorithm>
+#include <bit>
 
 ExhaustiveSearch::ExhaustiveSearch(const OpSet<Probe *> &interesting,
                                    const OpSet<Probe *> &wider)
@@ -77,8 +78,6 @@ void ExhaustiveSearch::setup()
 		return ip;
 	};
 	
-	std::cout << "Searching " << _all.size() << " probes" << std::endl;
-
 	for (Probe *const &probe : _all)
 	{
 		if (probe->is_bond())
@@ -115,12 +114,6 @@ void ExhaustiveSearch::setup()
 		}
 	}
 	
-	std::cout << "All iterators:" << std::endl;
-	for (IteratedProbe *it : _iterations)
-	{
-		std::cout << "Iterator: " << it->desc() << std::endl;
-	}
-	std::cout << std::endl;
 	hnet::ConnectBase::_silent = true;
 }
 	
@@ -161,27 +154,22 @@ GetScore ExhaustiveSearch::score_wider_clique()
 {
 	GuiltVersion gv = _gv;
 	
-	std::vector<std::pair<hnet::GetEnergy, std::string>> jobs;
+	std::vector<hnet::GetEnergy> jobs;
 	for (Probe *const &probe : _wider)
 	{
 		hnet::GetEnergy contrib = probe->energy();
 		if (contrib)
 		{
-			jobs.push_back({contrib, probe->desc()});
+			jobs.push_back(contrib);
 		}
 	}
 
 	return [jobs]()
 	{
 		float score = 0;
-		for (const auto &job : jobs)
+		for (const hnet::GetEnergy &job : jobs)
 		{
-			float contrib = job.first();
-			if (contrib != contrib)
-			{
-				std::cout << "NAN for: " << job.second << std::endl;
-			}
-			score += contrib;
+			score += job();
 		}
 
 		return score;
@@ -195,16 +183,17 @@ bool ExhaustiveSearch::next()
 		return false;
 	}
 
-	auto check_certainty = [this](const Config &c)
+	// "certain" means every decree in this config has settled on exactly
+	// one option (a single set bit) - std::popcount (a hardware popcount
+	// instruction on any remotely modern CPU) replaces what was a manual
+	// 32-iteration bit-by-bit count, on the single hottest check in this
+	// whole search (run once per call to next(), which runs once per
+	// enumerated configuration).
+	auto check_certainty = [](const Config &c)
 	{
 		for (const unsigned int &i : c)
 		{
-			int num_one = 0;
-			for (int bit = 0; bit < 32; bit++)
-			{
-				num_one += ((1 << bit) & i) ? 1 : 0;
-			}
-			if (num_one != 1)
+			if (std::popcount(i) != 1)
 			{
 				return false;
 			}
