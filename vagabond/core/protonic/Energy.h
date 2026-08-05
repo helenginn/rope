@@ -47,7 +47,12 @@ public:
 	{
 		_amplifiers[src] = amp;
 	}
-	
+
+	float amplification(const Source &src)
+	{
+		return _amplifiers.count(src) ? _amplifiers.at(src) : 0.f;
+	}
+
 	void alter_source(const Source &src, bool on)
 	{
 		_sources[src] = on;

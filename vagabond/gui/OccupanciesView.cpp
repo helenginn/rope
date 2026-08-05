@@ -107,7 +107,14 @@ void OccupanciesView::slider(std::string msg, const hnet::Energy::Source &src,
 	s->setDragFunction(drag_me);
 	s->resize(0.15);
 	s->setup("", -2, +2, 0.1, false);
-	s->setStart(0.5, 0.);
+
+	// setStart() takes a fraction of the [-2,+2] range, not the raw
+	// value - was always 0.5 (dead centre = 0) regardless of whatever
+	// amplification this source already had from a previous session/run,
+	// making the slider look reset even when it was not.
+	float current = _network.energy().amplification(src);
+	float fraction = (current + 2.f) / 4.f;
+	s->setStart(fraction, 0.);
 	s->setCentre(0.1, y);
 	addObject(s);
 
