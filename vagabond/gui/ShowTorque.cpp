@@ -52,7 +52,7 @@ void ShowTorque::update()
 		middle = centre + offset * 0.6f;
 
 		glm::vec3 dir = cross(offset, _torque->moment());
-		dir *= _magnitude * TORQUE_FORCE_MAGNITUDE;
+		dir *= _magnitude * GUI_TORQUE_MAGNITUDE;
 
 		glm::vec3 start = middle - dir / 2.f;
 

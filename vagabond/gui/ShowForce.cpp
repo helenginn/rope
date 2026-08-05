@@ -45,7 +45,7 @@ void ShowForce::update()
 		setDisabled(false);
 		glm::vec3 start = _particle->pos();
 		glm::vec3 dir = _force->get_vector();
-		dir *= _magnitude * TORQUE_FORCE_MAGNITUDE;
+		dir *= _magnitude * GUI_FORCE_MAGNITUDE;
 		float ratio = 2;
 		float length = glm::length(dir);
 		if (length < 2.f)
