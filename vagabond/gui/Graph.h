@@ -46,8 +46,13 @@ public:
 	
 	Style style = StyleLine;
 
+	// pointType indexes assets/images/points.png (0-7: filled circle,
+	// filled star, filled triangle, X, circle-with-dot [the default, see
+	// DataPoint], outline star, outline triangle, asterisk) - lets a
+	// caller mark specific points as visually distinct from the rest
+	// (e.g. OccupanciesView highlighting the watched signal residue).
 	void addPoint(int series, float x, float y, const std::string &label = "",
-	              float alpha = 1.f);
+	              float alpha = 1.f, int pointType = 4);
 	void setRange(char axis, float min, float max);
 	
 	// width and height of box contents.
@@ -75,6 +80,7 @@ private:
 		glm::vec2 point;
 		std::string label;
 		float alpha;
+		int pointType = 4;
 	};
 
 	void addAxes(float width, float height);
