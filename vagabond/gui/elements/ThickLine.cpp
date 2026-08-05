@@ -39,6 +39,17 @@ ThickLine::ThickLine(bool proj, const std::string &filename)
 
 	setFragmentShaderFile("assets/shaders/axes.fsh");
 	clearVertices();
+
+	// Image's constructor (just run, via makeQuad()) bakes a default
+	// quad and stamps _appliedAspect with the aspect it was built for -
+	// but that quad was just thrown away above, and the real geometry
+	// (added later via addPoint()/addThickLine(), e.g. Graph's axes) is
+	// plain NDC math that never depends on the window aspect at all.
+	// Left stamped, Box::windowSizeChanged() "corrects" this line's real
+	// vertices on every resize by oldAspect/newAspect around their
+	// centroid - a bogus stretch, since they were never aspect-corrected
+	// to begin with.
+	_appliedAspect = -1;
 }
 
 void ThickLine::addThickLine(glm::vec3 start, glm::vec3 dir, glm::vec3 colour)
