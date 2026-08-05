@@ -38,7 +38,9 @@ class Clique : public Item
 public:
 	Clique();
 	Clique(const OpSet<Probe *> &probes);
-	
+	Clique(const Clique &other);
+	Clique &operator=(const Clique &other);
+
 	const bool operator<(const Clique &other) const
 	{
 		if (_probes.size() == 0 && other._probes.size() == 0)
@@ -273,6 +275,22 @@ public:
 		_watchedDesc = desc;
 	}
 private:
+	/** Item::_items/_parent are raw, non-owning pointers that Item's own
+	 * (compiler-generated) copy/assignment copies verbatim - fine for
+	 * most Items, but _subdivs is a std::list<Clique> held by value, so
+	 * copying a Clique also deep-copies its subdivisions to fresh
+	 * addresses while Item's shallow copy leaves _items/_parent pointing
+	 * at the SOURCE's addresses. Left uncorrected, this dangles as soon
+	 * as the source is destroyed (e.g. Network::~Network() ->
+	 * updateModelCliques() copying into Model, then the live Network's
+	 * own _cliques/_subdivs being destroyed right after) - the crash this
+	 * fixes surfaces later, in LineGroup/ItemLine, when CliqueView's
+	 * wireDescendants() walks a re-entered ProtonNetworkView's (by then
+	 * doubly-copied) clique tree via items(). Called from both the copy
+	 * constructor and copy assignment right after the member-wise copy,
+	 * to re-home _items/_parent onto this object's own state. */
+	void fixupItemsAfterCopy(const Clique &other);
+
 	class ProbeKey : public OpSet<Probe *>
 	{
 	public:

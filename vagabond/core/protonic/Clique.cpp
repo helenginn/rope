@@ -30,6 +30,78 @@ Clique::Clique()
 	setSelectable(true);
 }
 
+Clique::Clique(const Clique &other)
+: Item(other), _probes(other._probes), _name(other._name),
+_planText(other._planText), _communication(other._communication),
+_descToCommune(other._descToCommune), _descs(other._descs),
+_states(other._states), _subdivs(other._subdivs),
+_searchRunning(other._searchRunning), _watchedDesc(other._watchedDesc)
+{
+	fixupItemsAfterCopy(other);
+}
+
+Clique &Clique::operator=(const Clique &other)
+{
+	if (this == &other)
+	{
+		return *this;
+	}
+
+	Item::operator=(other);
+	_probes = other._probes;
+	_name = other._name;
+	_planText = other._planText;
+	_communication = other._communication;
+	_descToCommune = other._descToCommune;
+	_descs = other._descs;
+	_states = other._states;
+	_subdivs = other._subdivs;
+	_searchRunning = other._searchRunning;
+	_watchedDesc = other._watchedDesc;
+
+	fixupItemsAfterCopy(other);
+	return *this;
+}
+
+void Clique::fixupItemsAfterCopy(const Clique &other)
+{
+	// whatever Item's own copy just gave _items/_parent, it points at
+	// OTHER's state, not this object's freshly-copied _subdivs above -
+	// drop it all before re-registering the right addresses.
+	clearParent();
+
+	std::vector<Item *> stale = items();
+	for (Item *item : stale)
+	{
+		removeItem(item);
+	}
+
+	// _subdivs was copied element-for-element from other._subdivs, so
+	// the two lists correspond 1:1 in the same order - re-register only
+	// the subdivisions that OTHER itself had registered as items
+	// (SearchAll::run()'s addItem(&clique) once a subdivision has
+	// actually been searched), pointing at our own copies instead.
+	auto srcIt = other._subdivs.begin();
+	auto dstIt = _subdivs.begin();
+	for (; srcIt != other._subdivs.end(); srcIt++, dstIt++)
+	{
+		bool wasItem = false;
+		for (Item *item : other.items())
+		{
+			if (item == &(*srcIt))
+			{
+				wasItem = true;
+				break;
+			}
+		}
+
+		if (wasItem)
+		{
+			addItem(&(*dstIt));
+		}
+	}
+}
+
 void Clique::add_probes(const OpSet<Probe *> &probes)
 {
 	_probes += probes;
