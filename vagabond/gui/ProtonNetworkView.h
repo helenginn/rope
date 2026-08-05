@@ -72,6 +72,7 @@ public:
 	virtual void mouseReleaseEvent(double x, double y, SDL_MouseButtonEvent button);
 
 	virtual void sendSelection(float t, float l, float b, float r, bool inverse);
+	virtual void sendClickSelection(double x, double y, bool inverse);
 	void expandSelectionToNeighbours(int max_jumps = INT_MAX);
 	void completeResidues(bool stop_at_alpha = false);
 	void selectProbes(const OpSet<Probe *> &probes, bool on = true);

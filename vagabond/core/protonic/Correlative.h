@@ -48,7 +48,14 @@ public:
 	
 	Eigen::MatrixXf rowsFor(const ProbeTypePair &ptp);
 
-	void addStates(const CertainStates &states);
+	// weight: the originating Clique's own sampleWeight() (see its own
+	// comment) - how many independent Subdivide::subdivide() walks
+	// collapsed into this one searched subdivision, so a region many
+	// walks converged on contributes proportionally more to the pooled
+	// correlation matrix than one only a single walk ever reached,
+	// instead of every subdivision counting equally regardless of how
+	// much of the original even sampling it actually represents.
+	void addStates(const CertainStates &states, float weight = 1.f);
 
 	Eigen::MatrixXf acquireMatrix();
 	

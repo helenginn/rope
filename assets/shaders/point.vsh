@@ -20,7 +20,12 @@ void main()
 {
     vec4 pos = vec4(position[0], position[1], position[2], 1.0);
 	gl_Position = projection * model * pos;
-	gl_PointSize = size / float(2);
+	// normal.x is otherwise unused by point rendering (see the vNormal
+	// output below, never actually read back in point.fsh) - repurposed
+	// as an optional per-vertex size scale about the shared uniform
+	// size, defaulting to 0 so anything that never sets it renders at
+	// the same uniform size as before.
+	gl_PointSize = size / float(2) * (1.0 + normal.x);
 	mat3 rot = mat3(model);
 	vNormal = rot * normal;
 	vTex = tex;

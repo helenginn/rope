@@ -972,6 +972,12 @@ void ProtonNetworkView::sendSelection(float t, float l, float b, float r,
 	highlightCliques();
 }
 
+void ProtonNetworkView::sendClickSelection(double x, double y, bool inverse)
+{
+	IndexResponseView::sendClickSelection(x, y, inverse);
+	highlightCliques();
+}
+
 void ProtonNetworkView::setManualAdjust(Probe *probe)
 {
 	if (!_textProbes.count(probe))

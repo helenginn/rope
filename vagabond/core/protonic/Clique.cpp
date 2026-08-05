@@ -32,7 +32,8 @@ Clique::Clique()
 
 Clique::Clique(const Clique &other)
 : Item(other), _probes(other._probes), _name(other._name),
-_planText(other._planText), _communication(other._communication),
+_planText(other._planText), _sampleWeight(other._sampleWeight),
+_communication(other._communication),
 _descToCommune(other._descToCommune), _descs(other._descs),
 _states(other._states), _subdivs(other._subdivs),
 _searchRunning(other._searchRunning), _watchedDesc(other._watchedDesc)
@@ -51,6 +52,7 @@ Clique &Clique::operator=(const Clique &other)
 	_probes = other._probes;
 	_name = other._name;
 	_planText = other._planText;
+	_sampleWeight = other._sampleWeight;
 	_communication = other._communication;
 	_descToCommune = other._descToCommune;
 	_descs = other._descs;

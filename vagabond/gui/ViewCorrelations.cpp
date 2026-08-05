@@ -123,13 +123,16 @@ namespace
 }
 
 ViewCorrelations::ViewCorrelations(Scene *prev, Clique *clique)
-: Scene(prev), _clique(clique)
+: Scene(prev), Mouse2D(prev), IndexResponseView(prev), _clique(clique)
 {
 
 }
 
 void ViewCorrelations::setup()
 {
+	IndexResponseView::setup();
+	setMakesSelections();
+
 	addTitle("Sub-network correlations");
 
 	makeList();
@@ -144,6 +147,32 @@ void ViewCorrelations::setup()
 	});
 
 	viewAll();
+}
+
+void ViewCorrelations::sendSelection(float t, float l, float b, float r,
+                                     bool inverse)
+{
+	IndexResponseView::sendSelection(t, l, b, r, inverse);
+	captureStateSelection();
+}
+
+void ViewCorrelations::sendClickSelection(double x, double y, bool inverse)
+{
+	IndexResponseView::sendClickSelection(x, y, inverse);
+	captureStateSelection();
+}
+
+void ViewCorrelations::captureStateSelection()
+{
+	// only the per-subnetwork state-clustering plot's own selection is
+	// meaningful here (see _lastSelectedStates's own comment) -
+	// _activeClusterPlot is reused for showSubnetworkClustering() too (a
+	// different, unrelated selection of subnetworks rather than states),
+	// which must not overwrite this.
+	if (_subnetworkView == SubnetworkView::StateClustering && _activeClusterPlot)
+	{
+		_lastSelectedStates = _activeClusterPlot->selectedIndices();
+	}
 }
 
 ViewCorrelations::~ViewCorrelations()
@@ -453,7 +482,7 @@ void ViewCorrelations::viewAll()
 	// away, rather than only once assembly finishes - stage 1 below is
 	// already safely cancellable (see makeTopLevelViewToggle()'s own
 	// comment on why stage 2 is handled differently).
-	deleteTemps();
+	clearScreen();
 	_correlationMatrixButton = nullptr;
 	_subnetworkClusteringButton = nullptr;
 	_matrixComplete = false;
@@ -525,7 +554,7 @@ void ViewCorrelations::viewAll()
 
 			if (sub.states())
 			{
-				correl->addStates(*sub.states());
+				correl->addStates(*sub.states(), (float)sub.sampleWeight());
 			}
 
 			progress->clickTicker();
@@ -723,10 +752,21 @@ void ViewCorrelations::viewSubnetwork(Clique &clique)
 		return;
 	}
 
+	// a state index only means anything relative to this specific
+	// subnetwork's own CertainStates - carrying it over into a different
+	// subnetwork (as opposed to just switching tabs on the same one,
+	// which also comes through here - see makeSubnetworkViewToggle())
+	// would apply a stale, meaningless selection to whatever unrelated
+	// state that index happens to land on there.
+	if (_viewedSubnetwork != &clique)
+	{
+		_lastSelectedStates.clear();
+	}
+
 	_viewedSubnetwork = &clique;
 
 	setInformation(clique.name());
-	deleteTemps();
+	clearScreen();
 	_subnetworkMats.clear();
 
 	// defensive: if a background FloydWarshall pass (see finishAssembly())
@@ -915,6 +955,19 @@ void ViewCorrelations::showStateClustering(Clique &clique)
 	ClusterPlot *cp = new ClusterPlot(dist, probs, getModel(), {}, colours);
 	placeClusterPlot(cp);
 
+	// a fresh ClusterPlot starts with nothing selected - reapply whatever
+	// was selected last time this tab was visited (see
+	// _lastSelectedStates's own comment), so switching to the H-bond
+	// diagram tab and back doesn't silently drop the selection the user
+	// made here.
+	for (int idx : _lastSelectedStates)
+	{
+		if (idx >= 0 && idx < n)
+		{
+			cp->selected(idx, false);
+		}
+	}
+
 	if (foundWatched)
 	{
 		makeStateClusteringLegend(watchedProbe, watchedType, labelSums,
@@ -1012,12 +1065,36 @@ void ViewCorrelations::showHydrogenBondDiagram(Clique &clique)
 		return;
 	}
 
+	const CertainStates &states = *clique.states();
+
+	float ave = 0;
+	std::vector<float> probs = states.probsForLocalAve(ave);
+
+	// restrict the average to whichever states are currently selected on
+	// the state-clustering tab (see _lastSelectedStates's own comment) -
+	// zeroing out every other state's weight rather than building a
+	// smaller probs vector, since proportions() indexes by raw state
+	// index. Falls back to every state (the plot's own default weighting)
+	// if nothing has been selected there yet.
+	if (!_lastSelectedStates.empty())
+	{
+		std::vector<float> restricted(probs.size(), 0.f);
+		for (int idx : _lastSelectedStates)
+		{
+			if (idx >= 0 && idx < (int)restricted.size())
+			{
+				restricted[idx] = probs[idx];
+			}
+		}
+		probs = restricted;
+	}
+
 	// ptps() already only ever holds uncertain atoms plus non-covalent
 	// bonds (ExhaustiveSearch skips is_covalent() probes entirely before
 	// they ever reach CertainStates) - so this is naturally a hydrogen-
 	// bonding diagram, with no separate filtering needed here.
-	HBondDiagram *diagram = new HBondDiagram(clique.states()->ptps(),
-	                                         getModel());
+	HBondDiagram *diagram = new HBondDiagram(states.ptps(), getModel(),
+	                                         &states, probs);
 
 	// same spot/positioning idiom as placeClusterPlot() (NOT setCentre()/
 	// setArbitrary() - see that method's own comment on why) - HBondDiagram
@@ -1047,8 +1124,28 @@ void ViewCorrelations::placeClusterPlot(ClusterPlot *cp)
 	glm::vec3 target(2.f * 0.5f - 1.f + 0.15f, -(2.f * 0.6f - 1.f), 0.f);
 	cp->setPosition(target);
 
+	// drops the previous plot's own registration (if any) first - by the
+	// time a new one is being placed, the old ClusterPlot has always
+	// already been queued for deletion by an earlier deleteTemps() call,
+	// so leaving its registration in _responders would be a dangling
+	// IndexResponder* the next selection interaction could walk into.
+	clearResponders();
+	addIndexResponder(cp);
+	_activeClusterPlot = cp;
+
 	addTempObject(cp);
 	cp->start();
+}
+
+void ViewCorrelations::clearScreen()
+{
+	deleteTemps();
+
+	// see this method's own header comment - deleteTemps() alone leaves
+	// both of these dangling once whatever ClusterPlot they refer to is
+	// actually destroyed.
+	clearResponders();
+	_activeClusterPlot = nullptr;
 }
 
 void ViewCorrelations::makeTopLevelViewToggle()
@@ -1151,7 +1248,7 @@ void ViewCorrelations::makeTopLevelViewToggle()
 
 void ViewCorrelations::showTopLevelView()
 {
-	deleteTemps();
+	clearScreen();
 	_correlationMatrixButton = nullptr;
 	_subnetworkClusteringButton = nullptr;
 	makeTopLevelViewToggle();
@@ -1188,100 +1285,158 @@ void ViewCorrelations::showSubnetworkClustering()
 	}
 
 	int n = (int)subs.size();
-	Eigen::MatrixXi overlap = Eigen::MatrixXi::Zero(n, n);
-	int maxOverlap = 0;
 
-	// distance derived from shared nodes between two subnetworks' own
-	// CertainStates::ptps() - not just each subnetwork's own core probes,
-	// since ptps() already includes whatever peripheral nodes that
-	// subnetwork's own analysis pulled in, which is what actually makes
-	// this an accurate correlation between subnetworks rather than just
-	// their nominal membership.
-	for (int i = 0; i < n; i++)
+	// cancellable via the back/toggle buttons, same mechanism (and same
+	// _cancelled member) viewAll()'s own assembly uses - see its comment.
+	// The O(n^2) overlap loop below is what actually takes a long time for
+	// a clique with many subdivisions, so it - and everything derived from
+	// it - runs on a background DoJob with a progress bar, one tick per
+	// outer i, rather than blocking this callback (a UI thread callback)
+	// until it finishes.
+	auto cancelled = std::make_shared<std::atomic<bool>>(false);
+	_cancelled = cancelled;
+
+	struct ClusterProgress : public Progressor {};
+	ClusterProgress *progress = new ClusterProgress();
+
+	auto cancelJob = [cancelled]()
 	{
-		for (int j = i + 1; j < n; j++)
-		{
-			OpSet<ProbeTypePair> common = subs[i]->states()->ptps()
-			.common_to_both(subs[j]->states()->ptps());
+		cancelled->store(true);
+	};
 
-			int shared = (int)common.size();
-			overlap(i, j) = shared;
-			overlap(j, i) = shared;
+	VagWindow::window()->requestProgressBar(n, "Clustering subnetworks",
+	                                        progress, cancelJob);
 
-			if (shared > maxOverlap)
-			{
-				maxOverlap = shared;
-			}
-		}
-	}
-
-	// exp(-overlap^2 / scale): 0 shared nodes -> distance 1 (the maximum,
-	// same as any other unrelated pair); overlap rising towards
-	// maxOverlap pulls distance down towards exp(-1) =~ 0.37, a smooth,
-	// continuous falloff rather than the previous linear
-	// "maxOverlap - overlap", which put every pair on an evenly-spaced
-	// integer ladder regardless of how the actual overlap counts were
-	// distributed (e.g. all-or-nothing when most pairs shared ~0 nodes).
-	// scale = maxOverlap^2 is a self-normalising bandwidth: it's tied to
-	// this clique's own most-correlated pair rather than a fixed
-	// constant, so the curve is meaningful whether overlaps typically run
-	// to single digits or the hundreds.
-	float scale = (float)maxOverlap * (float)maxOverlap;
-	if (scale < 1.f)
+	Clique *clique = _clique;
+	auto cluster = [this, clique, subs, n, cancelled, progress]()
 	{
-		scale = 1.f;
-	}
+		Eigen::MatrixXi overlap = Eigen::MatrixXi::Zero(n, n);
+		int maxOverlap = 0;
 
-	Eigen::MatrixXf dist = Eigen::MatrixXf::Zero(n, n);
-	for (int i = 0; i < n; i++)
-	{
-		for (int j = 0; j < n; j++)
-		{
-			if (i == j)
-			{
-				continue;
-			}
-
-			float o = (float)overlap(i, j);
-			dist(i, j) = expf(-(o * o) / scale);
-		}
-	}
-
-	// sized by how many nodes each subnetwork's own CertainStates spans -
-	// no obvious energy analogue at this level (unlike
-	// showStateClustering()'s per-state Boltzmann weight); a subnetwork
-	// touching more of the structure is the closest stand-in for
-	// "prominent" here.
-	std::vector<float> sizeWeights(n);
-	for (int i = 0; i < n; i++)
-	{
-		sizeWeights[i] = (float)subs[i]->states()->ptps().size();
-	}
-
-	// flags every subnetwork whose ptps() (own core probes plus whatever
-	// peripheral nodes its analysis pulled in - same set used for the
-	// overlap distance above) includes the signal currently watched via
-	// CommunicationChoice, so ClusterPlot can draw it as a star instead of
-	// a plain dot.
-	std::string watched = _clique->watchedSignal();
-	std::vector<bool> starred(n, false);
-	if (watched.length())
-	{
+		// distance derived from shared nodes between two subnetworks' own
+		// CertainStates::ptps() - not just each subnetwork's own core
+		// probes, since ptps() already includes whatever peripheral nodes
+		// that subnetwork's own analysis pulled in, which is what
+		// actually makes this an accurate correlation between
+		// subnetworks rather than just their nominal membership.
 		for (int i = 0; i < n; i++)
 		{
-			for (const ProbeTypePair &ptp : subs[i]->states()->ptps())
+			if (cancelled->load())
 			{
-				if (ptp.first && ptp.first->desc() == watched)
+				break;
+			}
+
+			for (int j = i + 1; j < n; j++)
+			{
+				OpSet<ProbeTypePair> common = subs[i]->states()->ptps()
+				.common_to_both(subs[j]->states()->ptps());
+
+				int shared = (int)common.size();
+				overlap(i, j) = shared;
+				overlap(j, i) = shared;
+
+				if (shared > maxOverlap)
 				{
-					starred[i] = true;
-					break;
+					maxOverlap = shared;
+				}
+			}
+
+			progress->clickTicker();
+		}
+
+		progress->finishTicker();
+
+		if (cancelled->load())
+		{
+			delete progress;
+			return;
+		}
+
+		// exp(-overlap^2 / scale): 0 shared nodes -> distance 1 (the
+		// maximum, same as any other unrelated pair); overlap rising
+		// towards maxOverlap pulls distance down towards exp(-1) =~ 0.37,
+		// a smooth, continuous falloff rather than the previous linear
+		// "maxOverlap - overlap", which put every pair on an evenly-spaced
+		// integer ladder regardless of how the actual overlap counts were
+		// distributed (e.g. all-or-nothing when most pairs shared ~0
+		// nodes). scale = maxOverlap^2 is a self-normalising bandwidth:
+		// it's tied to this clique's own most-correlated pair rather than
+		// a fixed constant, so the curve is meaningful whether overlaps
+		// typically run to single digits or the hundreds.
+		float scale = (float)maxOverlap * (float)maxOverlap;
+		if (scale < 1.f)
+		{
+			scale = 1.f;
+		}
+
+		Eigen::MatrixXf dist = Eigen::MatrixXf::Zero(n, n);
+		for (int i = 0; i < n; i++)
+		{
+			for (int j = 0; j < n; j++)
+			{
+				if (i == j)
+				{
+					continue;
+				}
+
+				float o = (float)overlap(i, j);
+				dist(i, j) = expf(-(o * o) / scale);
+			}
+		}
+
+		// sized by how many nodes each subnetwork's own CertainStates
+		// spans - no obvious energy analogue at this level (unlike
+		// showStateClustering()'s per-state Boltzmann weight); a
+		// subnetwork touching more of the structure is the closest
+		// stand-in for "prominent" here.
+		std::vector<float> sizeWeights(n);
+		for (int i = 0; i < n; i++)
+		{
+			sizeWeights[i] = (float)subs[i]->states()->ptps().size();
+		}
+
+		// flags every subnetwork whose ptps() (own core probes plus
+		// whatever peripheral nodes its analysis pulled in - same set
+		// used for the overlap distance above) includes the signal
+		// currently watched via CommunicationChoice, so ClusterPlot can
+		// draw it as a star instead of a plain dot.
+		std::string watched = clique->watchedSignal();
+		std::vector<bool> starred(n, false);
+		if (watched.length())
+		{
+			for (int i = 0; i < n; i++)
+			{
+				for (const ProbeTypePair &ptp : subs[i]->states()->ptps())
+				{
+					if (ptp.first && ptp.first->desc() == watched)
+					{
+						starred[i] = true;
+						break;
+					}
 				}
 			}
 		}
-	}
 
-	ClusterPlot *cp = new ClusterPlot(dist, sizeWeights, getModel(), starred);
-	placeClusterPlot(cp);
+		// hands off to the main thread rather than touching this Scene's
+		// Renderables directly from the background thread - same reason
+		// viewAll()'s own assemble() job does.
+		VagWindow::window()->addMainThreadJob(
+		[this, dist, sizeWeights, starred, cancelled, progress]()
+		{
+			delete progress;
+
+			if (cancelled->load())
+			{
+				return;
+			}
+
+			ClusterPlot *cp = new ClusterPlot(dist, sizeWeights, getModel(),
+			                                  starred);
+			placeClusterPlot(cp);
+		});
+	};
+
+	new DoJob(cluster);
 }
 
 void ViewCorrelations::showCorrelationMatrix(Clique &clique)
@@ -1349,9 +1504,20 @@ void ViewCorrelations::showCorrelationMatrix(Clique &clique)
 		std::string type = ptp.second ==
 		hnet::Types::BondType ? " bonding" : " exists";
 
+		// states.ptps() reaches beyond clique.probes() (the subnetwork's
+		// own core set Subdivide originally grew) - CertainStates/
+		// ExhaustiveSearch's own wider-context lookup pulls in extra
+		// peripheral probes it needed to resolve existence, which
+		// otherwise look identical to the core set in this grid. Thick
+		// font marks a probe that was actually part of the original
+		// subnetwork; thin marks one dragged in only for that wider
+		// resolution.
+		Font::Type font = clique.probes().count(ptp.first) ?
+		Font::Thick : Font::Thin;
+
 		for (int i = 0; i < 2; i++)
 		{
-			Text *t = new Text(desc + type);
+			Text *t = new Text(desc + type, font);
 			t->resize(0.3);
 			align_to_grid(t, (i == 0 ? -1 : p), (i == 0 ? p : -1));
 		}

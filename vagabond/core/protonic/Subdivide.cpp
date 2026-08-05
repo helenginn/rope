@@ -19,6 +19,7 @@
 #include "Subdivide.h"
 #include "Probe.h"
 #include "Clique.h"
+#include "Coordinated_Helpers.h"
 #include <algorithm>
 #include <random>
 #include <queue>
@@ -69,6 +70,7 @@ bool Subdivide::finish_ends(OpSet<Probe *> &chunk)
 				}
 			}
 		}
+
 		if (add_alt_confs_and_clashes && probe->is_atom())
 		{
 			for (Probe *const &other : probe->others())
@@ -90,9 +92,21 @@ bool Subdivide::finish_ends(OpSet<Probe *> &chunk)
 				}
 			}
 
+			// mutual-existence neighbours are deliberately NOT walked
+			// here (used to be - see comparison_key()'s own comment for
+			// why that moved out): pulling them into the real, searched
+			// chunk let the walk chain sideways through others() into
+			// clash partners, whose own mutual-existence neighbours could
+			// then chain further still - an unbounded, mixed-relation
+			// cascade with no natural stopping point, and it bloated the
+			// actual subdivisions that get searched. The convergence
+			// this was for (so near-duplicate subdivisions can be
+			// screened out) is now handled by a same-day, throwaway
+			// expansion computed only for that comparison - see
+			// subdivide().
 		}
 	}
-	
+
 	return false;
 }
 
@@ -249,6 +263,34 @@ bool has_non_water(const OpSet<Probe *> &chunk)
 	return false;
 }
 
+// true for a placeholder hydrogen itself (Probe::_h's atom name tagged
+// "H!" - see Coordinated::makeHydrogenAtom()'s own comment) or the
+// (also placeholder-flagged) BondConnector wrapping one - see
+// Coordinated::makePlaceholderHydrogen(). Before the real bond a given
+// coordination slot resolves to is known, developSeed()/expandAllSeeds()
+// can mint several of these per atom (one per seed that reaches that
+// slot) representing the same open slot - is_placeholder_hydrogen_name()
+// alone doesn't tell BondProbe/HydrogenProbe apart, so both are checked
+// explicitly rather than relying on desc() string content.
+static bool is_placeholder_related(Probe *probe)
+{
+	if (probe->_h && hnet::is_placeholder_hydrogen_name(probe->_h->atomName()))
+	{
+		return true;
+	}
+
+	if (probe->is_bond())
+	{
+		BondProbe *bp = static_cast<BondProbe *>(probe);
+		if (bp->_obj._placeholder)
+		{
+			return true;
+		}
+	}
+
+	return false;
+}
+
 void Subdivide::prune(OpSet<Probe *> &chunk)
 {
 	std::erase_if(chunk,
@@ -256,6 +298,68 @@ void Subdivide::prune(OpSet<Probe *> &chunk)
 	              {
 		             return probe->is_certain();// || probe->is_covalent();
 		          });
+}
+
+// throwaway view of a (already pruned) chunk used ONLY to decide whether
+// two subdivisions are near-duplicates of each other in subdivide() below
+// - never stored, never searched. Placeholder hydrogens/bonds (see
+// is_placeholder_related()'s own comment) and covalent bonds don't
+// meaningfully distinguish one subdivision from another once the real,
+// uncertain H-bond network membership already agrees, so both are
+// stripped; mutual-existence neighbours (unambiguous matching-letter-
+// conformer covalent bonds - see Probe::registerMutualExistence()'s own
+// comment) are added so two subdivisions covering the same ambiguous
+// region converge onto the same key regardless of which particular bond
+// within it each one's own random walk happened to reach (both resolve
+// to functionally identical CertainStates once ExhaustiveSearch runs, but
+// a plain membership comparison would otherwise never notice). Only ever
+// walks mutualExistenceNeighbours() - never others() - so this can't
+// chain sideways into clashes/alt-confs and cascade unboundedly the way
+// baking this into finish_ends() itself once did.
+static OpSet<Probe *> comparison_key(const OpSet<Probe *> &chunk)
+{
+	OpSet<Probe *> key = chunk;
+
+	bool added = true;
+	while (added)
+	{
+		added = false;
+		for (Probe *const &probe : key)
+		{
+			if (!probe->is_atom())
+			{
+				continue;
+			}
+
+			for (Probe *const &other : probe->mutualExistenceNeighbours())
+			{
+				if (other->is_definitely_not_present())
+				{
+					continue;
+				}
+
+				if (key.count(other) == 0)
+				{
+					key += other;
+					added = true;
+					break;
+				}
+			}
+
+			if (added)
+			{
+				break;
+			}
+		}
+	}
+
+	std::erase_if(key,
+	              [](Probe *const &probe)
+	              {
+		             return is_placeholder_related(probe) || probe->is_covalent();
+		          });
+
+	return key;
 }
 
 void Subdivide::one()
@@ -278,49 +382,141 @@ void Subdivide::subdivide(int samples)
 
 	OpSet<Probe *> to_chunk = _clique->probes();
 
-	OpSet<OpSet<Probe *>> chunks;
-	OpSet<Clique> cliques;
+	// A/B toggle, temporary - flip to true to compare against
+	// comparison_key()'s (+mutual neighbours, -placeholders, -covalent)
+	// view for near-duplicate detection instead of the plain original
+	// membership. false reproduces the pre-comparison_key() behaviour
+	// exactly (sample.key == sample.original), without deleting that code.
+	const bool USE_COMPARISON_KEY = true;
+
+	// each sample keeps its real, searched-and-stored membership
+	// (original) separate from the throwaway view used only to spot
+	// near-duplicates (key) - see comparison_key()'s own comment for why
+	// those must not be the same set. weight starts at 1 (this walk's own
+	// share of the sampling) and gains 1 every time another walk turns
+	// out to be an exact duplicate or strict subset of this one, instead
+	// of that walk's own contribution simply being discarded - see
+	// Clique::sampleWeight()'s own comment for why: every probe in
+	// to_chunk starts its own independent walk, so a region many walks
+	// collapse into represents that many independent "votes" for it, not
+	// just one - outright discarding every walk but the first one that
+	// reaches a given region silently undercounted it relative to a
+	// region only one walk ever reaches. This still only searches (and
+	// stores) each surviving region once.
+	struct Sample
+	{
+		OpSet<Probe *> original;
+		OpSet<Probe *> key;
+		int weight = 1;
+	};
+
+	std::vector<Sample> samples_found;
+	std::map<OpSet<Probe *>, size_t> keyIndex;
 
 	for (Probe *probe : to_chunk)
 	{
 		for (int i = 0; i < samples; i++)
 		{
 			OpSet<Probe *> chunk = grow_clique(probe);
-			if (chunk.size() > 0 && has_non_water(chunk))
-			{
-				chunks += chunk;
-			}
-		}
-	}
-
-	auto is_subset_of_another = [&chunks](const OpSet<Probe *> &chunk)
-	{
-		for (const OpSet<Probe *> &other : chunks)
-		{
-			if (&other == &chunk || other.size() <= chunk.size())
+			if (chunk.size() == 0 || !has_non_water(chunk))
 			{
 				continue;
 			}
 
-			if (std::includes(other.begin(), other.end(),
-			                  chunk.begin(), chunk.end()))
+			OpSet<Probe *> key = USE_COMPARISON_KEY ?
+			comparison_key(chunk) : chunk;
+
+			auto it = keyIndex.find(key);
+			if (it != keyIndex.end())
 			{
-				return true;
+				samples_found[it->second].weight++;
+				continue;
 			}
-		}
 
-		return false;
-	};
-
-	for (const OpSet<Probe *> &chunk : chunks)
-	{
-		if (chunk.size() >= 2 && !is_subset_of_another(chunk))
-		{
-			cliques.insert(Clique(chunk));
+			keyIndex[key] = samples_found.size();
+			samples_found.push_back({chunk, key});
 		}
 	}
 
+	// direct (not necessarily maximal - see the walk-up below) superset
+	// among every OTHER sample, biased towards the largest candidate
+	// found purely so the walk-up chain below tends to be short, not for
+	// correctness - transitivity of the subset relation (X subset of Y
+	// subset of Z implies X subset of Z) is what actually guarantees every
+	// non-maximal sample's chain eventually reaches a genuinely maximal
+	// one, however many hops that takes.
+	auto find_superset = [&samples_found](size_t idx) -> int
+	{
+		const Sample &sample = samples_found[idx];
+		int best = -1;
+
+		for (size_t i = 0; i < samples_found.size(); i++)
+		{
+			if (i == idx) { continue; }
+
+			const Sample &other = samples_found[i];
+			if (other.key.size() < sample.key.size())
+			{
+				continue;
+			}
+
+			if (std::includes(other.key.begin(), other.key.end(),
+			                  sample.key.begin(), sample.key.end()))
+			{
+				if (best < 0 || other.key.size() >
+				    samples_found[best].key.size())
+				{
+					best = (int)i;
+				}
+			}
+		}
+
+		return best;
+	};
+
+	std::vector<int> superset(samples_found.size(), -1);
+	for (size_t i = 0; i < samples_found.size(); i++)
+	{
+		superset[i] = find_superset(i);
+	}
+
+	// credits every non-maximal sample's weight to whichever maximal
+	// sample actually contains it, walking up the chain first if the
+	// direct superset found above isn't itself maximal (see
+	// find_superset()'s own comment) - a strict-subset relation can never
+	// cycle, so this always terminates.
+	for (size_t i = 0; i < samples_found.size(); i++)
+	{
+		if (superset[i] < 0)
+		{
+			continue;
+		}
+
+		int target = superset[i];
+		while (superset[target] >= 0)
+		{
+			target = superset[target];
+		}
+
+		samples_found[target].weight += samples_found[i].weight;
+	}
+
+	OpSet<Clique> cliques;
+	for (size_t i = 0; i < samples_found.size(); i++)
+	{
+		const Sample &sample = samples_found[i];
+		if (superset[i] >= 0 || sample.original.size() < 2)
+		{
+			continue;
+		}
+
+		Clique cl(sample.original);
+		cl.setSampleWeight(sample.weight);
+		cliques.insert(cl);
+	}
+
 	std::cout << "Found " << cliques.size() << std::endl;
+
 	_clique->setSubdivisions(cliques);
 }
 

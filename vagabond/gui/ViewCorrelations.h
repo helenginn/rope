@@ -20,6 +20,8 @@
 #define __vagabond__ViewCorrelations__
 
 #include <vagabond/gui/elements/Scene.h>
+#include <vagabond/gui/elements/Mouse2D.h>
+#include <vagabond/gui/elements/IndexResponseView.h>
 #include <vagabond/core/Item.h>
 #include <vagabond/core/ResidueRange.h>
 #include <vagabond/core/protonic/hnet.h>
@@ -39,13 +41,20 @@ class HBondDiagram;
 class MatrixPlot;
 class TextButton;
 
-class ViewCorrelations : public Scene
+class ViewCorrelations : public Mouse2D, public IndexResponseView
 {
 public:
 	ViewCorrelations(Scene *prev, Clique *clique);
 	~ViewCorrelations();
 
 	virtual void setup();
+	virtual void sendSelection(float t, float l, float b, float r,
+	                           bool inverse);
+	virtual void sendClickSelection(double x, double y, bool inverse);
+
+	// shared tail of both overrides above - see _lastSelectedStates's own
+	// comment.
+	void captureStateSelection();
 	void makeList();
 	void viewSubnetwork(Clique &clique);
 	void occupancies();
@@ -167,8 +176,40 @@ private:
 
 	// shared by showStateClustering() and showSubnetworkClustering():
 	// positions a freshly-built ClusterPlot at this view's standard
-	// content spot and starts its physics.
+	// content spot, registers it for shift+drag/shift+click selection
+	// (replacing any previous plot's own registration - see the .cpp),
+	// and starts its physics.
 	void placeClusterPlot(ClusterPlot *cp);
+
+	// deleteTemps() alone queues a ClusterPlot's underlying Renderable
+	// for deletion but does not deregister it from IndexResponseView's
+	// own _responders list (IndexResponder::~IndexResponder() never
+	// self-deregisters) - a shift+click landing on whatever view replaced
+	// it (e.g. HydrogenBondDiagram, which never calls placeClusterPlot()
+	// itself) would then walk a dangling pointer into the just-deleted
+	// plot and crash. Every deleteTemps() call in this class must go
+	// through here instead, which also clears _activeClusterPlot for the
+	// same reason (see its own comment).
+	void clearScreen();
+
+	// non-owning - whichever ClusterPlot placeClusterPlot() last
+	// registered as an IndexResponder, purely so a later call can tell
+	// clearResponders() to drop it before the temp object itself gets
+	// queued for deletion by the next deleteTemps().
+	ClusterPlot *_activeClusterPlot = nullptr;
+
+	// updated (from _activeClusterPlot->selectedIndices()) whenever a
+	// selection is made while _subnetworkView is StateClustering - see
+	// sendSelection()/sendClickSelection() - so showHydrogenBondDiagram()
+	// still has the selection available after switching tabs, even though
+	// deleteTemps() (viewSubnetwork()) will have already destroyed the
+	// ClusterPlot itself (and left _activeClusterPlot dangling) by the
+	// time that happens. Node index == CertainStates state index directly
+	// (showStateClustering() builds the plot with state_count() nodes in
+	// ptps()-independent, state-index order) - no remapping needed.
+	// Empty means "no selection" - showHydrogenBondDiagram() then falls
+	// back to averaging across every state.
+	std::vector<int> _lastSelectedStates;
 
 	TopLevelView _topLevelView = TopLevelView::CorrelationMatrix;
 

@@ -138,11 +138,18 @@ OccupanciesView::EstimateMap OccupanciesView::estimates()
 		std::map<int, float> results{}; // one per state
 		float sum = 0;
 		size_t samples = 0;
+
+		// the originating Clique's own sampleWeight() (see its own
+		// comment) - how many independent Subdivide::subdivide() walks
+		// collapsed into this one searched subdivision, so it counts
+		// proportionally more towards the pooled estimate below than a
+		// subdivision only a single walk ever reached.
+		float sampleWeight = 1.f;
 	};
-	
+
 	std::map<ProbeTypePair, std::vector<OccupancyEstimate>> occupancies;
 	EstimateMap ret;
-	
+
 	auto process_clique = [&occupancies](const Clique &clique)
 	{
 		if (!clique.states()) return;
@@ -155,12 +162,14 @@ OccupanciesView::EstimateMap OccupanciesView::estimates()
 		// average_score() + probsForAve(ave) pair this used to be.
 		float ave = 0;
 		std::vector<float> probs = states.probsForLocalAve(ave);
+		float sampleWeight = (float)clique.sampleWeight();
 
 		for (const ProbeTypePair &ptp : states.ptps())
 		{
 			float sum = 0; // sum of all energy contributions, populated next
 			std::map<int, float> occs = states.proportions(ptp, sum, probs);
-			occupancies[ptp].push_back({occs, sum, states.state_count()});
+			occupancies[ptp].push_back({occs, sum, states.state_count(),
+			                            sampleWeight});
 		}
 	};
 	
@@ -192,7 +201,7 @@ OccupanciesView::EstimateMap OccupanciesView::estimates()
 					continue;
 				}
 
-				float weight = est.sum;
+				float weight = est.sum * est.sampleWeight;
 				float quantity = est.results.at(state);
 				sample_count += est.samples;
 				sum += quantity * weight;

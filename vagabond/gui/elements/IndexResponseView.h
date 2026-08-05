@@ -57,6 +57,16 @@ protected:
 	virtual void interactedWithNothing(bool left, bool hover = false) {};
 
 	void sendSelection(float t, float l, float b, float r, bool inverse);
+
+	/** shift/alt+click counterpart to sendSelection() - single-point
+	 * GPU-picking lookup (checkIndex()) instead of a box scan. A hit
+	 * gets added to (or, if inverse, removed from) the selection exactly
+	 * like a box hit would; nothing under the cursor clears the whole
+	 * selection instead, since a click that hits nothing has no box-
+	 * scan equivalent to fall back on. Each concrete view overriding
+	 * Mouse2D::sendClickSelection() should forward here, the same way
+	 * they already forward to sendSelection(). */
+	void sendClickSelection(double x, double y, bool inverse);
 private:
 
 	IndexResponder *getResponderForIndex(int &val);

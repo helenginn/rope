@@ -212,10 +212,25 @@ void Mouse2D::mouseReleaseEvent(double x, double y, SDL_MouseButtonEvent button)
 		_box = nullptr;
 		
 		regulariseBox();
-		
-		sendSelection(_topPos, _leftPos, _bottomPos, _rightPos, 
-		              _reducingSelection);
-		
+
+		// a plain click (press+release with negligible movement) leaves
+		// a near-zero-size box that sendSelection()'s pixel-scan would
+		// just find nothing in - treat it as picking (or clearing) the
+		// one thing under the cursor instead of an empty drag.
+		const float clickThreshold = 4.f;
+		bool wasClick = (fabs(_rightPos - _leftPos) < clickThreshold &&
+		                 fabs(_bottomPos - _topPos) < clickThreshold);
+
+		if (wasClick)
+		{
+			sendClickSelection(x, y, _reducingSelection);
+		}
+		else
+		{
+			sendSelection(_topPos, _leftPos, _bottomPos, _rightPos,
+			              _reducingSelection);
+		}
+
 		_reducingSelection = false;
 	}
 

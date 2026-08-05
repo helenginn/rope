@@ -78,10 +78,23 @@ Energy::energy_wrapper_for_covalent(BondProbe &bp)
 		std::vector<Probe *> lefts = acquire_connected_atoms_for(left);
 
 		std::vector<Probe *> rights = acquire_connected_atoms_for(right);
-		
+
 		glm::vec3 l = left.position();
 		glm::vec3 r = right.position();
 		float sum = 0;
+
+		// conventional (AMBER/CHARMM-style) periodic torsion term, one per
+		// (extrLeft, extrRight) pair rather than one abstract dihedral for
+		// the whole bond - naturally scales with how many substituents
+		// each end has, since a more substituted centre sums over more
+		// pairs. n=3 matches a tetrahedral (sp3) centre's own three-fold
+		// symmetry - staggered minima every 120 degrees (60, 180, -60),
+		// eclipsed maxima every 120 degrees starting at 0. cos(n*theta)/2
+		// keeps this centred on zero (mean 0 over a full cycle, favourable
+		// staggered contributions negative, unfavourable eclipsed ones
+		// positive) rather than shifted up into [0, 1] - and, unlike the
+		// old |torsion| > 60 cutoff, is smooth and defined over the full
+		// cycle, not just a window around one minimum.
 		for (Probe *const &extrLeft : lefts)
 		{
 			glm::vec3 ll = extrLeft->position();
@@ -94,16 +107,11 @@ Energy::energy_wrapper_for_covalent(BondProbe &bp)
 				bool isHR = (extrRight->atom()->elementSymbol() == "H");
 				float torsion = measure_bond_torsion(poz);
 
-				if (fabs(torsion) > 60.f)
-				{
-					continue;
-				}
-
 				float x = deg2rad(torsion * 3.f);
-				float cosine = cos(x); // relative
-				if (isHL) cosine *= 0.5;
-				if (isHR) cosine *= 0.5;
-				sum += cosine;
+				float term = 0.5f * cos(x);
+				if (isHL) term *= 0.5;
+				if (isHR) term *= 0.5;
+				sum += term;
 			}
 		}
 
@@ -260,7 +268,18 @@ Energy::energy_wrapper_for_clash_repulsion(
     const std::vector<Probe::PendingRepulsion> &pairs,
     std::shared_ptr<GuiltVersion> lastRound)
 {
-	auto func = [&groupExist, pairs]()
+	// shared, not copied per group member - std::function's own copy
+	// semantics duplicate whatever a lambda captures by value, so
+	// capturing pairs directly here would give every member of an
+	// N-atom group its own full copy of the N-sized array (O(N^2)
+	// memory for a large alt-conf cluster, likely the actual driver
+	// behind memory still climbing during exhaustive search) once the
+	// identical wrapper is attached to each member via
+	// Probe::addEnergyWrapper() in Network::bundleRepulsionTerms().
+	auto sharedPairs =
+	std::make_shared<std::vector<Probe::PendingRepulsion>>(pairs);
+
+	auto func = [&groupExist, sharedPairs]()
 	{
 		// every pair's own "left" atom belongs to this same mutual-
 		// existence group, so their existence is guaranteed correlated -
@@ -281,7 +300,7 @@ Energy::energy_wrapper_for_clash_repulsion(
 		// checking individually.
 		float total = 0.f;
 
-		for (const Probe::PendingRepulsion &p : pairs)
+		for (const Probe::PendingRepulsion &p : *sharedPairs)
 		{
 			if (p.dist <= 0.f || p.dist != p.dist || p.sigma <= 0.f)
 			{

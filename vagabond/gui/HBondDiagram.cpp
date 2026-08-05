@@ -19,6 +19,7 @@
 #include "HBondDiagram.h"
 
 #include <vagabond/core/PositionShifter.h>
+#include <vagabond/core/protonic/CertainStates.h>
 #include <vagabond/core/protonic/Probe.h>
 #include <vagabond/core/protonic/ProbeResult.h>
 #include <vagabond/gui/BondRod.h>
@@ -27,10 +28,14 @@
 #include <vagabond/gui/elements/Window.h>
 
 HBondDiagram::HBondDiagram(const OpSet<ProbeTypePair> &nodes,
-                           const glm::mat4x4 &model)
+                           const glm::mat4x4 &model,
+                           const CertainStates *states,
+                           const std::vector<float> &stateWeights)
 {
 	_nodes = nodes;
 	_shifter = new PositionShifter(model);
+
+	computeStateAverages(states, stateWeights);
 
 	// same scheme as ProtonNetworkView::arrangeFigure() - a real distance-
 	// matching spring (the default targetFn, Probe::_init Euclidean
@@ -82,6 +87,139 @@ HBondDiagram::~HBondDiagram()
 void HBondDiagram::start()
 {
 	_shifter->run();
+}
+
+void HBondDiagram::computeStateAverages(const CertainStates *states,
+                                        const std::vector<float> &stateWeights)
+{
+	if (!states || stateWeights.empty())
+	{
+		return;
+	}
+
+	// ExistenceType pass first (see this method's own header comment) -
+	// one entry per atom actually tracked by CertainStates (never a
+	// bridging hydrogen - see makeAtoms()'s own comment on why).
+	for (const ProbeTypePair &ptp : _nodes)
+	{
+		if (ptp.second != hnet::Types::ExistenceType || !ptp.first)
+		{
+			continue;
+		}
+
+		float sum = 0.f;
+		std::map<int, float> totals = states->proportions(ptp, sum, stateWeights);
+
+		if (sum <= 0.f)
+		{
+			continue;
+		}
+
+		float fracPresent = totals[(int)hnet::Existence::Present] / sum;
+		_alphaOverride[ptp.first] = fracPresent - 1.f;
+	}
+
+	// BondType pass - see BondProbe::certainValueAsInt() for why only
+	// these three raw values ever appear: Existence::Absent (covers a
+	// genuinely absent bond as well as a functionally-absent Broken/
+	// LonePair one), Bond::Weak (Acceptor), Bond::Strong (Donor).
+	for (const ProbeTypePair &ptp : _nodes)
+	{
+		if (ptp.second != hnet::Types::BondType || !ptp.first)
+		{
+			continue;
+		}
+
+		float sum = 0.f;
+		std::map<int, float> totals = states->proportions(ptp, sum, stateWeights);
+
+		if (sum <= 0.f)
+		{
+			continue;
+		}
+
+		float fracWeak = totals[(int)hnet::Bond::Weak] / sum;
+		float fracStrong = totals[(int)hnet::Bond::Strong] / sum;
+		float fracBonded = fracWeak + fracStrong;
+
+		Probe *probe = ptp.first;
+		_alphaOverride[probe] = fracBonded - 1.f;
+
+		float fracAbsent = 1.f - fracBonded;
+
+		std::string icon;
+
+		// no clear majority either way between bonded and absent - the
+		// same "healthy mix" idea as the Weak/Strong split below, one
+		// level up: BondProbe::display()'s own "unassigned_bond" (its
+		// default case, for a live value it does not otherwise recognise)
+		// is the closest existing concept to "genuinely undecided", so
+		// reused here rather than forcing this into transparency/bonded
+		// when the average itself does not actually favour either. Same
+		// 0.3 threshold and same caveat as the Weak/Strong split below.
+		float minorOverall = std::min(fracAbsent, fracBonded);
+		if (minorOverall >= 0.3f)
+		{
+			icon = "unassigned_bond";
+		}
+		else if (fracBonded < 0.5f)
+		{
+			// mostly Absent/Broken/LonePair across the selected states -
+			// matches BondProbe::display()'s own Broken/NotBonded mapping.
+			icon = "transparency";
+		}
+		else
+		{
+			// a "healthy mix" (present's own request) - neither role
+			// dominates so heavily that the minority role is negligible.
+			// 0.3 is a judgement call, not derived from anything; easy to
+			// retune if the icon flips too eagerly/reluctantly in
+			// practice.
+			float minor = std::min(fracWeak, fracStrong);
+			if (minor / fracBonded >= 0.3f)
+			{
+				icon = "present_bond";
+			}
+			else if (fracStrong > fracWeak)
+			{
+				icon = "strong_bond";
+			}
+			else
+			{
+				icon = "weak_bond";
+			}
+		}
+
+		_iconOverride[probe] = icon;
+
+		// the bridging hydrogen (see makeAtoms()'s own comment) has no
+		// ExistenceType ptp of its own to have been covered by the first
+		// pass above - its existence is only ever implied by whichever
+		// bond(s) it takes part in, so borrow this bond's own fracBonded
+		// for it. Only if not already set: a hydrogen bridging two
+		// alternate bonds (rare, but possible) keeps whichever bond's
+		// alpha got there first rather than being silently overwritten by
+		// a second, unrelated bond touching the same atom. Text is
+		// restricted to the bridging hydrogen specifically (is_atom() ==
+		// false - the heavy atom endpoint's own display() is just its
+		// element symbol, which does not vary with existence certainty at
+		// all, so overriding it here would be wrong) - "H" once this bond
+		// is bonded in the majority of the weighted states, blank
+		// otherwise, matching HydrogenProbe::display()'s own two options.
+		BondProbe *bp = static_cast<BondProbe *>(probe);
+		for (Probe *end : {&bp->left(), &bp->right()})
+		{
+			if (_alphaOverride.count(end) == 0)
+			{
+				_alphaOverride[end] = fracBonded - 1.f;
+			}
+
+			if (!end->is_atom() && _textOverride.count(end) == 0)
+			{
+				_textOverride[end] = (fracBonded >= 0.5f) ? "H" : " ";
+			}
+		}
+	}
 }
 
 void HBondDiagram::makeAtoms()
@@ -176,15 +314,27 @@ void HBondDiagram::makeAtoms()
 
 	for (Probe *probe : atomProbes)
 	{
-		Text *label = new Text(probe->display());
+		// bridging hydrogens only (see _textOverride's own comment) - "H"
+		// once the majority of the weighted states have it actually
+		// bonded, blank otherwise, rather than whichever this one-shot
+		// snapshot's live display() happens to currently show.
+		auto textOverride = _textOverride.find(probe);
+		std::string text = textOverride != _textOverride.end() ?
+		textOverride->second : probe->display();
+
+		Text *label = new Text(text);
 		label->resize(0.5);
 		label->setPosition(to_screen((probe->_init - centroid) * _displayScale));
 		// matches ProbeAtom::fullUpdateProbe()'s own setAlpha(_probe->
 		// alpha()) - fades an atom that is not certain, and further fades
 		// (to fully invisible) one that is certainly absent, same as the
 		// interactive 3D view. A one-shot snapshot here, not a live
-		// update callback, same as the display() text itself.
-		label->setAlpha(probe->alpha());
+		// update callback, same as the display() text itself - unless
+		// computeStateAverages() found a state-weighted alpha for this
+		// atom instead (see its own comment), which then takes priority.
+		auto alphaOverride = _alphaOverride.find(probe);
+		label->setAlpha(alphaOverride != _alphaOverride.end() ?
+		                alphaOverride->second : probe->alpha());
 		addObject(label);
 
 		_atoms[probe] = label;
@@ -254,8 +404,15 @@ void HBondDiagram::makeBondLine(Probe *probe)
 		return;
 	}
 
-	BondRod *bond = new BondRod("assets/images/" +
-	                           probe->display() + ".png");
+	// computeStateAverages() may have picked a different icon (e.g.
+	// "present_bond" for a healthy donor/acceptor mix - see its own
+	// comment) reflecting the state-weighted average rather than this
+	// one-shot snapshot's own current display().
+	auto iconOverride = _iconOverride.find(probe);
+	std::string icon = iconOverride != _iconOverride.end() ?
+	iconOverride->second : probe->display();
+
+	BondRod *bond = new BondRod("assets/images/" + icon + ".png");
 
 	// BondRod's default shaders (axes.vsh/.fsh) apply the Scene's
 	// model/projection matrices - correct for ProbeBond's real 3D
@@ -279,8 +436,36 @@ void HBondDiagram::makeBondLine(Probe *probe)
 	// matches ProbeBond::updateProbe()'s own setAlpha(_probe->alpha()) -
 	// order-independent with fixVertices() below (setAlpha only ever
 	// touches vertex colour, fixVertices only ever touches pos/normal/
-	// tex), so this is fine to set once here rather than every tick.
-	bond->setAlpha(probe->alpha());
+	// tex), so this is fine to set once here rather than every tick -
+	// same state-weighted override as the icon above, when available.
+	// Plain covalent-skeleton bonds (drawn by makeBonds()'s second loop)
+	// never get one of their own - ExhaustiveSearch skips is_covalent()
+	// probes entirely, so CertainStates never tracks them - and
+	// probe->alpha() on a covalent BondProbe only reflects whether that
+	// specific link is broken, never whether the atoms it joins are
+	// actually present in the states being averaged, which left every
+	// skeleton bond fully opaque (including ones into a faded-out atom,
+	// or a never-tracked carbon) regardless of the averaged view. Falling
+	// back to the mean of the two endpoints' own effective alpha (their
+	// own override if they have one, else their own live probe->alpha() -
+	// covers carbon endpoints too, which never get an override of their
+	// own) fixes that without needing carbons to be tracked at all.
+	auto alphaOverride = _alphaOverride.find(probe);
+	float alpha;
+	if (alphaOverride != _alphaOverride.end())
+	{
+		alpha = alphaOverride->second;
+	}
+	else
+	{
+		auto effectiveAlpha = [this](Probe *p) -> float
+		{
+			auto found = _alphaOverride.find(p);
+			return found != _alphaOverride.end() ? found->second : p->alpha();
+		};
+		alpha = 0.5f * (effectiveAlpha(left) + effectiveAlpha(right));
+	}
+	bond->setAlpha(alpha);
 	addObject(bond);
 
 	Text *leftLabel = _atoms[left];
@@ -305,8 +490,12 @@ void HBondDiagram::makeBondLine(Probe *probe)
 		// visible glyph there.
 		return text.empty() || text == " ";
 	};
-	bool leftBlank = blank(left->display());
-	bool rightBlank = blank(right->display());
+	// leftLabel/rightLabel's own text() - not left/right->display() - so
+	// this matches whatever _textOverride (see its own comment) actually
+	// put on screen for a bridging hydrogen, not this one-shot snapshot's
+	// live value.
+	bool leftBlank = blank(leftLabel->text());
+	bool rightBlank = blank(rightLabel->text());
 
 	// follows wherever the two endpoint labels are currently rendered
 	// (PositionShifter-driven), same idiom as ProbeBond::updatePosition()

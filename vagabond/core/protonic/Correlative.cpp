@@ -34,13 +34,14 @@ OpSet<ProbeTypePair> Correlative::probeTypePairs
 		if (!clique.states()) continue;
 
 		const CertainStates &states = *clique.states();
-		float sum = states.average_score() * states.state_count();
+		float weight = (float)clique.sampleWeight();
+		float sum = states.average_score() * states.state_count() * weight;
 		if (sum != sum)
 		{
 			continue;
 		}
 		all_sum += sum;
-		all_count += states.state_count();
+		all_count += states.state_count() * weight;
 		all += states.ptps();
 	}
 
@@ -94,7 +95,7 @@ Correlative::Correlative(const OpSet<ProbeTypePair> &all, float ave_score,
 	_written.setZero();
 }
 
-void Correlative::addStates(const CertainStates &states)
+void Correlative::addStates(const CertainStates &states, float weight)
 {
 	// computed once for this run, not cached on states itself - score(i)
 	// is a live callback that can change if enabled energy terms change
@@ -139,10 +140,13 @@ void Correlative::addStates(const CertainStates &states)
 					}
 				}
 
+				c.mat *= weight;
+
 				_overall(seqN(x, m), seqN(y, n)) += c.mat;
 				_overall(seqN(y, n), seqN(x, m)) += c.mat.transpose();
-				
+
 				Eigen::MatrixXf copy = c.mat; copy.setOnes();
+				copy *= weight;
 //				copy *= states.state_count();
 
 				_written(seqN(x, m), seqN(y, n)) += copy;
@@ -150,9 +154,10 @@ void Correlative::addStates(const CertainStates &states)
 			}
 			else
 			{
-				Eigen::MatrixXf cc = c.mat;
+				Eigen::MatrixXf cc = c.mat * weight;
 				Eigen::MatrixXf csq = c.mat;
 				csq.setOnes();
+				csq *= weight;
 
 				_overall(seqN(x, m), seqN(y, n)) += cc;
 				_written(seqN(x, m), seqN(y, n)) += csq;

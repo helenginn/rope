@@ -19,13 +19,12 @@
 #ifndef __vagabond__ClusterPlot__
 #define __vagabond__ClusterPlot__
 
-#include <vagabond/gui/elements/Box.h>
+#include "PointyView.h"
 #include <vagabond/utils/Eigen/Dense>
 #include <vector>
 #include <map>
 
 class PositionShifter;
-class Image;
 
 /** Lays out one node per row/column of an arbitrary N x N distance matrix
  *  via PositionShifter, using that matrix as the spring target directly
@@ -34,26 +33,36 @@ class Image;
  *  init from. Deliberately has no notion of what the matrix represents -
  *  originally written for CertainStates::distanceMatrix() (states within
  *  one subnetwork), it's equally usable for e.g. inter-subnetwork
- *  overlap distance, or any other precomputed dissimilarity matrix. */
-class ClusterPlot : public Box
+ *  overlap distance, or any other precomputed dissimilarity matrix.
+ *
+ *  Renders as a single GL_POINTS buffer (PointyView) rather than one
+ *  Image per node - the same one-Renderable-many-vertices approach
+ *  Graph's own Scatter uses - so a plot with hundreds of nodes is one
+ *  draw call and one small VBO instead of hundreds of separate quads.
+ *  Selectable via the standard IndexResponder/SelectionBox mechanism
+ *  (shift+drag or shift+click, see Mouse2D/IndexResponseView) once
+ *  registered with the hosting Scene's addIndexResponder(). */
+class ClusterPlot : public PointyView
 {
 public:
 	// sizeWeights: optional, one entry per row/col of dist, used to scale
-	// each node's dot (see makeNodes()'s comment) - pass an empty vector
-	// for uniform sizing.
+	// each node's point size (see makeNodes()'s comment) - pass an empty
+	// vector for uniform sizing.
 	// starred: optional, one entry per row/col of dist - true draws that
-	// node as assets/images/star.png instead of the usual dot.png (see
-	// makeNodes()). Pass an empty vector for plain dots throughout; this
-	// class has no opinion on what "starred" means to the caller (e.g.
+	// node with the filled-star icon (points.png index 1) instead of the
+	// usual filled circle (index 0) - see makeNodes(). Pass an empty
+	// vector for plain dots throughout; this class has no opinion on
+	// what "starred" means to the caller (e.g.
 	// ViewCorrelations::showSubnetworkClustering() uses it to flag
 	// subnetworks touching a particular watched signal).
-	// colours: optional, one entry per row/col of dist - tints that node
-	// via Renderable::setColour() instead of leaving it at the image's own
-	// default colour. Pass an empty vector (or leave any given index
-	// unset) to leave that node's default colour alone; this class has no
-	// opinion on what a colour means to the caller (e.g.
-	// ViewCorrelations::showStateClustering() uses it to show what each
-	// state assigns to a particular watched signal).
+	// colours: optional, one entry per row/col of dist - tints that
+	// node's base colour instead of the default grey. Pass an empty
+	// vector (or leave any given index unset) to leave that node's
+	// default colour alone; this class has no opinion on what a colour
+	// means to the caller (e.g. ViewCorrelations::showStateClustering()
+	// uses it to show what each state assigns to a particular watched
+	// signal). Overridden visually (not replaced) while a node is
+	// selected - see selected().
 	ClusterPlot(const Eigen::MatrixXf &dist,
 	           const std::vector<float> &sizeWeights,
 	           const glm::mat4x4 &model,
@@ -64,22 +73,37 @@ public:
 	// starts the physics thread - deliberately not done by the
 	// constructor: callers position the whole plot afterwards (e.g.
 	// setPosition()), which rigidly translates every already-constructed
-	// child node via addToVertices() - if the physics thread were already
-	// running at that point, that translation would race the thread's
-	// own concurrent, unsynchronized vertex writes to those same nodes.
+	// node's vertex position via addToVertices() - if the physics thread
+	// were already running at that point, that translation would race
+	// the thread's own concurrent, unsynchronized vertex writes to those
+	// same vertices.
 	// Note: position this plot via setPosition(), never setCentre()/
-	// setArbitrary() - their recursive addAlign()/realign() cascade calls
-	// setPosition() directly on every child too, using each child's own
-	// (uninitialized) _x/_y fraction fields, which forces every single
-	// node to the exact same screen position and destroys the physics-
-	// driven layout entirely.
+	// setArbitrary() - see the same caution on the old Image-based
+	// version this replaced, still applicable since PositionShifter's
+	// setter writes vertex positions directly rather than going through
+	// any per-child alignment fields.
 	void start();
 
-private:
-	void makeNodes(const std::vector<float> &sizeWeights,
-	              const std::vector<bool> &starred,
-	              const std::vector<glm::vec3> &colours);
+	virtual void makePoints() {};
+	virtual void updatePoints();
 
+	virtual bool selectable() const
+	{
+		return true;
+	}
+
+	/** IndexResponder callback - marks node idx selected (inverse false)
+	 * or deselected (inverse true), visually highlighted the same way
+	 * ClusterView marks a selected point. */
+	virtual void selected(int idx, bool inverse);
+
+	/** which node indices are currently selected - queried by the
+	 * caller, since this class has no notion of what a node represents
+	 * (see the class comment) and so cannot itself act on a selection,
+	 * only track and display it. */
+	std::vector<int> selectedIndices() const;
+
+private:
 	// spring target (sim-space units) for a pair of nodes, shared between
 	// setTargetFn() and setWeightFn() - see PositionShifter.h.
 	float targetFor(void *left, void *right) const;
@@ -97,8 +121,9 @@ private:
 	// raw counts span 0-5 or 0-30.
 	float _displayScale = 1.f;
 
-	std::vector<Image *> _nodes;
 	std::map<void *, int> _nodeIndex;
+	std::vector<glm::vec4> _baseColours;
+	std::vector<bool> _selected;
 
 	PositionShifter *_shifter = nullptr;
 };

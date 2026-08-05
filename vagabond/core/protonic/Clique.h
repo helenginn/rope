@@ -113,7 +113,30 @@ public:
 	{
 		_planText = text;
 	}
-	
+
+	/** how many independent Subdivide::subdivide() samples this
+	 * subdivision actually represents - always >= 1. Every probe in the
+	 * top-level clique starts its own independent random walk, so before
+	 * near-duplicate/subset screening this count was implicit (one
+	 * subdivision per surviving walk); discarding a walk that collapsed
+	 * onto (or into a strict subset of) another one's region loses that
+	 * walk's own share of the sampling entirely, silently undercounting
+	 * regions where many independent walks happen to collapse together
+	 * relative to regions no other walk reached. Incremented once per
+	 * walk this subdivision "ate" (an exact-duplicate or subset match -
+	 * see Subdivide::subdivide()) instead of discarding it outright, so
+	 * that information survives without needing to keep - or pay to
+	 * search - the redundant copies themselves. */
+	int sampleWeight() const
+	{
+		return _sampleWeight;
+	}
+
+	void setSampleWeight(int weight)
+	{
+		_sampleWeight = weight;
+	}
+
 	bool is_certain() const;
 	
 	int num_waters() const;
@@ -330,6 +353,7 @@ private:
 	
 	std::string _name{};
 	std::string _planText{};
+	int _sampleWeight = 1;
 	std::map<std::string, OpSet<std::string>> _communication;
 	std::map<std::string, std::string> _descToCommune;
 	OpSet<std::string> _descs;
@@ -375,6 +399,11 @@ inline void to_json(json &j, const Clique &cl)
 	{
 		j["plan"] = cl._planText;
 	}
+
+	if (cl._sampleWeight != 1)
+	{
+		j["sample_weight"] = cl._sampleWeight;
+	}
 }
 
 inline void from_json(const json &j, Clique &cl)
@@ -403,6 +432,11 @@ inline void from_json(const json &j, Clique &cl)
 	if (j.count("plan"))
 	{
 		cl._planText = j.at("plan");
+	}
+
+	if (j.count("sample_weight"))
+	{
+		cl._sampleWeight = j.at("sample_weight");
 	}
 }
 

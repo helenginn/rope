@@ -43,6 +43,16 @@ protected:
 	virtual void sendSelection(float t, float l, float b, float r,
 	                           bool inverse);
 
+	/** shift/alt+click (as opposed to +drag) - a plain click's box never
+	 * grows past mouseReleaseEvent()'s own click-vs-drag threshold, so
+	 * sendSelection()'s pixel-scan over that near-zero box would find
+	 * nothing; this is called instead for that case. Default no-op;
+	 * IndexResponseView provides the real implementation (single-point
+	 * pick, adding the hit to the existing selection, or clearing the
+	 * whole selection if nothing was under the cursor), common to every
+	 * Mouse2D-based selection view the same way sendSelection() is. */
+	virtual void sendClickSelection(double x, double y, bool inverse) {}
+
 	void setMakesSelections(bool makes = true)
 	{
 		_makesSelections = makes;

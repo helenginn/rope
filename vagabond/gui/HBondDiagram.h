@@ -23,6 +23,7 @@
 #include <vagabond/utils/OpSet.h>
 #include <map>
 
+class CertainStates;
 class PositionShifter;
 class Probe;
 struct ProbeTypePair;
@@ -48,7 +49,18 @@ class Text;
 class HBondDiagram : public Box
 {
 public:
-	HBondDiagram(const OpSet<ProbeTypePair> &nodes, const glm::mat4x4 &model);
+	// states/stateWeights (optional): when given, every node's alpha (and
+	// a bond's own icon - see computeStateAverages()) reflects the
+	// stateWeights-weighted average across states rather than this one-
+	// shot live snapshot's actual current value - stateWeights is passed
+	// straight through to CertainStates::proportions() (zero out a state's
+	// own weight to exclude it, e.g. for an "only these selected states"
+	// average), and must be states->state_count() long if given at all.
+	// Leaving both at their defaults keeps this exactly the plain live
+	// snapshot it always was.
+	HBondDiagram(const OpSet<ProbeTypePair> &nodes, const glm::mat4x4 &model,
+	            const CertainStates *states = nullptr,
+	            const std::vector<float> &stateWeights = {});
 	~HBondDiagram();
 
 	// starts the physics thread - deliberately not done by the
@@ -78,9 +90,38 @@ private:
 	// makeAtoms()); a no-op otherwise.
 	void makeBondLine(Probe *probe);
 
+	// fills _alphaOverride/_iconOverride from states/stateWeights (see the
+	// constructor's own comment) - a no-op (both maps left empty) if
+	// states is null, so makeAtoms()/makeBondLine() fall back to the
+	// plain live-snapshot probe->alpha()/probe->display() exactly as
+	// before. Two passes: ExistenceType ptps() first (one per atom, the
+	// fraction of stateWeights-weighted states where that atom is
+	// Present), then BondType ptps() (one per bond, the fraction where it
+	// is genuinely bonded (Weak/Acceptor or Strong/Donor) rather than
+	// Absent/Broken/LonePair, plus a majority-role icon - see its own
+	// body) - the second pass also fills in alpha for each bond's own
+	// bridging-hydrogen endpoint (never its own ExistenceType ptp - see
+	// makeAtoms()'s own comment on why), but only if the first pass
+	// hasn't already claimed that Probe*, which is why the two passes run
+	// in this order and not combined into one.
+	void computeStateAverages(const CertainStates *states,
+	                          const std::vector<float> &stateWeights);
+
 	OpSet<ProbeTypePair> _nodes;
 
 	std::map<Probe *, Text *> _atoms;
+
+	// see computeStateAverages() - empty (falls back to probe->alpha()/
+	// probe->display()) unless this instance was constructed with a
+	// CertainStates/stateWeights pair.
+	std::map<Probe *, float> _alphaOverride;
+	std::map<Probe *, std::string> _iconOverride;
+
+	// bridging-hydrogen label text only ("H" vs " ", majority-bonded vs
+	// not - see computeStateAverages()'s own comment) - every other atom's
+	// display() text (an element symbol) does not vary with existence
+	// certainty at all, so nothing else ever needs an entry here.
+	std::map<Probe *, std::string> _textOverride;
 
 	// converts between screen space (what each Text label actually
 	// renders at - this Scene's shaders treat vertex positions as literal

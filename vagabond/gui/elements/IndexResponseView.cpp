@@ -211,6 +211,22 @@ void IndexResponseView::sendSelection(float t, float l, float b, float r,
 #endif
 
 	std::set<int> results = objectsInBox(t, l, b, r);
-	
+
+	selectIndices(results, inverse);
+}
+
+void IndexResponseView::sendClickSelection(double x, double y, bool inverse)
+{
+	int val = checkIndex(x, y);
+
+	if (val < 0)
+	{
+		// clicked on nothing - cancels the whole selection, matching
+		// Mouse2D::sendClickSelection()'s own comment.
+		deselect();
+		return;
+	}
+
+	std::set<int> results = {val};
 	selectIndices(results, inverse);
 }
