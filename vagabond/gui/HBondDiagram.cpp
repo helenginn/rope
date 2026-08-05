@@ -24,6 +24,7 @@
 #include <vagabond/gui/BondRod.h>
 #include <vagabond/gui/elements/Text.h>
 #include <vagabond/gui/elements/GLView.h>
+#include <vagabond/gui/elements/Window.h>
 
 HBondDiagram::HBondDiagram(const OpSet<ProbeTypePair> &nodes,
                            const glm::mat4x4 &model)
@@ -158,23 +159,44 @@ void HBondDiagram::makeAtoms()
 	}
 	_displayScale = 0.5f / maxDist;
 
+	// NDC x and y units do not span equal physical screen distances
+	// unless the window happens to be square - PositionShifter's physics
+	// (repulsion/springs) is isotropic in "sim space" and has no notion
+	// of screen shape at all, so without this the whole layout rendered
+	// visibly stretched/squashed on any non-square window, not just the
+	// bond widths (see flat_bond.vsh for that separate correction - a
+	// bond's own perpendicular width direction needs correcting too,
+	// even once the positions it connects are already right). Applied
+	// only when converting to/from actual screen (rendered) coordinates,
+	// never inside the physics loop itself - get_pos/set_pos are the
+	// only boundary between the two.
+	float aspect = Window::aspect();
+	auto to_screen = [aspect](glm::vec3 v) { v.x *= aspect; return v; };
+	auto to_sim = [aspect](glm::vec3 v) { v.x /= aspect; return v; };
+
 	for (Probe *probe : atomProbes)
 	{
 		Text *label = new Text(probe->display());
 		label->resize(0.5);
-		label->setPosition((probe->_init - centroid) * _displayScale);
+		label->setPosition(to_screen((probe->_init - centroid) * _displayScale));
+		// matches ProbeAtom::fullUpdateProbe()'s own setAlpha(_probe->
+		// alpha()) - fades an atom that is not certain, and further fades
+		// (to fully invisible) one that is certainly absent, same as the
+		// interactive 3D view. A one-shot snapshot here, not a live
+		// update callback, same as the display() text itself.
+		label->setAlpha(probe->alpha());
 		addObject(label);
 
 		_atoms[probe] = label;
 
 		auto get_init = [probe]() -> glm::vec3 { return probe->_init; };
-		auto get_pos = [label, this]() -> glm::vec3
+		auto get_pos = [label, this, to_sim]() -> glm::vec3
 		{
-			return label->centroid() / _displayScale;
+			return to_sim(label->centroid()) / _displayScale;
 		};
-		auto set_pos = [label, this](const glm::vec3 &pos)
+		auto set_pos = [label, this, to_screen](const glm::vec3 &pos)
 		{
-			label->setPosition(pos * _displayScale);
+			label->setPosition(to_screen(pos * _displayScale));
 		};
 
 		_shifter->addPosition(probe, get_init, get_pos, set_pos);
@@ -254,25 +276,49 @@ void HBondDiagram::makeBondLine(Probe *probe)
 	// otherwise shrink bonds down to a barely-visible sliver.
 	bond->setVertexShaderFile("assets/shaders/flat_bond.vsh");
 	bond->setUsesProjection(false);
+	// matches ProbeBond::updateProbe()'s own setAlpha(_probe->alpha()) -
+	// order-independent with fixVertices() below (setAlpha only ever
+	// touches vertex colour, fixVertices only ever touches pos/normal/
+	// tex), so this is fine to set once here rather than every tick.
+	bond->setAlpha(probe->alpha());
 	addObject(bond);
 
 	Text *leftLabel = _atoms[left];
 	Text *rightLabel = _atoms[right];
 
+	// truncate a quarter of the length in from an end ONLY where that
+	// end actually has a visible label to stop short of - matches
+	// ProbeBond::updatePosition()'s own left/right multiplier logic
+	// (only non-zero when that side's display() isn't blank). A "silent"
+	// atom - logically inactive, e.g. AtomProbe::display()'s Inactive
+	// case for a carbon - displays as a blank space, so there is nothing
+	// there to overlap; truncating that end anyway just leaves the rod
+	// visibly disconnected from the atom's actual position for no reason.
+	// Evaluated once here, not per tick - this diagram is a one-shot
+	// snapshot (no live update callbacks the way ProbeBond has), so
+	// display() never changes after construction.
+	auto blank = [](const std::string &text)
+	{
+		// ProbeBond::updatePosition() only checks " " (AtomProbe/BondProbe
+		// Inactive/Absent), but HydrogenProbe::display() can also return
+		// "" outright (no right-hand partner set yet) - both mean no
+		// visible glyph there.
+		return text.empty() || text == " ";
+	};
+	bool leftBlank = blank(left->display());
+	bool rightBlank = blank(right->display());
+
 	// follows wherever the two endpoint labels are currently rendered
 	// (PositionShifter-driven), same idiom as ProbeBond::updatePosition()
-	// - not the physics probe position directly. Truncated a quarter of
-	// the way in from each end (same proportion ProbeBond::
-	// updatePosition() itself uses) so the rod stops short of each
-	// label's own glyph instead of running into - and through - its
-	// centre.
-	_shifter->addTidy([bond, leftLabel, rightLabel]()
+	// - not the physics probe position directly.
+	_shifter->addTidy([bond, leftLabel, rightLabel, leftBlank, rightBlank]()
 	{
 		glm::vec3 start = leftLabel->centroid();
 		glm::vec3 end = rightLabel->centroid();
 		glm::vec3 full = end - start;
-		glm::vec3 quarter = full * 0.25f;
-		bond->fixVertices(start + quarter, full - quarter * 2.f);
+		glm::vec3 startTrim = leftBlank ? glm::vec3(0.f) : full * 0.25f;
+		glm::vec3 endTrim = rightBlank ? glm::vec3(0.f) : full * 0.25f;
+		bond->fixVertices(start + startTrim, full - startTrim - endTrim);
 		bond->forceRender(true, true);
 	});
 }

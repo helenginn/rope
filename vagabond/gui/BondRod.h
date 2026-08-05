@@ -36,6 +36,14 @@ public:
 	BondRod(const std::string &path);
 
 	void fixVertices(const glm::vec3 &start, const glm::vec3 &dir);
+
+	// sets an "aspect" uniform (Window::aspect(), height/width) - only
+	// meaningful to flat_bond.vsh (HBondDiagram's bonds), which has no
+	// camera/projection of its own to correct for the window not being
+	// square, unlike axes.vsh (ProbeBond's real 3D scene, where the
+	// projection matrix already accounts for it) - harmless there, since
+	// glUniform on a name axes.vsh does not declare is a silent no-op.
+	virtual void extraUniforms();
 };
 
 #endif

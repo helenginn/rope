@@ -17,12 +17,20 @@
 // Please email: vagabond @ hginn.co.uk for more details.
 
 #include "BondRod.h"
+#include <vagabond/gui/elements/Window.h>
 
 BondRod::BondRod(const std::string &path) : Image(path)
 {
 	setVertexShaderFile("assets/shaders/axes.vsh");
 	setFragmentShaderFile("assets/shaders/axes.fsh");
 	setUsesProjection(true);
+}
+
+void BondRod::extraUniforms()
+{
+	GLint u = glGetUniformLocation(_program, "aspect");
+	glUniform1f(u, Window::aspect());
+	Image::extraUniforms();
 }
 
 void BondRod::fixVertices(const glm::vec3 &start, const glm::vec3 &dir)
