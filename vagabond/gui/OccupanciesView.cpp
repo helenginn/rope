@@ -77,21 +77,26 @@ void OccupanciesView::setup()
 	              toggle_type("Hydrogen bond angles", 
 	               hnet::Energy::Angle), 
 	               e.source_on(hnet::Energy::Angle));
-	tix->addOption("Liberation into bulk solvent", 
-	              toggle_type("Liberation into bulk solvent", 
-	               hnet::Energy::Bulk), 
+	tix->addOption("Liberation into bulk solvent",
+	              toggle_type("Liberation into bulk solvent",
+	               hnet::Energy::Bulk),
 	               e.source_on(hnet::Energy::Bulk));
+	tix->addOption("Van der Waals repulsion",
+	              toggle_type("Van der Waals repulsion",
+	               hnet::Energy::Repulsion),
+	               e.source_on(hnet::Energy::Repulsion));
 	tix->setVertical(true);
 	tix->setOneOnly(false);
-	tix->arrange(0.15, 0.52, 0.32, 0.78);
+	tix->arrange(0.15, 0.52, 0.32, 0.83);
 	addObject(tix);
-	
+
 	slider("", hnet::Energy::Torsion, 0.52);
 	slider("", hnet::Energy::Acceptor, 0.57);
 	slider("", hnet::Energy::Distance, 0.62);
 	slider("", hnet::Energy::Angle, 0.67);
 	slider("", hnet::Energy::Bulk, 0.72);
-	
+	slider("", hnet::Energy::Repulsion, 0.77);
+
 	IndexResponseView::setup();
 }
 
@@ -103,6 +108,13 @@ void OccupanciesView::slider(std::string msg, const hnet::Energy::Source &src,
 		_network.energy().alter_amplification(src, x);
 	};
 
+	// captured before setup() below - setup() seeds its dot at
+	// proportion (0,0) via its own internal finishedDragging("dot",0,0),
+	// which (since no _responder is set) fires drag_me(-2, 0) as a side
+	// effect, overwriting whatever amplification this source already
+	// had with the slider's minimum before we ever get to read it.
+	float current = _network.energy().amplification(src);
+
 	Slider *s = new Slider();
 	s->setDragFunction(drag_me);
 	s->resize(0.15);
@@ -112,7 +124,6 @@ void OccupanciesView::slider(std::string msg, const hnet::Energy::Source &src,
 	// value - was always 0.5 (dead centre = 0) regardless of whatever
 	// amplification this source already had from a previous session/run,
 	// making the slider look reset even when it was not.
-	float current = _network.energy().amplification(src);
 	float fraction = (current + 2.f) / 4.f;
 	s->setStart(fraction, 0.);
 	s->setCentre(0.1, y);
@@ -240,13 +251,37 @@ void OccupanciesView::occupancies()
 
 	deleteTemps();
 	CorrelData cd = empty_CD();
-	
+
 	Graph *graph = new Graph();
 	graph->style = Graph::StyleScatter;
 	graph->setRange('x', 0, 1);
 	graph->setRange('y', 0, 1);
 	graph->setAxisLabel('x', "Calculated occupancy");
 	graph->setAxisLabel('y', "Observed occupancy");
+
+	// find the watched signal's own residue (chain + residue id) once,
+	// independently of pass - the watched probe itself may not survive
+	// estimates()'s own filtering (occupancy_sum()/isActiveAtom() etc.)
+	// even though other atoms in the same residue do, and we still want
+	// those highlighted.
+	std::string watched = _clique->watchedSignal();
+	std::string watchedChain;
+	ResidueId watchedResidue;
+	bool haveWatchedResidue = false;
+
+	if (watched.length())
+	{
+		for (Probe *const &probe : _clique->probes())
+		{
+			if (probe->is_atom() && probe->desc() == watched)
+			{
+				watchedChain = probe->atom()->chain();
+				watchedResidue = probe->atom()->residueId();
+				haveWatchedResidue = true;
+				break;
+			}
+		}
+	}
 
 	std::cout << "observed, calculated, samples, atom\n";
 	for (auto &pair : pass)
@@ -256,7 +291,20 @@ void OccupanciesView::occupancies()
 		float &calculated = pair.second.calculated;
 		size_t &samples = pair.second.samples;
 
-		graph->addPoint(0, calculated, observed, ptp.first->desc());
+		// filled star (see Graph::addPoint's own comment on pointType)
+		// for every atom sharing the watched signal's residue - same
+		// star-for-watched visual language ClusterPlot already uses for
+		// subnetworks touching the watched signal.
+		int pointType = 4;
+		if (haveWatchedResidue && ptp.first->atom() &&
+		    ptp.first->atom()->chain() == watchedChain &&
+		    ptp.first->atom()->residueId() == watchedResidue)
+		{
+			pointType = 1;
+		}
+
+		graph->addPoint(0, calculated, observed, ptp.first->desc(), 1.f,
+		                pointType);
 		add_to_CD(&cd, calculated, observed);
 
 		std::cout << observed << " " << calculated << " " << samples << " " <<
