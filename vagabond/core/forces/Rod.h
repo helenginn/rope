@@ -77,6 +77,17 @@ public:
 
 	void forcesEquation(const std::map<ForceCoordinate, int> &indexing_map,
 	                    int coord, const InsertIntoRow &insert, float &target);
+  
+  const Particle *left() const
+  {
+    return _left;
+  }
+
+  const Particle *right () const
+  {
+    return _right;
+  }
+
 private:
 	Particle *_left{}, *_right{};
 

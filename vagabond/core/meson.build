@@ -51,6 +51,8 @@ cfile,
 'files/MtzFile.h',
 'files/PdbFile.h',
 
+'forces/ForceSource.cpp',
+'forces/ForceSource.h',
 'forces/ForceAnalysis.cpp',
 'forces/ForceAnalysis.h',
 'forces/Particle.cpp',
