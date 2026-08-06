@@ -42,6 +42,7 @@ HandleForce;
 class ForceAnalysis
 {
 public:
+
 	ForceAnalysis(AtomContent *group);
 
 	void setHandleForce(const HandleForce &func)
@@ -60,7 +61,13 @@ public:
 	
 	void calculateUnknown();
 	void resetUnknowns();
+
 private:
+
+  static constexpr long double BOLTZMANN_CONSTANT = 1.380649L; // in pNnm/100K
+  long double collection_temperature = 1.0L; // in /100K // TODO: make this read from metadata or enter by GUI
+  long double _kBT = (BOLTZMANN_CONSTANT * collection_temperature);
+
 	void createRods();
 	void createParticles();
 	void createTorsionTorques();
