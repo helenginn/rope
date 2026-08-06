@@ -20,6 +20,7 @@
 #include "Force.h"
 #include "Torque.h"
 #include "Particle.h"
+#include "forces/ForceSource.h"
 #include <vagabond/utils/maths.h>
 #include <iostream>
 #include <vagabond/utils/Eigen/Dense>
@@ -45,19 +46,41 @@ void Rod::calculatedAsTension(std::ostream &ss, CorrelData *data)
 	glm::vec3 length{};
 	
 	auto accumulate = [&sum, &length](Particle *particle, float dir)
-	{
-		for (const AppliedForce &applied : particle->forces())
-		{
-			if (applied.force->status() == Force::StatusCalculated)
-			{
-				sum += applied.force->get_vector() * applied.magnitude * dir;
-			}
-			else if (applied.force->reason() == Force::ReasonBondLength)
-			{
-				length += applied.force->get_vector() * applied.magnitude * dir;
-			}
-		}
-	};
+    {
+      for (const AppliedForce &applied : particle->forces())
+      {
+
+        if (applied.force->status() == Force::StatusCalculated)
+        {
+          sum += applied.force->get_vector() * applied.magnitude * dir;
+        }
+        else if (applied.force->reason() == Force::ReasonBondLength)
+        {
+          length += applied.force->get_vector() * applied.magnitude * dir;
+        }
+      }
+    };
+
+	auto accumulate_force_source= [this, &sum, &length](Particle *particle, float dir)
+    {
+      for (const AppliedForce &applied : particle->forces())
+      {
+
+        if (applied.force->status() == Force::StatusCalculated)
+        {
+          sum += applied.force->get_vector() * applied.magnitude * dir;
+        }
+        else if (applied.force->reason() == Force::ReasonBondLength)
+        {
+          ForceSource *source = applied.force->source();
+          if (source && !source->contains(this))
+          {
+            continue;
+          }
+          length += applied.force->get_vector() * applied.magnitude * dir;
+        }
+      }
+    };
 	
 	accumulate(_left, 1);
 	accumulate(_right, -1);

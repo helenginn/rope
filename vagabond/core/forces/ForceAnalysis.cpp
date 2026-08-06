@@ -33,6 +33,7 @@
 
 #include "Particle.h"
 #include "Rod.h"
+#include "ForceSource.h"
 
 ForceAnalysis::ForceAnalysis(AtomContent *group) : _group(group)
 {
@@ -125,6 +126,7 @@ void ForceAnalysis::createRods()
 		Force *force = new Force(Force::StatusKnown, Force::ReasonBondLength);
 		force->setUnitGetter(get_unit);
 		force->setMagGetter(get_mag);
+		// force->setSource(new RodSource(rod));
 
 		applyForce(p, force, 1);
 		applyForce(q, force, -1);
