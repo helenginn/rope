@@ -25,6 +25,8 @@
 
 typedef std::function<void(int, float)> InsertIntoRow;
 
+class ForceSource;
+
 class AbstractForce
 {
 public:
@@ -110,11 +112,22 @@ public:
 	{
 		return _report ? _report() : "(empty report)";
 	}
+
+  void setSource(ForceSource *source)
+  {
+    _source = source;
+  }
+
+  ForceSource *source() const
+  {
+    return _source;
+  }
 	
 	friend std::ostream &operator<<(std::ostream &ss, const AbstractForce *f);
 private:
 	Status _status{};
 	Reason _reason{};
+  ForceSource *_source{};
 
 	std::function<glm::vec3()> _getUnit;
 	std::function<float()> _getMag;
