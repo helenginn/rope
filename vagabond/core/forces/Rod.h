@@ -39,14 +39,14 @@ public:
 	Rod(Particle *left, Particle *right) : _left(left), _right(right)
 	{}
 	
-	void setCategory(int cat)
+	void setHasHydrogen(bool hasHydrogen)
 	{
-		_category = cat;
+		_hasHydrogen= hasHydrogen;
 	}
 	
-	const int &category() const
+	const bool &hasHydrogen() const
 	{
-		return _category;
+		return _hasHydrogen;
 	}
 	
 	std::string desc();
@@ -92,7 +92,7 @@ private:
 	Particle *_left{}, *_right{};
 
 	std::vector<AppliedTorque> _torques;
-	int _category = 0;
+	bool _hasHydrogen = true;
 };
 
 #endif

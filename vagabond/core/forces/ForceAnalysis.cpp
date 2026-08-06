@@ -105,7 +105,7 @@ void ForceAnalysis::createRods()
 			continue;
 		}
 		
-		rod->setCategory(1);
+		rod->setHasHydrogen(false);
 
 		auto get_unit = [bond]()
 		{

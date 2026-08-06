@@ -170,7 +170,7 @@ void StaticForces::calculateUnknowns(const std::map<ForceCoordinate, int>
 	CorrelData data = empty_CD();
 	for (Rod *rod : _rods)
 	{
-		if (rod->category() > 0)
+		if (rod->hasHydrogen() == false)
 		{
 			rod->calculatedAsTension(file, &data);
 		}
