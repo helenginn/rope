@@ -87,10 +87,13 @@ void StaticForces::calculateUnknowns(const std::map<ForceCoordinate, int>
 	std::cout << std::endl;
 
 	weights.makeCompressed();
-	Eigen::SparseQR<SpMat, Eigen::COLAMDOrdering<int>> qr(weights);
+  Eigen::SparseQR<SpMat, Eigen::COLAMDOrdering<int>> qr(weights);
 	Eigen::VectorXf results = qr.solve(targets);
+  // Eigen::MatrixXf dense_weights = Eigen::MatrixXf(weights);
 
-//	Eigen::VectorXf results = weights.colPivHouseholderQr().solve(targets);
+  // Eigen::VectorXf results = weights.colPivHouseholderQr().solve(targets);
+	// Eigen::VectorXf results = dense_weights.bdcSvd().solve(targets);
+	// Eigen::VectorXf results = dense_weights.householderQr().solve(targets);
 	
 	/*
 	std::cout << "==== results ==== " << std::endl;
