@@ -16,6 +16,7 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
+#include <fstream>
 #include <gemmi/elem.hpp>
 
 #include <iostream>
@@ -86,6 +87,10 @@ void ForceAnalysis::createParticles()
 
 void ForceAnalysis::createRods()
 {
+	//  std::ofstream file;
+	//  file.open("forces_compare.csv");
+	//  file << "bond_name,magnitude,z_score,stdev" << std::endl;
+
 	for (int i = 0; i < _group->bondLengthCount(); i++)
 	{
 		BondLength *bond = _group->bondLength(i);
@@ -137,10 +142,13 @@ void ForceAnalysis::createRods()
     force->setUnitGetter(get_unit);
 		force->setMagGetter(get_mag);
 		// force->setSource(new RodSource(rod));
+    
+    // file << left->desc() << "-" << right->desc() << "," << get_mag() << "," << bond->as_signed_z_score(bond->measurement()) << "," << bond->stdev()/10. << std::endl;
 
 		applyForce(p, force, 1);
 		applyForce(q, force, -1);
 	}
+// file.close();
 }
 
 void ForceAnalysis::createTorsionTorques()
