@@ -226,17 +226,16 @@ NonCovalents::Interface NonCovalents::findInterface(Segment first,
 	return interface;
 }
 
-auto closest_atoms(OpSet<Atom *> &atoms, float bond_len)
-// Add total ~ 9 fiducials. 9C4 = 126.
+auto closest_atoms(OpSet<Atom *> &atoms, float bond_len, size_t max_atoms = 0)
 {
-	return [&atoms, bond_len](Atom *const &atom) -> std::vector<Atom *> 
+	return [&atoms, bond_len, max_atoms](Atom *const &atom) -> std::vector<Atom *>
 	{
 		struct AtomDist
 		{
 			Atom *partner = nullptr;
 			float distsq = FLT_MAX;
 		};
-		
+
 		std::vector<AtomDist> dists;
         float min_dsq = bond_len * bond_len;
 
@@ -260,17 +259,61 @@ auto closest_atoms(OpSet<Atom *> &atoms, float bond_len)
 		{
             return a.distsq < b.distsq;
 		}); // IDK if this matches the house style?
-		
-		std::vector<Atom *> ret; // HELEN: Change to std::vector
+
+		std::vector<Atom *> ret;
+		if (max_atoms > 0)
+		{
+			ret.reserve(std::min(max_atoms, dists.size()));
+		}
+		else
+		{
+			ret.reserve(dists.size());
+		}
+
 		for (const auto &d : dists)
 		{
-            // Future conditions for selecting 4 fiducials.
             ret.push_back(d.partner);
+			if (max_atoms > 0 && ret.size() >= max_atoms)
+			{
+				break;
+			}
 		}
 
 		return ret;
 	};
 };
+
+template <typename Func>
+void for_each_atom_quartet(const std::vector<Atom *> &atoms, Func func)
+{
+	if (atoms.size() < 4)
+	{
+		return;
+	}
+
+	std::vector<Atom *> subset(4);
+	// todo: Another lambda contraction for for-loops.
+	for (size_t i = 0; i < atoms.size() - 3; i++)
+	{
+		subset[0] = atoms[i];
+		for (size_t j = i + 1; j < atoms.size() - 2; j++)
+		{
+			subset[1] = atoms[j];
+			for (size_t k = j + 1; k < atoms.size() - 1; k++)
+			{
+				subset[2] = atoms[k];
+				for (size_t m = k + 1; m < atoms.size(); m++)
+				{
+					subset[3] = atoms[m];
+					if (!func(subset))
+					{
+						return;
+					}
+				}
+			}
+		}
+	}
+}
 
 void NonCovalents::findInterfaces(const std::function<int(Atom *const &)> 
                                   &atom_idx)
@@ -337,7 +380,7 @@ NonCovalents::WeightedSum::position_for_weights(const GetPos &getPos,
 }
 
 OpVec<float>
-NonCovalents::WeightedSum::weights_for_positions(const GetPos &getPos) // Helen: optimize
+NonCovalents::WeightedSum::weights_for_positions(const GetPos &getPos)
 {
 	glm::vec3 ave{};
 	
@@ -370,9 +413,6 @@ NonCovalents::WeightedSum::weights_for_positions(const GetPos &getPos) // Helen:
 	glm::vec3 q = getPos(atom);
 	Eigen::Vector4f vec(q.x - ave.x, q.y - ave.y, q.z - ave.z, 0.0f);
 
-	Eigen::MatrixXf weights = to_centric.fullPivLu().solve(vec);
-
-	/*
 	Eigen::MatrixXf weights;
 	if (fiducials.size() == 4)
 	{
@@ -382,7 +422,6 @@ NonCovalents::WeightedSum::weights_for_positions(const GetPos &getPos) // Helen:
 	{
 		weights = to_centric.colPivHouseholderQr().solve(vec);
 	}
-	*/
 
 	/*
     {
@@ -547,7 +586,6 @@ void weighted_sums_for_side(NonCovalents::Interface &face,
 	{
 		return a->derivedPosition();
 	};
-    // Could use "std::function<glm::vec3(Atom *)>" instead of auto. Should I?
 
     struct AtomScore
 	{
@@ -557,204 +595,334 @@ void weighted_sums_for_side(NonCovalents::Interface &face,
 		float total_penalty;
 	};
 
-	std::vector<AtomScore> scores;
-    const float MAX_VARIANCE = 1.0f;
+    const float MAX_VARIANCE = 80.0f;
 	const float fiducial_coplanar_threshold = 0.01f;
 	const float right_coplanar_threshold = 0.1f;
+	const float fiducial_search_radius = 10.0f;
+	const size_t starting_fiducials = 9;
+	const size_t fiducial_fetch_step = 4;
 	
-	for (Atom *right : rights.atoms)
+	face.sums.clear();
+
+	if (lefts.atoms.size() == 0 || rights.atoms.size() == 0)
+	// todo: Change to rights.atoms.size < 4 if we find that 4 right atoms per interface is one of the reasons for a inconsistent pathfinding.
 	{
-		auto l = closest_atoms(lefts.atoms, 10.0f);
+		std::cout << "\tRejected interface: Insufficient interface atoms found." << std::endl;
+		return;
+	}
+
+	auto right_atoms_from_scores = [](const std::vector<AtomScore> &active_scores)
+	{
+		std::vector<Atom *> atoms;
+		atoms.reserve(active_scores.size());
+		for (const AtomScore &score : active_scores)
+		{
+			atoms.push_back(score.candidate.atom);
+		}
+		return atoms;
+	};
+
+	auto right_atom_selection_is_usable = [&](const std::vector<AtomScore> &active_scores)
+	{
+		if (active_scores.size() < 4)
+		{
+			return false;
+		}
+
+		std::vector<Atom *> atoms = right_atoms_from_scores(active_scores);
+		return !is_coplanar(atoms, target_pos, right_coplanar_threshold);
+	};
+
+	auto print_candidate = [](const NonCovalents::WeightedSum &candidate)
+	{
+		std::cout << "\t" << "Candidate atomos: " << candidate.atom->desc() << " <-> ";
+		for (Atom *f : candidate.fiducials)
+		{
+			std::cout << f->desc() << ", ";
+		}
+	};
+
+	auto best_fiducials_for_right = [&](Atom *right, size_t fiducial_limit,
+	                                    std::vector<Atom *> &best_fiducials)
+	{
+		auto l = closest_atoms(lefts.atoms, fiducial_search_radius, fiducial_limit);
 		std::vector<Atom *> neighbours = l(right);
 		
 		if (neighbours.size() < 4)
 		{
-			continue;
+			return false;
 		}
 		
         NonCovalents::WeightedSum pool_candidate =
         NonCovalents::WeightedSum(right, neighbours);
 
-		std::cout << "\t" << "Candidate atomos: " << pool_candidate.atom->desc() << " <-> ";
-		for (Atom *f : pool_candidate.fiducials)
+		if (pool_candidate.start_weight_cache.size() < neighbours.size())
 		{
-			std::cout << f->desc() << ", ";
+			return false;
 		}
 
-		std::vector<Atom *> best_fiducials;
+		std::map<Atom *, float> start_weight_for_atom;
+		for (size_t i = 0; i < neighbours.size(); i++)
+		{
+			start_weight_for_atom[neighbours[i]] = pool_candidate.start_weight_cache[i];
+		}
+
 		float best_subset_score = FLT_MAX;
 		bool found = false;
 		
-		for (size_t i = 0; i < neighbours.size() - 3; i++) // Helen: Kinetic trap, figuratively
+		auto subset_weight_variance = [&](const std::vector<Atom *> &subset, float &var)
 		{
-			for (size_t j = i + 1; j < neighbours.size() - 2; j++)
+			float sum = 0;
+			for (Atom *a : subset)
 			{
-				for (size_t k = j + 1; k < neighbours.size() - 1; k++)
+				auto it = start_weight_for_atom.find(a);
+				if (it == start_weight_for_atom.end())
 				{
-					for (size_t m = k + 1; m < neighbours.size(); m++) // Helen: Lambda func to absorb the 4 for loops for readability.
-					{
-						std::vector<Atom *> subset = {neighbours[i], neighbours[j], neighbours[k], neighbours[m]};
-						// Helen: Weight_variance check for stability
-						
-						if (!is_coplanar(subset, derived_pos, fiducial_coplanar_threshold))
-						// Minimise is_coplanar usage; make it last check.
-						{
-							auto get_w = [&](Atom *a)
-							{
-								for (size_t l = 0; l < neighbours.size(); l++)
-								{
-									if (neighbours[l] == a) return pool_candidate.start_weight_cache[l];
-								}
-								return 0.0f;
-							};
-							
-							float sum = 0;
-							for (Atom *a : subset) sum += fabs(get_w(a));
-							float mean = sum / 4.0f;
-							float var = 0;
-							for (Atom *a : subset)
-							{
-								float d = fabs(get_w(a)) - mean;
-								//float d = fabs(get_w(a)) - pool_candidate.ave_weight;
-								var += d * d;
-							}
-
-							if (var < best_subset_score)
-							{
-								best_subset_score = var;
-								best_fiducials = subset;
-								found = true;
-							}
-
-							if (found && best_subset_score < 0.001f) break; 
-						}
-					}
-					if (found && best_subset_score < 0.001f) break;
+					return false;
 				}
-				if (found && best_subset_score < 0.001f) break;
+						
+				sum += fabs(it->second);
 			}
-			if (found && best_subset_score < 0.001f) break;
-		}
-		
-		if (!found)
-		{
-			std::cout << "REJECTED (unoptimized 4-set)" << std::endl;
-			continue;
-		}
-		
-		NonCovalents::WeightedSum candidate = NonCovalents::WeightedSum(right, best_fiducials);
+							
+			float mean = sum / 4.0f;
+			var = 0;
+			for (Atom *a : subset)
+			{
+				float weight = start_weight_for_atom[a];
+				float d = fabs(weight) - mean;
+				var += d * d;
+			}
 
-		std::cout << "ave_weight = " << candidate.ave_weight;
-		std::cout << ", weight_variance = " << candidate.weight_variance;
+			return true;
+		};
 
-		if (candidate.ave_weight < 5 && candidate.ave_weight >= 0 && 
-		    candidate.weight_variance < MAX_VARIANCE)
+		for_each_atom_quartet(neighbours, [&](const std::vector<Atom *> &subset)
 		{
+			float var = 0;
+			if (!subset_weight_variance(subset, var))
+			{
+				return true;
+			}
+
+			if (var >= best_subset_score)
+			{
+				return true;
+			}
+
+			if (is_coplanar(subset, derived_pos, fiducial_coplanar_threshold))
+			{
+				return true;
+			}
+
+			best_subset_score = var;
+			best_fiducials = subset;
+			found = true;
+			return best_subset_score >= 0.001f;
+		});
+
+		return found;
+	};
+
+	auto build_scores = [&](size_t fiducial_limit)
+	{
+		std::vector<AtomScore> scores;
+
+		std::cout << "Fetching up to " << fiducial_limit
+		          << " fiducials per right atom." << std::endl;
+
+		for (Atom *right : rights.atoms)
+		{
+			std::vector<Atom *> best_fiducials;
+			if (!best_fiducials_for_right(right, fiducial_limit, best_fiducials))
+			{
+				std::cout << "\t" << "Candidate atomos: " << right->desc();
+				std::cout << " <-> REJECTED (unoptimized 4-set)" << std::endl;
+				continue;
+			}
+
+			NonCovalents::WeightedSum candidate = NonCovalents::WeightedSum(right, best_fiducials);
+
+			print_candidate(candidate);
+			std::cout << "ave_weight = " << candidate.ave_weight;
+			std::cout << ", weight_variance = " << candidate.weight_variance;
+
 			if (candidate.ave_weight != candidate.ave_weight ||
-			    !isfinite(candidate.ave_weight))
+			    !isfinite(candidate.ave_weight) ||
+			    !isfinite(candidate.weight_variance))
 			{
 				std::cout << ", REJECTED (invalid)" << std::endl;
 				continue;
 			}
 			
-			std::cout << ", preliminarily ACCEPTED" << std::endl;
+			if (candidate.ave_weight < 10 && candidate.ave_weight >= 0 &&
+			    candidate.weight_variance < MAX_VARIANCE)
+			{
+				std::cout << ", preliminarily ACCEPTED" << std::endl;
 
-			AtomScore score = {candidate, 0.0f, 0.0f};
-			scores.push_back(score);
+				AtomScore score = {candidate, 0.0f, 0.0f, 0.0f};
+				scores.push_back(score);
+			}
+			else
+			{
+				std::cout << ", REJECTED (failed weights criteria)" << std::endl;
+			}
+		}
+
+		std::cout << "\n" << scores.size() << " candidates before penalty." << std::endl;
+		return scores;
+	};
+
+	auto select_scores = [&](const std::vector<AtomScore> &scores)
+	{
+		std::vector<AtomScore> active_scores = scores;
+
+		if (active_scores.empty())
+		{
+			return active_scores;
+		}
+
+		std::cout << "Optimizing selection from " << active_scores.size()
+		          << " right atoms." << std::endl;
+
+		bool use_min_distance = true;
+
+		auto recalculate_and_prune = [&]() -> bool
+		{
+			for (size_t i = 0; i < active_scores.size(); i++)
+			{
+				float min_dist_sq = FLT_MAX;
+				float sum_dist_sq = 0;
+				int count = 0;
+				glm::vec3 posA = target_pos(active_scores[i].candidate.atom);
+
+				for (size_t j = 0; j < active_scores.size(); j++)
+				{
+					if (i == j) continue;
+					glm::vec3 posB = target_pos(active_scores[j].candidate.atom);
+					float dist_sq = glm::dot(posA - posB, posA - posB);
+					if (dist_sq < min_dist_sq) min_dist_sq = dist_sq;
+					sum_dist_sq += dist_sq;
+					count++;
+				}
+
+				float mean_dist_sq = (count > 0) ? (sum_dist_sq / count) : 1.0f;
+
+				if (count == 0)
+				{
+					active_scores[i].sparsity_penalty = 0;
+				}
+				else if (use_min_distance)
+				{
+					active_scores[i].sparsity_penalty =
+					(min_dist_sq > 0 ? 1.0f / min_dist_sq : FLT_MAX);
+				}
+				else
+				{
+					active_scores[i].sparsity_penalty =
+					(mean_dist_sq > 0 ? 1.0f / mean_dist_sq : FLT_MAX);
+				}
+
+				active_scores[i].total_penalty =
+				active_scores[i].sparsity_penalty + active_scores[i].stability_penalty;
+			}
+
+			std::sort(active_scores.begin(), active_scores.end(),
+			[](const AtomScore &a, const AtomScore &b)
+			{
+				return a.total_penalty > b.total_penalty;
+			});
+
+			for (auto it = active_scores.begin(); it != active_scores.end(); ++it)
+			{
+				if (it->total_penalty < 0.3f)
+				{
+					return false;
+				}
+
+				std::vector<Atom *> test_pool;
+				for (auto test_it = active_scores.begin(); test_it != active_scores.end();
+				     ++test_it)
+				{
+					if (test_it != it)
+					{
+						test_pool.push_back(test_it->candidate.atom);
+					}
+				}
+
+				bool coplanar_choice = is_coplanar(test_pool, target_pos,
+				                                  right_coplanar_threshold);
+
+				if (!coplanar_choice)
+				{
+					std::cout << "\tRemoved worst atom: " << it->candidate.atom->desc()
+					          << " (penalty: " << it->total_penalty << ")" << std::endl;
+
+					active_scores.erase(it);
+					return true;
+				}
+				else
+				{
+					std::cout << "\tKept atom (needed for planarity): "
+					          << it->candidate.atom->desc() << std::endl;
+				}
+			}
+
+			return false;
+		};
+
+		while (active_scores.size() > 4)
+		{
+			if (!recalculate_and_prune()) break;
+		}
+
+		return active_scores;
+	};
+
+	size_t fiducial_limit = std::min(starting_fiducials, lefts.atoms.size());
+	std::vector<AtomScore> active_scores;
+
+	while (true)
+	{
+		std::vector<AtomScore> scores = build_scores(fiducial_limit);
+		active_scores = select_scores(scores);
+
+		if (right_atom_selection_is_usable(active_scores))
+		{
+			break;
+		}
+
+		if (fiducial_limit >= lefts.atoms.size())
+		{
+			std::cout << "\tRejected interface: final right-atom selection ";
+			if (active_scores.size() < 4)
+			{
+				std::cout << "has only " << active_scores.size()
+				          << " usable atoms";
+			}
+			else
+			{
+				std::cout << "is coplanar";
+			}
+			std::cout << " after trying all candidate fiducials." << std::endl;
+			return;
+		}
+
+		size_t next_limit = std::min(lefts.atoms.size(),
+		                             fiducial_limit + fiducial_fetch_step);
+
+		if (active_scores.size() < 4)
+		{
+			std::cout << "\tOnly " << active_scores.size()
+			          << " usable right atoms";
 		}
 		else
 		{
-			std::cout << ", REJECTED (failed weights criteria)" << std::endl;
+			std::cout << "\tUsable right atoms are coplanar";
 		}
-	}
+		std::cout << "; fetching up to " << next_limit
+		          << " fiducials per right atom." << std::endl;
 
-	std::cout << "\n" << scores.size() << " candidates before penalty." << std::endl;
-
-	if (scores.empty()) return;
-
-	std::vector<AtomScore> active_scores = scores;
-
-	std::cout << "Optimizing selection from " << active_scores.size() << " right atoms." << std::endl;
-
-    bool use_min_distance = true;
-	
-	// HELEN: Function encapsulates dynamic penalty calculation and pruning logic
-	auto recalculate_and_prune = [&]() -> bool
-	{
-		for (size_t i = 0; i < active_scores.size(); i++)
-		{
-			float min_dist_sq = FLT_MAX;
-			float sum_dist_sq = 0;
-			int count = 0;
-			glm::vec3 posA = target_pos(active_scores[i].candidate.atom);
-			
-			for (size_t j = 0; j < active_scores.size(); j++)
-			{
-				if (i == j) continue;
-				glm::vec3 posB = target_pos(active_scores[j].candidate.atom);
-				float dist_sq = glm::dot(posA - posB, posA - posB);
-				if (dist_sq < min_dist_sq) min_dist_sq = dist_sq;
-				sum_dist_sq += dist_sq;
-				count++;
-			}
-			
-			float mean_dist_sq = (count > 0) ? (sum_dist_sq / count) : 1.0f;
-			
-			if (use_min_distance)
-			{
-				active_scores[i].sparsity_penalty = 1.0f / min_dist_sq;
-			}
-			else
-			{
-				active_scores[i].sparsity_penalty = 1.0f / mean_dist_sq;
-			}
-			
-			active_scores[i].total_penalty = active_scores[i].sparsity_penalty + active_scores[i].stability_penalty;
-		}
-
-		std::sort(active_scores.begin(), active_scores.end(), [](const AtomScore &a, const AtomScore &b)
-		{
-			return a.total_penalty > b.total_penalty;
-		});
-
-		for (auto it = active_scores.begin(); it != active_scores.end(); ++it)
-		{
-			if (it->total_penalty < 0.6f)
-			{
-				return false;
-			}
-			
-			std::vector<Atom *> test_pool;
-			for (auto test_it = active_scores.begin(); test_it != active_scores.end(); ++test_it)
-			{
-				if (test_it != it)
-				{
-					test_pool.push_back(test_it->candidate.atom);
-				}
-			}
-			
-			bool coplanar_choice = is_coplanar(test_pool, target_pos, right_coplanar_threshold);
-			
-			if (!coplanar_choice)
-			{
-				std::cout << "\tRemoved worst atom: " << it->candidate.atom->desc() 
-						  << " (penalty: " << it->total_penalty << ")" << std::endl;
-				
-				active_scores.erase(it);
-				return true;
-			}
-			else
-			{
-				std::cout << "\tKept atom (needed for planarity): " << it->candidate.atom->desc() << std::endl;
-			}
-		}
-		
-		return false;
-	};
-
-	while (active_scores.size() > 4)
-	{
-		if (!recalculate_and_prune()) break;
+		fiducial_limit = next_limit;
 	}
 
 	for (auto &s : active_scores)
