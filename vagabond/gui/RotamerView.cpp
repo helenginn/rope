@@ -5,8 +5,8 @@
 #include "RotamerView.h"
 #include "vagabond/gui/elements/Slider.h"
 #include <vagabond/core/Model.h>
-#include <vagabond/core/Rotamers.h>
-#include <vagabond/core/RotamerModifier.h>
+#include <../core/rotamers/Rotamers.h>
+#include <vagabond/core/rotamers/RotamerModifier.h>
 #include <vagabond/core/ModelManager.h>
 #include <vagabond/gui/elements/TextButton.h>
 
@@ -67,15 +67,18 @@ void RotamerView::buttonPressed(std::string tag, Button *button)
     {
         _modifier->submitJobAndRetrieve(2.f, RotamerModifier::Reset);
     }
-    if (tag == "collision")
-    {
-        if (_collision)
-        {
-            _collision = false;
-            return;
-        }
-        _collision = true;
-    }
+    // if (tag == "collision")
+    // {
+    //     if (_collision)
+    //     {
+    //         _collision = false;
+    //         //_modifier->submitJobAndRetrieve(2.f, RotamerModifier::Reset);
+    //         return;
+    //     }
+    //     _collision = true;
+        //_modifier->submitJobAndRetrieve(2.f, RotamerModifier::Reset);
+
+    // }
     if (tag == "save") // saving current structure
     {
         _line4->clearVertices();
@@ -136,47 +139,61 @@ void RotamerView::finishedDragging(std::string tag, double x, double y)
     {
         _modifier->move(x,RotamerModifier::MoveY);
     }
-    std::vector<glm::vec3> points {};
+    //std::vector<glm::vec3> points {};
+    std::vector<std::vector<glm::vec3>> drawing {};
+    drawing = _modifier->getVertices();
     _line->clearVertices();
-    _line2->clearVertices();
-    _line6->clearVertices();
-    _line7->clearVertices();
+    // _line2->clearVertices();
+    // _line6->clearVertices();
+    // _line7->clearVertices();
 
-    if (_collision)
+    for (auto boxes: drawing)
     {
-        points = _modifier->getVertices("A");
-        for (glm::vec3 point : points)
+        for (auto point : boxes)
+        {
             _line->addPoint(point);
-        _line->forceRender();
-        points = _modifier->getVertices("B");
-        for (glm::vec3 point : points)
-            _line2->addPoint(point);
-        _line2->forceRender();
-        points = _modifier->getSecondaryVertices("A");
-        for (glm::vec3 point : points)
-            _line6->addPoint(point);
-        _line6->forceRender();
-        points = _modifier->getSecondaryVertices("B");
-        for (glm::vec3 point : points)
-            _line7->addPoint(point);
-        _line7->forceRender();
+        }
     }
-    _line4->clearVertices();
-    if (!_collision)
-    {
-        points = _modifier->intersectionBox();
-        for (glm::vec3 point : points)
-            _line4->addPoint(point);
-        _line4->forceRender();
-        points = _modifier->getSecondaryVertices("A", true);
-        for (glm::vec3 point : points)
-            _line6->addPoint(point);
-        _line6->forceRender();
-        points = _modifier->getSecondaryVertices("B", true);
-        for (glm::vec3 point : points)
-            _line7->addPoint(point);
-        _line7->forceRender();
-    }
+    _line->forceRender();
+    // std::cout << "update" << std::endl;
+    // if (_collision)
+    // {
+    //     points = _modifier->getVertices("A");
+    //     for (glm::vec3 point : points)
+    //         _line->addPoint(point);
+    //     _line->forceRender();
+    //     points = _modifier->getVertices("B");
+    //     for (glm::vec3 point : points)
+    //         _line2->addPoint(point);
+    //     _line2->forceRender();
+    //     points = _modifier->getSecondaryVertices("A");
+    //     for (glm::vec3 point : points)
+    //         _line6->addPoint(point);
+    //     _line6->forceRender();
+    //     points = _modifier->getSecondaryVertices("B");
+    //     for (glm::vec3 point : points)
+    //         _line7->addPoint(point);
+    //     _line7->forceRender();
+    // }
+    // _line4->clearVertices();
+    // if (!_collision)
+    // {
+    //     points = _modifier->intersectionBox();
+    //     if (!points.empty())
+    //     {
+    //         for (glm::vec3 point : points)
+    //             _line4->addPoint(point);
+    //         _line4->forceRender();
+    //         points = _modifier->getSecondaryVertices("A", true);
+    //         for (glm::vec3 point : points)
+    //             _line6->addPoint(point);
+    //         _line6->forceRender();
+    //         points = _modifier->getSecondaryVertices("B", true);
+    //         for (glm::vec3 point : points)
+    //             _line7->addPoint(point);
+    //         _line7->forceRender();
+    //     }
+    // }
 }
 
 void RotamerView::setupSlider()

@@ -19,7 +19,7 @@
 #include "ChainAssignment.h"
 #include "Display.h"
 #include "DisplayUnit.h"
-#include "Rotamers.h"
+#include "../core/rotamers/Rotamers.h"
 
 #include <vagabond/gui/elements/TextButton.h>
 #include <vagabond/gui/SequenceView.h>

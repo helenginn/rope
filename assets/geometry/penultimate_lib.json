@@ -1457,7 +1457,7 @@
         {
             "id": 1, 
             "name": "p", 
-            "chi_1": 62, 
+            "chi_1": 62,
             "chi-width_1": 10
         }, 
         {
@@ -1531,6 +1531,22 @@
             "name": "m", 
             "chi_1": -65, 
             "chi-width_1": 11
+        }
+    ],
+    "GLY": [
+        {
+            "id": 1,
+            "name": "NA",
+            "chi_1": 0,
+            "chi-width_1": 0
+        }
+    ],
+    "ALA": [
+        {
+            "id": 1,
+            "name": "NA",
+            "chi_1": 0,
+            "chi-width_1": 0
         }
     ]
 }
