@@ -147,6 +147,7 @@ void Rod::insertCoupleInto(const std::map<ForceCoordinate, int>
                            const InsertIntoRow &insert, float &target)
 {
 	glm::vec3 bond_axis = bond_dir(); // relative to left
+	glm::vec3 bond_axis_units = bond_dir()/10.f; // relative to left // is given in A
 	glm::vec3 known_forces = (_left->all_known_forces() -
 	                          _right->all_known_forces()) / 2.f;
 

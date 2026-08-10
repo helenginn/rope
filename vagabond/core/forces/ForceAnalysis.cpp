@@ -26,7 +26,6 @@
 #include "BondAngle.h"
 #include "AtomContent.h"
 #include "SymMates.h"
-#include "Particle.h"
 #include "Torque.h"
 #include "Force.h"
 #include "Atom.h"
@@ -116,15 +115,26 @@ void ForceAnalysis::createRods()
 			return perp;
 		};
 
-		auto get_mag = [bond]()
+    auto get_mag= [bond]()
+    {
+			float z_score = bond->as_signed_z_score(bond->measurement());
+      return z_score;
+    };
+
+		auto get_mag_units = [bond, this]()
 		{
 			float z_score = bond->as_signed_z_score(bond->measurement());
-			return z_score; 
+      float stdev = bond->stdev()/10.; // conversion from A to nm
+      long double kBT = _kBT; //given in pNnm
+
+      float force_mag = 2.f*kBT*z_score/stdev; // in pN
+
+			return force_mag; //TODO: also check minus here
 		};
 
 		// FORCE ATTRIBUTABLE TO COMPRESSION/TENSION ON BOND LENGTH
 		Force *force = new Force(Force::StatusKnown, Force::ReasonBondLength);
-		force->setUnitGetter(get_unit);
+    force->setUnitGetter(get_unit);
 		force->setMagGetter(get_mag);
 		// force->setSource(new RodSource(rod));
 
@@ -235,14 +245,25 @@ void ForceAnalysis::createBondAngleTorques()
 			glm::vec3 a = ang->atom(0)->initialPosition();
 			glm::vec3 b = ang->atom(1)->initialPosition();
 			glm::vec3 c = ang->atom(2)->initialPosition();
-			glm::vec3 perp = glm::normalize(glm::cross(c - a, b - a));
+			glm::vec3 perp = glm::normalize(glm::cross(c - a, b - a)); //TODO: check with minus as well (cross product)
 			return perp;
 		};
 
-		auto get_moment_mag = [ang]()
+    auto get_moment_mag = [ang]()
+    {
+			float z_score = ang->as_signed_z_score(ang->measurement());
+      return -z_score;
+    };
+
+		auto get_moment_mag_units = [ang, this]()
 		{
 			float z_score = ang->as_signed_z_score(ang->measurement());
-			return -z_score;
+      float stdev = deg2rad(ang->stdev());
+      long double kBT = _kBT; // given in pNnm
+      
+      float moment_mag = 2.f*kBT*z_score/stdev; // in pNnm 
+
+			return -moment_mag; // TODO: check whether this needs a minus, compare with z_score of force mag
 		};
 		
 		Torque *torque = new Torque(Torque::StatusKnown, 
