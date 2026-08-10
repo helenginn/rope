@@ -175,9 +175,6 @@ cfile,
 'rotamers/RotamerModifier.cpp',
 'rotamers/RotamerStore.h',
 'rotamers/RotamerStore.cpp',
-'rotamers/tests.h',
-'rotamers/tests.cpp',
-
 
 'FixIssues.cpp',
 'GeometryTable.cpp',
