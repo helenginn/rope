@@ -7,7 +7,6 @@
 #include <glm/glm.hpp>
 #include <string>
 #include <vector>
-#include <iostream>
 
 
 class CollisionBox
@@ -15,7 +14,7 @@ class CollisionBox
     std::vector<glm::vec3> vertices {};
     std::string name {};
     bool collision {false};
-    float xMin {};
+    float xMin {}; //Goal might be to remove these variable (but can be useful for Collisions checks?)
     float xMax {};
 
     float yMin {};

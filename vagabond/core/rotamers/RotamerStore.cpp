@@ -80,8 +80,6 @@ void RotamerStore::updatePositions(glm::mat4x4 transformationMat)
 
 void RotamerStore::move(glm::mat4x4 parameters, std::string chain)
 {
-    // RotamerStore updatedPos {};
-    // std::vector<glm::vec3> newPositionArray {};
     for (int length = 0; length <= positionArray.size()-1; length++)
     {
         if (atoms[length]->chain() == chain || chain == "")
@@ -89,10 +87,6 @@ void RotamerStore::move(glm::mat4x4 parameters, std::string chain)
             positionArray[length] =glm::vec3(parameters*glm::vec4(positionArray[length],1.0f));
         }
     }
-
-    // updatedPos.storage = storage;
-    // updatedPos.atoms = atoms;
-    // positionArray = updatedPos.positionArray;
 }
 
 AtomPosMap RotamerStore::extractForGUI(RotamerStore &storeToRender)

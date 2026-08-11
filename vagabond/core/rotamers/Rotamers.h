@@ -20,7 +20,7 @@ struct RotamerMap
     float initialAngle {};
     int RotamerValue {0};  // store the rotamer number present in the penultimate_lib. if rotamer number = 0, initialChiAngles are loaded
 };
-class RotamerLibrary //: public Rotamer
+class RotamerLibrary
 {
 public:
     RotamerLibrary();

@@ -32,9 +32,7 @@ private:
     Slider *_rangeSlider2 = nullptr;
 
     bool _first = true;
-    // double _min = 0;
-    // double _max = 1;
-    // double _step = 0.01;
+
     double _min = -15;
     double _max = 15;
     double _step = 0.5;

@@ -19,8 +19,6 @@ std::map<std::string,std::vector<Rotamer>> RotamerLibrary::loadRotamersFromJson(
     std::ifstream f;
     std::cout << std::string(DATA_DIRECTORY) + "/" + filepath << " test " << std::endl;
     f.open( std::string(DATA_DIRECTORY) + "/" + filepath);
-
-    //std::ifstream file(filepath);
     if (!f.is_open())
     {
         throw std::runtime_error("Could not open rotamer JSON: " + filepath);

@@ -16,14 +16,9 @@ struct Bouquet
     std::vector<Atom*> atoms;
     std::string resName;
     ResidueId resNumber;
-    //std::map<std::string, std::vector<Atom*>> atoms;
 
-    std::map<Atom*, std::vector<glm::vec3>> positions; // Atoms* ; positions
+    std::map<Atom*, std::vector<glm::vec3>> positions;
     std::map<ResidueId, std::map<Atom*,  std::vector<glm::vec3>>> resBouquet {};
-    //Collision stuffs and checks
-    std::map<std::string, CollisionBox> primaryBoxes {};
-    std::map<ResidueId,CollisionBox> secondaryBoxes {};
-    std::map<ResidueId,CollisionBox> individualBoxes {};
 
     std::map<std::string,std::vector<CollisionBox>> collisions {};
 };

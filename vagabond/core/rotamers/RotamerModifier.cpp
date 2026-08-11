@@ -8,7 +8,6 @@
 #include "vagabond/utils/AcquireCoord.h"
 
 #include <vagabond/core/engine/Task.h>
-#include <vagabond/core/TabulatedData.h>
 #include <vagabond/core/BondCalculator.h>
 #include <vagabond/core/BondSequenceHandler.h>
 #include <vagabond/core/LocalMotion.h>
@@ -22,7 +21,6 @@
 #include <vagabond/core/AtomPosMap.h>
 
 #include "RotamerBouquet.h"
-#include "vagabond/gui/elements/Line.h"
 
 
 RotamerModifier::RotamerModifier(Instance *inst)
