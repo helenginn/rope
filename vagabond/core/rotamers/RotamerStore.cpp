@@ -55,8 +55,6 @@ std::vector<RotamerStore> RotamerStore::residueStore()
             }
             sto.storage[object].first = globalPos;
             sto.storage[object].second = counter;
-            globalPos += counter;
-
         }
         residueStore.emplace_back(sto);
     }
@@ -67,6 +65,17 @@ std::vector<RotamerStore> RotamerStore::residueStore()
 std::vector<glm::vec3> RotamerStore::getPos()
 {
     return positionArray;
+}
+
+std::vector<glm::vec3> RotamerStore::positionFor(ResRot const &rotamer)
+{
+    std::vector<glm::vec3> positions{};
+    LookUpInfo lookup = storage[rotamer];
+    for (int x = lookup.start(); x < (lookup.start() + lookup.length()); x++)
+    {
+        positions.emplace_back(positionArray[x]);
+    }
+    return positions;
 }
 
 void RotamerStore::updatePositions(glm::mat4x4 transformationMat)

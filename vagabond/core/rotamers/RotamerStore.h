@@ -40,6 +40,8 @@ public:
     RotamerStore store(std::map<ResidueId, std::map<Atom*,  std::vector<glm::vec3>>> &rotamers);
     std::vector<RotamerStore> residueStore();
     std::vector<glm::vec3> getPos();
+    std::vector<glm::vec3> positionFor(ResRot const &rotamer);
+
     void updatePositions(glm::mat4x4 transformationMat);
     void move(glm::mat4x4 parameters,std::string chain = "");
     AtomPosMap extractForGUI(RotamerStore &storeToRender);
