@@ -10,7 +10,7 @@
 #include "vagabond/core/AtomGroup.h"
 #include "vagabond/core/ResidueId.h"
 
-struct ResRot : std::pair<ResidueId, int> //ResidueId; RotNumber
+struct ResRot : std::pair<ResidueId, int>
 {
     ResidueId &Id()
     {
