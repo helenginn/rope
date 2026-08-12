@@ -27,6 +27,8 @@ utilfiles = [
 'histogram.cpp',
 'FloydWarshall.cpp',
 'FloydWarshall.h',
+'ResultType.h',
+
 'brain/Layer.cpp',
 'brain/Layer.h',
 'brain/InputLayer.cpp',
