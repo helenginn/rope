@@ -169,6 +169,22 @@ public:
     }
     return Result<T, U>(Ok(std::get<0>(std::move(data_))));
   }
+
+  template <typename F> auto and_then(F &&func) && {
+    using CallResult = std::invoke_result_t<F, T>;
+    if (is_ok()) {
+      return func(std::get<0>(std::move(data_)));
+    }
+    return CallResult(Err(std::get<1>(std::move(data_))));
+  }
+
+  template <typename F> auto or_else(F &&func) && {
+    using CallResult = std::invoke_result_t<F, E>;
+    if (is_err()) {
+      return func(std::get<1>(std::move(data_)));
+    }
+    return CallResult(Ok(std::get<0>(std::move(data_))));
+  }
 };
 
 template <typename E> class [[nodiscard]] Result<void, E> {
@@ -246,5 +262,21 @@ public:
       return Result<void, U>(Err(func(std::get<1>(std::move(data_)))));
     }
     return Result<void, U>(Ok<void>{});
+  }
+
+  template <typename F> auto and_then(F &&func) && {
+    using CallResult = std::invoke_result_t<F>;
+    if (is_ok()) {
+      return func();
+    }
+    return CallResult(Err(std::get<1>(std::move(data_))));
+  }
+
+  template <typename F> auto or_else(F &&func) && {
+    using CallResult = std::invoke_result_t<F, E>;
+    if (is_err()) {
+      return func(std::get<1>(std::move(data_)));
+    }
+    return CallResult(Ok<void>{});
   }
 };

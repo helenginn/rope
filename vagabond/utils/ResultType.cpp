@@ -31,6 +31,19 @@ struct CustomTestError {
 // Error type without toString
 struct PlainTestError {};
 
+// Error types for PipelineTest
+struct FileError {
+  std::string msg;
+};
+struct ParseError {
+  std::string msg;
+};
+struct PipelineError {
+  std::string msg;
+  PipelineError(FileError e) : msg("File: " + e.msg) {}
+  PipelineError(ParseError e) : msg("Parse: " + e.msg) {}
+};
+
 TEST_CASE("Result - Basic Ok operations") {
   Result<int, std::string> res = Ok(42);
 
@@ -201,4 +214,177 @@ TEST_CASE("Result - map() with void-returning func") {
     CHECK(mapped.unwrap_err() == "bad");
   }
 }
+TEST_CASE("Result - and_then") {
+  SUBCASE("and_then on Ok chains to new Result") {
+    Result<int, std::string> res = Ok(5);
+    auto chained =
+        std::move(res).and_then([](int x) -> Result<std::string, std::string> {
+          return Ok(std::to_string(x * 2));
+        });
+    CHECK(chained.is_ok());
+    CHECK(chained.unwrap() == "10");
+  }
+  SUBCASE("and_then on Ok, func itself returns Err") {
+    Result<int, std::string> res = Ok(5);
+    auto chained =
+        std::move(res).and_then([](int) -> Result<std::string, std::string> {
+          return Err(std::string("conversion failed"));
+        });
+    CHECK(chained.is_err());
+    CHECK(chained.unwrap_err() == "conversion failed");
+  }
+  SUBCASE("and_then on Err passes through, func never called") {
+    Result<int, std::string> res = Err(std::string("initial error"));
+    bool called = false;
+    auto chained = std::move(res).and_then(
+        [&called](int x) -> Result<std::string, std::string> {
+          called = true;
+          return Ok(std::to_string(x));
+        });
+    CHECK(!called);
+    CHECK(chained.is_err());
+    CHECK(chained.unwrap_err() == "initial error");
+  }
+}
+
+TEST_CASE("Result - or_else") {
+  SUBCASE("or_else on Err recovers to Ok, error type changes") {
+    Result<int, std::string> res = Err(std::string("bad"));
+    auto recovered = std::move(res).or_else(
+        [](std::string) -> Result<int, int> { return Ok(0); });
+    CHECK(recovered.is_ok());
+    CHECK(recovered.unwrap() == 0);
+  }
+  SUBCASE("or_else on Err, func also fails with new error type") {
+    Result<int, std::string> res = Err(std::string("bad"));
+    auto recovered =
+        std::move(res).or_else([](std::string s) -> Result<int, int> {
+          return Err(static_cast<int>(s.size()));
+        });
+    CHECK(recovered.is_err());
+    CHECK(recovered.unwrap_err() == 3);
+  }
+  SUBCASE("or_else on Ok passes through, func never called") {
+    Result<int, std::string> res = Ok(42);
+    bool called = false;
+    auto recovered =
+        std::move(res).or_else([&called](std::string) -> Result<int, int> {
+          called = true;
+          return Ok(0);
+        });
+    CHECK(!called);
+    CHECK(recovered.is_ok());
+    CHECK(recovered.unwrap() == 42);
+  }
+}
+
+TEST_CASE("Result - and_then pipeline with map_err error unification") {
+  auto read_file = [](bool ok) -> Result<int, FileError> {
+    if (ok)
+      return Ok(1);
+    return Err(FileError{"not found"});
+  };
+  auto parse = [](int x) -> Result<std::string, ParseError> {
+    if (x > 0)
+      return Ok(std::string("parsed"));
+    return Err(ParseError{"bad token"});
+  };
+  auto run = [&](bool fileOk) -> Result<std::string, PipelineError> {
+    return read_file(fileOk)
+        .map_err([](FileError e) { return PipelineError(e); })
+        .and_then([&](int x) -> Result<std::string, PipelineError> {
+          return parse(x).map_err(
+              [](ParseError e) { return PipelineError(e); });
+        });
+  };
+
+  SUBCASE("success path") {
+    auto res = run(true);
+    CHECK(res.is_ok());
+    CHECK(res.unwrap() == "parsed");
+  }
+  SUBCASE("file error short-circuits before parse") {
+    auto res = run(false);
+    CHECK(res.is_err());
+    CHECK(res.unwrap_err().msg == "File: not found");
+  }
+}
+
+TEST_CASE("Result<void,E> - and_then") {
+  SUBCASE("and_then on Ok calls function (void -> Result<T, E>)") {
+    Result<void, std::string> res = Ok();
+    auto chained = std::move(res).and_then(
+        []() -> Result<int, std::string> { return Ok(42); });
+    CHECK(chained.is_ok());
+    CHECK(chained.unwrap() == 42);
+  }
+
+  SUBCASE("and_then on Ok calls function (void -> Result<void, E>)") {
+    Result<void, std::string> res = Ok();
+    bool called = false;
+    auto chained =
+        std::move(res).and_then([&called]() -> Result<void, std::string> {
+          called = true;
+          return Ok();
+        });
+    CHECK(called);
+    CHECK(chained.is_ok());
+  }
+
+  SUBCASE("and_then on Ok where returning function fails") {
+    Result<void, std::string> res = Ok();
+    auto chained = std::move(res).and_then([]() -> Result<int, std::string> {
+      return Err(std::string("failed inside closure"));
+    });
+    CHECK(chained.is_err());
+    CHECK(chained.unwrap_err() == "failed inside closure");
+  }
+
+  SUBCASE("and_then on Err passes error through without invoking function") {
+    Result<void, std::string> res = Err(std::string("initial error"));
+    bool called = false;
+    auto chained =
+        std::move(res).and_then([&called]() -> Result<int, std::string> {
+          called = true;
+          return Ok(100);
+        });
+    CHECK(!called);
+    CHECK(chained.is_err());
+    CHECK(chained.unwrap_err() == "initial error");
+  }
+}
+
+TEST_CASE("Result<void,E> - or_else") {
+  SUBCASE("or_else on Err recovers to Ok") {
+    Result<void, std::string> res = Err(std::string("bad"));
+    auto recovered = std::move(res).or_else(
+        [](std::string) -> Result<void, int> { return Ok(); });
+    CHECK(recovered.is_ok());
+    CHECK_NOTHROW(recovered.unwrap());
+  }
+
+  SUBCASE("or_else on Err transforms error type") {
+    Result<void, std::string> res = Err(std::string("bad"));
+    auto recovered =
+        std::move(res).or_else([](std::string s) -> Result<void, int> {
+          return Err(static_cast<int>(s.size()));
+        });
+    CHECK(recovered.is_err());
+    CHECK(recovered.unwrap_err() == 3);
+  }
+
+  SUBCASE("or_else on Ok passes through without invoking function") {
+    Result<void, std::string> res = Ok();
+    bool called = false;
+    auto recovered =
+        std::move(res).or_else([&called](std::string) -> Result<void, int> {
+          called = true;
+          return Ok();
+        });
+    CHECK(!called);
+    CHECK(recovered.is_ok());
+    CHECK_NOTHROW(recovered.unwrap());
+  }
+}
+
 #endif
