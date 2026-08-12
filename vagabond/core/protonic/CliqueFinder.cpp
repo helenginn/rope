@@ -71,15 +71,7 @@ completeOnCondition(const OpSet<Probe *> &start,
 	return done;
 }
 
-OpSet<Probe *> remove_absents(const OpSet<Probe *> &done)
-{
-	return done.filter([](Probe *const &p)
-	{
-		return !p->is_definitely_not_present();
-	});
-}
-
-OpSet<Probe *> 
+OpSet<Probe *>
 CliqueFinder::expandSelectionToNeighbours(const OpSet<Probe *> &done,
                                           int max_jumps, bool with_covalent)
 {
@@ -242,51 +234,3 @@ CliqueFinder::connectGroups(const std::vector<OpSet<Probe *>> &groups,
 	return result;
 }
 
-OpSet<Probe *> CliqueFinder::findOneClique(const OpSet<Probe *> &all)
-{
-	for (Probe *const &trial : all)
-	{
-		OpSet<Probe *> clique = expandSelectionToNeighbours({trial});
-		return clique;
-	}
-
-	return {};
-}
-
-void CliqueFinder::completeAndChop(const OpSet<Probe *> &done,
-                                   const HandleClique &handle_clique)
-{
-	OpSet<Probe *> all = remove_absents(expandSelectionToNeighbours(done));
-	OpSet<Probe *> remaining = all;
-
-	while (remaining.size())
-	{
-		OpSet<Probe *> total = findOneClique(remaining);
-		OpSet<Probe *> clique = total.common_to_both(all);
-
-		_cliques.push_back(clique);
-		
-		if (clique.size() == 0)
-		{
-			break;
-		}
-
-		remaining -= clique;
-
-		if (handle_clique)
-		{
-			handle_clique(clique, "");
-		}
-	}
-	
-	handle_clique(all, "all");
-	
-	OpSet<Probe *> protein = all;
-	protein.filter([](Probe *const &probe)
-	{
-		return (probe->is_atom() && probe->atom()->bondLengthCount() > 0
-		        && probe->isActiveAtom());
-	});
-	
-	handle_clique(protein, "protein");
-}

@@ -25,12 +25,16 @@
 
 namespace hnet
 {
-/* logic for determining hydrogen bonding patterns between two heavier atoms */
+/* logic for determining hydrogen bonding patterns between two heavier atoms -
+ * exactly one of exclusives must exist. Used to also support a "no more than
+ * one" mode (must_be_one = false), but that mode never used the "force the
+ * last remaining candidate Present" behaviour below at all - it is now
+ * MaxOne instead (generalised from a fixed pair to any number of
+ * exclusives), leaving this permanently exactly-one. */
 struct OnlyOne : public ConstraintBase
 {
-	OnlyOne(std::vector<ExistenceConnector *> exclusives, 
-	        bool must_be_one = true)
-	: _exclusives(exclusives), _must_be_one(must_be_one)
+	OnlyOne(std::vector<ExistenceConnector *> exclusives)
+	: _exclusives(exclusives)
 	{
 		std::vector<ConnectBase *> list;
 		for (ExistenceConnector *conn : exclusives)
@@ -39,19 +43,12 @@ struct OnlyOne : public ConstraintBase
 		}
 		prep_constraints_and_forgets(this, list);
 	}
-	
+
 	std::string desc()
 	{
 		std::ostringstream ss;
-		if (_must_be_one)
-		{
-			ss << "exactly one of [";
-		}
-		else
-		{
-			ss << "no more than one of [";
-		}
-		
+		ss << "exactly one of [";
+
 		for (ExistenceConnector *conn : _exclusives)
 		{
 			ss << *conn << ", ";
@@ -89,18 +86,17 @@ struct OnlyOne : public ConstraintBase
 			{
 				assign(*existence, Existence::Absent);
 			}
-			if (existence->value() != Existence::Absent && 
-			    number_excluding_absences == 1 && _must_be_one)
+			if (existence->value() != Existence::Absent &&
+			    number_excluding_absences == 1)
 			{
 				assign(*existence, Existence::Present);
 			}
 		}
-		
+
 		return assign.okay();
 	}
 
 	std::vector<ExistenceConnector *> _exclusives;
-	bool _must_be_one{true};
 };
 };
 

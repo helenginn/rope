@@ -253,11 +253,26 @@ bool ExhaustiveSearch::next()
 					continue;
 				}
 				
-				if (!probe->is_bond() && !probe->is_atom())
+				// a bridging hydrogen's own "protonation state" connector
+				// (HydrogenProbe::_obj) is neither is_bond() nor is_atom()
+				// (both false, unoverridden base Probe defaults) - unlike
+				// every other Probe subtype reaching this point, so it
+				// needs its own explicit admission here rather than being
+				// picked up by either check below. Recorded as
+				// ExistenceType (h is an ExistenceConnector, same as
+				// AtomProbe's own _exist) - see HBondDiagram::
+				// computeStateAverages() for why this is worth recording
+				// explicitly rather than only ever inferring it from its
+				// two bonds' own BondType values.
+				bool isHydrogenProtonation =
+				(dynamic_cast<HydrogenProbe *>(probe) != nullptr);
+
+				if (!probe->is_bond() && !probe->is_atom() &&
+				    !isHydrogenProtonation)
 				{
 					continue;
 				}
-				
+
 				if (probe->atom() && probe->atom()->elementSymbol() == "H")
 				{
 					continue;

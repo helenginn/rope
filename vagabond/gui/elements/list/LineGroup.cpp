@@ -196,7 +196,7 @@ void LineGroup::reorganiseGroups()
 			y += height;
 		}
 	}
-	
+
 	forceRender(true, false);
 }
 

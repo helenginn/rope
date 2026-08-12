@@ -226,6 +226,7 @@ bool Network::setupCarboxylOxygen(AtomConf atom)
 	Count::Values charge = Count::mOneOrZero;
 	Count::Values valency = Count::Three;
 	Count::Values charge_sum = Count::mOneOrZero;
+	charge_sum = Count::mOne;
 	const Count::Values coord_num = Count::Values(Count::Three | Count::Four);
 
 	_atomMap[atom]->addCoordinationState(Count::Three, Count::Zero, Count::Six);
@@ -503,7 +504,7 @@ void Network::setupInactiveAtom(AtomConf atom)
 				make_maybe_covalent_bond(atom, {connect, conf});
 				group.push_back(result);
 			}
-			add_constraint(new OnlyOne(group, false));
+			add_constraint(new MaxOne(group));
 		}
 	}
 
@@ -727,7 +728,16 @@ void Network::establishAtom(::Atom *atom)
 
 void Network::bundleRepulsionTerms()
 {
+	// temporarily ignoring this because it slows everything down and it
+	// is also not helping ~Helen
+	return;
 	OpSet<Probe *> visited;
+
+	// temporary diagnostic - how much is bundling actually achieving?
+	int wrapperGroups = 0;
+	int bundledPairs = 0;
+	int soloGroups = 0;
+	int maxGroupPairs = 0;
 
 	for (const auto &pair : _atomMap)
 	{
@@ -821,7 +831,20 @@ void Network::bundleRepulsionTerms()
 		{
 			member->addEnergyWrapper(wrapper);
 		}
+
+		wrapperGroups++;
+		bundledPairs += (int)pairs.size();
+		if (pairs.size() == 1)
+		{
+			soloGroups++;
+		}
+		maxGroupPairs = std::max(maxGroupPairs, (int)pairs.size());
 	}
+
+	std::cout << "[bundleRepulsionTerms] " << wrapperGroups
+	<< " wrapper groups covering " << bundledPairs << " candidates ("
+	<< soloGroups << " solo groups of 1, largest group had "
+	<< maxGroupPairs << " candidates)" << std::endl;
 }
 
 void Network::updateModelCliques()

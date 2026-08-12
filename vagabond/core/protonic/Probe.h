@@ -552,6 +552,19 @@ public:
 	{
 		if (!_right) return "";
 		std::string str;
+
+		// _exist (hExist) is a separate connector from _obj (h, the
+		// protonation state/role) - h alone can settle to Present even
+		// while hExist independently settles to Absent (e.g. Coordinated_
+		// Hydrogens.cpp's StrictExistence forcing hExist Absent on a
+		// broken bond, via a constraint that says nothing at all about h),
+		// so h can't be trusted alone to mean "this hydrogen is really
+		// here" - same reasoning as certainValueAsInt() below.
+		if (_exist.value(true) == hnet::Existence::Absent)
+		{
+			return " ";
+		}
+
 		hnet::Existence::Values val = _obj.value(true);
 
 		switch (val)
@@ -576,7 +589,7 @@ public:
 			str = "?";
 			break;
 		}
-		
+
 		return str;
 	}
 
@@ -609,7 +622,11 @@ public:
 
 	virtual bool is_definitely_not_present()
 	{
-		return (_obj.value() == hnet::Existence::Absent);
+		// same reasoning as certainValueAsInt()/display() - _obj (h)
+		// alone doesn't mean this hydrogen is really here; _exist
+		// (hExist) can independently be Absent regardless of what h says.
+		return (_obj.value() == hnet::Existence::Absent ||
+		        _exist.value() == hnet::Existence::Absent);
 	}
 
 	virtual float transparency()
@@ -637,12 +654,27 @@ public:
 
 	virtual int certainValueAsInt()
 	{
+		// same collapse BondProbe::certainValueAsInt() already does for
+		// its own _exist/_obj pair - h (_obj) alone is not a reliable
+		// signal of whether this hydrogen is really present, since
+		// hExist (_exist) can independently settle Absent regardless of
+		// what h itself resolves to (see display()'s own comment) - only
+		// called once is_certain() is true, so both are already known
+		// settled by this point, just not necessarily consistent with
+		// each other.
+		if (_exist.value() == hnet::Existence::Absent)
+		{
+			return (int)hnet::Existence::Absent;
+		}
+
 		return (int)_obj.value();
 	}
 
 	virtual bool is_absent()
 	{
-		return _obj.value() == hnet::Existence::Absent;
+		// same reasoning as certainValueAsInt()/display() above.
+		return (_obj.value() == hnet::Existence::Absent ||
+		        _exist.value() == hnet::Existence::Absent);
 	}
 
 	hnet::ExistenceConnector &_obj;

@@ -31,6 +31,7 @@
 #include <vagabond/gui/elements/BadChoice.h>
 #include <vagabond/gui/elements/ImageButton.h>
 #include <vagabond/gui/elements/TextButton.h>
+#include <vagabond/gui/elements/Menu.h>
 #include <vagabond/gui/elements/Text.h>
 #include <vagabond/gui/elements/Image.h>
 #include <vagabond/gui/MatrixPlot.h>
@@ -48,6 +49,7 @@
 #include <map>
 #include <cctype>
 #include <cmath>
+#include <algorithm>
 
 using Eigen::seqN;
 
@@ -162,6 +164,35 @@ void ViewCorrelations::sendClickSelection(double x, double y, bool inverse)
 	captureStateSelection();
 }
 
+void ViewCorrelations::mouseMoveEvent(double x, double y)
+{
+	if (_dragged)
+	{
+		Scene::mouseMoveEvent(x, y);
+		return;
+	}
+
+	Mouse2D::mouseMoveEvent(x, y);
+}
+
+void ViewCorrelations::mouseReleaseEvent(double x, double y,
+                                         SDL_MouseButtonEvent button)
+{
+	Mouse2D::mouseReleaseEvent(x, y, button);
+
+	// see this method's own header comment - a stuck _right silently
+	// turns every later mouse move anywhere in this Scene into an
+	// ongoing Mouse2D::mouseMoveEvent() z-zoom (the same translation a
+	// real right-drag applies), compounding tick after tick until
+	// whatever is on screen - including a totally unrelated, later-viewed
+	// subnetwork's own HBondDiagram - has shrunk to a speck in the middle
+	// of the window. Calling this again is always safe even when the
+	// base class's own call already ran (same button, same false) - it
+	// only ever writes _left/_right to match the button that just
+	// released, never anything conditional on prior state.
+	interpretMouseButton(button, false);
+}
+
 void ViewCorrelations::captureStateSelection()
 {
 	// only the per-subnetwork state-clustering plot's own selection is
@@ -171,8 +202,106 @@ void ViewCorrelations::captureStateSelection()
 	// which must not overwrite this.
 	if (_subnetworkView == SubnetworkView::StateClustering && _activeClusterPlot)
 	{
-		_lastSelectedStates = _activeClusterPlot->selectedIndices();
+		// selectedIndices() are plot-local (0..pointCount()-1), not
+		// necessarily true state indices once _includedStates has gated
+		// the plot down to fewer than every state - _plottedStateIndices
+		// (filled in by whichever showStateClustering() call last built
+		// this same plot) translates back.
+		_lastSelectedStates.clear();
+		for (int plotIdx : _activeClusterPlot->selectedIndices())
+		{
+			if (plotIdx >= 0 && plotIdx < (int)_plottedStateIndices.size())
+			{
+				_lastSelectedStates.push_back(_plottedStateIndices[plotIdx]);
+			}
+		}
 	}
+}
+
+void ViewCorrelations::interactedWithNothing(bool left, bool hover)
+{
+	if (hover)
+	{
+		return;
+	}
+
+	if (!left && _subnetworkView == SubnetworkView::StateClustering &&
+	    _activeClusterPlot)
+	{
+		showStateContextMenu();
+	}
+}
+
+void ViewCorrelations::showStateContextMenu()
+{
+	Menu *menu = new Menu(this);
+	menu->addOption("Exclude unselected", [this]() { excludeUnselectedStates(); });
+	menu->addOption("Invert selection", [this]() { invertStateSelection(); });
+	menu->addOption("Reset selection", [this]() { resetStateSelection(); });
+
+	float x; float y;
+	getFractionalPos(x, y);
+	menu->setup(x, y);
+	setModal(menu);
+}
+
+void ViewCorrelations::invertStateSelection()
+{
+	if (!_activeClusterPlot)
+	{
+		return;
+	}
+
+	OpSet<int> selected(_activeClusterPlot->selectedIndices());
+	int n = (int)_plottedStateIndices.size();
+	for (int i = 0; i < n; i++)
+	{
+		_activeClusterPlot->selected(i, selected.count(i) > 0);
+	}
+
+	captureStateSelection();
+}
+
+void ViewCorrelations::excludeUnselectedStates()
+{
+	if (!_viewedSubnetwork)
+	{
+		return;
+	}
+
+	// makes sure _lastSelectedStates reflects whatever is on screen right
+	// now, in case this fires without an intervening sendSelection()/
+	// sendClickSelection() call (it shouldn't, but this is cheap enough
+	// to not rely on that).
+	captureStateSelection();
+
+	if (_lastSelectedStates.empty())
+	{
+		// nothing selected to narrow down to - a no-op rather than
+		// excluding every state.
+		return;
+	}
+
+	_includedStates = _lastSelectedStates;
+	_lastSelectedStates.clear();
+
+	// same rebuild path viewSubnetwork() itself uses - _viewedSubnetwork
+	// is already this same subnetwork, so its own "different subnetwork"
+	// guard leaves _lastSelectedStates (just cleared above) alone.
+	viewSubnetwork(*_viewedSubnetwork);
+}
+
+void ViewCorrelations::resetStateSelection()
+{
+	if (!_viewedSubnetwork)
+	{
+		return;
+	}
+
+	_includedStates.clear();
+	_lastSelectedStates.clear();
+
+	viewSubnetwork(*_viewedSubnetwork);
 }
 
 ViewCorrelations::~ViewCorrelations()
@@ -223,7 +352,11 @@ void ViewCorrelations::makeList()
 	_clique->collapse();
 
 	LineGroup *lg = new LineGroup(_clique, this);
-	lg->setLeft(-0.04, 0.2);
+	// was -0.04 - pushed the top-level ("parent") row's own left edge
+	// past the true screen edge, cutting its own name off; every child
+	// row (indented further right - see ItemLine::addBranch()/addArrow())
+	// stayed clear of it, which is why only the parent row was affected.
+	lg->setLeft(0.0, 0.2);
 	std::cout << "Clique count: " << _clique->itemCount() << std::endl;
 
 	ScrollBox *sb = new ScrollBox();
@@ -273,6 +406,7 @@ void ViewCorrelations::makeSearchButton(LineGroup *lg)
 		}
 
 		state->text = text;
+		_clique->setSearchText(text);
 
 		tokens = resolveChains(tokens);
 		filterSubdivisions(*_clique, tokens);
@@ -342,6 +476,16 @@ void ViewCorrelations::makeSearchButton(LineGroup *lg)
 		setModal(aft);
 	});
 	addObject(b);
+
+	// re-displays the search text/cross-button indicator on re-entering
+	// this list (see Clique::searchText()'s own comment) - also
+	// harmlessly re-applies the same filter via filterSubdivisions(), but
+	// that was already in effect (it lives on the Clique tree itself), so
+	// this is really only about restoring the visual indicator.
+	if (_clique->searchText().length())
+	{
+		(*apply)(_clique->searchText());
+	}
 }
 
 std::vector<ResidueRangeToken> ViewCorrelations::resolveChains(
@@ -434,11 +578,11 @@ bool ViewCorrelations::cliqueMatchesTokens(Clique &clique,
                                            const std::vector<ResidueRangeToken>
                                            &tokens)
 {
-	for (Probe *const &probe : clique.probes())
+	auto probe_matches = [&tokens](Probe *const &probe)
 	{
 		if (!probe->is_atom() || !probe->atom())
 		{
-			continue;
+			return false;
 		}
 
 		const std::string &probeChain = probe->atom()->chain();
@@ -448,6 +592,31 @@ bool ViewCorrelations::cliqueMatchesTokens(Clique &clique,
 		{
 			if (probeChain == token.chain && resNum >= token.begin
 			    && resNum <= token.end)
+			{
+				return true;
+			}
+		}
+
+		return false;
+	};
+
+	for (Probe *const &probe : clique.probes())
+	{
+		if (probe_matches(probe))
+		{
+			return true;
+		}
+	}
+
+	// clique.probes() is only this subnetwork's own original/core set -
+	// ptps() (once a search has actually run) also includes whatever
+	// peripheral nodes ExhaustiveSearch's own wider resolution pulled in,
+	// which the search should be able to find too, not just the core.
+	if (clique.states())
+	{
+		for (const ProbeTypePair &ptp : clique.states()->ptps())
+		{
+			if (ptp.first && probe_matches(ptp.first))
 			{
 				return true;
 			}
@@ -603,7 +772,7 @@ void ViewCorrelations::viewAll()
 	new DoJob(assemble);
 }
 
-MatrixPlot *ViewCorrelations::buildCorrelationMatrixUI()
+MatrixPlot *ViewCorrelations::buildCorrelationMatrixUI(bool addButton)
 {
 	MatrixPlot *mp = new MatrixPlot(_matrix, _mutex);
 
@@ -623,6 +792,16 @@ MatrixPlot *ViewCorrelations::buildCorrelationMatrixUI()
 	mp->setArbitrary(0.4, 0.25, align);
 	addTempObject(mp);
 
+	if (addButton)
+	{
+		addCommunicationAnalysisButton();
+	}
+
+	return mp;
+}
+
+void ViewCorrelations::addCommunicationAnalysisButton()
+{
 	auto choose_groups = [this]()
 	{
 		CommunicationChoice *cc = new CommunicationChoice(this, _clique);
@@ -654,8 +833,6 @@ MatrixPlot *ViewCorrelations::buildCorrelationMatrixUI()
 	comm->setCentre(0.55, 0.9);
 	comm->setReturnJob(comm_analysis);
 	addTempObject(comm);
-
-	return mp;
 }
 
 void ViewCorrelations::finishAssembly()
@@ -667,7 +844,12 @@ void ViewCorrelations::finishAssembly()
 	setInformation("Matrix assembled - preparing to derive correlations");
 
 	_matrix = _result;
-	MatrixPlot *mp = buildCorrelationMatrixUI();
+	// addButton=false - the matrix FloydWarshall is about to gap-fill
+	// isn't complete/analysable yet, so "Communication analysis" doesn't
+	// belong here until fill_gaps's own completion below actually adds
+	// it - previously this appeared the moment gap-filling *began*, not
+	// once it finished.
+	MatrixPlot *mp = buildCorrelationMatrixUI(false);
 
 	// not cancellable - the comparison matrix isn't usable until this
 	// finishes, so there is nothing sensible to fall back to if aborted.
@@ -714,6 +896,7 @@ void ViewCorrelations::finishAssembly()
 			_matrixComplete = true;
 			_stage2Running = false;
 			makeTopLevelViewToggle();
+			addCommunicationAnalysisButton();
 
 			viewChanged();
 		});
@@ -757,10 +940,16 @@ void ViewCorrelations::viewSubnetwork(Clique &clique)
 	// subnetwork (as opposed to just switching tabs on the same one,
 	// which also comes through here - see makeSubnetworkViewToggle())
 	// would apply a stale, meaningless selection to whatever unrelated
-	// state that index happens to land on there.
+	// state that index happens to land on there. _includedStates (the
+	// "Exclude unselected" gate) is exactly the same kind of subnetwork-
+	// relative state index and needs the same guard - without this, a
+	// gate set up in one subnetwork would silently narrow down (or,
+	// depending on index magnitudes, just do nothing meaningful to) an
+	// unrelated later subnetwork's own states.
 	if (_viewedSubnetwork != &clique)
 	{
 		_lastSelectedStates.clear();
+		_includedStates.clear();
 	}
 
 	_viewedSubnetwork = &clique;
@@ -807,11 +996,11 @@ void ViewCorrelations::makeSubnetworkViewToggle()
 		addTempObject(tb);
 	};
 
-	make_button("Correlation matrix", SubnetworkView::CorrelationMatrix,
-	           0.425);
 	make_button("Hydrogen-bonding diagram",
-	           SubnetworkView::HydrogenBondDiagram, 0.55);
-	make_button("State clustering", SubnetworkView::StateClustering, 0.69);
+	           SubnetworkView::HydrogenBondDiagram, 0.425);
+	make_button("State clustering", SubnetworkView::StateClustering, 0.55);
+	make_button("Correlation matrix", SubnetworkView::CorrelationMatrix,
+	           0.69);
 }
 
 void ViewCorrelations::showSubnetworkView(Clique &clique)
@@ -839,13 +1028,44 @@ void ViewCorrelations::showStateClustering(Clique &clique)
 		return;
 	}
 
-	Eigen::MatrixXf dist = clique.states()->distanceMatrix().cast<float>();
+	int fullCount = (int)clique.states()->state_count();
+
+	// _includedStates (see its own comment) gates which states actually
+	// get plotted - empty means every state is still in play, same as
+	// before "Exclude unselected" existed.
+	if (_includedStates.empty())
+	{
+		_plottedStateIndices.resize(fullCount);
+		for (int i = 0; i < fullCount; i++)
+		{
+			_plottedStateIndices[i] = i;
+		}
+	}
+	else
+	{
+		_plottedStateIndices = _includedStates;
+	}
+
+	int n = (int)_plottedStateIndices.size();
+
+	Eigen::MatrixXf fullDist = clique.states()->distanceMatrix().cast<float>();
+	Eigen::MatrixXf dist(n, n);
+	for (int i = 0; i < n; i++)
+	{
+		for (int j = 0; j < n; j++)
+		{
+			dist(i, j) = fullDist(_plottedStateIndices[i], _plottedStateIndices[j]);
+		}
+	}
 	dist = capDistanceJumps(dist, 5.f);
 
 	float ave = 0;
-	std::vector<float> probs = clique.states()->probsForLocalAve(ave);
-
-	int n = (int)clique.states()->state_count();
+	std::vector<float> fullProbs = clique.states()->probsForLocalAve(ave);
+	std::vector<float> probs(n);
+	for (int i = 0; i < n; i++)
+	{
+		probs[i] = fullProbs[_plottedStateIndices[i]];
+	}
 
 	// default (unset) colour - box.fsh ADDS vertex colour to the texture
 	// sample (result = texture(...) + vColor), and every vertex's colour
@@ -908,7 +1128,7 @@ void ViewCorrelations::showStateClustering(Clique &clique)
 
 			for (int i = 0; i < n; i++)
 			{
-				int raw = states.value(i, row);
+				int raw = states.value(_plottedStateIndices[i], row);
 				if (raw < 0)
 				{
 					labelSums[0] += probs[i];
@@ -959,12 +1179,20 @@ void ViewCorrelations::showStateClustering(Clique &clique)
 	// was selected last time this tab was visited (see
 	// _lastSelectedStates's own comment), so switching to the H-bond
 	// diagram tab and back doesn't silently drop the selection the user
-	// made here.
+	// made here. _lastSelectedStates holds true state indices, but a
+	// gated plot's own node indices are plot-local (see
+	// _plottedStateIndices's own comment) - translate via a reverse
+	// lookup; a highlighted state that "Exclude unselected" has since
+	// gated out simply has nothing to highlight any more, which is
+	// correct.
 	for (int idx : _lastSelectedStates)
 	{
-		if (idx >= 0 && idx < n)
+		auto found = std::find(_plottedStateIndices.begin(),
+		                       _plottedStateIndices.end(), idx);
+		if (found != _plottedStateIndices.end())
 		{
-			cp->selected(idx, false);
+			int plotIdx = (int)(found - _plottedStateIndices.begin());
+			cp->selected(plotIdx, false);
 		}
 	}
 
@@ -1068,18 +1296,27 @@ void ViewCorrelations::showHydrogenBondDiagram(Clique &clique)
 	const CertainStates &states = *clique.states();
 
 	float ave = 0;
-	std::vector<float> probs = states.probsForLocalAve(ave);
+	std::vector<float> baseline = states.probsForLocalAve(ave);
+	std::vector<float> probs = baseline;
 
 	// restrict the average to whichever states are currently selected on
 	// the state-clustering tab (see _lastSelectedStates's own comment) -
 	// zeroing out every other state's weight rather than building a
 	// smaller probs vector, since proportions() indexes by raw state
-	// index. Falls back to every state (the plot's own default weighting)
-	// if nothing has been selected there yet.
-	if (!_lastSelectedStates.empty())
+	// index. Falls back to _includedStates (the state-clustering context
+	// menu's "Exclude unselected" gate - see its own comment) if nothing
+	// is currently highlighted, or every state (the plot's own default
+	// weighting) if nothing has been excluded either. _lastSelectedStates,
+	// whenever non-empty, is already a subset of _includedStates by
+	// construction (only a currently-plotted, i.e. not-yet-excluded,
+	// state can ever be highlighted), so no separate intersection is
+	// needed.
+	const std::vector<int> &restriction = !_lastSelectedStates.empty() ?
+	_lastSelectedStates : _includedStates;
+	if (!restriction.empty())
 	{
 		std::vector<float> restricted(probs.size(), 0.f);
-		for (int idx : _lastSelectedStates)
+		for (int idx : restriction)
 		{
 			if (idx >= 0 && idx < (int)restricted.size())
 			{
@@ -1089,22 +1326,153 @@ void ViewCorrelations::showHydrogenBondDiagram(Clique &clique)
 		probs = restricted;
 	}
 
-	// ptps() already only ever holds uncertain atoms plus non-covalent
-	// bonds (ExhaustiveSearch skips is_covalent() probes entirely before
-	// they ever reach CertainStates) - so this is naturally a hydrogen-
-	// bonding diagram, with no separate filtering needed here.
-	HBondDiagram *diagram = new HBondDiagram(states.ptps(), getModel(),
-	                                         &states, probs);
-
 	// same spot/positioning idiom as placeClusterPlot() (NOT setCentre()/
 	// setArbitrary() - see that method's own comment on why) - HBondDiagram
 	// isn't a ClusterPlot, so this doesn't go through that shared helper,
 	// but uses the exact same target so all three subnetwork tabs land in
 	// the same place.
-	glm::vec3 target(2.f * 0.5f - 1.f + 0.2, -(2.f * 0.6f - 1.f), 0.f);
-	diagram->setPosition(target);
+	glm::vec3 target(2.f * 0.5f - 1.f + 0.25f, -(2.f * 0.6f - 1.f), 0.f);
+
+	// one shared label, updated on hover rather than each atom showing
+	// its own floating tag (see HoverAtomLabel's own comment in
+	// HBondDiagram.cpp for why that doesn't work for a raw-setPosition()
+	// atom) - horizontally centred on target.x, which stays the correct
+	// midpoint of either a single diagram or a side-by-side pair (offset,
+	// below, is symmetric around it). Constructed blank ("") deliberately
+	// - Text's own constructor only builds real vertex geometry at all
+	// when given non-empty text (see Text::Text()), so resize()/
+	// setPosition() here would have nothing to act on yet regardless.
+	// The real fix has to live in the callback below: Text::setText()
+	// unconditionally rebuilds the quad from scratch at its natural size
+	// and repositions it via realign() (the fractional setCentre()/
+	// setLeft() layout system) - this label was never set up through
+	// that system (raw setPosition(), same as every other position in
+	// this method), so realign() falls back to its unset default (screen
+	// origin) - hence both resize() and setPosition() have to be
+	// reapplied after every single setText() call, not just once here.
+	Text *hoverInfo = new Text("");
+	addTempObject(hoverInfo);
+	auto onHoverAtom = [hoverInfo, target](const std::string &desc)
+	{
+		hoverInfo->setText(desc);
+		hoverInfo->resize(0.6);
+		hoverInfo->setPosition(glm::vec3(target.x, -0.85f, 0.f));
+		hoverInfo->forceRender(true, true);
+	};
+
+	// ptps() already only ever holds uncertain atoms plus non-covalent
+	// bonds (ExhaustiveSearch skips is_covalent() probes entirely before
+	// they ever reach CertainStates) - so this is naturally a hydrogen-
+	// bonding diagram, with no separate filtering needed here. Always the
+	// same (default) targetRadius regardless of side-by-side vs single -
+	// see the offset calculation below for how the side-by-side case
+	// instead makes room for two full-size diagrams.
+	HBondDiagram *diagram = new HBondDiagram(states.ptps(), getModel(),
+	                                         &states, probs, nullptr, {},
+	                                         0.5f, onHoverAtom);
+
+	// a second, side-by-side diagram showing the complement of the
+	// selection (every other state) only makes sense once there is an
+	// actual selection to contrast against - with nothing selected, probs
+	// above is already every state, and its own "complement" would be
+	// empty.
+	if (_lastSelectedStates.empty())
+	{
+		diagram->setPosition(target);
+		addTempObject(diagram);
+		diagram->start();
+		return;
+	}
+
+	// settle diagram's own physics synchronously (see PositionShifter::
+	// settle() itself) before ever deciding screen placement from it - an
+	// earlier attempt derived the offset from displayScale() instead (a
+	// proxy for how much post-seed repulsion growth to expect), which
+	// gave every subnetwork a different, unpredictable gap rather than a
+	// consistent one; measuring the actual settled radius directly is
+	// what that was trying to approximate in the first place. 200
+	// iterations is a balance between an actually-relaxed layout and not
+	// stalling the GUI thread noticeably - retune if diagrams still look
+	// visibly unsettled the moment this tab opens.
+	diagram->settle(200);
+
+	// offset = measuredRadius() + a fixed margin guarantees the two
+	// diagrams' own content (each up to measuredRadius() from its own
+	// centre) cannot overlap (their centres end up 2*offset apart), while
+	// still tracking each specific subnetwork's own actual size rather
+	// than an arbitrary constant. Does not on its own guarantee staying
+	// within the screen edges for a very large/sprawling subnetwork -
+	// only that the pair itself is well laid out relative to each other.
+	const float MARGIN = 0.05f;
+	float offsetX = diagram->measuredRadius() + MARGIN;
+	glm::vec3 offset(offsetX, 0.f, 0.f);
+	diagram->setPosition(target - offset);
+
+	// complement of _lastSelectedStates - the same baseline probs values
+	// (this clique's own probsForLocalAve() weights, not just a flat 1/0
+	// mask) restricting probs (above) started from, just zeroing out the
+	// opposite set of states. baseline is every state CertainStates knows
+	// about, regardless of _includedStates - without also zeroing out
+	// anything "Exclude unselected" has since gated out, a gated-out
+	// state's own weight would still land in this diagram's own
+	// denominator (proportions()'s sum) even though it no longer even
+	// appears in the state-clustering plot, silently pulling every
+	// fraction here down towards whatever that invisible state's own
+	// values happened to be.
+	std::vector<float> complementProbs = baseline;
+	OpSet<int> selected(_lastSelectedStates);
+	OpSet<int> included(_includedStates);
+	bool gated = !_includedStates.empty();
+	for (size_t i = 0; i < complementProbs.size(); i++)
+	{
+		bool excluded = gated && !included.count((int)i);
+		if (selected.count((int)i) || excluded)
+		{
+			complementProbs[i] = 0.f;
+		}
+	}
+
+	// negative shares diagram's own PositionShifter (positionSource - see
+	// HBondDiagram's own constructor comment) rather than running its own
+	// physics, so it must be fully constructed - every addTidy()/
+	// addPosition() call it makes on that shared shifter included -
+	// before diagram->start() below ever spawns the physics thread that
+	// reads from the same, unlocked _tidyJobs list (PositionShifter::
+	// addTidy() has no locking at all - a start() before this would race
+	// the two). positionOffset (2x offset - the difference between
+	// negative's own target below and diagram's own target above) is
+	// what actually keeps negative's own synced nodes offset from
+	// diagram's rather than landing directly on top of them - see
+	// HBondDiagram's own constructor/syncPositionsFrom() comments.
+	HBondDiagram *negative = new HBondDiagram(states.ptps(), getModel(),
+	                                          &states, complementProbs,
+	                                          diagram, offset * 2.f,
+	                                          0.5f, onHoverAtom);
+	negative->setPosition(target + offset);
 
 	addTempObject(diagram);
+	addTempObject(negative);
+
+	// one caption per diagram, just below it - smaller than hoverInfo
+	// above (a static label, not the thing the user is actively reading
+	// off), same x as each diagram's own setPosition() target above so
+	// it stays centred underneath regardless of how offset ends up
+	// scaling.
+	auto add_caption = [this](const std::string &text, float x)
+	{
+		Text *caption = new Text(text);
+		caption->resize(0.4);
+		caption->setPosition(glm::vec3(x, -0.72f, 0.f));
+		addTempObject(caption);
+	};
+	add_caption("selected state average", (target - offset).x);
+	add_caption("unselected state average", (target + offset).x);
+
+	// deliberately no negative->start() - see HBondDiagram's own
+	// constructor comment: it is driven entirely by diagram's own
+	// physics thread instead of running its own, so the two stay laid
+	// out identically and only differ in the data (alpha/icon) each one
+	// shows.
 	diagram->start();
 }
 

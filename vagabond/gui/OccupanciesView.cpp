@@ -90,6 +90,32 @@ void OccupanciesView::setup()
 	tix->arrange(0.15, 0.52, 0.32, 0.83);
 	addObject(tix);
 
+	// top-left display filters - purely cosmetic (see rebuildGraph()'s
+	// own comment): neither changes what estimates() itself computes,
+	// only which of its already-computed points get plotted.
+	TickBoxes *displayTix = new TickBoxes(this, this);
+
+	displayTix->addOption("Show waters", [this, displayTix]()
+	{
+		_showWaters = displayTix->isTicked("Show waters");
+		rebuildGraph();
+	}, _showWaters);
+
+	displayTix->addOption("Clique members only", [this, displayTix]()
+	{
+		_cliqueOnly = displayTix->isTicked("Clique members only");
+		rebuildGraph();
+	}, _cliqueOnly);
+
+	displayTix->setVertical(true);
+	displayTix->setOneOnly(false);
+
+	// same x-range as the energy-source tickboxes below (tix), just
+	// higher up - was top-left (0.02, 0.06) but that overlapped the back
+	// button.
+	displayTix->arrange(0.15, 0.25, 0.32, 0.35);
+	addObject(displayTix);
+
 	slider("", hnet::Energy::Torsion, 0.52);
 	slider("", hnet::Energy::Acceptor, 0.57);
 	slider("", hnet::Energy::Distance, 0.62);
@@ -256,7 +282,17 @@ OccupanciesView::EstimateMap OccupanciesView::estimates()
 
 void OccupanciesView::occupancies()
 {
-	EstimateMap pass = estimates();
+	_lastEstimates = estimates();
+	rebuildGraph();
+}
+
+void OccupanciesView::rebuildGraph()
+{
+	if (_lastEstimates.empty())
+	{
+		// see this method's own header comment - nothing to (re)plot yet.
+		return;
+	}
 
 	deleteTemps();
 	CorrelData cd = empty_CD();
@@ -293,21 +329,43 @@ void OccupanciesView::occupancies()
 	}
 
 	std::cout << "observed, calculated, samples, atom\n";
-	for (auto &pair : pass)
+	for (auto &pair : _lastEstimates)
 	{
 		const ProbeTypePair &ptp = pair.first;
 		float &observed = pair.second.observed;
 		float &calculated = pair.second.calculated;
 		size_t &samples = pair.second.samples;
 
+		Atom *atom = ptp.first->atom();
+
+		// "waters" here means the same thing Subdivide::has_non_water()
+		// checks - the residue code, not is_bulk() (a separate, narrower
+		// "liberated into bulk solvent" existence state already filtered
+		// out unconditionally by estimates() itself).
+		if (!_showWaters && atom && atom->code() == "HOH")
+		{
+			continue;
+		}
+
+		// _clique is this screen's own top-level clique - its own
+		// probes() are the originally-selected/core members, same "bold"
+		// distinction ViewCorrelations::showCorrelationMatrix() draws
+		// between a subnetwork's own core set and whatever peripheral
+		// nodes ExhaustiveSearch's wider resolution pulled in (ptps()
+		// includes both, clique.probes() only the former).
+		if (_cliqueOnly && _clique->probes().count(ptp.first) == 0)
+		{
+			continue;
+		}
+
 		// filled star (see Graph::addPoint's own comment on pointType)
 		// for every atom sharing the watched signal's residue - same
 		// star-for-watched visual language ClusterPlot already uses for
 		// subnetworks touching the watched signal.
 		int pointType = 4;
-		if (haveWatchedResidue && ptp.first->atom() &&
-		    ptp.first->atom()->chain() == watchedChain &&
-		    ptp.first->atom()->residueId() == watchedResidue)
+		if (haveWatchedResidue && atom &&
+		    atom->chain() == watchedChain &&
+		    atom->residueId() == watchedResidue)
 		{
 			pointType = 1;
 		}
@@ -320,16 +378,15 @@ void OccupanciesView::occupancies()
 		ptp.first->atomConf() << "\n";
 	}
 	std::cout << std::flush;
-	
+
 	float cc = evaluate_CD(cd);
-	
+
 	setInformation("Correlation: " + f_to_str(cc, 3));
 	graph->setup(0.4, 0.5);
 	graph->addToGraphPosition(0.75, 0.5);
 	graph->setIndexResponder(this);
 	_graph = graph;
 	addTempObject(graph);
-
 }
 
 void OccupanciesView::interactedWithNothing(bool left, bool hover)

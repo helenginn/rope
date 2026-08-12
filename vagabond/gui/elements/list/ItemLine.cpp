@@ -16,7 +16,6 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#include <iostream>
 #include <vagabond/gui/elements/TextEntry.h>
 #include <vagabond/gui/elements/TextButton.h>
 #include <vagabond/gui/elements/GLView.h>
@@ -104,13 +103,26 @@ void ItemLine::update()
 {
 	if (_update)
 	{
+		// content first, not the arrow - addArrow() below positions the
+		// arrow relative to _content's own current xy(), which is only
+		// reliable once replaceContent() has actually run: an item that
+		// transitions from no-arrow to arrow-bearing (e.g. gaining its
+		// first child) triggers this same update() well after the
+		// surrounding tree's own group-level offset (LineGroup::setLeft())
+		// has already been applied once - addArrow(), if it ran first,
+		// would build the arrow's own position from scratch using only
+		// depth/_unitHeight, landing it in a stale reference frame that
+		// hasn't picked up that offset, while _content (rebuilt fresh
+		// every single update(), so always in sync) looks fine - exactly
+		// the "arrow ends up far from the text" split this order avoids.
+		replaceContent();
+
 		if (shouldHaveArrow() && !_triangle)
 		{
 			addArrow();
 		}
 
 		turnArrow();
-		replaceContent();
 		_group->refreshGroups();
 		_update = false;
 	}
@@ -124,18 +136,32 @@ bool ItemLine::shouldHaveArrow()
 
 void ItemLine::addArrow()
 {
-	size_t depth = _item->depth();
-	
 	bool arrow = shouldHaveArrow();
-	float start_indent = (float)depth * _unitHeight;
 	_displayCollapse = _item->collapsed();
 
 	if (arrow)
 	{
 		ImageButton *b = new ImageButton("assets/images/triangle.png", _group);
 		b->rescale(0.025, 0.025);
-		b->setLeft(start_indent + xy().x, 0.0 + xy().y);
-		
+
+		// positioned relative to _content's own current xy() - one
+		// _unitHeight to its left, same y - rather than computing an
+		// independent depth/_unitHeight-based position the way
+		// replaceContent() does for _content: update() now always runs
+		// replaceContent() before this, specifically so _content's xy()
+		// is a reliable, already-correct reference to build from. An
+		// independent computation looked fine for an item whose arrow
+		// exists from construction (both would agree, since nothing has
+		// repositioned the surrounding tree yet), but an item that only
+		// gains its arrow later - e.g. on getting its first child, well
+		// after LineGroup::setLeft() has already placed the surrounding
+		// group somewhere - built the arrow's position from scratch in a
+		// stale reference frame that never picked up that placement,
+		// landing it far from (previously: on top of, before an earlier,
+		// incomplete fix to this same issue) the text.
+		glm::vec2 contentXY = _content ? _content->xy() : glm::vec2(0.f);
+		b->setLeft(contentXY.x - _unitHeight, contentXY.y);
+
 		auto toggle_button = [this]()
 		{
 			_item->toggleCollapsed();
@@ -177,7 +203,7 @@ void ItemLine::replaceContent()
 	_unitHeight = _content->maximalHeight() / 4;
 
 	size_t depth = _item->depth();
-	
+
 	float start_indent = (float)(depth + 1) * _unitHeight;
 
 	_content->setLeft(start_indent, 0.0);
@@ -241,7 +267,19 @@ Renderable *ItemLine::displayRenderable(ButtonResponder *parent) const
 	}
 	else if (!text && !_item->isSelectable())
 	{
-		text = new Text(_item->displayName(), Font::Thin, true);
+		// not delay=true (deferred texture creation, resolved later in
+		// Text::render()) - ItemLine construction only ever happens
+		// synchronously, as part of LineGroup's own construction, itself
+		// always triggered by a UI action on the main thread, so there is
+		// no thread-safety reason to defer here the way e.g. ProgressBar
+		// (updated from a worker thread) genuinely needs to. The deferred
+		// path was also landing this label at the same position as the
+		// row's own arrow/dot icon instead of start_indent further right
+		// (see replaceContent()) - not fully root-caused, but this sidesteps
+		// it by building the texture immediately, the same way TextButton
+		// (the selectable-item branch above, which never showed this
+		// symptom) already does.
+		text = new Text(_item->displayName());
 	}
 
 	text->resize(0.5);

@@ -130,7 +130,6 @@ void BreakMatrix::setup(const OpSet<AcceptableGroup> &groups)
 		all.push_back(pair.first);
 	}
 
-	std::cout << "Coordination's (" << _ac.desc() << ") break matrix: " << std::endl;
 	print_current(all);
 	
 	checks_forgets();
@@ -177,7 +176,7 @@ Eigen::MatrixXi BreakMatrix::partialMatrix(const std::vector<BondConnector *>
 
 void BreakMatrix::print_current(const std::vector<BondConnector *> &in_game)
 {
-	if (!(_ac.desc() == "S-HOH57:O" || _ac.desc() == "A-SER85:OG,A"))
+	if (!(_ac.desc() == "D-HOH155:O" || _ac.desc() == "A-SER85:OG,A"))
 	{
 		return;
 	}
@@ -186,6 +185,8 @@ void BreakMatrix::print_current(const std::vector<BondConnector *> &in_game)
 	{
 		return;
 	}
+
+	std::cout << "Coordination's (" << _ac.desc() << ") break matrix: " << std::endl;
 
 	Eigen::MatrixXi tmp = partialMatrix(in_game);
 	

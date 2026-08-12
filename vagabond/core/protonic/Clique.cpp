@@ -36,7 +36,8 @@ _planText(other._planText), _sampleWeight(other._sampleWeight),
 _communication(other._communication),
 _descToCommune(other._descToCommune), _descs(other._descs),
 _states(other._states), _subdivs(other._subdivs),
-_searchRunning(other._searchRunning), _watchedDesc(other._watchedDesc)
+_searchRunning(other._searchRunning), _watchedDesc(other._watchedDesc),
+_searchText(other._searchText)
 {
 	fixupItemsAfterCopy(other);
 }
@@ -60,6 +61,7 @@ Clique &Clique::operator=(const Clique &other)
 	_subdivs = other._subdivs;
 	_searchRunning = other._searchRunning;
 	_watchedDesc = other._watchedDesc;
+	_searchText = other._searchText;
 
 	fixupItemsAfterCopy(other);
 	return *this;

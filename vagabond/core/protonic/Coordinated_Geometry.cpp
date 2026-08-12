@@ -55,6 +55,31 @@ glm::vec3 pair_to_vec(const Pair &pair)
 	return ac.position();
 }
 
+// true if the angle between a and b (two directions from a shared
+// origin - need not already be normalized) falls within
+// HYDROGEN_BONDING_TOLERANCE of target_angle (degrees). Shared by
+// comparePairs() (checking two simultaneously-chosen candidate bond
+// directions against each other) and acceptableHydrogenAngle() (checking
+// a candidate hydrogen direction against an already-registered
+// neighbour's own direction) - both need exactly this same tolerance-band
+// check, just against different pairs of vectors. angle_out, if given,
+// is set to the raw angle regardless of accept/reject, for callers that
+// also want to log/report it.
+static bool angle_within_tolerance(const glm::vec3 &a, const glm::vec3 &b,
+                                   float target_angle,
+                                   float *angle_out = nullptr)
+{
+	float angle = rad2deg(glm::angle(glm::normalize(a), glm::normalize(b)));
+
+	if (angle_out)
+	{
+		*angle_out = angle;
+	}
+
+	return (angle > target_angle - HYDROGEN_BONDING_TOLERANCE &&
+	        angle < target_angle + HYDROGEN_BONDING_TOLERANCE);
+}
+
 bool Coordinated::acceptablePlane(const glm::vec3 &child)
 {
 	if (!_planar.ptr)
@@ -134,6 +159,15 @@ void Coordinated::comparePairs(OpSet<PairSet> &results,
 
 	glm::vec3 c2l = glm::normalize(l - centre);
 	glm::vec3 c2r = glm::normalize(r - centre);
+
+	float angle = 0.f;
+	if (!angle_within_tolerance(c2l, c2r, target_angle, &angle))
+	{
+		std::cout << "Dropping option due to angle between " << first
+		<< " and " << second << " (" << angle << ", expected "
+		<< target_angle << ")" << std::endl;
+		return;
+	}
 
 	if (!check_coord_okay(first, c2l) || !check_coord_okay(second, c2r))
 	{
@@ -446,17 +480,14 @@ bool Coordinated::acceptableHydrogenAngle(const glm::vec3 &hydrogen,
 		for (const ACPair &covalent : group)
 		{
 			glm::vec3 atom_pos = pair_to_vec(covalent);
-			glm::vec3 c2l = glm::normalize(atom_pos - atomic_position());
-			glm::vec3 c2r = glm::normalize(hydrogen - atomic_position());
+			glm::vec3 c2l = atom_pos - atomic_position();
+			glm::vec3 c2r = hydrogen - atomic_position();
 
-			float angle = rad2deg(glm::angle(c2l, c2r));
-			std::cout << "\tangle from hydrogen to " << covalent.first << 
+			float angle = 0.f;
+			bool accept = angle_within_tolerance(c2l, c2r, target_angle,
+			                                     &angle);
+			std::cout << "\tangle from hydrogen to " << covalent.first <<
 			" is " << angle;
-
-			bool accept = (angle > target_angle - 
-			               HYDROGEN_BONDING_TOLERANCE && 
-			               angle < target_angle + 
-			               HYDROGEN_BONDING_TOLERANCE);
 
 			// we definitely can't accept this pair if it's far outside
 			// this range!

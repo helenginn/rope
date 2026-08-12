@@ -25,12 +25,12 @@
 class Network;
 class LineGroup;
 class ProtonNetworkView;
+class ImageButton;
 
 class CliqueView : public Image
 {
 public:
-	CliqueView(ProtonNetworkView *scene, 
-	Network &network, const OpSet<Probe *> &probes);
+	CliqueView(ProtonNetworkView *scene, Network &network);
 
 	void setupConstants();
 	
@@ -64,17 +64,23 @@ private:
 	void wireDescendants(Item *item);
 	void wireSubdivision(Clique *sub);
 
+	// a small question-mark icon (same idiom as Modal::setHelpText(),
+	// replicated directly since this view isn't a Modal itself) that
+	// opens an InfoModal explaining how to create a clique now that there
+	// is no automatic clique finder any more (see the constructor's own
+	// comment) - always present from construction, not just while the
+	// list is empty.
+	void addHelpButton();
+
 	Network &_network;
 	std::function<void()> _kill{};
-	
+
 	ProtonNetworkView *_scene{};
 	Item _parent{};
-	Item _ambiguous{};
-	Item _wet{};
-	Item _dry{};
-	Item _certain{};
 	LineGroup *_lg{};
-	
+
+	ImageButton *_helpButton = nullptr;
+
 	std::vector<Clique *> _cliques;
 };
 

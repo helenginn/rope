@@ -46,8 +46,8 @@ ClusterPlot::ClusterPlot(const Eigen::MatrixXf &dist,
 	// driver's max supported point size and clamps, which would make
 	// per-node size variation invisible even though gl_PointSize is
 	// genuinely being computed differently per vertex. Deliberately much
-	// smaller; a first guess, likely needs visual tuning.
-	_size = 12.f;
+	// smaller; visually tuned since (was 12, doubled per request).
+	_size = 24.f;
 
 	_dist = dist;
 

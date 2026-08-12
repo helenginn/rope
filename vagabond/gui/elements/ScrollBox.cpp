@@ -79,6 +79,22 @@ void ScrollBox::addSliderIfNeeded()
 		deleteSlider();
 	}
 
+	// content height may have just shrunk (e.g. a LineGroup node
+	// collapsing) enough that the current scroll offset now points past
+	// the end of the content - previously left stale (nothing revisited
+	// _scrollOffset once dragged), which could leave the visible window
+	// scrolled past everything the list now has, i.e. showing nothing at
+	// all rather than settling back onto whatever content remains.
+	float maxScroll = glMaxHeight() - glBoundHeight();
+	if (maxScroll < 0.f)
+	{
+		maxScroll = 0.f;
+	}
+
+	if (_scrollOffset > maxScroll)
+	{
+		updateScrollOffset(maxScroll);
+	}
 }
 
 float ScrollBox::screenMidHeight()
@@ -114,7 +130,13 @@ void ScrollBox::extraUniforms()
 
 void ScrollBox::heightChanged()
 {
-
+	// this class's own Responder<Box>::respond() override - see its own
+	// declaration - reaches here whenever something calls
+	// triggerResponse() on _content directly; LineGroup itself instead
+	// calls addSliderIfNeeded() straight from its own update cycle (see
+	// updateGroups()/updateHeights()), which is where the real logic
+	// actually lives, so both paths stay consistent.
+	addSliderIfNeeded();
 }
 
 void ScrollBox::setContent(Box *box)

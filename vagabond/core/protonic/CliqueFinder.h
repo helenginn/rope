@@ -71,17 +71,6 @@ public:
 	static OpSet<Probe *>
 	connectGroups(const std::vector<OpSet<Probe *>> &groups,
 	             int max_jumps = INT_MAX, bool with_covalent = false);
-
-	typedef std::function<void(const OpSet<Probe *> &,
-	                           const std::string &)> HandleClique;
-
-	void completeAndChop(const OpSet<Probe *> &done,
-	                     const HandleClique &handle_clique = {});
-private:
-	OpSet<Probe *> findOneClique(const OpSet<Probe *> &all);
-
-	std::vector<OpSet<Probe *>> _cliques;
-
 };
 
 #endif

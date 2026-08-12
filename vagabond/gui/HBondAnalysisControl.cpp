@@ -200,8 +200,12 @@ void HBondAnalysisControl::setup()
 		// start_subdivisions() calls back() below, and this view may be
 		// destroyed and freshly reconstructed by the time the user
 		// returns to this clique, long before the search actually
-		// finishes on its worker thread.
+		// finishes on its worker thread. searchCancelled() likewise, so
+		// ProtonNetworkView::cancelAnalysis() can request cancellation
+		// of a search it didn't start (e.g. via the 3D view's right-click
+		// menu, without ever having opened the progress bar itself).
 		_clique->searchRunning() = running;
+		_clique->searchCancelled() = cancelled;
 
 		SearchAll *search = new SearchAll(_clique, _network);
 		search->setCancelFlag(cancelled);

@@ -115,10 +115,26 @@ public:
 	{
 		return _partialMutex;
 	}
-	
+
 	void addTidy(const Tidy &tidy)
 	{
 		_tidyJobs.push_back(tidy);
+	}
+
+	// blocks until any tidy() call currently in flight on the physics
+	// thread has fully finished, then returns immediately (the lock is
+	// not held afterwards). A Tidy job lambda that checks a caller's own
+	// "am I still alive" flag before touching anything is only race-free
+	// against that caller's own destructor if the destructor also does
+	// this, right after flipping the flag false and before actually
+	// freeing anything the job might read: the flag alone only narrows
+	// the window (a job that already read the flag as true a moment
+	// earlier can still be mid-execution, using now-freed memory, by the
+	// time the flag's new value would otherwise have stopped it). See
+	// HBondDiagram::~HBondDiagram() for the motivating case.
+	void waitForTidy()
+	{
+		std::unique_lock<std::mutex> lock(_tidyMutex);
 	}
 	
 	bool isPaused()
@@ -132,6 +148,16 @@ public:
 	void unpause();
 	void run();
 	void tidy();
+
+	// runs move() synchronously, on whichever thread calls this, the
+	// given number of times in a row - lets a caller measure a genuinely
+	// settled (repulsion/spring-relaxed) layout before ever showing it or
+	// deciding screen placement from it, rather than only from the raw
+	// seed positions addPosition() started from. Must only be called
+	// before run() ever spawns the background worker thread (undefined
+	// otherwise - move() has no locking of its own beyond skip_lock()'s
+	// narrow critical section, which assumes a single caller at a time).
+	void settle(int iterations);
 private:
 	struct Element
 	{
@@ -186,6 +212,7 @@ private:
 	bool _stop{false};
 	std::thread *_worker = nullptr;
 	std::mutex _partialMutex{};
+	std::mutex _tidyMutex{};
 	std::mutex _pauseMutex{};
 	std::condition_variable _waitForPause{};
 	std::atomic<bool> _pause{false};

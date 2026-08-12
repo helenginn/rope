@@ -275,6 +275,18 @@ public:
 		return _searchRunning;
 	}
 
+	/** shared with whichever SearchAll is currently iterating this
+	 * Clique's subdivisions (if any) - stored here rather than only
+	 * locally in HBondAnalysisControl's own exhaustive_search job, so
+	 * something outside that scene (ProtonNetworkView::cancelAnalysis())
+	 * can request cancellation of a search it didn't start and has no
+	 * other handle on. Same runtime-only, not-serialized idiom as
+	 * searchRunning() above. */
+	std::shared_ptr<std::atomic<bool>> &searchCancelled()
+	{
+		return _searchCancelled;
+	}
+
 	const std::shared_ptr<CertainStates> &states() const
 	{
 		return _states;
@@ -283,11 +295,13 @@ public:
 	void setStates(const std::shared_ptr<CertainStates> &states);
 
 	/** desc of the single assigned communication-point signal currently
-	 * "watched" in CommunicationChoice (empty if none) - runtime-only
-	 * session state, not serialized: lives here (rather than as a member
-	 * of CommunicationChoice itself) purely so it survives closing and
-	 * reopening that scene for as long as this Clique stays in memory,
-	 * same idiom as searchRunning() above. */
+	 * "watched" in CommunicationChoice (empty if none) - serialized (see
+	 * to_json()/from_json() below), so it persists across runs the same
+	 * way _sampleWeight does; a loaded desc that no longer matches any
+	 * current communication point/probe is simply inert (every reader
+	 * - CommunicationChoice, ViewCorrelations, OccupanciesView - only
+	 * ever compares it against whatever descs currently exist) rather
+	 * than needing validation here. */
 	const std::string &watchedSignal() const
 	{
 		return _watchedDesc;
@@ -296,6 +310,24 @@ public:
 	void setWatchedSignal(const std::string &desc)
 	{
 		_watchedDesc = desc;
+	}
+
+	/** ViewCorrelations::makeSearchButton()'s own residue-range query
+	 * text (empty if none) - runtime-only, not serialized: lives here
+	 * (rather than as a ViewCorrelations member) purely so it survives
+	 * closing and reopening that scene for as long as this Clique stays
+	 * in memory, same idiom as watchedSignal()/searchRunning() above.
+	 * filterSubdivisions()'s own hidden state already lives on the Clique
+	 * tree itself and so already survives on its own - this is only ever
+	 * about restoring the visual search-box/cross-button indicator. */
+	const std::string &searchText() const
+	{
+		return _searchText;
+	}
+
+	void setSearchText(const std::string &text)
+	{
+		_searchText = text;
 	}
 private:
 	/** Item::_items/_parent are raw, non-owning pointers that Item's own
@@ -360,7 +392,9 @@ private:
 	std::shared_ptr<CertainStates> _states{};
 	std::list<Clique> _subdivs;
 	std::shared_ptr<std::atomic<bool>> _searchRunning;
+	std::shared_ptr<std::atomic<bool>> _searchCancelled;
 	std::string _watchedDesc;
+	std::string _searchText;
 };
 
 inline void to_json(json &j, const Clique &cl)
@@ -404,6 +438,11 @@ inline void to_json(json &j, const Clique &cl)
 	{
 		j["sample_weight"] = cl._sampleWeight;
 	}
+
+	if (cl._watchedDesc.size())
+	{
+		j["watched_signal"] = cl._watchedDesc;
+	}
 }
 
 inline void from_json(const json &j, Clique &cl)
@@ -437,6 +476,11 @@ inline void from_json(const json &j, Clique &cl)
 	if (j.count("sample_weight"))
 	{
 		cl._sampleWeight = j.at("sample_weight");
+	}
+
+	if (j.count("watched_signal"))
+	{
+		cl._watchedDesc = j.at("watched_signal");
 	}
 }
 

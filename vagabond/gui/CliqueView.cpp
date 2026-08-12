@@ -18,13 +18,15 @@
 
 #include <vagabond/gui/elements/AskForText.h>
 #include <vagabond/gui/elements/TextButton.h>
+#include <vagabond/gui/elements/ImageButton.h>
+#include <vagabond/gui/elements/Text.h>
+#include <vagabond/gui/elements/InfoModal.h>
 #include <vagabond/gui/elements/list/LineGroup.h>
 #include <vagabond/gui/elements/list/ItemLine.h>
 #include <vagabond/gui/elements/ScrollBox.h>
 #include <vagabond/gui/elements/Menu.h>
 #include <vagabond/core/protonic/Clique.h>
 #include <vagabond/core/protonic/Network.h>
-#include <vagabond/core/protonic/CliqueFinder.h>
 #include <vagabond/gui/ProtonNetworkView.h>
 #include <vagabond/gui/HBondAnalysisControl.h>
 #include <vagabond/utils/DoJob.h>
@@ -82,18 +84,7 @@ void CliqueView::insertClique(Clique *clique)
 		{
 			clique->setDisplayName(clique->name());
 			clique->removeSelf(true);
-			if (clique->is_certain())
-			{
-				insert_clique(_certain, clique);
-			}
-			else if (clique->num_waters() > 0)
-			{
-				insert_clique(_wet, clique);
-			}
-			else
-			{
-				insert_clique(_dry, clique);
-			}
+			insert_clique(_parent, clique);
 		};
 	};
 	
@@ -279,8 +270,7 @@ void CliqueView::wireSubdivision(Clique *sub)
 	});
 }
 
-CliqueView::CliqueView(ProtonNetworkView *scene, Network &network, 
-                       const OpSet<Probe *> &probes) 
+CliqueView::CliqueView(ProtonNetworkView *scene, Network &network)
 : Image("assets/images/box.png"), _network(network), _scene(scene)
 {
 	clearVertices();
@@ -290,26 +280,32 @@ CliqueView::CliqueView(ProtonNetworkView *scene, Network &network,
 	setCentre(1 - (width / 2) - 0.05, 0.55);
 	setupConstants();
 
-	_parent.addItem(&_ambiguous);
-	_ambiguous.addItem(&_wet);
-	_ambiguous.addItem(&_dry);
-	_parent.addItem(&_certain);
+	// named before LineGroup/ItemLine ever get constructed below, not
+	// after - ItemLine::replaceContent() builds its own Text straight
+	// from displayName() the moment it first runs (inside LineGroup's own
+	// constructor), and _unitHeight/every indent derived from it comes
+	// from that Text's own measured height - an Item still unnamed at
+	// that point got a zero-height, zero-width placeholder that later
+	// updates (see setDisplayName()'s own triggerResponse()) haven't
+	// reliably recovered from. Naming first avoids that first pass ever
+	// happening at all, rather than needing it to self-correct.
+	_parent.setDisplayName("All cliques");
 
 	LineGroup *lg = new LineGroup(&_parent, _scene);
-	lg->setLeft(0.65, 0.23);
+	// 0.05 below the ScrollBox's own top clip bound, not the same value -
+	// matching ViewCorrelations::makeList() and CommunicationAnalysis's
+	// own ScrollBox setup, both of which already give their content a
+	// margin here. Without it, the first row's own text (centred on its
+	// own top-aligned position, so extending slightly above it) got
+	// clipped by the scrollbox's clip shader before it could ever render.
+	lg->setLeft(0.68, 0.28);
 	_lg = lg;
 
 	ScrollBox *sb = new ScrollBox();
 	sb->setContent(lg);
 	lg->setScrollBox(sb);
-	sb->setBounds(glm::vec4(0.23, 0.65, 0.9, 0.9));
+	sb->setBounds(glm::vec4(0.23, 0.65, 0.9, 0.92));
 	addObject(sb);
-	
-	_parent.setDisplayName("All cliques");
-	_ambiguous.setDisplayName("Ambiguous assignment");
-	_certain.setDisplayName("Fully resolved");
-	_wet.setDisplayName("Wet");
-	_dry.setDisplayName("Dry");
 
 	auto add_clique = [this](Clique *clique)
 	{
@@ -319,29 +315,10 @@ CliqueView::CliqueView(ProtonNetworkView *scene, Network &network,
 		};
 	};
 
-	auto handle_clique = [this, add_clique]
-	(const OpSet<Probe *> &probes, const std::string &suggested_name)
-	{
-		Clique *clique = _network.newClique(probes);
-		if (suggested_name.length())
-		{
-			clique->setDisplayName(suggested_name);
-		}
-		addMainThreadJob(add_clique(clique));
-	};
-
-	auto find_cliques = [probes, handle_clique, sb, lg, this]()
-	{
-		CliqueFinder finder{};
-		finder.completeAndChop(probes, handle_clique);
-		
-		addMainThreadJob([sb, lg]()
-		{
-			lg->refreshGroups();
-			sb->addSliderIfNeeded();
-		});
-	};
-	
+	// no automatic clique finder any more - cliques only ever come from
+	// whatever was already saved on network, or from the user's own
+	// "make new clique" (ProtonNetworkView::interactedWithNothing()) from
+	// here on.
 	if (_network.cliques().size())
 	{
 		for (Clique &clique : _network.cliques())
@@ -355,11 +332,8 @@ CliqueView::CliqueView(ProtonNetworkView *scene, Network &network,
 			sb->addSliderIfNeeded();
 		});
 	}
-	else
-	{
-		new DoJob(find_cliques);
-	}
-	
+
+	addHelpButton();
 }
 
 void CliqueView::setupCloseButton()
@@ -385,6 +359,31 @@ void CliqueView::setupCloseButton()
 void CliqueView::setupConstants()
 {
 	setupCloseButton();
+}
+
+void CliqueView::addHelpButton()
+{
+	std::string text =
+	"To create a new clique, shift + drag and select atoms with the mouse,\n"\
+	"or right click empty space and click 'select from plan'.\n\n"\
+	"To examine the hydrogen-bonding network behaviour of a clique,\n"\
+	"right click the clique's name in the list and choose 'analyse'.";
+
+	// straight to the question-mark icon, no inline text first - same
+	// idiom as Modal::setHelpText() (a small icon that opens the text in
+	// an InfoModal on click), replicated directly since this view isn't
+	// a Modal itself.
+	ImageButton *ib = new ImageButton("assets/images/question_mark.png",
+	                                  nullptr);
+	ib->resize(0.04);
+	ib->setRight(0.69, 0.22);
+	ib->setReturnJob([this, text]()
+	{
+		InfoModal *info = new InfoModal(_scene, text);
+		_scene->setModal(info, false);
+	});
+	addObject(ib);
+	_helpButton = ib;
 }
 
 void CliqueView::highlightCliquesWith(const OpSet<Probe *> &probes)

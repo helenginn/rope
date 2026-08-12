@@ -511,6 +511,22 @@ void ProtonNetworkView::cancelAnalysis()
 		leave2D();
 	}
 
+	// stop any exhaustive search still running on this clique's own
+	// worker thread (see HBondAnalysisControl's exhaustive_search) -
+	// "Cancel analysis" implies exactly that, and there's otherwise no
+	// way to reach a search from here since it may have been started
+	// from an HBondAnalysisControl scene that no longer exists.
+	if (_activeClique)
+	{
+		auto &running = _activeClique->searchRunning();
+		auto &cancelled = _activeClique->searchCancelled();
+
+		if (running && running->load() && cancelled)
+		{
+			cancelled->store(true);
+		}
+	}
+
 	_activeClique = nullptr;
 	_analysing = false;
 
@@ -547,7 +563,7 @@ void ProtonNetworkView::ensureCliqueView()
 		return;
 	}
 
-	_cv = new CliqueView(this, _network, _hProbes);
+	_cv = new CliqueView(this, _network);
 
 	auto kill = [this]()
 	{

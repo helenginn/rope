@@ -51,10 +51,28 @@ private:
 
 	typedef std::map<ProbeTypePair, OccData> EstimateMap;
 	EstimateMap estimates();
+
+	// (re)builds _graph from _lastEstimates, applying the current
+	// _showWaters/_cliqueOnly filters - shared by occupancies() (which
+	// recomputes _lastEstimates first) and the top-left tickboxes' own
+	// toggle jobs (which just re-filter the same, already-computed
+	// estimates, since neither filter changes what estimates() itself
+	// would produce). A no-op if occupancies() has never actually been
+	// run yet (_lastEstimates empty) - the tickboxes are pure display
+	// filters on top of an existing plot, not their own trigger to run
+	// the (potentially slow) full estimation pass.
+	void rebuildGraph();
+
 	Clique *_clique{};
 
 	Graph *_graph{};
 	Network &_network;
+
+	EstimateMap _lastEstimates;
+
+	// top-left display-filter tickboxes (see setup()/rebuildGraph()).
+	bool _showWaters = true;
+	bool _cliqueOnly = false;
 };
 
 #endif

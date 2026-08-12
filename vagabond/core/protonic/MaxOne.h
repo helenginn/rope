@@ -22,46 +22,74 @@
 
 #include "hnet.h"
 #include "ConstraintBase.h"
+#include <vector>
 
 namespace hnet
 {
+// at most one of exclusives may exist - the OnlyOne(exclusives, false)
+// mode used to provide this too (see OnlyOne's own comment for why that
+// mode was dropped in favour of this, generalised from a fixed pair to
+// any number of exclusives).
 struct MaxOne : public ConstraintBase
 {
 public:
-	MaxOne(ExistenceConnector &left, ExistenceConnector &right)
-	: _left(left), _right(right)
+	MaxOne(std::vector<ExistenceConnector *> exclusives)
+	: _exclusives(exclusives)
 	{
-		prep_constraints_and_forgets(this, {&left, &right});
+		std::vector<ConnectBase *> list;
+		for (ExistenceConnector *conn : exclusives)
+		{
+			list.push_back(conn);
+		}
+		prep_constraints_and_forgets(this, list);
 	}
 
 	std::string desc()
 	{
-		return "clash prevention between \"" + _left.desc() + 
-		"\" and \"" + _right.desc() + "\"";
+		std::ostringstream ss;
+		ss << "no more than one of [";
+
+		for (ExistenceConnector *conn : _exclusives)
+		{
+			ss << *conn << ", ";
+		}
+		std::string str = ss.str();
+		str.pop_back();
+		str.pop_back();
+		str += "] should exist";
+
+		return str;
 	}
 
 	bool check(const GuiltVersion &gv, CheckList &list)
 	{
 		auto assign = make_assign_and_say(this, gv, list);
 
-		Existence::Values forLeft = _left.value();
-		Existence::Values forRight = _right.value();
+		bool declare_absent = false;
+		for (ExistenceConnector *&existence : _exclusives)
+		{
+			if (existence->value() == Existence::Present)
+			{
+				declare_absent = true;
+				break;
+			}
+		}
 
-		if (forLeft == Existence::Present)
+		if (declare_absent)
 		{
-			assign(_right, Existence::Absent);
+			for (ExistenceConnector *&existence : _exclusives)
+			{
+				if (existence->value() != Existence::Present)
+				{
+					assign(*existence, Existence::Absent);
+				}
+			}
 		}
-		else if (forRight == Existence::Present)
-		{
-			assign(_left, Existence::Absent);
-		}
-		
+
 		return assign.okay();
 	}
 private:
-	ExistenceConnector &_left;
-	ExistenceConnector &_right;
-
+	std::vector<ExistenceConnector *> _exclusives;
 };
 };
 

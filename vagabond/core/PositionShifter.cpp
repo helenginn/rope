@@ -226,6 +226,11 @@ glm::vec3 PositionShifter::gradient(size_t idx,
 
 void PositionShifter::tidy()
 {
+	// held for every job's actual invocation, not just the loop's own
+	// bookkeeping - see waitForTidy()'s own comment for why the whole
+	// call needs to be inside the critical section, not just entry/exit.
+	std::unique_lock<std::mutex> lock(_tidyMutex);
+
 	for (const Tidy &tidy : _tidyJobs)
 	{
 		tidy();
@@ -312,6 +317,7 @@ void PositionShifter::move()
 	{
 		Element *ele;
 		glm::vec3 motion;
+		glm::vec3 position;
 	};
 
 	std::vector<Adjustment> adjustments;
@@ -341,10 +347,44 @@ void PositionShifter::move()
 		average += motion;
 		count++;
 
-		adjustments.push_back({&ele, motion});
+		adjustments.push_back({&ele, motion, positions[i]});
 	}
 
 	average /= count;
+
+	// rigid-body rotation (about z only - every element ends up sharing
+	// the same z, see "current.z = z" below/adjustZ(), so there is no
+	// other axis it could ever happen about) - gradient()'s repulsion/
+	// spring terms are symmetric per pair but not perfectly so across the
+	// whole group once more than a couple of elements are involved, so a
+	// small net angular momentum survives even after average (translation)
+	// above is removed - left uncorrected, that compounds tick after tick
+	// into a visible, never-settling spin. Same idea as average: measure
+	// the group's net rotation about its own centroid, then subtract
+	// exactly that rotation back out of each element's own motion before
+	// it gets applied, leaving whatever genuine relative (non-rigid)
+	// motion the springs/repulsion actually wanted.
+	glm::vec3 centroid = {};
+	for (Adjustment &a : adjustments)
+	{
+		centroid += a.position;
+	}
+	centroid /= count;
+
+	float angularMomentum = 0.f;
+	float momentOfInertia = 0.f;
+	for (Adjustment &a : adjustments)
+	{
+		glm::vec3 r = a.position - centroid;
+		angularMomentum += r.x * a.motion.y - r.y * a.motion.x;
+		momentOfInertia += r.x * r.x + r.y * r.y;
+	}
+
+	// momentOfInertia is ~0 only when every element sits on (or very near)
+	// the shared centroid - e.g. a single-element or fully-collapsed
+	// group - where "rotation" isn't a meaningful concept anyway.
+	float angularVelocity = (momentOfInertia > 1e-6f) ?
+	angularMomentum / momentOfInertia : 0.f;
 
 	float z = _z;
 
@@ -352,8 +392,12 @@ void PositionShifter::move()
 		std::unique_lock<std::mutex> lock(_partialMutex);
 		for (Adjustment &a : adjustments)
 		{
+			glm::vec3 r = a.position - centroid;
+			glm::vec3 rigidRotation(-angularVelocity * r.y,
+			                        angularVelocity * r.x, 0.f);
+
 			glm::vec3 current = a.ele->getter();
-			current += a.motion * learning_rate - average * learning_rate;
+			current += (a.motion - average - rigidRotation) * learning_rate;
 			current.z = z;
 			a.ele->setter(current);
 			a.ele->momentum = a.motion;
@@ -363,6 +407,14 @@ void PositionShifter::move()
 	tidy();
 
 	_num++;
+}
+
+void PositionShifter::settle(int iterations)
+{
+	for (int i = 0; i < iterations; i++)
+	{
+		move();
+	}
 }
 
 void PositionShifter::setPosition(void *ptr, glm::vec3 pos)

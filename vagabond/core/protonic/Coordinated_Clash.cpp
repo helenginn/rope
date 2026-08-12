@@ -210,7 +210,7 @@ void Coordinated::clashLogic(OpSet<AtomConf> &clash_check)
 		std::ostringstream result;
 		try
 		{
-			add_constraint(new MaxOne(*left, *right));
+			add_constraint(new MaxOne({left, right}));
 
 			// registered into the same others()/register_probe() graph
 			// Network::establishAtom() already uses for alt-conf siblings
