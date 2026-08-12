@@ -178,6 +178,7 @@ guifiles = [
 'WholeModelPathSetupView.h',
 '../cmd/CmdWorker.cpp',
 '../cmd/Dictator.cpp',
+'../cmd/CalcForces.cpp',
 
 'AddEntity.h',
 'AddModel.h',
@@ -237,6 +238,7 @@ guifiles = [
 'WatchRefinement.h',
 '../cmd/CmdWorker.h',
 '../cmd/Dictator.h',
+'../cmd/CalcForces.h',
 ]
 
 gui = static_library('vaggui', guifiles,

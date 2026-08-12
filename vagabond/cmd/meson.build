@@ -2,10 +2,12 @@ clifiles = [
 'CmdWorker.cpp',
 'Socket.cpp',
 'Dictator.cpp',
+'CalcForces.cpp',
 
 'CmdWorker.h',
 'Socket.h',
 'Dictator.h',
+'CalcForces.h',
 ]
 
 cli = static_library('rope_cli', clifiles,

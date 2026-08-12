@@ -18,10 +18,12 @@
 
 #include <vagabond/utils/FileReader.h>
 #include <vagabond/utils/os.h>
+
 #include "Dictator.h"
 #include "Socket.h"
 #include "CmdWorker.h"
-#include "forces/AbstractForce.h"
+#include "CalcForces.h"
+
 #include "forces/ForceAnalysis.h"
 #include <vagabond/core/Environment.h>
 #include <vagabond/core/FileManager.h>
@@ -65,6 +67,8 @@ void Dictator::makeCommands()
   _commands["-h"] = ("Displays available commands.");
   _commands["help"] = ("Displays available commands.");
   _commands["calc_stress_strain"] = ("calculates the stress strain in a given ptb_file");
+  _commands["cpp_version"] = ("Shows the cpp version with which RoPE has been built");
+  _commands["test_result"] = ("This is a test for the result class");
 }
 
 void splitCommand(std::string command, std::string *first, std::string *last)
@@ -201,38 +205,17 @@ void Dictator::processRequest(std::string &first, std::string &last)
 
 		PathManager::manager()->makePathsWithinGroup(args, num);
 	}
+
+  if (first == "test_result"){
+    handleTestResult(first, last);
+  }
+
   if (first == "calc_stress_strain"){
-    if (last.empty()){
-      std::cout << "Usage: calc_stress_strain=/path/to/pdb" << std::endl;
-      return;
-    }
-    File *file = File::loadUnknown(last);
-    if (!file){
-      std::cout << "Could not load file: " << last << std::endl;
-      return;
-    }
-    File::Type type = file->cursoryLook();
-    if (!(type & File::MacroAtoms) && !(type & File::CompAtoms)){
-      std::cout << "File has no atoms for force analysis: " << last << std::endl;
-      delete file;
-      return;
-    }
+    handleCalcForces(first,last);
+  }
 
-    AtomContent *atoms = file->atoms();
-    ForceAnalysis analysis(atoms);
-
-    analysis.convert();
-
-    analysis.toggleReason(AbstractForce::ReasonBondLength, false);
-    analysis.toggleReason(AbstractForce::ReasonBondTorsion, false);
-    analysis.toggleReason(AbstractForce::ReasonVdwContact, false);
-    analysis.toggleReason(AbstractForce::ReasonElectrostaticContact, false);
-
-    analysis.toggleReason(AbstractForce::ReasonBondAngle, true);
-    analysis.calculateUnknown();
-    
-    delete atoms;
-    delete file;
+  if (first == "cpp_version"){
+    std::cout << "C++ Standard Version macro: " << __cplusplus << std::endl;
   }
 
 	if (first == "refine-path")
