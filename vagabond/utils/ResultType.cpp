@@ -1,19 +1,19 @@
 // vagabond
 // Copyright (C) 2022 Helen Ginn
-// 
+//
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-// 
+//
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-// 
+//
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
-// 
+//
 // Please email: vagabond @ hginn.co.uk for more details.
 
 #include "ResultType.h"
@@ -78,6 +78,19 @@ TEST_CASE("Result - Concept expect() checks") {
   }
 }
 
+TEST_CASE("Result - expect_err() concept checks") {
+  SUBCASE("With .toString() on T") {
+    Result<CustomTestError, int> res = Ok(CustomTestError{"unexpected value"});
+    CHECK_THROWS_AS(std::move(res).expect_err("Expected error"),
+                    std::runtime_error);
+  }
+  SUBCASE("Without .toString() on T") {
+    Result<PlainTestError, int> res = Ok(PlainTestError{});
+    CHECK_THROWS_AS(std::move(res).expect_err("Expected error"),
+                    std::runtime_error);
+  }
+}
+
 TEST_CASE("Result - Monadic map operations") {
   SUBCASE("map on Ok") {
     Result<int, std::string> res = Ok(5);
@@ -91,4 +104,20 @@ TEST_CASE("Result - Monadic map operations") {
     CHECK(mapped.unwrap_err() == "bad!");
   }
 }
+
+TEST_CASE("Result - map/map_err pass-through") {
+  SUBCASE("map on Err leaves error untouched") {
+    Result<int, std::string> res = Err(std::string("bad"));
+    auto mapped = std::move(res).map([](int x) { return x * 2; });
+    CHECK(mapped.is_err());
+    CHECK(mapped.unwrap_err() == "bad");
+  }
+  SUBCASE("map_err on Ok leaves value untouched") {
+    Result<int, std::string> res = Ok(5);
+    auto mapped = std::move(res).map_err([](std::string s) { return s + "!"; });
+    CHECK(mapped.is_ok());
+    CHECK(mapped.unwrap() == 5);
+  }
+}
+
 #endif

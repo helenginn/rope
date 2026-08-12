@@ -72,7 +72,7 @@ void handleTestResult(std::string first, std::string last) {
 
   auto res = divide(5,0);
   if (res.is_err()) {
-    std::cout << "Abgefangen: " << res.error() << std::endl;
+    std::cout << "Aborted: " << res.error() << std::endl;
   }
 }
 
