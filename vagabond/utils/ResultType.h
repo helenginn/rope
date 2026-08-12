@@ -22,9 +22,9 @@
 #include <concepts>
 #include <stdexcept>
 #include <string>
+#include <type_traits>
 #include <utility>
 #include <variant>
-#include <memory>
 
 template <typename T>
 concept HasToString = requires(T obj) {

@@ -17,6 +17,7 @@
 // Please email: vagabond @ hginn.co.uk for more details.
 
 #include "ResultType.h"
+#include <memory>
 
 #ifdef ROPE_INLINE_TESTS
 #include <doctest/doctest.h>
