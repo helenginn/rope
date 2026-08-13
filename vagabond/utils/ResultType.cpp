@@ -504,4 +504,28 @@ TEST_CASE("Result - constexpr usability") {
   CHECK(true);
 }
 
+TEST_CASE("Result - operator== is SFINAE'd out for non-comparable types") {
+  static_assert(std::equality_comparable<Result<int, std::string>>);
+  static_assert(!std::equality_comparable<Result<int, PlainTestError>>);
+  static_assert(!std::equality_comparable<Result<PlainTestError, int>>);
+
+  Result<int, PlainTestError> res = Err(PlainTestError{});
+  CHECK(res.is_err());
+}
+
+TEST_CASE("Result - ref-qualified overload coverage") {
+  SUBCASE("unwrap() const&") {
+    const Result<int, std::string> res = Ok(42);
+    CHECK(res.unwrap() == 42);
+  }
+  SUBCASE("unwrap_err() const&") {
+    const Result<int, std::string> res = Err(std::string("bad"));
+    CHECK(res.unwrap_err() == "bad");
+  }
+  SUBCASE("unwrap_err() &&") {
+    Result<int, std::string> res = Err(std::string("bad"));
+    CHECK(std::move(res).unwrap_err() == "bad");
+  }
+}
+
 #endif
