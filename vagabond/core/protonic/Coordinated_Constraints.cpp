@@ -362,6 +362,30 @@ void Coordinated::attachToNeighbours(const OpSet<AtomConf> &searchSet)
 
 		add_constraint(new HydrogenBond(left, le, h, hExist, right, re));
 		add_constraint(new HydrogenBond(right, re, h, hExist, left, le));
+
+		// these two rules are symmetric under swapping le/re (and left/
+		// right for non_existent_bonds) and only ever touch shared/
+		// both-sides connectors, so evaluating them once per H-bond pair
+		// here - rather than inline in HydrogenBond::check(), which runs
+		// once per mirrored instance above - reaches the same conclusions
+		// without redundantly re-deriving them a second time every check().
+
+		// half-bond existence <-> protonation slot subservience
+		add_constraint(new SubExistence(le, hExist, re, false));
+
+		// an unsampled half-bond whose other side isn't a donor/acceptor
+		// either means the protonation slot is believed unsampled
+		auto non_existent_bonds = [&le, &re, &left, &right]()
+		{
+			return (le.value() == Existence::Absent &&
+			        !(right.value() & Bond::Bonded)) ||
+			       (re.value() == Existence::Absent &&
+			        !(left.value() & Bond::Bonded));
+		};
+
+		add_constraint(new StrictExistence({&le, &re, &left, &right},
+		                                     non_existent_bonds, hExist,
+		                                     Existence::Absent));
 	};
 
 	uninvolvedCoordinators();

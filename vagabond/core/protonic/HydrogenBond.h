@@ -163,36 +163,18 @@ struct HydrogenBond : public ConstraintBase
 		// --- absorbed from Coordinated_Constraints.cpp's
 		// create_two_half_hydrogen_bonds (formerly separate Stricter/
 		// StricterBond/SubExistence constraints) ---
-
-		// half-bond existence <-> protonation slot (hSlot) subservience -
-		// formerly SubExistence(le, hSlot, re, false)
-		if (_leftExist.value() == Existence::Present &&
-		    _rightExist.value() == Existence::Present)
-		{
-			assign(_hSlot, Existence::Present);
-		}
-		if (_leftExist.value() == Existence::Absent &&
-		    _rightExist.value() == Existence::Absent)
-		{
-			assign(_hSlot, Existence::Absent, "both half-bond existences "\
-			       "were absent so the protonation slot should also be "\
-			       "absent");
-		}
-		if (_hSlot.value() == Existence::Absent)
-		{
-			if (_leftExist.value() & Existence::Absent)
-			{
-				assign(_leftExist, Existence::Absent, "the protonation "\
-				       "slot was absent and left half-bond existence "\
-				       "could be absent");
-			}
-			if (_rightExist.value() & Existence::Absent)
-			{
-				assign(_rightExist, Existence::Absent, "the protonation "\
-				       "slot was absent and right half-bond existence "\
-				       "could be absent");
-			}
-		}
+		//
+		// NOTE: the "half-bond existence <-> protonation slot (hSlot)
+		// subservience" (formerly SubExistence(le, hSlot, re, false)) and
+		// "non_existent_bonds" rules used to live here too, but both are
+		// symmetric under swapping left/right and only ever touch shared/
+		// both-sides connectors - since HydrogenBond is always constructed
+		// in a mirrored (left,right)/(right,left) pair sharing the same
+		// hSlot, inlining them here meant every check() cycle derived the
+		// same two conclusions twice over. They're back to being their own
+		// constraints, added once per H-bond pair, right where the two
+		// HydrogenBonds themselves are constructed
+		// (create_two_half_hydrogen_bonds()).
 
 		// lone pair / hydrogen mutual exclusion - formerly
 		// lone_pair_cannot_brace_hydrogen (four call sites collapse to two
@@ -221,16 +203,9 @@ struct HydrogenBond : public ConstraintBase
 			assign(_left, Bond::NotLonePair);
 		}
 
-		// an unsampled half-bond whose other side isn't a donor/acceptor
-		// either means the protonation slot is believed unsampled -
-		// formerly non_existent_bonds
-		if ((_leftExist.value() == Existence::Absent &&
-		     !(_right.value() & Bond::Bonded)) ||
-		    (_rightExist.value() == Existence::Absent &&
-		     !(_left.value() & Bond::Bonded)))
-		{
-			assign(_hSlot, Existence::Absent);
-		}
+		// non_existent_bonds moved out to create_two_half_hydrogen_bonds()
+		// alongside the SubExistence rule above - see this file's own note
+		// further up for why.
 
 		// if every part of the H-bond is definitely sampled and the other
 		// side is definitely bonded, this side cannot be broken - formerly
