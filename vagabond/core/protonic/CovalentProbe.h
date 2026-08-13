@@ -22,6 +22,27 @@
 #include "Probe.h"
 #include "BondAngle.h"
 
+inline bool has_real_bond_to(hnet::AtomConf atom, const std::string &search)
+{
+	// unlike find_partner() below (which walks bondAngle() entries - the
+	// idealised per-residue-TYPE geometry dictionary, present even when
+	// the neighbouring residue isn't actually modelled in this
+	// structure), this checks actual per-instance connectivity
+	// (bondLength()/connectedAtom(), the same API Network.cpp's
+	// setupInactiveAtom() uses to discover bonds in the first place) -
+	// needed wherever "is there really a next residue here" matters, as
+	// opposed to "what would a complete chain look like".
+	for (size_t i = 0; i < atom.ptr->bondLengthCount(); i++)
+	{
+		if (atom.ptr->connectedAtom(i)->atomName() == search)
+		{
+			return true;
+		}
+	}
+
+	return false;
+}
+
 inline hnet::AtomConf find_partner(hnet::AtomConf atom,
                                    const std::string &search)
 {
@@ -89,11 +110,17 @@ hnet::Covalent::Values covalent_status_for_bond(const hnet::AtomConf &left,
 	
 	if (either_are_named_couple("C", "O")(left, right))
 	{
+		// only ambiguous for a genuine C-terminal carboxylate (a second,
+		// OXT, oxygen sharing the same carbon to resonate with) - anything
+		// else, including the ordinary mid-chain backbone carbonyl, is a
+		// definite double bond. has_real_bond_to() (not find_partner(),
+		// which walks the idealised per-residue-type geometry dictionary
+		// and would report an OXT/next-N regardless of whether this
+		// specific structure actually has one) checks real per-instance
+		// connectivity instead.
 		hnet::AtomConf o = (left.ptr->atomName() == "O" ? left : right);
-		std::cout << "We got to this point for " << o.ptr->desc() << std::endl;
-		hnet::AtomConf oxt = find_partner(o, "OXT");
-		std::cout << "oxt is: " << oxt << std::endl;
-		if (oxt.ptr)
+
+		if (has_real_bond_to(o, "OXT"))
 		{
 			maybe = true;
 		}

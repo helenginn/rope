@@ -56,8 +56,8 @@ Coordinated::Coordinated(Network &network, ::Atom *atom, char conf)
 	_charge = &charge;
 }
 
-auto find_close(const hnet::AtomConf &ref, float threshold, bool one_sided,
-                Network &network)
+auto find_close(const hnet::AtomConf &ref, const glm::vec3 &v,
+                float threshold, bool one_sided, Network &network)
 {
 		
 	auto are_h_bonded = [&network](const hnet::AtomConf &left, 
@@ -132,7 +132,7 @@ auto find_close(const hnet::AtomConf &ref, float threshold, bool one_sided,
 		return false;
 	};
 
-	return [ref, threshold, one_sided, are_remotely_bonded]
+	return [ref, v, threshold, one_sided, are_remotely_bonded]
 	(const hnet::AtomConf &atom)
 	{
 		if (one_sided && (ref.ptr->atomNum() > atom.ptr->atomNum()))
@@ -140,7 +140,7 @@ auto find_close(const hnet::AtomConf &ref, float threshold, bool one_sided,
 			return false;
 		}
 
-		glm::vec3 pos = ref.position();
+		glm::vec3 pos = v;
 		glm::vec3 init = atom.position();
 
 		for (int i = 0; i < 3; i++)
@@ -163,11 +163,18 @@ auto find_close(const hnet::AtomConf &ref, float threshold, bool one_sided,
 	};
 }
 
-OpSet<AtomConf> Coordinated::findNeighbours(const OpSet<AtomConf> &group, 
-                                            const glm::vec3 &v, 
+// v is the actual search origin (every existing caller happens to pass
+// atomic_position(), i.e. _atomConf's own position, but this no longer
+// assumes that - see makePlaceholderHydrogen(), which searches from a
+// candidate position that isn't this Coordinated's own atom at all).
+// _atomConf is still used separately, for find_close()'s bonded-pair
+// exclusion and one_sided ordering, which are about identity rather than
+// position.
+OpSet<AtomConf> Coordinated::findNeighbours(const OpSet<AtomConf> &group,
+                                            const glm::vec3 &v,
                                             float distance, bool one_sided)
 {
-	auto filter_in = find_close(_atomConf, distance, one_sided, _network);
+	auto filter_in = find_close(_atomConf, v, distance, one_sided, _network);
 
 	return group.filter(filter_in);
 }
