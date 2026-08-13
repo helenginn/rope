@@ -412,11 +412,26 @@ void Coordinated::prepareCoordination()
 	                               cov_plus_expl_more_than_one,
 	                               twirling_donors, Count::Zero));
 
-	/*
-	add_constraint(new StrictCount({&cov_plus_expl},
-	                               cov_plus_expl_more_than_one,
-	                               twirling_lp, Count::Zero));
-	*/
+	// trigonal-planar nitrogens (backbone N, Trp's indole NE1, His's ring
+	// ND1/NE2, Asn/Gln's side-chain amide ND2/NE2, etc.) all need exactly
+	// one vacancy per the outershell-electron bookkeeping above, but none
+	// of them can reliably supply it via an explicit lone-pair
+	// placeholder - their donor/acceptor role, or the ring/conjugation
+	// context sharing that lone pair, varies too much case by case (see
+	// covalent_status_for_bond() in CovalentProbe.h for the deliberate
+	// choice not to resolve this via covalent-bond conjugation instead).
+	// Forcing twirling_lp to Zero leaves nitrogens with no way to satisfy
+	// that vacancy at all, so every nitrogen is exempted wholesale rather
+	// than calling out individual cases.
+	bool ring_nitrogen_needs_twirling_lp =
+	(_atomConf.ptr->elementSymbol() == "N");
+
+	if (!ring_nitrogen_needs_twirling_lp)
+	{
+		add_constraint(new StrictCount({&cov_plus_expl},
+		                               cov_plus_expl_more_than_one,
+		                               twirling_lp, Count::Zero));
+	}
 
 	/* counts which need to be hooked up to bond adders later */
 	_donors = &expl_donors;
