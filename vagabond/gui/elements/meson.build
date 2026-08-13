@@ -88,6 +88,9 @@ cfile,
 'TickBoxes.h',
 'upload.h',
 'Window.h',
+
+'Parallelepiped.h',
+'Parallelepiped.cpp',
 ]
 
 install_headers([
