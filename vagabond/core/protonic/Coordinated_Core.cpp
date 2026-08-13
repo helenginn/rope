@@ -339,10 +339,10 @@ void Coordinated::prepareCoordination()
 	CountConnector &all_twirl = add_zero_or_positive_connector();
 	all_twirl.setDesc("all twirling bonds of " + _atomConf.desc());
 
-	/* vacancies are the sum of weak bonds and lonepair (lone pair) bonds */
+	/* twirling bonds are the sum of lone pair & donor twirlers */
 	add_constraint(new CountAdder(twirling_donors, twirling_lp, all_twirl));
 
-	/* vacancies are the sum of weak bonds and lonepair (lone pair) bonds */
+	/* vacancies are the sum of acceptor bonds and lone pair bonds */
 	add_constraint(new CountAdder(expl_lonepair, expl_acceptors, expl_vacancies));
 
 	/* vacancies are the sum of weak bonds and lonepair (lone pair) bonds */
