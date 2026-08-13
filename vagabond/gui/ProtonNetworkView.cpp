@@ -105,6 +105,18 @@ void ProtonNetworkView::findAtomProbes()
 
 	for (HydrogenProbe *const &probe : _network.hydrogenProbes())
 	{
+		// _right is only ever set for a real, bridging H-bond (see
+		// HydrogenProbe::display()'s own comment) - a placeholder
+		// hydrogen is legitimately one-sided, so this is the existing
+		// signal for "placeholder" without needing a new flag. Skipped
+		// here (not added to _textProbes at all) to cleanly disable their
+		// display - the matching BondProbe loop below skips their rod the
+		// same way, via BondConnector::_placeholder on the same bond.
+		if (!probe->_right)
+		{
+			continue;
+		}
+
 		ProbeAtom *text = new ProbeAtom(this, probe);
 		addObject((FloatingText *)text);
 		_textProbes[probe] = text;
@@ -116,13 +128,15 @@ void ProtonNetworkView::findAtomProbes()
 
 	for (BondProbe *const &probe : _network.bondProbes())
 	{
-		ProbeBond *bond = new ProbeBond(this, probe);
-		if (probe && probe->left().atom() && probe->right().atom() &&
-		    (probe->left().atom()->elementSymbol() == "H" ||
-		    probe->right().atom()->elementSymbol() == "H"))
+		// same placeholder skip as the HydrogenProbe loop above - keeps
+		// _textProbes/_bondProbes consistent (a placeholder's rod would
+		// otherwise look up a HydrogenProbe endpoint that was never added).
+		if (probe->_obj._placeholder)
 		{
 			continue;
 		}
+
+		ProbeBond *bond = new ProbeBond(this, probe);
 		addObject((Image *)bond);
 		_bondProbes[probe] = bond;
 		_allProbes.insert(probe);

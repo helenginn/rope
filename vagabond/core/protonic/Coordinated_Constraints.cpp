@@ -147,14 +147,25 @@ void Coordinated::mutualExclusions(const OpSet<AtomConf> &baseClashCheck)
 				addBond(acceptable);
 				add_constraint(new BondConstant(*acceptable.second,
 				                                Bond::NotAcceptor));
-				acceptable.second->setDesc("Placeholder Hbond for " 
+				acceptable.second->setDesc("Placeholder Hbond for "
 				                           + _atomConf.desc() + desc_ending);
 				acceptable.second->_placeholder = true;
-				ExistenceConnector &h = add(new ExistenceConnector());
-//				_bond2HydrogenSample[acceptable.second] = &h;
 
-				h.setDesc("Fake H existence off " + _atomConf.desc());
-				_bond2Exist[acceptable.second] = &h;
+				// this placeholder's own hExist already exists - created
+				// in makePlaceholderHydrogen(), which also registered it
+				// into _bond2HydrogenProbe (populated before this loop
+				// runs, since acceptable.second only ever reaches here via
+				// a group that was built from the very same call). Point
+				// the bond-accounting map straight at it instead of
+				// manufacturing a second, disconnected "existence" that
+				// nothing ties back to the real one - this used to create
+				// a fresh, unconstrained ExistenceConnector here ("Fake H
+				// existence"), so BondAdder/BreakMatrix would narrow that
+				// in isolation while the placeholder's own hExist (what
+				// HydrogenProbe/the GUI actually reads) stayed untouched.
+				HydrogenProbe *placeholderProbe =
+				_bond2HydrogenProbe[acceptable.second];
+				_bond2Exist[acceptable.second] = &placeholderProbe->existence();
 				fake_added++;
 			}
 		}
