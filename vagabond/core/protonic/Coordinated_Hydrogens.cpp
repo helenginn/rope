@@ -149,6 +149,10 @@ ABPair Coordinated::makePlaceholderHydrogen(const glm::vec3 &pos)
 	// existence.
 //	add_constraint(new MutualExistence(hExist, probe()->existence()));
 
+	// TEMPORARILY disabled for bisection - isolating this backstop from
+	// the h/hExist targeting fix above to test independently (clash
+	// mechanism already ruled out as the sole cause).
+	/*
 	// explicit, one-directional backstop for the same rule (mother atom
 	// Absent -> slot Absent) - MutualExistence's own "right Absent -> left
 	// Absent" rule already states this, but it stayed Unassigned ("?" in
@@ -163,6 +167,7 @@ ABPair Coordinated::makePlaceholderHydrogen(const glm::vec3 &pos)
 	add_constraint(new StrictExistence({&probe()->existence()},
 	                                     mother_is_absent, hExist,
 	                                     Existence::Absent));
+	*/
 
 	// a placeholder exists purely to fill an otherwise-unaccounted-for
 	// coordination slot - if another candidate hydrogen (real or another
