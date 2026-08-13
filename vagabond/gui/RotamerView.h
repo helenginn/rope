@@ -8,6 +8,7 @@
 #include <vagabond/gui/elements/DragResponder.h>
 
 #include "elements/Line.h"
+#include <vagabond/gui/elements/Parallelepiped.h>
 
 
 class Model;
@@ -41,6 +42,7 @@ private:
     std::string _modelName ={} ;
     RotamerModifier *_modifier {};
     int _number {1};
+    Parallelepiped * _para {};
     Line *_line = nullptr;
     Line *_line2 = nullptr;
     Line *_line3 = nullptr;

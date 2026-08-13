@@ -29,11 +29,11 @@ public:
     {
 
     }
-    CollisionBox(std::vector<glm::vec3> positions)
+    CollisionBox(std::vector<glm::vec3> const &positions)
     {
         updateVert(positions);
     }
-    void updateVert(std::vector<glm::vec3> positions)
+    void updateVert(std::vector<glm::vec3> const &positions)
     {
         vertices.clear();
         float xMint {};
@@ -44,7 +44,7 @@ public:
 
         float zMint {};
         float zMaxt {};
-        for (auto pos: positions)
+        for (auto const pos: positions)
         {
             if (!xMint)
             {
@@ -82,22 +82,6 @@ public:
                 zMaxt = pos.z;
             }
         }
-        vertices.emplace_back(xMint, yMint, zMint);
-        vertices.emplace_back(xMint, yMint, zMaxt);
-        vertices.emplace_back(xMint, yMaxt, zMaxt);
-        vertices.emplace_back(xMint, yMaxt, zMint);
-        vertices.emplace_back(xMint, yMint, zMint);
-        vertices.emplace_back(xMaxt, yMint, zMint);
-        vertices.emplace_back(xMaxt, yMint, zMaxt);
-        vertices.emplace_back(xMint, yMint, zMaxt);
-        vertices.emplace_back(xMaxt, yMint, zMaxt);
-        vertices.emplace_back(xMaxt, yMaxt, zMaxt);
-        vertices.emplace_back(xMint, yMaxt, zMaxt);
-        vertices.emplace_back(xMint, yMaxt, zMint);
-        vertices.emplace_back(xMaxt, yMaxt, zMint);
-        vertices.emplace_back(xMaxt, yMaxt, zMaxt);
-        vertices.emplace_back(xMaxt, yMaxt, zMint);
-        vertices.emplace_back(xMaxt, yMint, zMint);
         xMax = xMaxt;
         xMin = xMint;
         yMax = yMaxt;
@@ -106,9 +90,11 @@ public:
         zMin = zMint;
     }
 
-    std::vector<glm::vec3> collisionCube()
+    std::pair<glm::vec3,glm::vec3> collisionCube() const
     {
-        return vertices;
+        glm::vec3 min {xMin,yMin,zMin};
+        glm::vec3 max {xMax,yMax,zMax};
+        return std::pair<glm::vec3,glm::vec3> {min,max};
     }
     bool collidesWith(CollisionBox &other)
     {
@@ -131,7 +117,7 @@ public:
     {
         this->collision = false;
     }
-bool colliding()
+    bool colliding() const
     {return collision;}
 };
 #endif
