@@ -61,7 +61,6 @@ std::vector<RotamerStore> RotamerStore::residueStore()
     return residueStore;
 }
 
-
 std::vector<glm::vec3> RotamerStore::getPos()
 {
     return positionArray;
@@ -91,7 +90,7 @@ void RotamerStore::move(glm::mat4x4 parameters, std::string chain)
 {
     for (int length = 0; length <= positionArray.size()-1; length++)
     {
-        if (atoms[length]->chain() == chain || chain == "")
+        if (atoms[length]->chain() == chain || chain.empty())
         {
             positionArray[length] =glm::vec3(parameters*glm::vec4(positionArray[length],1.0f));
         }

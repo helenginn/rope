@@ -8,12 +8,12 @@
 #include "RotamerStore.h"
 #include "RotamerCollisionBox.h"
 
-class Bouquet2
+class Bouquet
 {
 public:
     RotamerStore store {};
     CollisionBox collision {};
-    std::vector<Bouquet2> residueBouquets;
+    std::vector<Bouquet> residueBouquets;
     void storeRotamers(std::map<ResidueId, std::map<Atom*,  std::vector<glm::vec3>>> &rotamers)
     {
         store = store.store(rotamers);
@@ -25,13 +25,13 @@ public:
         residueStore = store.residueStore();
         for (auto positions : residueStore)
         {
-            Bouquet2 resBouquet = Bouquet2(positions);
+            Bouquet resBouquet = Bouquet(positions);
             resBouquet.collision = CollisionBox(positions.getPos());
             residueBouquets.emplace_back(resBouquet);
         }
     }
 
-    void updatePosition(glm::mat3x3 transformationMat)
+    void updatePosition(glm::mat3x3 const &transformationMat)
     {
         store.updatePositions(transformationMat);
     }
@@ -61,9 +61,9 @@ public:
         return store.extractForGUI(storeToRender);
     }
 
-    std::vector<std::vector<glm::vec3>> getVertices()
+    std::vector<std::pair<glm::vec3,glm::vec3>> getVertices() const
     {
-        std::vector<std::vector<glm::vec3>> vert;
+        std::vector<std::pair<glm::vec3,glm::vec3>> vert;
         for (auto bouquets : residueBouquets)
             if (bouquets.collision.colliding())
                 vert.emplace_back(bouquets.collision.collisionCube());
