@@ -155,9 +155,26 @@ void Coordinated::setupRealignment()
 			*it = ac.position();
 			it++;
 		}
-		std::vector<glm::vec3> perfect = 
+		std::vector<glm::vec3> perfect =
 		align(to_align.size(), atomConf().position(), geometry, 0.92f);
-		
+
+		// align() (alignment.h) falls back to an empty vector whenever
+		// to_align.size() (align_set + align_free, i.e. real bonds plus
+		// placeholders pending realignment - not the same count as
+		// align_set.size()) isn't one of the coordination numbers
+		// template_for_coordination() actually has a template for
+		// (2, 3, 4, 14) - transplant_positions() below dereferences one
+		// perfect[] entry per align_set member that resolved to Donor,
+		// so anything short of align_set.size() here is a guaranteed
+		// out-of-bounds/null read once such a member is hit.
+		if (perfect.size() < align_set.size())
+		{
+			std::cout << "Warning! align() returned " << perfect.size() <<
+			" positions for " << to_align.size() << " requested (" <<
+			atomConf() << ") - skipping realignment" << std::endl;
+			return;
+		}
+
 		it = perfect.begin();
 
 		auto transplant_positions = [hMap, &it, &to_align]
@@ -189,12 +206,6 @@ void Coordinated::setupRealignment()
 				it++;
 			}
 		};
-		
-		if (align_set.size() >= 5)
-		{
-			std::cout << "Warning! align_set is >= 5 for " << atomConf() << std::endl;
-			return;
-		}
 
 		transplant_positions(align_set);
 //		transplant_positions(align_free);
