@@ -436,4 +436,39 @@ TEST_CASE("Result<void, E> - err() optional conversion") {
   }
 }
 
+TEST_CASE("Result - unwrap_or_else") {
+  SUBCASE("Ok: fallback function not called") {
+    Result<int, std::string> res = Ok(5);
+    bool called = false;
+    int val = std::move(res).unwrap_or_else([&called](std::string) {
+      called = true;
+      return -1;
+    });
+    CHECK(!called);
+    CHECK(val == 5);
+  }
+  SUBCASE("Err: fallback lazily computed from error") {
+    Result<int, std::string> res = Err(std::string("bad"));
+    int val = std::move(res).unwrap_or_else(
+        [](std::string s) { return static_cast<int>(s.size()); });
+    CHECK(val == 3);
+  }
+}
+
+TEST_CASE("Result - operator==") {
+  CHECK(Result<int, std::string>(Ok(5)) == Result<int, std::string>(Ok(5)));
+  CHECK(Result<int, std::string>(Ok(5)) != Result<int, std::string>(Ok(6)));
+  CHECK(Result<int, std::string>(Err(std::string("bad"))) ==
+        Result<int, std::string>(Err(std::string("bad"))));
+  CHECK(Result<int, int>(Ok(5)) != Result<int, int>(Err(5)));
+}
+
+TEST_CASE("Result<void,E> - operator==") {
+  Result<void, std::string> a = Ok();
+  Result<void, std::string> b = Ok();
+  Result<void, std::string> c = Err(std::string("bad"));
+  CHECK(a == b);
+  CHECK(a != c);
+}
+
 #endif

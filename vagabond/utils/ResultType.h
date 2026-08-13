@@ -55,6 +55,8 @@ public:
     requires std::convertible_to<U, E>
   Result(Err<U> err) : data_(std::in_place_index<1>, std::move(err.value)) {}
 
+  bool operator==(const Result &) const = default;
+
   [[nodiscard]] bool is_ok() const { return data_.index() == 0; }
   [[nodiscard]] bool is_err() const { return data_.index() == 1; }
 
@@ -106,6 +108,15 @@ public:
       return std::get<0>(std::move(data_));
     }
     return T{};
+  }
+
+  template <typename F>
+    requires std::convertible_to<std::invoke_result_t<F, E>, T>
+  T unwrap_or_else(F &&func) && {
+    if (is_ok()) {
+      return std::get<0>(std::move(data_));
+    }
+    return func(std::get<1>(std::move(data_)));
   }
 
   T expect(const std::string &msg) &&
@@ -224,6 +235,8 @@ public:
   template <typename U = E>
     requires std::convertible_to<U, E>
   Result(Err<U> err) : data_(std::in_place_index<1>, std::move(err.value)) {}
+
+  bool operator==(const Result &) const = default;
 
   [[nodiscard]] bool is_ok() const { return data_.index() == 0; }
   [[nodiscard]] bool is_err() const { return data_.index() == 1; }
