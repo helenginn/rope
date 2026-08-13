@@ -190,6 +190,9 @@ ABPair Coordinated::makePlaceholderHydrogen(const glm::vec3 &pos)
 	// possibly-realigned HydrogenProbe::position() - deliberately: this is
 	// about whether two candidates were ever proposed on top of each other,
 	// not where either has since been nudged to.
+	// TEMPORARILY disabled for bisection - isolating the H-H clash
+	// MaxOne mechanism from the rest of Batch B to test independently.
+	/*
 	OpSet<AtomConf> nearby = findNeighbours(_network.hydrogenAtomConfs(),
 	                                        pos, 1.0f, false);
 	for (const AtomConf &ac : nearby)
@@ -204,6 +207,7 @@ ABPair Coordinated::makePlaceholderHydrogen(const glm::vec3 &pos)
 		hProbe.register_probe(other);
 		other->register_probe(&hProbe);
 	}
+	*/
 
 	AtomProbe *ref = atomMap()[_atomConf]->probe();
 	// exist here must be hExist, not h: BondProbe::transparency() hides
