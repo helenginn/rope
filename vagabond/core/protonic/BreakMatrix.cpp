@@ -304,11 +304,11 @@ bool BreakMatrix::evaluate(hnet::make_assign_and_say<BreakMatrix> &assign)
 	for (int i = 0; i < in_game.size(); i++)
 	{
 		int total = tmp(i, Eigen::all).sum();
-		if (total < lower_limit && lower_limit < in_game.size() && 
+		if (total < lower_limit && lower_limit < in_game.size() &&
 		    max_sum >= lower_limit)
 		{
 			int idx = _indexing[in_game[i]];
-			if (assertAbsence(assign, _entries[idx], 
+			if (assertAbsence(assign, _entries[idx],
 			                  wrap("this configuration has too "\
 			                  "few partners to complete the coordination")))
 			{
@@ -415,7 +415,7 @@ bool BreakMatrix::evaluate(hnet::make_assign_and_say<BreakMatrix> &assign)
 	return false;
 }
 
-bool BreakMatrix::assertAbsence(make_assign_and_say<BreakMatrix> &assign, 
+bool BreakMatrix::assertAbsence(make_assign_and_say<BreakMatrix> &assign,
                                  BreakEntry &chosen, std::string reason)
 {
 	if (_myExist.value() != Existence::Present)
