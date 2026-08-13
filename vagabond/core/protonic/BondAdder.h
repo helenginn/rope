@@ -254,8 +254,8 @@ struct BondAdder : public ConstraintBase
 	std::string _centre{};
 };
 
-typedef BondAdder<Bond::Strong> StrongAdder;
-typedef BondAdder<Bond::Weak> WeakAdder;
+typedef BondAdder<Bond::Donor> DonorAdder;
+typedef BondAdder<Bond::Acceptor> AcceptorAdder;
 typedef BondAdder<Bond::Bonded> BondedAdder;
 typedef BondAdder<Bond::LonePair> LonePairAdder;
 typedef BondAdder<Bond::NotBroken> NotBrokenAdder;

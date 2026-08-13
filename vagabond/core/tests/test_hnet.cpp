@@ -56,7 +56,7 @@ BOOST_AUTO_TEST_CASE(can_create_network)
 BOOST_AUTO_TEST_CASE(can_create_hydrogen_bond)
 {
 	AtomConnector o(hnet::Atom::Oxygen);
-	BondConnector o_h(Bond::Strong);
+	BondConnector o_h(Bond::Donor);
 	HydrogenConnector h;
 	BondConnector h_n;
 	AtomConnector n(hnet::Atom::Nitrogen);

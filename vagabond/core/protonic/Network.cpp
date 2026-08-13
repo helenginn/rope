@@ -1206,7 +1206,7 @@ void Network::firstOrderLogic()
 			}
 
 			/*
-			taken = check_and_or_revert(obj, Bond::Weak, v, found, true);
+			taken = check_and_or_revert(obj, Bond::Acceptor, v, found, true);
 			taken = check_and_or_revert(obj, Bond::LonePair, v, found, true);
 			taken = check_and_or_revert(obj, Bond::Donor, v, found, true);
 			taken = check_and_or_revert(obj, Bond::Broken, v, found, true);

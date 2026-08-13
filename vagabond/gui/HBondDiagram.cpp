@@ -383,11 +383,11 @@ void HBondDiagram::computeStateAverages(const CertainStates *states,
 	// LonePair one - indistinguishable from each other in this recorded
 	// data, so there is no separate layer for them below; a bond that is
 	// mostly Absent simply has both the layers below faded down together),
-	// Bond::Weak (Acceptor), Bond::Strong (Donor). Rather than picking one
-	// "majority" icon, every bond gets both layers overlaid at once (see
-	// makeBondLine()), each independently faded by its own fraction of the
-	// weighted states, so a genuine mix (e.g. half weak, half strong)
-	// reads as a blend rather than being forced into one or the other.
+	// Bond::Acceptor, Bond::Donor. Rather than picking one "majority" icon,
+	// every bond gets both layers overlaid at once (see makeBondLine()),
+	// each independently faded by its own fraction of the weighted states,
+	// so a genuine mix (e.g. half acceptor, half donor) reads as a blend
+	// rather than being forced into one or the other.
 	// a bridging hydrogen (see makeAtoms()'s own comment) is always the
 	// shared right()-hand endpoint of exactly two BondProbes - one half-
 	// bond to each of the two heavy atoms it sits between (see
@@ -418,16 +418,16 @@ void HBondDiagram::computeStateAverages(const CertainStates *states,
 			continue;
 		}
 
-		float fracWeak = totals[(int)hnet::Bond::Weak] / sum;
-		float fracStrong = totals[(int)hnet::Bond::Strong] / sum;
-		float fracBonded = fracWeak + fracStrong;
+		float fracAcceptor = totals[(int)hnet::Bond::Acceptor] / sum;
+		float fracDonor = totals[(int)hnet::Bond::Donor] / sum;
+		float fracBonded = fracAcceptor + fracDonor;
 
 		Probe *probe = ptp.first;
 		_alphaOverride[probe] = fracBonded - 1.f;
 
 		_bondOverlay[probe] = {
-			{"weak_bond", fracWeak - 1.f},
-			{"strong_bond", fracStrong - 1.f},
+			{"weak_bond", fracAcceptor - 1.f},
+			{"strong_bond", fracDonor - 1.f},
 		};
 
 		// the heavy-atom endpoint almost always already has its own

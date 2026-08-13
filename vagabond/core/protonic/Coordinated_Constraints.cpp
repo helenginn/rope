@@ -621,8 +621,8 @@ void Coordinated::attachAdderConstraints()
 
 	try
 	{
-		trappedAdder<StrongAdder>(this, _donors, "donor adder");
-		trappedAdder<WeakAdder>(this, _acceptors, "acceptor adder");
+		trappedAdder<DonorAdder>(this, _donors, "donor adder");
+		trappedAdder<AcceptorAdder>(this, _acceptors, "acceptor adder");
 		trappedAdder<LonePairAdder>(this, _lonepair, "lone pair adder");
 		trappedAdder<NotBrokenAdder>(this, _unbroken_bonds, "not broken adder");
 	}

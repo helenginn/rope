@@ -785,11 +785,11 @@ public:
 
 		switch (val)
 		{
-			case hnet::Bond::Weak:
+			case hnet::Bond::Acceptor:
 			str = "weak_bond";
 			break;
 
-			case hnet::Bond::Strong:
+			case hnet::Bond::Donor:
 			str = "strong_bond";
 			break;
 

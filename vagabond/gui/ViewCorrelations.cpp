@@ -1135,8 +1135,8 @@ void ViewCorrelations::showStateClustering(Clique &clique)
 					continue;
 				}
 
-				// raw is a bit-flag (Absent = 1<<0, Weak/Present = 1<<1,
-				// Strong/Donor = 1<<2 - see hnet::Existence::Values/
+				// raw is a bit-flag (Absent = 1<<0, Acceptor/Present = 1<<1,
+				// Donor = 1<<2 - see hnet::Existence::Values/
 				// hnet::Bond::Values) rather than already a plain 0/1/2
 				// label - same decode CertainStates::correlate() uses
 				// (its get_index lambda).

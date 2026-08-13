@@ -218,11 +218,11 @@ void ProbeBond::buttonPressed(std::string tag, Button *button)
 	}
 	else if (tag == "setB_Acceptor")
 	{
-		declareBondValue(this, _probe->_obj, Bond::Weak);
+		declareBondValue(this, _probe->_obj, Bond::Acceptor);
 	}
 	else if (tag == "setB_Donor")
 	{
-		declareBondValue(this, _probe->_obj, Bond::Strong);
+		declareBondValue(this, _probe->_obj, Bond::Donor);
 	}
 	else if (tag == "setB_Broken")
 	{

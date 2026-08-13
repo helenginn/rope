@@ -51,24 +51,20 @@ namespace Bond
 {
 	enum Values
 	{
-		Contradiction   =  (0),
-		LonePair        =  (1 << 0),
-		NotLonePair     =  (1 << 1 | 1 << 2 | 1 << 3),
-		LonePairOrWeak  =  (1 << 0 | 1 << 1),
-		Weak            =  (1 << 1),
-		NotWeak         =  (1 << 0 | 1 << 2 | 1 << 3),
-		Acceptor        =  (1 << 1),
-		NotAcceptor     =  (1 << 0 | 1 << 2 | 1 << 3),
-		Strong          =  (1 << 2),
-		Donor           =  (1 << 2),
-		NotDonor        =  (1 << 0 | 1 << 1 | 1 << 3),
-		NotStrong       =  (1 << 0 | 1 << 1 | 1 << 3),
-		Bonded          =  (1 << 1 | 1 << 2),
-		NotBonded       =  (1 << 0 | 1 << 3),
-		Broken          =  (1 << 3),
-		NotWeakOrBroken =  (1 << 0 | 1 << 2),
-		NotBroken       =  (1 << 0 | 1 << 1 | 1 << 2),
-		Unassigned      =  (1 << 0 | 1 << 1 | 1 << 2 | 1 << 3),
+		Contradiction       =  (0),
+		LonePair            =  (1 << 0),
+		NotLonePair         =  (1 << 1 | 1 << 2 | 1 << 3),
+		LonePairOrAcceptor  =  (1 << 0 | 1 << 1),
+		Acceptor            =  (1 << 1),
+		NotAcceptor         =  (1 << 0 | 1 << 2 | 1 << 3),
+		Donor               =  (1 << 2),
+		NotDonor            =  (1 << 0 | 1 << 1 | 1 << 3),
+		Bonded              =  (1 << 1 | 1 << 2),
+		NotBonded           =  (1 << 0 | 1 << 3),
+		Broken              =  (1 << 3),
+		NotAcceptorOrBroken =  (1 << 0 | 1 << 2),
+		NotBroken           =  (1 << 0 | 1 << 1 | 1 << 2),
+		Unassigned          =  (1 << 0 | 1 << 1 | 1 << 2 | 1 << 3),
 	};
 };
 
@@ -513,6 +509,24 @@ inline std::string to_string(int val)
 		}
 	}
 
+	// a run still open when the loop ends (e.g. bits 0-15 all set, as in
+	// Count::ZeroOrMore) never hits the byte==0 flush above, since bit 15
+	// is the last index the loop visits - flush whatever's left here
+	// instead of silently dropping it (which used to print "Contradiction!"
+	// for perfectly valid, just wide, ranges).
+	if (run == 1)
+	{
+		if (str.length() > 0) str += ", ";
+		str += num_to_string(count_to_int(first));
+	}
+	else if (run > 1)
+	{
+		if (str.length() > 0) str += ", ";
+		str += num_to_string(count_to_int(first));
+		str += " to ";
+		str += num_to_string(count_to_int(last));
+	}
+
 	if (str.length() == 0)
 	{
 		str += "Contradiction!";
@@ -754,7 +768,7 @@ inline std::ostream &operator<<(std::ostream &ss, const Bond::Values &v)
 		ss << std::string("LonePair");
 		break;
 
-		case Bond::LonePairOrWeak:
+		case Bond::LonePairOrAcceptor:
 		ss << std::string("LonePairOrAcceptor");
 		break;
 
@@ -762,19 +776,19 @@ inline std::ostream &operator<<(std::ostream &ss, const Bond::Values &v)
 		ss << std::string("NotLonePair");
 		break;
 
-		case Bond::Weak:
+		case Bond::Acceptor:
 		ss << std::string("Acceptor");
 		break;
 
-		case Bond::NotWeak:
+		case Bond::NotAcceptor:
 		ss << std::string("NotAcceptor");
 		break;
 
-		case Bond::Strong:
+		case Bond::Donor:
 		ss << std::string("Donor");
 		break;
 
-		case Bond::NotStrong:
+		case Bond::NotDonor:
 		ss << std::string("NotDonor");
 		break;
 
