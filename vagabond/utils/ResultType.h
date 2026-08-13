@@ -296,7 +296,12 @@ public:
     using U = std::invoke_result_t<F>;
 
     if (is_ok()) {
-      return Result<U, E>(Ok(func()));
+      if constexpr (std::is_void_v<U>) {
+        func();
+        return Result<void, E>(Ok<void>{});
+      } else {
+        return Result<U, E>(Ok(func()));
+      }
     }
 
     return Result<U, E>(Err(std::get<1>(std::move(data_))));

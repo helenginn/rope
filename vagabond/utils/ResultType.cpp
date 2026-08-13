@@ -188,6 +188,28 @@ TEST_CASE("Result<void,E> - map/map_err") {
     CHECK(mapped.is_err());
     CHECK(mapped.unwrap_err() == "bad");
   }
+  SUBCASE("map on Ok with void func stays Result<void,E>") {
+    Result<void, std::string> res = Ok();
+
+    bool called = false;
+
+    auto mapped = std::move(res).map([&called]() { called = true; });
+
+    CHECK(called);
+    CHECK(mapped.is_ok());
+    CHECK_NOTHROW(mapped.unwrap());
+  }
+  SUBCASE("map on Err with void func preserves error") {
+    Result<void, std::string> res = Err(std::string("bad"));
+
+    bool called = false;
+
+    auto mapped = std::move(res).map([&called]() { called = true; });
+
+    CHECK(!called);
+    CHECK(mapped.is_err());
+    CHECK(mapped.unwrap_err() == "bad");
+  }
   SUBCASE("map_err on Err transforms error") {
     Result<void, std::string> res = Err(std::string("bad"));
     auto mapped = std::move(res).map_err([](std::string s) { return s + "!"; });
