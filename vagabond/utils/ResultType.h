@@ -57,12 +57,11 @@ public:
   constexpr Result(Err<U> err)
       : data_(std::in_place_index<1>, std::move(err.value)) {}
 
-  constexpr bool operator==(const Result &) const
-    requires requires(const T &a, const T &b, const E &x, const E &y) {
-      a == b;
-      x == y;
-    }
-  = default;
+  constexpr bool operator==(const Result &other) const
+    requires std::equality_comparable<T> && std::equality_comparable<E>
+  {
+    return data_ == other.data_;
+  }
 
   [[nodiscard]] constexpr bool is_ok() const { return data_.index() == 0; }
   [[nodiscard]] constexpr bool is_err() const { return data_.index() == 1; }
@@ -244,9 +243,11 @@ public:
   constexpr Result(Err<U> err)
       : data_(std::in_place_index<1>, std::move(err.value)) {}
 
-  constexpr bool operator==(const Result &) const
-    requires requires(const E &x, const E &y) { x == y; }
-  = default;
+  constexpr bool operator==(const Result &other) const
+    requires std::equality_comparable<E>
+  {
+    return data_ == other.data_;
+  }
 
   [[nodiscard]] constexpr bool is_ok() const { return data_.index() == 0; }
   [[nodiscard]] constexpr bool is_err() const { return data_.index() == 1; }
