@@ -18,6 +18,10 @@
 
 #include "ResultType.h"
 #include <memory>
+#include <optional>
+#include <string>
+#include <stdexcept>
+#include <utility>
 
 #ifdef ROPE_INLINE_TESTS
 #include <doctest/doctest.h>

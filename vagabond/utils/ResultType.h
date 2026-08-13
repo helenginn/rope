@@ -18,8 +18,8 @@
 
 #pragma once
 
-#include <algorithm>
 #include <concepts>
+#include <optional>
 #include <stdexcept>
 #include <string>
 #include <type_traits>
