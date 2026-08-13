@@ -322,145 +322,15 @@ void Coordinated::attachToNeighbours(const OpSet<AtomConf> &searchSet)
 		ExistenceConnector &eRef = ref->existence();
 		ExistenceConnector &eOther = other->existence();
 		
-		add_constraint(new MutualExistence(le, eRef)); 
-		add_constraint(new SubExistence(le, hExist, re, false));
+		add_constraint(new MutualExistence(le, eRef));
 		add_constraint(new MutualExistence(re, eOther));
-		
-		auto unpaired_right = [&le, &re]()
-		{
-			return (re.value() == Existence::Absent && 
-			        le.value() == Existence::Present);
-		};
 
-		auto unpaired_left = [&le, &re]()
-		{
-			return (le.value() == Existence::Absent && 
-			        re.value() == Existence::Present);
-		};
-		
-		// Acceptor bonds cannot be paired with non-existent bonds
-		add_constraint(new StricterBond({&le, &re}, unpaired_left, right,
-		                                        Bond::NotAcceptor));
-		add_constraint(new StricterBond({&re, &le}, unpaired_right, left,
-		                                        Bond::NotAcceptor));
-
-		auto non_existent_bonds = [&le, &re, &left, &right]()
-		{
-			if (le.value() == Existence::Absent && 
-			    !(right.value() & Bond::Bonded))
-			{
-				return true;
-			}
-
-			if (re.value() == Existence::Absent && 
-			    !(left.value() & Bond::Bonded))
-			{
-				return true;
-			}
-
-			return false;
-		};
-
-		auto bond_is_donor = [](BondConnector &bond,
-		                           ExistenceConnector &exist)
-		{
-			return [&bond, &exist]()
-			{
-				return (exist.value() == Existence::Present && 
-				        bond.value() == Bond::Donor);
-			};
-		};
-
-		add_constraint(new Stricter<Existence::Values>
-		               ({&left, &le}, bond_is_donor(left, le), 
-		               hExist, Existence::Present));
-
-		add_constraint(new Stricter<Existence::Values>
-		               ({&right, &re}, bond_is_donor(right, re), 
-		               hExist, Existence::Present));
-
-		auto bond_is_acceptor = [](BondConnector &bond,
-		                           ExistenceConnector &exist)
-		{
-			return [&bond, &exist]()
-			{
-				return (exist.value() == Existence::Present && 
-				        bond.value() == Bond::Acceptor);
-			};
-		};
-
-		add_constraint(new Stricter<Existence::Values>
-		               ({&left, &le}, bond_is_acceptor(left, le), 
-		               re, Existence::Present));
-
-		add_constraint(new Stricter<Existence::Values>
-		               ({&right, &re}, bond_is_acceptor(right, re), 
-		               le, Existence::Present));
-		
-
-		auto lone_pair_cannot_brace_hydrogen = [](BondConnector &bond,
-		                                          ExistenceConnector &bExist,
-		                                          ExistenceConnector &hExist)
-		{
-			return [&bond, &bExist, &hExist]()
-			{
-				bool interesting = (bExist.value() == Existence::Present && 
-				                    bond.value() == Bond::LonePair);
-				if (!interesting) return false;
-				
-				return (hExist.value() == Existence::Present);
-			};
-		};
-
-		add_constraint(new Stricter<Existence::Values>
-		               ({&left, &le, &h},
-		               lone_pair_cannot_brace_hydrogen(left, le, h), 
-		               hExist, Existence::Absent));
-		add_constraint(new Stricter<Existence::Values>
-		               ({&right, &re, &h},
-		               lone_pair_cannot_brace_hydrogen(right, re, h), 
-		               hExist, Existence::Absent));
-
-		add_constraint(new Stricter<Existence::Values>
-		               ({&left, &le, &hExist},
-		               lone_pair_cannot_brace_hydrogen(left, le, hExist), 
-		               h, Existence::Absent));
-		add_constraint(new Stricter<Existence::Values>
-		               ({&right, &re, &hExist},
-		               lone_pair_cannot_brace_hydrogen(right, re, hExist), 
-		               h, Existence::Absent));
-
-		auto hydrogen_cannot_brace_lonepair = [](ExistenceConnector &proton,
-		                                         ExistenceConnector &bExist,
-		                                         ExistenceConnector &hExist)
-		{
-			return [&bExist, &hExist, &proton]()
-			{
-				bool interesting = (bExist.value() == Existence::Present && 
-				                    hExist.value() == Existence::Present && 
-				                    proton.value() == Existence::Present);
-				return interesting;
-			};
-		};
-
-		add_constraint(new Stricter<Bond::Values>
-		               ({&left, &le, &h},
-		               lone_pair_cannot_brace_hydrogen(left, le, h), 
-		               left, Bond::NotLonePair));
-		add_constraint(new Stricter<Bond::Values>
-		               ({&right, &re, &h},
-		               lone_pair_cannot_brace_hydrogen(right, re, h), 
-		               right, Bond::NotLonePair));
-
-		add_constraint(new Stricter<Bond::Values>
-		               ({&h, &le, &hExist},
-		               hydrogen_cannot_brace_lonepair(h, le, hExist), 
-		               left, Bond::NotLonePair));
-		add_constraint(new Stricter<Bond::Values>
-		               ({&h, &re, &hExist},
-		               hydrogen_cannot_brace_lonepair(h, re, hExist), 
-		               right, Bond::NotLonePair));
-		
+		// le/re's existence, given both heavy atoms exist - the rest of
+		// the per-H-bond constraint cluster (le/re vs h/hExist/left/right)
+		// now lives in HydrogenBond itself, see the two constructions
+		// below; this pair stays here since eRef/eOther are atom-level
+		// existence nodes (Coordinated::existence()), not intrinsic to
+		// the H-bond.
 		auto both_ends_exist = [&eRef, &eOther]()
 		{
 			return (eRef.value() == Existence::Present &&
@@ -468,46 +338,12 @@ void Coordinated::attachToNeighbours(const OpSet<AtomConf> &searchSet)
 		};
 
 		add_constraint(new Stricter<Existence::Values>
-		               ({&eRef, &eOther}, both_ends_exist, 
+		               ({&eRef, &eOther}, both_ends_exist,
 		               le, Existence::Present));
 
 		add_constraint(new Stricter<Existence::Values>
-		               ({&eRef, &eOther}, both_ends_exist, 
+		               ({&eRef, &eOther}, both_ends_exist,
 		               re, Existence::Present));
-
-		
-		// If one side of a hydrogen bond is not sampled and the other side 
-		// is not a donor/acceptor, then the intervening hydrogen is believed 
-		// to not be sampled.
-		add_constraint(new Stricter<Existence::Values>
-		               ({&left, &re, &le, &right}, non_existent_bonds, 
-		               hExist, Existence::Absent));
-
-		auto could_be_bonded = [&le, &re, &h]
-		(BondConnector &other)
-		{
-			return [&le, &re, &other, &h]()
-			{
-				if (le.value() & Existence::Absent || 
-				    re.value() & Existence::Absent ||
-				    h.value() & Existence::Absent)
-				{
-					return false;
-				}
-
-				return other.value() == Bond::Bonded;
-			};
-		};
-
-		// if all parts of hydrogen bond are definitely sampled, and one side
-		// of the hydrogen bond is definitely bonded, the other side cannot
-		// be broken
-		add_constraint(new StricterBond({&re, &le, &right, &h}, 
-		                                        could_be_bonded(right), left,
-		                                        Bond::NotBroken));
-		add_constraint(new StricterBond({&re, &le, &right, &h}, 
-		                                        could_be_bonded(left), right,
-		                                        Bond::NotBroken));
 
 		ABPair left_pair = {candidate, &left};
 		addBond(left_pair);
@@ -535,8 +371,32 @@ void Coordinated::attachToNeighbours(const OpSet<AtomConf> &searchSet)
 		hProbe.addEnergyWrapper
 		(e.energy_wrapper_for_hbond_angle(&hProbe, b1, b2, *_probe, *other));
 
-		add_constraint(new HydrogenBond(left, h, right));
-		add_constraint(new HydrogenBond(right, h, left));
+		add_constraint(new HydrogenBond(left, le, h, hExist, right, re));
+		add_constraint(new HydrogenBond(right, re, h, hExist, left, le));
+
+		// these two rules are symmetric under swapping le/re (and left/
+		// right for non_existent_bonds) and only ever touch shared/
+		// both-sides connectors, so evaluating them once per H-bond pair
+		// here - rather than inline in HydrogenBond::check(), which runs
+		// once per mirrored instance above - reaches the same conclusions
+		// without redundantly re-deriving them a second time every check().
+
+		// half-bond existence <-> protonation slot subservience
+		add_constraint(new SubExistence(le, hExist, re, false));
+
+		// an unsampled half-bond whose other side isn't a donor/acceptor
+		// either means the protonation slot is believed unsampled
+		auto non_existent_bonds = [&le, &re, &left, &right]()
+		{
+			return (le.value() == Existence::Absent &&
+			        !(right.value() & Bond::Bonded)) ||
+			       (re.value() == Existence::Absent &&
+			        !(left.value() & Bond::Bonded));
+		};
+
+		add_constraint(new StrictExistence({&le, &re, &left, &right},
+		                                     non_existent_bonds, hExist,
+		                                     Existence::Absent));
 	};
 
 	uninvolvedCoordinators();
