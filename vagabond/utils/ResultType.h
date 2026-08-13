@@ -185,6 +185,34 @@ public:
     }
     return CallResult(Ok(std::get<0>(std::move(data_))));
   }
+
+  [[nodiscard]] std::optional<T> ok() const & {
+    if (is_ok()) {
+      return std::get<0>(data_);
+    }
+    return std::nullopt;
+  }
+
+  [[nodiscard]] std::optional<T> ok() && {
+    if (is_ok()) {
+      return std::get<0>(std::move(data_));
+    }
+    return std::nullopt;
+  }
+
+  [[nodiscard]] std::optional<E> err() const & {
+    if (is_err()) {
+      return std::get<1>(data_);
+    }
+    return std::nullopt;
+  }
+
+  [[nodiscard]] std::optional<E> err() && {
+    if (is_err()) {
+      return std::get<1>(std::move(data_));
+    }
+    return std::nullopt;
+  }
 };
 
 template <typename E> class [[nodiscard]] Result<void, E> {
@@ -278,5 +306,19 @@ public:
       return func(std::get<1>(std::move(data_)));
     }
     return CallResult(Ok<void>{});
+  }
+
+  [[nodiscard]] std::optional<E> err() const & {
+    if (is_err()) {
+      return std::get<1>(data_);
+    }
+    return std::nullopt;
+  }
+
+  [[nodiscard]] std::optional<E> err() && {
+    if (is_err()) {
+      return std::get<1>(std::move(data_));
+    }
+    return std::nullopt;
   }
 };

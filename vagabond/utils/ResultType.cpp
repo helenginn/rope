@@ -391,4 +391,49 @@ TEST_CASE("Result<void,E> - or_else") {
   }
 }
 
+TEST_CASE("Result - ok() and err() optional conversion") {
+  SUBCASE("ok() on Ok value (const ref & move)") {
+    const Result<int, std::string> res = Ok(42);
+    std::optional<int> opt = res.ok();
+    REQUIRE(opt.has_value());
+    CHECK(opt.value() == 42);
+
+    Result<std::string, int> move_res = Ok(std::string("hello"));
+    std::optional<std::string> moved_opt = std::move(move_res).ok();
+    REQUIRE(moved_opt.has_value());
+    CHECK(moved_opt.value() == "hello");
+  }
+
+  SUBCASE("ok() on Err returns nullopt") {
+    Result<int, std::string> res = Err(std::string("fail"));
+    CHECK(res.ok() == std::nullopt);
+  }
+
+  SUBCASE("err() on Err value") {
+    Result<int, std::string> res = Err(std::string("fail"));
+    std::optional<std::string> opt = std::move(res).err();
+    REQUIRE(opt.has_value());
+    CHECK(opt.value() == "fail");
+  }
+
+  SUBCASE("err() on Ok returns nullopt") {
+    Result<int, std::string> res = Ok(42);
+    CHECK(res.err() == std::nullopt);
+  }
+}
+
+TEST_CASE("Result<void, E> - err() optional conversion") {
+  SUBCASE("err() on Err value") {
+    Result<void, std::string> res = Err(std::string("fail"));
+    std::optional<std::string> opt = std::move(res).err();
+    REQUIRE(opt.has_value());
+    CHECK(opt.value() == "fail");
+  }
+
+  SUBCASE("err() on Ok returns nullopt") {
+    Result<void, std::string> res = Ok();
+    CHECK(res.err() == std::nullopt);
+  }
+}
+
 #endif
