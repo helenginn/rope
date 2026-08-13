@@ -145,13 +145,28 @@ auto evaluate_hbond(BondProbe &bp)
 	};
 }
 
-hnet::EnergyWrapper 
-Energy::energy_wrapper_for_hbond_angle(HydrogenProbe *probe, 
+hnet::EnergyWrapper
+Energy::energy_wrapper_for_hbond_angle(HydrogenProbe *probe,
                                        BondProbe &left, BondProbe &right,
                                        AtomProbe &lAtom, AtomProbe &rAtom)
 {
+	struct AngleCache
+	{
+		GuiltVersion seenAt = -2;
+		float energy = 0.f;
+	};
+
+	// one cache slot per side - left/right evaluate different bond/atom
+	// pairs even though they share the same hydrogen. shared_ptr so every
+	// copy of the returned EnergyWrapper (std::function) reuses the same
+	// cache instance rather than each getting its own independent copy
+	// (same reasoning as energy_wrapper_for_clash_repulsion's sharedPairs).
+	auto lCache = std::make_shared<AngleCache>();
+	auto rCache = std::make_shared<AngleCache>();
+
 	auto hbond_angle_for_bond = [probe](BondProbe &bp, AtomProbe &centre,
-	                                     AtomProbe &other)
+	                                     AtomProbe &other,
+	                                     const std::shared_ptr<AngleCache> &cache)
 	{
 		auto evaluate = evaluate_hbond(bp);
 		if (!evaluate(hnet::Bond::Acceptor, true))
@@ -162,7 +177,18 @@ Energy::energy_wrapper_for_hbond_angle(HydrogenProbe *probe,
 		centre.realign();
 		other.realign();
 
-		
+		// probe->_lastPositioned only changes when realignment actually
+		// repositions this hydrogen (Coordinated_Realign.cpp's
+		// transplant_positions()) - realign() above runs every call
+		// regardless (it's cheap and does its own internal no-op check),
+		// but if the hydrogen hasn't actually moved since this cache slot
+		// last computed, the angle can't have changed either, so skip the
+		// trig and reuse the cached contribution instead of recomputing it.
+		if (cache->seenAt == probe->_lastPositioned)
+		{
+			return cache->energy;
+		}
+
 		glm::vec3 lPos = centre.position();
 		glm::vec3 rPos = other.position();
 		glm::vec3 hPos = probe->_h->initialPosition();
@@ -172,15 +198,17 @@ Energy::energy_wrapper_for_hbond_angle(HydrogenProbe *probe,
 		float angle = acos(dot);
 		float exag = angle * 3;
 		float damping = std::max(cos(exag), 0.f);
-		
-		return 1.0f * -damping;
+
+		cache->energy = 1.0f * -damping;
+		cache->seenAt = probe->_lastPositioned;
+		return cache->energy;
 	};
 
-	auto hbond_angle = [&, hbond_angle_for_bond]()
+	auto hbond_angle = [&, hbond_angle_for_bond, lCache, rCache]()
 	{
 		float total = 0;
-		total += hbond_angle_for_bond(left, lAtom, rAtom);
-		total += hbond_angle_for_bond(right, rAtom, lAtom);
+		total += hbond_angle_for_bond(left, lAtom, rAtom, lCache);
+		total += hbond_angle_for_bond(right, rAtom, lAtom, rCache);
 		return total;
 	};
 

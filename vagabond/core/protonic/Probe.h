@@ -595,7 +595,9 @@ public:
 
 	void setAtomPosition(const glm::vec3 &pos)
 	{
+		_pos = pos;
 		_h->setInitialPosition(pos);
+		_obj._update(true);
 	}
 	
 	void setPosition(const glm::vec3 &pos)
@@ -681,6 +683,15 @@ public:
 	hnet::ExistenceConnector &_exist;
 	AtomProbe *_left{};
 	AtomProbe *_right{};
+
+	// stamped with a fresh GuiltVersion (Coordinated_Realign.cpp's
+	// transplant_positions(), the only place a hydrogen's actual position
+	// changes) each time realignment genuinely repositions this hydrogen -
+	// not tied to any particular scoring round, just a marker that changes
+	// exactly when the position does. Lets callers (e.g. Energy.cpp's
+	// hbond angle term) tell "has this hydrogen moved since I last looked"
+	// apart from "did realign() run" (which happens every call regardless).
+	GuiltVersion _lastPositioned = -1;
 };
 
 

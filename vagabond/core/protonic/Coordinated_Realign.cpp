@@ -175,6 +175,7 @@ void Coordinated::setupRealignment()
 					}
 					glm::vec3 pos = *it;
 					hp->setAtomPosition(pos);
+					hp->_lastPositioned = Guilt::guilt().issueNext();
 
 					for (Probe *const &other : hp->others())
 					{
