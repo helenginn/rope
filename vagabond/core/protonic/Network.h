@@ -65,18 +65,7 @@ public:
 	{
 		return _hydrogenProbes;
 	}
-
-	// every AtomConf ever passed to addNewHydrogen() (bonded or
-	// placeholder), maintained incrementally there rather than rebuilt
-	// from _hAtoms on demand - lets Coordinated::findNeighbours() reuse
-	// the same cheap bounding-box-filtered search clashLogic() already
-	// uses, without paying an O(n) AtomGroup->OpSet rebuild on every
-	// single placeholder hydrogen created.
-	const OpSet<hnet::AtomConf> &hydrogenAtomConfs() const
-	{
-		return _hydrogenAtomConfs;
-	}
-
+	
 	const std::list<BondProbe *> &bondProbes() const
 	{
 		return _bondProbes;
@@ -234,7 +223,6 @@ private:
 	std::map<hnet::AtomConf, AtomProbe *> _atom2Probe;
 	std::map<hnet::AtomConf, HydrogenProbe *> _h2Probe;
 	std::map<hnet::AtomConf, std::vector<CovalentProbe *>> _atom2Covs;
-	OpSet<hnet::AtomConf> _hydrogenAtomConfs;
 
 	AtomGroup *_original = nullptr;
 	AtomGroup *_originalAndMates = nullptr;

@@ -22,27 +22,6 @@
 #include "Probe.h"
 #include "BondAngle.h"
 
-inline bool has_real_bond_to(hnet::AtomConf atom, const std::string &search)
-{
-	// unlike find_partner() below (which walks bondAngle() entries - the
-	// idealised per-residue-TYPE geometry dictionary, present even when
-	// the neighbouring residue isn't actually modelled in this
-	// structure), this checks actual per-instance connectivity
-	// (bondLength()/connectedAtom(), the same API Network.cpp's
-	// setupInactiveAtom() uses to discover bonds in the first place) -
-	// needed wherever "is there really a next residue here" matters, as
-	// opposed to "what would a complete chain look like".
-	for (size_t i = 0; i < atom.ptr->bondLengthCount(); i++)
-	{
-		if (atom.ptr->connectedAtom(i)->atomName() == search)
-		{
-			return true;
-		}
-	}
-
-	return false;
-}
-
 inline hnet::AtomConf find_partner(hnet::AtomConf atom,
                                    const std::string &search)
 {
@@ -92,14 +71,14 @@ hnet::Covalent::Values covalent_status_for_bond(const hnet::AtomConf &left,
 		sure_double |= either_are_named_couple("CD2", "CE2")(left, right);
 		sure_double |= either_are_named_couple("CE1", "CZ")(left, right);
 	}
-	// TRP's indole is a single delocalized aromatic system (10 pi
-	// electrons across both fused rings, including NE1's lone pair) -
-	// fixing any subset of its ring bonds as definite doubles
-	// over-constrains the rest of the ring and can prevent a valid
-	// resonance assignment from being found at all, so every ring bond
-	// is left ambiguous instead (maybe block below) rather than any
-	// being sure_double.
-
+	if (left.ptr->code() == "TRP")
+	{
+		sure_double |= either_are_named_couple("CG", "CD1")(left, right);
+		sure_double |= either_are_named_couple("CE2", "CZ2")(left, right);
+		sure_double |= either_are_named_couple("CH2", "CZ3")(left, right);
+		sure_double |= either_are_named_couple("CE3", "CD2")(left, right);
+	}
+	
 	if (sure_double)
 	{
 		return hnet::Covalent::Double;
@@ -107,36 +86,14 @@ hnet::Covalent::Values covalent_status_for_bond(const hnet::AtomConf &left,
 
 	bool maybe = false;
 	maybe |= either_are_named_couple("OXT", "C")(left, right);
-
-	if (left.ptr->code() == "TRP")
-	{
-		// pyrrole ring
-		maybe |= either_are_named_couple("CG", "CD1")(left, right);
-		maybe |= either_are_named_couple("CD1", "NE1")(left, right);
-		maybe |= either_are_named_couple("NE1", "CE2")(left, right);
-		maybe |= either_are_named_couple("CE2", "CD2")(left, right);
-		maybe |= either_are_named_couple("CD2", "CG")(left, right);
-		// benzo ring (CD2-CE2 fusion bond already covered above)
-		maybe |= either_are_named_couple("CE2", "CZ2")(left, right);
-		maybe |= either_are_named_couple("CZ2", "CH2")(left, right);
-		maybe |= either_are_named_couple("CH2", "CZ3")(left, right);
-		maybe |= either_are_named_couple("CZ3", "CE3")(left, right);
-		maybe |= either_are_named_couple("CE3", "CD2")(left, right);
-	}
-
+	
 	if (either_are_named_couple("C", "O")(left, right))
 	{
-		// only ambiguous for a genuine C-terminal carboxylate (a second,
-		// OXT, oxygen sharing the same carbon to resonate with) - anything
-		// else, including the ordinary mid-chain backbone carbonyl, is a
-		// definite double bond. has_real_bond_to() (not find_partner(),
-		// which walks the idealised per-residue-type geometry dictionary
-		// and would report an OXT/next-N regardless of whether this
-		// specific structure actually has one) checks real per-instance
-		// connectivity instead.
 		hnet::AtomConf o = (left.ptr->atomName() == "O" ? left : right);
-
-		if (has_real_bond_to(o, "OXT"))
+		std::cout << "We got to this point for " << o.ptr->desc() << std::endl;
+		hnet::AtomConf oxt = find_partner(o, "OXT");
+		std::cout << "oxt is: " << oxt << std::endl;
+		if (oxt.ptr)
 		{
 			maybe = true;
 		}

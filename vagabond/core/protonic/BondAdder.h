@@ -130,6 +130,8 @@ struct BondAdder : public ConstraintBase
 				certainty = Maybe;
 			}
 
+//			std::cout << "Telling it it's " << tell << ", " << certainty << " ("
+//			<< *_coordExist << ")" << std::endl;
 			attach.inform(tell, assign, certainty);
 
 			// don't even think about playing with sampling!
@@ -216,10 +218,12 @@ struct BondAdder : public ConstraintBase
 		}
 		if (common.size() == 1)
 		{
+//			std::cout << "common: " << *common.begin() << " for " << certain << " + " << maybe << " for desc " << desc() << std::endl;
 			if (*common.begin() == certain)
 			{
-				Bond::Values unrequest =
+				Bond::Values unrequest = 
 				(Bond::Values)(~Request & Bond::Unassigned);
+//				std::cout << "My unrequest: " << unrequest << std::endl;
 				tell_maybe_bonds(unrequest, assign, Certain);
 			}
 			else if (*common.begin() == certain + maybe)

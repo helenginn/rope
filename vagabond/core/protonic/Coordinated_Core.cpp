@@ -56,8 +56,8 @@ Coordinated::Coordinated(Network &network, ::Atom *atom, char conf)
 	_charge = &charge;
 }
 
-auto find_close(const hnet::AtomConf &ref, const glm::vec3 &v,
-                float threshold, bool one_sided, Network &network)
+auto find_close(const hnet::AtomConf &ref, float threshold, bool one_sided,
+                Network &network)
 {
 		
 	auto are_h_bonded = [&network](const hnet::AtomConf &left, 
@@ -132,7 +132,7 @@ auto find_close(const hnet::AtomConf &ref, const glm::vec3 &v,
 		return false;
 	};
 
-	return [ref, v, threshold, one_sided, are_remotely_bonded]
+	return [ref, threshold, one_sided, are_remotely_bonded]
 	(const hnet::AtomConf &atom)
 	{
 		if (one_sided && (ref.ptr->atomNum() > atom.ptr->atomNum()))
@@ -140,7 +140,7 @@ auto find_close(const hnet::AtomConf &ref, const glm::vec3 &v,
 			return false;
 		}
 
-		glm::vec3 pos = v;
+		glm::vec3 pos = ref.position();
 		glm::vec3 init = atom.position();
 
 		for (int i = 0; i < 3; i++)
@@ -163,18 +163,11 @@ auto find_close(const hnet::AtomConf &ref, const glm::vec3 &v,
 	};
 }
 
-// v is the actual search origin (every existing caller happens to pass
-// atomic_position(), i.e. _atomConf's own position, but this no longer
-// assumes that - see makePlaceholderHydrogen(), which searches from a
-// candidate position that isn't this Coordinated's own atom at all).
-// _atomConf is still used separately, for find_close()'s bonded-pair
-// exclusion and one_sided ordering, which are about identity rather than
-// position.
-OpSet<AtomConf> Coordinated::findNeighbours(const OpSet<AtomConf> &group,
-                                            const glm::vec3 &v,
+OpSet<AtomConf> Coordinated::findNeighbours(const OpSet<AtomConf> &group, 
+                                            const glm::vec3 &v, 
                                             float distance, bool one_sided)
 {
-	auto filter_in = find_close(_atomConf, v, distance, one_sided, _network);
+	auto filter_in = find_close(_atomConf, distance, one_sided, _network);
 
 	return group.filter(filter_in);
 }
@@ -419,26 +412,11 @@ void Coordinated::prepareCoordination()
 	                               cov_plus_expl_more_than_one,
 	                               twirling_donors, Count::Zero));
 
-	// trigonal-planar nitrogens (backbone N, Trp's indole NE1, His's ring
-	// ND1/NE2, Asn/Gln's side-chain amide ND2/NE2, etc.) all need exactly
-	// one vacancy per the outershell-electron bookkeeping above, but none
-	// of them can reliably supply it via an explicit lone-pair
-	// placeholder - their donor/acceptor role, or the ring/conjugation
-	// context sharing that lone pair, varies too much case by case (see
-	// covalent_status_for_bond() in CovalentProbe.h for the deliberate
-	// choice not to resolve this via covalent-bond conjugation instead).
-	// Forcing twirling_lp to Zero leaves nitrogens with no way to satisfy
-	// that vacancy at all, so every nitrogen is exempted wholesale rather
-	// than calling out individual cases.
-	bool ring_nitrogen_needs_twirling_lp =
-	(_atomConf.ptr->elementSymbol() == "N");
-
-	if (!ring_nitrogen_needs_twirling_lp)
-	{
-		add_constraint(new StrictCount({&cov_plus_expl},
-		                               cov_plus_expl_more_than_one,
-		                               twirling_lp, Count::Zero));
-	}
+	/*
+	add_constraint(new StrictCount({&cov_plus_expl},
+	                               cov_plus_expl_more_than_one,
+	                               twirling_lp, Count::Zero));
+	*/
 
 	/* counts which need to be hooked up to bond adders later */
 	_donors = &expl_donors;

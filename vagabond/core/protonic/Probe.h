@@ -550,16 +550,7 @@ public:
 	
 	virtual std::string display()
 	{
-		// _right (the acceptor-side heavy atom) is only ever set for a
-		// real, bridging H-bond - a placeholder hydrogen (Coordinated::
-		// makePlaceholderHydrogen()) is legitimately one-sided by design,
-		// not an incomplete probe, so it should display the same h/hExist
-		// state as any other hydrogen below rather than being blanked out
-		// here. That blanking was also silently hiding the placeholder's
-		// own BondProbe - ProbeBond::updatePosition() treats an empty
-		// display() (as opposed to " ", used deliberately below for a
-		// valid-but-absent probe) as "not a valid endpoint" and skips
-		// positioning it entirely.
+		if (!_right) return "";
 		std::string str;
 
 		// _exist (hExist) is a separate connector from _obj (h, the

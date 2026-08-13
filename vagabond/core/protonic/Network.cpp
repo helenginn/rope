@@ -1099,12 +1099,11 @@ BondProbe &Network::add_probe(BondProbe *const &probe)
 	return *probe;
 }
 
-void Network::addNewHydrogen(hnet::AtomConf hydrogen,
+void Network::addNewHydrogen(hnet::AtomConf hydrogen, 
                              hnet::ExistenceConnector &hCombo)
 {
 	_existMap[hydrogen] = &hCombo;
 	_hAtoms->add(hydrogen.ptr);
-	_hydrogenAtomConfs.insert(hydrogen);
 }
 
 
