@@ -49,61 +49,63 @@ template <typename T, typename E> class [[nodiscard]] Result {
 public:
   template <typename U = T>
     requires std::convertible_to<U, T>
-  Result(Ok<U> ok) : data_(std::in_place_index<0>, std::move(ok.value)) {}
+  constexpr Result(Ok<U> ok)
+      : data_(std::in_place_index<0>, std::move(ok.value)) {}
 
   template <typename U = E>
     requires std::convertible_to<U, E>
-  Result(Err<U> err) : data_(std::in_place_index<1>, std::move(err.value)) {}
+  constexpr Result(Err<U> err)
+      : data_(std::in_place_index<1>, std::move(err.value)) {}
 
-  bool operator==(const Result &) const = default;
+  constexpr bool operator==(const Result &) const = default;
 
-  [[nodiscard]] bool is_ok() const { return data_.index() == 0; }
-  [[nodiscard]] bool is_err() const { return data_.index() == 1; }
+  [[nodiscard]] constexpr bool is_ok() const { return data_.index() == 0; }
+  [[nodiscard]] constexpr bool is_err() const { return data_.index() == 1; }
 
-  T &unwrap() & {
+  constexpr T &unwrap() & {
     if (is_err())
       throw std::runtime_error("Called unwrap on an Err value!");
     return std::get<0>(data_);
   }
 
-  T unwrap() && {
+  constexpr T unwrap() && {
     if (is_err())
       throw std::runtime_error("Called unwrap on an Err value!");
     return std::get<0>(std::move(data_));
   }
 
-  const T &unwrap() const & {
+  constexpr const T &unwrap() const & {
     if (is_err())
       throw std::runtime_error("Called unwrap on an Err value!");
     return std::get<0>(data_);
   }
 
-  E &unwrap_err() & {
+  constexpr E &unwrap_err() & {
     if (is_ok())
       throw std::runtime_error("Called unwrap_err on an Ok value!");
     return std::get<1>(data_);
   }
 
-  E unwrap_err() && {
+  constexpr E unwrap_err() && {
     if (is_ok())
       throw std::runtime_error("Called unwrap_err on an Ok value!");
     return std::get<1>(std::move(data_));
   }
 
-  const E &unwrap_err() const & {
+  constexpr const E &unwrap_err() const & {
     if (is_ok())
       throw std::runtime_error("Called unwrap_err on an Ok value!");
     return std::get<1>(data_);
   }
 
-  T unwrap_or(T fallback) && {
+  constexpr T unwrap_or(T fallback) && {
     if (is_ok()) {
       return std::get<0>(std::move(data_));
     }
     return fallback;
   }
 
-  T unwrap_or_default() && {
+  constexpr T unwrap_or_default() && {
     if (is_ok()) {
       return std::get<0>(std::move(data_));
     }
@@ -112,7 +114,7 @@ public:
 
   template <typename F>
     requires std::convertible_to<std::invoke_result_t<F, E>, T>
-  T unwrap_or_else(F &&func) && {
+  constexpr T unwrap_or_else(F &&func) && {
     if (is_ok()) {
       return std::get<0>(std::move(data_));
     }
@@ -155,9 +157,9 @@ public:
     return std::get<1>(std::move(data_));
   }
 
-  const E &error() const { return std::get<1>(data_); }
+  constexpr const E &error() const { return std::get<1>(data_); }
 
-  template <typename F> auto map(F &&func) && {
+  template <typename F> constexpr auto map(F &&func) && {
     using U = std::invoke_result_t<F, T>;
     if constexpr (std::is_void_v<U>) {
       if (is_ok()) {
@@ -173,7 +175,7 @@ public:
     }
   }
 
-  template <typename F> auto map_err(F &&func) && {
+  template <typename F> constexpr auto map_err(F &&func) && {
     using U = std::invoke_result_t<F, E>;
     if (is_err()) {
       return Result<T, U>(Err(func(std::get<1>(std::move(data_)))));
@@ -181,7 +183,7 @@ public:
     return Result<T, U>(Ok(std::get<0>(std::move(data_))));
   }
 
-  template <typename F> auto and_then(F &&func) && {
+  template <typename F> constexpr auto and_then(F &&func) && {
     using CallResult = std::invoke_result_t<F, T>;
     if (is_ok()) {
       return func(std::get<0>(std::move(data_)));
@@ -189,7 +191,7 @@ public:
     return CallResult(Err(std::get<1>(std::move(data_))));
   }
 
-  template <typename F> auto or_else(F &&func) && {
+  template <typename F> constexpr auto or_else(F &&func) && {
     using CallResult = std::invoke_result_t<F, E>;
     if (is_err()) {
       return func(std::get<1>(std::move(data_)));
@@ -197,28 +199,28 @@ public:
     return CallResult(Ok(std::get<0>(std::move(data_))));
   }
 
-  [[nodiscard]] std::optional<T> ok() const & {
+  [[nodiscard]] constexpr std::optional<T> ok() const & {
     if (is_ok()) {
       return std::get<0>(data_);
     }
     return std::nullopt;
   }
 
-  [[nodiscard]] std::optional<T> ok() && {
+  [[nodiscard]] constexpr std::optional<T> ok() && {
     if (is_ok()) {
       return std::get<0>(std::move(data_));
     }
     return std::nullopt;
   }
 
-  [[nodiscard]] std::optional<E> err() const & {
+  [[nodiscard]] constexpr std::optional<E> err() const & {
     if (is_err()) {
       return std::get<1>(data_);
     }
     return std::nullopt;
   }
 
-  [[nodiscard]] std::optional<E> err() && {
+  [[nodiscard]] constexpr std::optional<E> err() && {
     if (is_err()) {
       return std::get<1>(std::move(data_));
     }
@@ -230,35 +232,36 @@ template <typename E> class [[nodiscard]] Result<void, E> {
   std::variant<std::monostate, E> data_;
 
 public:
-  Result(Ok<void>) : data_(std::in_place_index<0>) {}
+  constexpr Result(Ok<void>) : data_(std::in_place_index<0>) {}
 
   template <typename U = E>
     requires std::convertible_to<U, E>
-  Result(Err<U> err) : data_(std::in_place_index<1>, std::move(err.value)) {}
+  constexpr Result(Err<U> err)
+      : data_(std::in_place_index<1>, std::move(err.value)) {}
 
-  bool operator==(const Result &) const = default;
+  constexpr bool operator==(const Result &) const = default;
 
-  [[nodiscard]] bool is_ok() const { return data_.index() == 0; }
-  [[nodiscard]] bool is_err() const { return data_.index() == 1; }
+  [[nodiscard]] constexpr bool is_ok() const { return data_.index() == 0; }
+  [[nodiscard]] constexpr bool is_err() const { return data_.index() == 1; }
 
-  void unwrap() const {
+  constexpr void unwrap() const {
     if (is_err())
       throw std::runtime_error("Called unwrap on an Err value!");
   }
 
-  E &unwrap_err() & {
+  constexpr E &unwrap_err() & {
     if (is_ok())
       throw std::runtime_error("Called unwrap_err on an Ok value!");
     return std::get<1>(data_);
   }
 
-  E unwrap_err() && {
+  constexpr E unwrap_err() && {
     if (is_ok())
       throw std::runtime_error("Called unwrap_err on an Ok value!");
     return std::get<1>(std::move(data_));
   }
 
-  const E &unwrap_err() const & {
+  constexpr const E &unwrap_err() const & {
     if (is_ok())
       throw std::runtime_error("Called unwrap_err on an Ok value!");
     return std::get<1>(data_);
@@ -287,17 +290,19 @@ public:
     return std::get<1>(std::move(data_));
   }
 
-  const E &error() const { return std::get<1>(data_); }
+  constexpr const E &error() const { return std::get<1>(data_); }
 
-  template <typename F> auto map(F &&func) && {
+  template <typename F> constexpr auto map(F &&func) && {
     using U = std::invoke_result_t<F>;
+
     if (is_ok()) {
       return Result<U, E>(Ok(func()));
     }
+
     return Result<U, E>(Err(std::get<1>(std::move(data_))));
   }
 
-  template <typename F> auto map_err(F &&func) && {
+  template <typename F> constexpr auto map_err(F &&func) && {
     using U = std::invoke_result_t<F, E>;
     if (is_err()) {
       return Result<void, U>(Err(func(std::get<1>(std::move(data_)))));
@@ -305,7 +310,7 @@ public:
     return Result<void, U>(Ok<void>{});
   }
 
-  template <typename F> auto and_then(F &&func) && {
+  template <typename F> constexpr auto and_then(F &&func) && {
     using CallResult = std::invoke_result_t<F>;
     if (is_ok()) {
       return func();
@@ -313,7 +318,7 @@ public:
     return CallResult(Err(std::get<1>(std::move(data_))));
   }
 
-  template <typename F> auto or_else(F &&func) && {
+  template <typename F> constexpr auto or_else(F &&func) && {
     using CallResult = std::invoke_result_t<F, E>;
     if (is_err()) {
       return func(std::get<1>(std::move(data_)));
@@ -321,14 +326,14 @@ public:
     return CallResult(Ok<void>{});
   }
 
-  [[nodiscard]] std::optional<E> err() const & {
+  [[nodiscard]] constexpr std::optional<E> err() const & {
     if (is_err()) {
       return std::get<1>(data_);
     }
     return std::nullopt;
   }
 
-  [[nodiscard]] std::optional<E> err() && {
+  [[nodiscard]] constexpr std::optional<E> err() && {
     if (is_err()) {
       return std::get<1>(std::move(data_));
     }

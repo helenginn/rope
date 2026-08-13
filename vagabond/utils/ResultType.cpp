@@ -19,8 +19,8 @@
 #include "ResultType.h"
 #include <memory>
 #include <optional>
-#include <string>
 #include <stdexcept>
+#include <string>
 #include <utility>
 
 #ifdef ROPE_INLINE_TESTS
@@ -469,6 +469,17 @@ TEST_CASE("Result<void,E> - operator==") {
   Result<void, std::string> c = Err(std::string("bad"));
   CHECK(a == b);
   CHECK(a != c);
+}
+
+TEST_CASE("Result - constexpr usability") {
+  static_assert(Result<int, int>(Ok(5)).unwrap() == 5);
+  static_assert(Result<int, int>(Err(-1)).unwrap_err() == -1);
+  static_assert(
+      Result<int, int>(Ok(2)).map([](int x) { return x * 3; }).unwrap() == 6);
+  static_assert(
+      Result<int, int>(Ok(5)).unwrap_or_else([](int) { return -1; }) == 5);
+  static_assert(Result<int, int>(Ok(1)) == Result<int, int>(Ok(1)));
+  CHECK(true);
 }
 
 #endif
