@@ -24,53 +24,12 @@
 
 namespace hnet
 {
-struct EqualBonds : public ConstraintBase
-{
-	EqualBonds(BondConnector &left, BondConnector &right,
-	           ExistenceConnector &lExist, ExistenceConnector &rExist)
-	: _left(left), _right(right), _lExist(lExist), _rExist(rExist)
-	{
-		prep_constraints_and_forgets(this, {&left, &right, &lExist, &rExist});
-	}
-
-	std::string desc()
-	{
-		return "Bonds \"" + _left.desc() + "\", \"" + _right.desc() 
-		+ "\" should be equal";
-	}
-
-	bool check(const GuiltVersion &gv, CheckList &list)
-	{
-		auto assign = make_assign_and_say(this, gv, list);
-
-		{
-			Bond::Values forLeft = _left.value();
-			Bond::Values forRight = _right.value();
-
-			Bond::Values both = Bond::Values(forLeft & forRight);
-
-			assign(_left, both);
-			assign(_right, both);
-		}
-
-		{
-			Existence::Values forLeft = _lExist.value();
-			Existence::Values forRight = _rExist.value();
-
-			Existence::Values both = Existence::Values(forLeft & forRight);
-
-			assign(_lExist, both);
-			assign(_rExist, both);
-		}
-
-		return assign.okay();
-	}
-
-	BondConnector &_left;
-	BondConnector &_right;
-	ExistenceConnector &_lExist;
-	ExistenceConnector &_rExist;
-};
+// EqualBonds removed - used to force a symmetry mate's bond (and
+// existence) equal to its mother atom's own resolved state, which
+// incorrectly treated crystallographic symmetry (a bulk/ensemble-
+// averaged property) as a per-molecule constraint. See
+// Coordinated_Constraints.cpp's own note where
+// findSymmetricallyRelatedBonds() used to live.
 
 struct EqualCount : public ConstraintBase
 {

@@ -219,10 +219,9 @@ public:
 	 *  actually crossing one of those bond probes. others() also carries
 	 *  several kinds of direct (non-bond-mediated) atom<->atom edges -
 	 *  alt-conformer siblings, steric clashes, charge-sharing/tautomer
-	 *  partners, bulk-liberated-water pseudo-conformers, crystallographic
-	 *  symmetry mates (see Network::establishAtom/shareProperty,
-	 *  Coordinated::clashLogic, ProtonNetworkView::linkSymmetricAtomProbes)
-	 *  - none of which are a real bonded neighbour, and none of which
+	 *  partners, bulk-liberated-water pseudo-conformers (see Network::
+	 *  establishAtom/shareProperty, Coordinated::clashLogic) - none of
+	 *  which are a real bonded neighbour, and none of which
 	 *  should make two Probes spring together in a 2D layout (that
 	 *  coupling was the actual bug this method exists to avoid - see
 	 *  Subdivide.cpp for the very different, and correct, place those

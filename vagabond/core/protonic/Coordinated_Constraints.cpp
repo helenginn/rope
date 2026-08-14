@@ -507,100 +507,14 @@ void Coordinated::attachAdderConstraints()
 	}
 }
 
-ABPair Coordinated::bondForAtom(const AtomConf &asymmetric)
-{
-	for (const ABPair &bond : _bonds)
-	{
-		if (bond.first == asymmetric)
-		{
-			return bond;
-		}
-	}
-
-	std::cout << std::endl;
-	return ABPair{};
-}
-
-void Coordinated::findSymmetricallyRelatedBonds()
-{
-	::Atom *mother_atom = atom()->symmetryCopyOf();
-	if (!mother_atom)
-	{
-		return;
-	}
-
-	AtomConf mother_conf = {mother_atom, atomConf().conf};
-	Coordinated *mother = atomMap()[mother_conf];
-	// existence must be the same
-	std::ostringstream result;
-	try
-	{
-		add_constraint(new MutualExistence(*existence(), *mother->existence()));
-	}
-	catch (const std::runtime_error &err)
-	{
-		result << "Failed to add symmetry constraint between " 
-		<< *existence() << " and " << *mother->existence() << 
-		" as it led to immediate contradiction";
-		std::cout << result.str() << std::endl;
-
-		_network.addImpromptuCollapse(result.str());
-	}
-
-	std::cout << "Adding symmetries for " << atomConf() << std::endl;
-
-	// make sure bonds which are related by symmetry are constrained to
-	// be equal
-	for (const ABPair &bond : _bonds)
-	{
-		// get the asymmetric version of our symmetry mate
-		AtomConf other_conf = bond.first;
-		Coordinated *other = atomMap()[other_conf];
-
-		::Atom *otherRoot = other_conf.ptr->symmetryCopyOf();
-		if (!otherRoot) otherRoot = other_conf.ptr;
-
-		for (const ABPair &mBond : mother->bonds())
-		{
-			::Atom *symRoot = mBond.first.ptr->symmetryCopyOf();
-			if (!symRoot) symRoot = mBond.first.ptr;
-
-			std::cout << "Is " << symRoot->desc() << " same as " << otherRoot->desc() << "?" << std::endl;
-			if (symRoot != otherRoot)
-			{
-				// wrong bond from mother
-				continue;
-			}
-
-			AtomConf sym_other_conf = {mBond.first.ptr, other_conf.conf};
-
-			// ask the asymmetric version for the symmetry mate of my own atom
-			const ABPair &corresponding = mother->bondForAtom(sym_other_conf);
-
-			if (corresponding.second)
-			{
-				hnet::BondConnector &left = *bond.second;
-				hnet::BondConnector &right = *corresponding.second;
-				
-				std::cout << "Propose that " << left << " and " << right << " should be equal " << std::endl;
-
-
-				try
-				{
-					add_constraint(new EqualBonds(left, right, 
-					                              *_bond2Exist[&left], 
-					 *mother->_bond2Exist[&right]));
-				}
-				catch (const std::runtime_error &err)
-				{
-					result << "Failed to add symmetry constraint between " 
-					<< left << " and " << right << " as it led to immediate "
-					"contradiction";
-					std::cout << result.str() << std::endl;
-
-					_network.addImpromptuCollapse(result.str());
-				}
-			}
-		}
-	}
-}
+// findSymmetricallyRelatedBonds()/bondForAtom() removed - used to force
+// a symmetry mate's bond pattern (EqualBonds) and existence
+// (MutualExistence) equal to its mother atom's own resolved state.
+// Crystallographic symmetry constrains the bulk/ensemble-averaged
+// measurement, not what tautomer or occupancy any one individual
+// molecule actually has - neither claim was correct, particularly at a
+// protein-protein interface where a mate's local environment can
+// genuinely differ from its mother's. Mates now get the same
+// independent prepareCoordination()/attachToNeighbours()/
+// mutualExclusions()/attachAdderConstraints() treatment as any other
+// atom (Network::Network()).

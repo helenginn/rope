@@ -23,7 +23,27 @@ class AtomGroup;
 
 namespace SymMates
 {
-	AtomGroup *getSymmetryMates(AtomGroup *const &other, 
+	struct Mates
+	{
+		// within live_distance of the reference group - candidates for
+		// full, independent coordination/H-bond treatment.
+		AtomGroup *live = nullptr;
+		// beyond live_distance but within dead_distance - covalent
+		// topology only (never coordinated/searched), so atoms just
+		// inside live_distance have their own real covalent bond
+		// partners available via Atom::symmetryEquivalent().
+		AtomGroup *dead = nullptr;
+	};
+
+	// dead_distance must be >= live_distance.
+	Mates getSymmetryMates(AtomGroup *const &other,
+	                       const std::string &spg_name,
+	                       const std::array<double, 6> &uc,
+	                       float live_distance, float dead_distance);
+
+	// convenience wrapper for callers with no dead-bucket concept of
+	// their own - equivalent to getSymmetryMates(..., distance, distance).live.
+	AtomGroup *getSymmetryMates(AtomGroup *const &other,
 	                            const std::string &spg_name,
 	                            const std::array<double, 6> &uc, float distance);
 };

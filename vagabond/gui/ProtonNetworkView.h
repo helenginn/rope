@@ -98,7 +98,6 @@ private:
 	void makeNewClique();
 	void askForSelectionPlan();
 	void selectUsingPlan(std::string plan);
-	void linkSymmetricAtomProbes(const hnet::AtomConf &ac);
 
 	
 	std::map<Probe *, ProbeAtom *> _textProbes;

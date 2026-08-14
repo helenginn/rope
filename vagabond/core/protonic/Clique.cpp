@@ -225,6 +225,31 @@ void Clique::addProbeDesc(const std::string &str)
 	_descs += str;
 }
 
+namespace
+{
+	// symmetry mates now resolve their own H-bonding independently rather
+	// than being forced equal to their mother atom (see Network::Network()),
+	// but they still shouldn't be offered as choosable Communication Choice
+	// signals - a mate's identity (which residue/copy of the crystal it
+	// belongs to) isn't something a user picking a "signal" name is meant to
+	// have to reason about.
+	bool is_symmetry_mate(Probe *const &probe)
+	{
+		if (probe->atom())
+		{
+			return probe->atom()->symmetryCopyOf() != nullptr;
+		}
+		if (probe->is_bond())
+		{
+			BondProbe *bp = static_cast<BondProbe *>(probe);
+			Atom *l = bp->left().atom();
+			Atom *r = bp->right().atom();
+			return (l && l->symmetryCopyOf()) || (r && r->symmetryCopyOf());
+		}
+		return false;
+	}
+}
+
 OpSet<Probe *> Clique::nonWaterProbes()
 {
 	OpSet<Probe *> nonwater;
@@ -232,6 +257,11 @@ OpSet<Probe *> Clique::nonWaterProbes()
 	{
 		if (pr->is_atom())
 		{
+			if (is_symmetry_mate(pr))
+			{
+				continue;
+			}
+
 			bool water = (pr->atom()->code() == "HOH");
 			if (!pr->is_certain())
 			{
@@ -241,7 +271,8 @@ OpSet<Probe *> Clique::nonWaterProbes()
 			{
 				for (Probe *connected : pr->others())
 				{
-					if (!connected->is_covalent() && !connected->is_certain())
+					if (!connected->is_covalent() && !connected->is_certain() &&
+					    !is_symmetry_mate(connected))
 					{
 						nonwater.insert(connected);
 					}

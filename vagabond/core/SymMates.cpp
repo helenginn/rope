@@ -24,29 +24,40 @@
 #include "AtomGroup.h"
 #include "GroupBounds.h"
 
-AtomGroup *SymMates::getSymmetryMates(AtomGroup *const &other, 
-                                      const std::string &spg_name,
-                                      const std::array<double, 6> &uc, 
-                                      float distance)
+SymMates::Mates SymMates::getSymmetryMates(AtomGroup *const &other,
+                                           const std::string &spg_name,
+                                           const std::array<double, 6> &uc,
+                                           float live_distance,
+                                           float dead_distance)
 {
-	AtomGroup *total = new AtomGroup();
+	Mates mates;
+	mates.live = new AtomGroup();
+	mates.dead = new AtomGroup();
 	if (spg_name.length() == 0)
 	{
-		return total;
+		return mates;
 	}
-	
+
 	const gemmi::SpaceGroup *spg = gemmi::find_spacegroup_by_name(spg_name);
 
 	gemmi::GroupOps grp = spg->operations();
 	glm::mat3x3 uc_mat = {};
 	uc_mat = mat3x3_from_unit_cell(uc[0], uc[1], uc[2], uc[3], uc[4], uc[5]);
 	glm::mat3x3 to_frac = glm::inverse(uc_mat);
-	float distsq = distance * distance;
-	
+	float live_distsq = live_distance * live_distance;
+	float dead_distsq = dead_distance * dead_distance;
+
+	// bounds padding must cover the widest radius actually being
+	// searched (used to be a flat 5 A, silently assuming distance was
+	// never much more than that) - a trial position can legitimately be
+	// up to dead_distance beyond the reference group's own bounding box
+	// (e.g. near a corner) and still be within dead_distance of some
+	// atom in it.
 	GroupBounds bounds(other);
-	glm::vec3 min = bounds.min - glm::vec3(5.f);
-	glm::vec3 max = bounds.max + glm::vec3(5.f);
-	
+	glm::vec3 pad = glm::vec3(dead_distance);
+	glm::vec3 min = bounds.min - pad;
+	glm::vec3 max = bounds.max + pad;
+
 	auto outside_bounds = [min, max](const glm::vec3 &target) -> bool
 	{
 		for (int i = 0; i < 3; i++)
@@ -57,20 +68,26 @@ AtomGroup *SymMates::getSymmetryMates(AtomGroup *const &other,
 		return false;
 	};
 
-	auto close_to = [distsq](::Atom *atom, const glm::vec3 &target) -> bool
+	auto make_close_to = [](float distsq)
 	{
-		glm::vec3 second = atom->initialPosition();
-		for (int i = 0; i < 3; i++)
+		return [distsq](::Atom *atom, const glm::vec3 &target) -> bool
 		{
-			if (fabs(second[i] - target[i]) > distsq)
+			glm::vec3 second = atom->initialPosition();
+			for (int i = 0; i < 3; i++)
 			{
-				return false;
+				if (fabs(second[i] - target[i]) > distsq)
+				{
+					return false;
+				}
 			}
-		}
-		glm::vec3 diff = second - target;
-		float lsq = glm::dot(diff, diff);
-		return (lsq < distsq && lsq >= 1e-3);
+			glm::vec3 diff = second - target;
+			float lsq = glm::dot(diff, diff);
+			return (lsq < distsq && lsq >= 1e-3);
+		};
 	};
+
+	auto close_to = make_close_to(dead_distsq);
+	auto close_to_live = make_close_to(live_distsq);
 
 	// deliberately does not stop at the first (i, j, k, l) that matches -
 	// a special position (e.g. sitting near a 2-/3-/4-fold axis) can have
@@ -126,14 +143,14 @@ AtomGroup *SymMates::getSymmetryMates(AtomGroup *const &other,
 		};
 	};
 
-	auto add_symop_atom_if_nearby = 
-	[close_to, other, uc_mat, total, outside_bounds,
+	auto add_symop_atom_if_nearby =
+	[close_to, close_to_live, other, uc_mat, &mates, outside_bounds,
 	 do_on_nearby_unit_cells, make_do_sym_op]
 	(::Atom *const &atom, glm::vec3 pos)
 	{
-		auto check_if_atom_is_near = 
-		[pos, uc_mat, outside_bounds, other, close_to, atom, 
-		 total, make_do_sym_op]
+		auto check_if_atom_is_near =
+		[pos, uc_mat, outside_bounds, other, close_to, close_to_live, atom,
+		 &mates, make_do_sym_op]
 		(int i, int j, int k, int l)
 		{
 			auto do_frac_sym = make_do_sym_op(l);
@@ -146,6 +163,9 @@ AtomGroup *SymMates::getSymmetryMates(AtomGroup *const &other,
 				return false;
 			}
 
+			// dead_distance's wider net decides inclusion at all;
+			// live_distance (checked separately, same trial position)
+			// only decides which bucket the copy lands in.
 			::Atom *near = other->find_by([close_to, trial]
 			                              (::Atom *const &a)
 			                              {return close_to(a, trial);});
@@ -175,7 +195,11 @@ AtomGroup *SymMates::getSymmetryMates(AtomGroup *const &other,
 				}
 
 				copy->setDerivedPosition(trial);
-				total->add(copy);
+
+				bool live = other->find_by([close_to_live, trial]
+				                           (::Atom *const &a)
+				                           {return close_to_live(a, trial);});
+				(live ? mates.live : mates.dead)->add(copy);
 				return true;
 			}
 
@@ -201,6 +225,14 @@ AtomGroup *SymMates::getSymmetryMates(AtomGroup *const &other,
 	};
 
 	other->do_op(on_each_conf_pos(add_symop_atom_if_nearby));
-	return total;
+	return mates;
+}
+
+AtomGroup *SymMates::getSymmetryMates(AtomGroup *const &other,
+                                      const std::string &spg_name,
+                                      const std::array<double, 6> &uc,
+                                      float distance)
+{
+	return getSymmetryMates(other, spg_name, uc, distance, distance).live;
 }
 

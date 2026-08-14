@@ -469,10 +469,65 @@ void Network::setupInactiveAtom(AtomConf atom)
 		return &covalent;
 	};
 
-	for (int i = 0; i < atom.ptr->bondLengthCount(); i++)
+	// a symmetry mate's own HasBondstraints data (bondLengthCount()/
+	// connectedAtom()) is always empty - Atom's copy constructor
+	// (Atom.cpp) never copies it, since the raw BondLength/BondAngle
+	// dictionary objects reference specific Atom* pointers that would
+	// still point at the asymmetric-unit originals, not this mate's own
+	// siblings. So a mate instead borrows its mother's topology (which
+	// atom index i's covalent partner IS) and maps that partner onto its
+	// own symmetry image via Atom::symmetryEquivalent() (the SymOp-keyed
+	// registry populated in SymMates.cpp) - the mate's own covalently
+	// bonded neighbour, generated under the exact same transform.
+	::Atom *mother = atom.ptr->symmetryCopyOf();
+	::Atom *topology = mother ? mother : atom.ptr;
+
+	for (int i = 0; i < topology->bondLengthCount(); i++)
 	{
-		::Atom *connect = atom.ptr->connectedAtom(i);
+		::Atom *connect = topology->connectedAtom(i);
+
+		if (mother)
+		{
+			// neighbour not resolved under this exact transform - not
+			// yet pulled into the network (e.g. outside whatever radius
+			// supplied symmetry mates), so this bond simply cannot be
+			// represented. Not the same as the make_maybe_covalent_bond
+			// case below, which is for a connect that definitely exists
+			// but doesn't have a probe yet.
+			connect = connect ? connect->symmetryEquivalent(atom.ptr->symOp())
+			                  : nullptr;
+			if (!connect)
+			{
+				continue;
+			}
+		}
+
 		AtomConf connected = {connect, atom.conf};
+
+		if (mother)
+		{
+			// belt and braces: a covalently bonded neighbour resolved via
+			// a matching SymOp key should always land close by, but
+			// SymMates.cpp currently decides that key per atom
+			// independently rather than once per whole rigid molecule, so
+			// a "matching" key is not yet a hard guarantee of actually
+			// being the same physical copy. Refuse to draw the bond
+			// rather than connect two atoms that ended up nowhere near
+			// each other - 2.5 A is generous for any real covalent bond
+			// (even S-S or a metal-ligand contact) while being nowhere
+			// close to the scale of a symmetry-mate mismatch. soft_position()
+			// (not position(), which throws via an unguarded map::at() if
+			// connected's own conformer list doesn't happen to have an
+			// entry for atom.conf - not guaranteed, since connected only
+			// borrows atom's conformer letter rather than having its own
+			// matching one) falls back to initialPosition() instead.
+			float dist = glm::length(atom.soft_position() -
+			                         connected.soft_position());
+			if (dist > 2.5f)
+			{
+				continue;
+			}
+		}
 		// we try to find the conformer which matches our own
 		AtomProbe *other = _atom2Probe[connected];
 		
@@ -886,8 +941,16 @@ Network::Network(AtomGroup *group, const std::string &spg_name,
 
 	_hAtoms = new AtomGroup();
 	_original = rehydrogenate(nonHydrogensFrom(group));
-	AtomGroup *mates = SymMates::getSymmetryMates(_original, spg_name, 
-	                                              unit_cell, 4.0);
+	// live: within 4 A, candidates for full independent coordination/
+	// H-bond treatment, same as _original. dead: out to 9 A - never
+	// coordinated or searched, exist purely so a live atom near the edge
+	// of its own shell still has its real covalent bond partners
+	// available (Atom::symmetryEquivalent()), rather than silently
+	// missing them just because they happened to fall outside 4 A.
+	SymMates::Mates symMates = SymMates::getSymmetryMates(_original, spg_name,
+	                                                      unit_cell, 4.0, 9.0);
+	AtomGroup *mates = symMates.live;
+	AtomGroup *deadMates = symMates.dead;
 	_originalAndMates = new AtomGroup();
 	_originalAndMates->add(mates);
 	_originalAndMates->add(_original);
@@ -901,11 +964,9 @@ Network::Network(AtomGroup *group, const std::string &spg_name,
 	std::cout << _original->size() << " original atoms." << std::endl;
 	std::cout << donors->size() << " donor atoms from those." << std::endl;
 	std::cout << mates->size() << " symmetry atoms." << std::endl;
+	std::cout << deadMates->size() << " dead (covalent-only) symmetry atoms." << std::endl;
 	std::cout << _originalAndMates->size() << " original+symmetry atoms." << std::endl;
 	std::cout << symDonors->size() << " donor atoms from those." << std::endl;
-
-	// set up the connectors and probes for each atom
-	_originalAndMates->do_op([this](::Atom *atom) { establishAtom(atom); });
 
 	auto on_each_conf = [] <typename Func>(const Func &func)
 	{
@@ -919,16 +980,37 @@ Network::Network(AtomGroup *group, const std::string &spg_name,
 		};
 	};
 
+	// set up the connectors and probes for each atom, dead bucket
+	// included - a dead atom still needs an AtomProbe/existence for its
+	// live neighbours' covalent bond discovery to resolve it via
+	// atomMap(), it just never gets a real coordination treatment below.
+	_originalAndMates->do_op([this](::Atom *atom) { establishAtom(atom); });
+	deadMates->do_op([this](::Atom *atom) { establishAtom(atom); });
 
-	// here is when the coordination is prepared
-	for (auto it = atomMap().begin(); it != atomMap().end(); it++)
+	// here is when the coordination is prepared - _originalAndMates
+	// only (not the raw atomMap(), which also now holds the dead
+	// bucket): a dead atom must never reach findAtomCoordinations()'s
+	// donor/acceptor/lone-pair dispatch, only the plain covalent-bond
+	// discovery setupInactiveAtom() itself provides (called directly
+	// below, bypassing that dispatch entirely).
+	_originalAndMates->do_op(on_each_conf([this](::Atom *a, char conf)
 	{
-		const AtomConf &ac = it->first;
-		findAtomCoordinations(ac);
-	}
+		findAtomCoordinations({a, conf});
+	}));
 
-	// here is when the coordination is finalised
-	donors->do_op(on_each_conf([this](::Atom *a, char conf)
+	deadMates->do_op(on_each_conf([this](::Atom *a, char conf)
+	{
+		setupInactiveAtom({a, conf});
+	}));
+
+	// here is when the coordination is finalised - symDonors (original +
+	// live mates), not just donors: a symmetry mate now gets the same
+	// independent coordination treatment as any other atom, rather than
+	// being forced equal to its mother atom's own resolved pattern (see
+	// the now-removed findSymmetricallyRelatedBonds()) - crystallographic
+	// symmetry constrains the bulk/ensemble average, not what tautomer
+	// any one individual molecule actually adopts.
+	symDonors->do_op(on_each_conf([this](::Atom *a, char conf)
 	{
 		_atomMap[{a, conf}]->prepareCoordination();
 	}));
@@ -946,7 +1028,7 @@ Network::Network(AtomGroup *group, const std::string &spg_name,
 
 	// record the hydrogen-bonding neighbours for each atom
 	// generate connectors for each acquired bond
-	donors->do_op(on_each_conf([this](::Atom *a, char conf)
+	symDonors->do_op(on_each_conf([this](::Atom *a, char conf)
 	{
 		_atomMap[{a, conf}]->uninvolvedCoordinators();
 	}));
@@ -966,14 +1048,14 @@ Network::Network(AtomGroup *group, const std::string &spg_name,
 
 	// record the hydrogen-bonding neighbours for each atom
 	// generate connectors for each acquired bond
-	donors->do_op(on_each_conf([this, &symDonorSet](::Atom *a, char conf)
+	symDonors->do_op(on_each_conf([this, &symDonorSet](::Atom *a, char conf)
 	{
 		_atomMap[{a, conf}]->attachToNeighbours(symDonorSet);
 	}));
 
 
 	// find sets of bonds which can/cannot participate in bonding together
-	donors->do_op(on_each_conf([this, &originalAndMatesSet]
+	symDonors->do_op(on_each_conf([this, &originalAndMatesSet]
 	                           (::Atom *a, char conf)
 	{
 		_atomMap[{a, conf}]->mutualExclusions(originalAndMatesSet);
@@ -1015,22 +1097,22 @@ Network::Network(AtomGroup *group, const std::string &spg_name,
 	std::cout << "==     FINDING SYMMETRY       ==" << std::endl;
 	std::cout << "================================" << std::endl;
 
-	// make sure bonds in the next crystal contact are the same as this asu
-	symDonors->do_op(on_each_conf([this](::Atom *a, char conf)
-	{
-		_atomMap[{a, conf}]->findSymmetricallyRelatedBonds();
-	}));
+	// symmetry mates no longer get findSymmetricallyRelatedBonds() (used
+	// to force each mate's bond pattern and existence equal to its
+	// mother's via EqualBonds/MutualExistence) - crystallographic
+	// symmetry constrains the bulk/ensemble average, not what an
+	// individual molecule actually does, so neither claim was correct.
+	// They already got their own independent treatment above.
 
-	// make sure bonds in the next crystal contact are the same as this asu
 	symDonors->do_op(on_each_conf([this](::Atom *a, char conf)
 	{
 		_atomMap[{a, conf}]->setupRealignment();
 	}));
 
-	donors->do_op(on_each_conf(job));
-	
+	symDonors->do_op(on_each_conf(job));
+
 	int failCount = 0;
-	donors->do_op(on_each_conf([this, &failCount](::Atom *a, char conf)
+	symDonors->do_op(on_each_conf([this, &failCount](::Atom *a, char conf)
 	{
 		failCount += (atomMap()[{a, conf}]->failedCheck()) ? 1 : 0;
 	}));

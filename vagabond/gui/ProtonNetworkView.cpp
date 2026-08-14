@@ -67,24 +67,6 @@ ProtonNetworkView::~ProtonNetworkView()
 	delete &_network;
 }
 
-void ProtonNetworkView::linkSymmetricAtomProbes(const hnet::AtomConf &ac)
-{
-	if (!ac.ptr || !ac.ptr->symmetryCopyOf())
-	{
-		return;
-	}
-
-	AtomProbe *p = _network.probeForAtom(ac);
-	AtomProbe *q = _network.probeForAtom({ac.ptr->symmetryCopyOf(), ac.conf});
-	if (!(p && q))
-	{
-		return;
-	}
-	
-	p->register_probe(q);
-	q->register_probe(p);
-}
-
 void ProtonNetworkView::findAtomProbes()
 {
 	for (AtomProbe *const &probe : _network.atomProbes())
@@ -96,7 +78,14 @@ void ProtonNetworkView::findAtomProbes()
 
 		ProbeAtom *text = new ProbeAtom(this, probe);
 		addObject((FloatingText *)text);
-		linkSymmetricAtomProbes(probe->atomConf());
+		// used to also link a symmetry mate's probe directly to its
+		// mother's here (linkSymmetricAtomProbes(), now removed) - made
+		// sense while a mate's bond pattern was forced equal to its
+		// mother's (EqualBonds), but now that mates resolve independently
+		// that direct, non-bond graph edge no longer means anything, and
+		// was letting selection/completion BFS walks (CliqueFinder.cpp)
+		// hop straight from an atom to its mate regardless of whether
+		// they were ever actually bonded.
 		_textProbes[probe] = text;
 		_allProbes.insert(probe);
 		probe->setResponder(this);
@@ -913,6 +902,22 @@ void ProtonNetworkView::selectUsingPlan(std::string plan)
 		connected = CliqueFinder::completeToResidues(connected, true);
 
 		while (Subdivide::finish_ends(connected)) {}
+
+		// symmetry mates now fully participate in the H-bond network (and
+		// so are reachable by the bridging search / backbone completion
+		// above like any other atom), but a plan is specified in terms of
+		// the asymmetric unit's own chain/residue numbering - keep this
+		// selection confined to it, rather than also picking up whichever
+		// symmetry-generated copies the search happened to walk through.
+		// completeToResidues()/expandSelectionToNeighbours() themselves
+		// stay mate-inclusive, since SearchAll and the general manual
+		// "expand selection"/"complete to residues" GUI actions both
+		// legitimately want to reach mates.
+		auto not_a_symmetry_mate = [](Probe *const &probe) -> bool
+		{
+			return !(probe->atom() && probe->atom()->symmetryCopyOf());
+		};
+		connected.filter(not_a_symmetry_mate);
 
 		selectProbes(connected);
 

@@ -175,7 +175,13 @@ CliqueFinder::probeGroupsForResidues(Network &network,
 
 			for (AtomProbe *const &probe : network.atomProbes())
 			{
-				if (probe->atom() && probe->atom()->chain() == chain &&
+				// symmetry mates carry the same chain/residueId as their
+				// asymmetric-unit mother (Atom's copy constructor copies
+				// both) - a plan should only ever pick up the real,
+				// original residue, not every symmetry-generated copy of
+				// it too.
+				if (probe->atom() && !probe->atom()->symmetryCopyOf() &&
+				    probe->atom()->chain() == chain &&
 				    probe->atom()->residueId() == id)
 				{
 					group.insert(probe);
