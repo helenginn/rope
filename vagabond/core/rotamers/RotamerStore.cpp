@@ -34,11 +34,11 @@ std::vector<RotamerStore> RotamerStore::residueStore()
 {
     std::map<ResidueId,std::map<ResRot,LookUpInfo>> tempStorage;
     std::vector<RotamerStore> residueStore;
-    for (auto index: storage)
+    for (auto &index: storage)
     {
         tempStorage[index.first.first].emplace(index);
     }
-    for (auto restore: tempStorage)
+    for (auto &restore: tempStorage)
     {
         RotamerStore sto = RotamerStore();
         for (auto [object, lookup]: restore.second)
@@ -76,17 +76,22 @@ std::vector<glm::vec3> RotamerStore::positionFor(ResRot const &rotamer)
     }
     return positions;
 }
-
-void RotamerStore::updatePositions(glm::mat4x4 transformationMat)
+glm::vec3 RotamerStore::positionForReporter()
 {
-    transformationMat = glm::inverse(transformationMat);
-    for (glm::vec3 &pos : positionArray)
+    glm::vec3 position{};
+    LookUpInfo lookup = storage.begin()->second;
+    for (int x = lookup.start(); x < (lookup.start() + lookup.length()); x++)
     {
-        pos = transformationMat * glm::vec4(pos,1.0f);
+        if (atoms[x]->isReporterAtom())
+        {
+            position = positionArray[x];
+            break;
+        }
     }
+    return position;
 }
 
-void RotamerStore::move(glm::mat4x4 parameters, std::string chain)
+void RotamerStore::move(glm::mat4x4 parameters, std::string const &chain)
 {
     for (int length = 0; length <= positionArray.size()-1; length++)
     {
@@ -97,25 +102,25 @@ void RotamerStore::move(glm::mat4x4 parameters, std::string chain)
     }
 }
 
-AtomPosMap RotamerStore::extractForGUI(RotamerStore &storeToRender)
+AtomPosMap RotamerStore::extractForGUI()
 {
     AtomPosMap positionMap {};
     int max {};
-    for (auto pairs : storeToRender.storage)
+    for (auto pairs : storage)
     {
         int rotaNumber = pairs.first.second;
         if (rotaNumber > max)
             max = rotaNumber;
     }
     std::pair<ResRot, LookUpInfo> memoryResRot {};
-    for (auto pairs : storeToRender.storage)
+    for (auto pairs : storage)
     {
         if (positionMap.empty() || pairs.first.first == memoryResRot.first.first)
         {
             memoryResRot = pairs;
             for (int i = pairs.second.start(); i < (pairs.second.start() + pairs.second.length()); i++)
             {
-                positionMap[storeToRender.atoms[i]].samples.emplace_back(storeToRender.positionArray[i]);
+                positionMap[atoms[i]].samples.emplace_back(positionArray[i]);
             }
         }
         else
@@ -125,13 +130,13 @@ AtomPosMap RotamerStore::extractForGUI(RotamerStore &storeToRender)
             {
                 for (int X = memoryResRot.second.start(); X < (memoryResRot.second.start() + memoryResRot.second.length()); X++)
                 {
-                    positionMap[storeToRender.atoms[X]].samples.emplace_back(storeToRender.positionArray[X]);
+                    positionMap[atoms[X]].samples.emplace_back(positionArray[X]);
                 }
             }
             memoryResRot = pairs;
             for (int i = pairs.second.start(); i < (pairs.second.start() + pairs.second.length()); i++)
             {
-                positionMap[storeToRender.atoms[i]].samples.emplace_back(storeToRender.positionArray[i]);
+                positionMap[atoms[i]].samples.emplace_back(positionArray[i]);
             }
         }
     }
@@ -140,5 +145,5 @@ AtomPosMap RotamerStore::extractForGUI(RotamerStore &storeToRender)
 
 std::pair<ResidueId,std::string> RotamerStore::name()
 {
-    return std::pair(atoms[0]->residueId(), atoms[0]->chain());
+    return {storage.begin()->first.first, atoms[0]->chain()};
 }
