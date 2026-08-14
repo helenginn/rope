@@ -705,7 +705,8 @@ void Network::establishAtom(::Atom *atom)
 		
 		if (atom->symmetryCopyOf())
 		{
-			bulk->setSymmetryCopyOf(atom->symmetryCopyOf(), atom->symNote());
+			bulk->setSymmetryCopyOf(atom->symmetryCopyOf(), atom->symOp(),
+			                        atom->symNote());
 		}
 
 		AtomProbe *probe = &(add_probe(new AtomProbe(*bulkAtom, *bulkExist,

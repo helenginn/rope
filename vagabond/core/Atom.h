@@ -18,6 +18,36 @@ struct BondNum
 	int num;
 };
 
+/** identifies a specific crystallographic symmetry transform (space
+ *  group operator + lattice translation) - used as a map key so a
+ *  symmetry-mate Atom can be resolved from its mother, and so two
+ *  mates generated under the same transform (e.g. covalently bonded
+ *  atoms of the same mate residue) can find each other via their
+ *  shared mother atoms. Comparable/orderable rather than the free-text
+ *  debug note (_symNote) this sits alongside, which stays purely for
+ *  display. */
+struct SymOp
+{
+	int op = 0;
+	int i = 0;
+	int j = 0;
+	int k = 0;
+
+	bool operator<(const SymOp &other) const
+	{
+		if (op != other.op) return op < other.op;
+		if (i != other.i) return i < other.i;
+		if (j != other.j) return j < other.j;
+		return k < other.k;
+	}
+
+	bool operator==(const SymOp &other) const
+	{
+		return op == other.op && i == other.i && j == other.j &&
+		       k == other.k;
+	}
+};
+
 class Cyclic;
 class BondLength;
 
@@ -367,17 +397,42 @@ public:
 		return _cyclic;
 	}
 	
-	void setSymmetryCopyOf(Atom *const &other, const std::string &note)
+	void setSymmetryCopyOf(Atom *const &other, const SymOp &op,
+	                       const std::string &note)
 	{
 		_symAtom = other;
+		_symOp = op;
 		_symNote = note;
+		other->registerSymmetryEquivalent(op, this);
 	}
-	
+
 	const std::string &symNote() const
 	{
 		return _symNote;
 	}
-	
+
+	const SymOp &symOp() const
+	{
+		return _symOp;
+	}
+
+	/** records that `equivalent` is this atom's own copy under `op` -
+	 *  called automatically by setSymmetryCopyOf() on the mother atom,
+	 *  so this only needs calling directly for an atom that isn't itself
+	 *  a mate (e.g. an asymmetric-unit atom registering its own mates). */
+	void registerSymmetryEquivalent(const SymOp &op, Atom *const &equivalent)
+	{
+		_symEquivalents[op] = equivalent;
+	}
+
+	/** this atom's own copy under `op`, or nullptr if none is currently
+	 *  loaded (e.g. outside whatever radius pulled symmetry mates in). */
+	Atom *symmetryEquivalent(const SymOp &op) const
+	{
+		auto it = _symEquivalents.find(op);
+		return (it == _symEquivalents.end()) ? nullptr : it->second;
+	}
+
 	float charge();
 	
 	void setSelected(const bool &sel)
@@ -429,7 +484,9 @@ private:
 	BackboneType _backboneType = NoOverride;
 
 	Atom *_symAtom = nullptr;
+	SymOp _symOp;
 	std::string _symNote;
+	std::map<SymOp, Atom *> _symEquivalents;
 };
 
 

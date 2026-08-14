@@ -72,8 +72,16 @@ AtomGroup *SymMates::getSymmetryMates(AtomGroup *const &other,
 		return (lsq < distsq && lsq >= 1e-3);
 	};
 
+	// deliberately does not stop at the first (i, j, k, l) that matches -
+	// a special position (e.g. sitting near a 2-/3-/4-fold axis) can have
+	// several distinct symmetry-related copies genuinely nearby at once,
+	// not just one, and all of them need registering as real mates for
+	// the SymOp-keyed equivalence lookup (Atom::symmetryEquivalent()) to
+	// have anything to find later.
 	auto do_on_nearby_unit_cells = [grp]<typename Func>(const Func &func)
 	{
+		bool found = false;
+
 		for (int k = -1; k <= 2; k++)
 		{
 			for (int j = -1; j <= 2; j++)
@@ -87,16 +95,13 @@ AtomGroup *SymMates::getSymmetryMates(AtomGroup *const &other,
 							continue;
 						}
 
-						if (func(i, j, k, l))
-						{
-							return true;
-						}
+						found |= func(i, j, k, l);
 					}
 				}
 			}
 		}
-		
-		return false;
+
+		return found;
 	};
 	
 	auto make_do_sym_op = [grp, to_frac](int l)
@@ -147,11 +152,12 @@ AtomGroup *SymMates::getSymmetryMates(AtomGroup *const &other,
 			if (near)
 			{
 				::Atom *copy = new ::Atom(*atom);
-				std::string note = ("rot " + std::to_string(l) + 
+				std::string note = ("rot " + std::to_string(l) +
 				                    " trans " + std::to_string(i) +
 				                    " " + std::to_string(j) +
 				                    " " + std::to_string(k));
-				copy->setSymmetryCopyOf(atom, note);
+				SymOp op{l, i, j, k};
+				copy->setSymmetryCopyOf(atom, op, note);
 				copy->setInitialPosition(trial);
 
 				for (std::string c : atom->conformerList())
