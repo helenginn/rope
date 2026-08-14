@@ -2,8 +2,8 @@
 #define __vagabond__HeatMapVDW__
 
 #include <vagabond/gui/elements/Scene.h>
+#include <vagabond/utils/Eigen/Dense>
 #include <vagabond/core/PathGroup.h>
-#include <vagabond/utils/svd/PCA.h>
 
 class MatrixBox;
 class MatrixPlot;
@@ -15,12 +15,15 @@ public:
 
     virtual void setup();
 private:
+    void resetMatrix();
+    void printMatrixToTerminal();
+
 	std::vector<std::string> _squareNames;
 	std::vector<std::string> _rowNames;
 	std::vector<std::string> _colNames;
 
-	PCA::Matrix _squareData;
-	PCA::Matrix _rectData;
+	Eigen::MatrixXf _squareData;
+	Eigen::MatrixXf _rectData;
 
 	MatrixPlot *_squarePlot{};
 	MatrixPlot *_rectPlot{};

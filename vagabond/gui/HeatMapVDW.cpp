@@ -1,12 +1,25 @@
 #include "HeatMapVDW.h"
 #include "MatrixPlot.h"
 #include "MatrixBox.h"
+#include "PathGroup.h"
 #include <vagabond/gui/elements/TextButton.h>
 
 HeatMapVDW::HeatMapVDW(Scene *prev, const std::vector<PathGroup> &paths) : Scene(prev)
 {
-/*	int n = (int)paths.size();
-	PCA::setupMatrix(&_squareData, n, n);
+    int rows, cols;
+    std::map<Instance*, std::size_t> rowMap, colMap;
+
+    PathGroup::PathMatrixDims dims = PathGroup::matricise(paths);
+
+    for (const auto& [rowInst, colInst] : dims)
+    {
+        rowMap.try_emplace(rowInst, rowMap.size());
+        colMap.try_emplace(colInst, colMap.size());
+    }
+
+    int n = std::max(rowMap.size(), colMap.size());
+
+	_squareData = Eigen::MatrixXf(n, n);
 
 	for (int i = 0; i < n; i++)
 	{
@@ -14,36 +27,47 @@ HeatMapVDW::HeatMapVDW(Scene *prev, const std::vector<PathGroup> &paths) : Scene
 		{
 			// distinguishable per-cell values so a dragged row/column's
 			// values can be visually traced to where they end up.
-			_squareData[i][j] = i * 0.1 + j * 0.1;
+			_squareData(i, j) = i * 0.1 + j * 0.1;
 		}
 	}
 
-	_rowNames = {"Row0", "Row1", "Row2"};
-	_colNames = {"Col0", "Col1", "Col2", "Col3", "Col4"};
-	PCA::setupMatrix(&_rectData, (int)_rowNames.size(),
-	                 (int)_colNames.size());
+    for (const auto& [inst, index] : rowMap)
+    {
+        _rowNames.push_back(inst->desc());
+    }
 
-	for (size_t i = 0; i < _rowNames.size(); i++)
+    for (const auto& [inst, index] : colMap)
+    {
+        _colNames.push_back(inst->desc());
+    }
+
+	_rectData = Eigen::MatrixXf((int)_rowNames.size(), (int)_colNames.size());
+
+	for (const PathGroup& p : paths)
 	{
-		for (size_t j = 0; j < _colNames.size(); j++)
-		{
-			_rectData[i][j] = i * 0.1 + j * 0.1;
-		}
+        auto r = rowMap[p.front()->startInstance()];
+        auto c = colMap[p.front()->endInstance()];
+		_rectData(r, c) = p.front()->activationEnergy();
 	}
-*/}
+}
 
-/*void MatrixBoxTest::setValueAtOriginal()
+void HeatMapVDW::resetMatrix()
 {
 	// original index (0, 1) - "Alpha" row, "Beta" column - regardless of
 	// how the display has been dragged around since construction.
-	_squareBox->setValueAtOriginal(0, 1, 99);
+	_squareBox->setOriginalMatrix(_rectData);
 }
-*/
+
+void HeatMapVDW::printMatrixToTerminal()
+{
+    std::cout << _rectData << std::endl;
+}
+
 void HeatMapVDW::setup()
 {
 	addTitle("van der Waals");
 
-/*	_squarePlot = new MatrixPlot(_squareData);
+	_squarePlot = new MatrixPlot(_squareData);
 	_squareBox = new MatrixBox(_squarePlot, _squareNames, _squareNames,
 	                          false);
 	_squareBox->setCentre(0.25, 0.5);
@@ -54,8 +78,13 @@ void HeatMapVDW::setup()
 	_rectBox->setCentre(0.75, 0.5);
 	addObject(_rectBox);
 
-	TextButton *setValue = new TextButton("set Alpha/Beta to 99", this);
+	TextButton *setValue = new TextButton("restore original view", this);
 	setValue->setLeft(0.1, 0.8);
-	setValue->setReturnJob([this]() { setValueAtOriginal(); });
+	setValue->setReturnJob([this]() { resetMatrix(); });
 	addObject(setValue);
-*/}
+
+    TextButton *printMatrix = new TextButton("print matrix to terminal", this);
+    printMatrix->setLeft(0.1, 0.9);
+    printMatrix->setReturnJob([this]() { printMatrixToTerminal(); });
+    addObject(printMatrix);
+}
