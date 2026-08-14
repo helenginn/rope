@@ -89,3 +89,17 @@ Metadata *PathGroup::prepareMetadata(bool force)
 	return metadata;
 }
 
+PathGroup::PathMatrixDims PathGroup::matricise(const std::vector<PathGroup> paths)
+{
+    PathMatrixDims dims;
+
+    for(const PathGroup p : paths)
+    {
+        std::pair<Instance *, Instance *> pair;
+        pair = {p.front()->startInstance(), p.front()->endInstance()};
+ 
+        dims.push_back(pair);
+    }
+
+    return dims;
+}

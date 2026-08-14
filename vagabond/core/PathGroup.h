@@ -20,6 +20,7 @@
 #define __vagabond__PathGroup__
 
 #include <vagabond/utils/OpVec.h>
+#include <Path.h>
 
 class Path;
 class PathData;
@@ -49,6 +50,9 @@ public:
 	virtual PathData *preparePathData();
 	virtual Metadata *prepareMetadata(bool force = false);
 
+    typedef std::vector<std::pair<Instance *, Instance *>> PathMatrixDims;
+
+    static PathMatrixDims matricise(const std::vector<PathGroup> paths);
 private:
 
 };
