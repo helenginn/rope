@@ -37,6 +37,7 @@ void RotamerModifier::setup()
     unifiedTorsionFetcher();
     _lib = new RotamerLibrary;
     _bouquet = new Bouquet;
+    generateRotamerMapPosition();
     makePlan();
 }
 RotamerModifier::~RotamerModifier()
@@ -70,23 +71,23 @@ float RotamerModifier::submitJobAndRetrieve(float weight, parameter a)
 void RotamerModifier::move(float weight, parameter xy)
 {
     Result *r = new Result;
-    glm::mat4x4 transfo = glm::mat4x4(1.0f);
+    glm::mat4x4 transformation = glm::mat4x4(1.0f);
     glm::vec3 translation {0.f, 0.f, 0.f};
     if (xy == MoveX && weight != _memoryX)
     {
         translation.y = weight-_memoryX;
-        transfo = glm::translate(transfo, translation);
+        transformation = glm::translate(transformation, translation);
         _memoryX = weight;
-        r->aps = _bouquet->move(transfo, "A");
+        r->aps = _bouquet->move(transformation, "B");
         r->transplantPositions(false);
         r->destroy();
     }
     if (xy == MoveY && weight != _memoryY)
     {
         translation.z = weight-_memoryY;
-        transfo = glm::translate(transfo, translation);
+        transformation = glm::translate(transformation, translation);
         _memoryY = weight;
-        r->aps = _bouquet->move(transfo, "A");
+        r->aps = _bouquet->move(transformation, "B");
         r->transplantPositions(false);
         r->destroy();
     }
@@ -122,14 +123,14 @@ void RotamerModifier::prepareMemory()
     {
         if (_params[idx]->isTorsion())
         {
-            BondTorsion *torsion = static_cast<BondTorsion *>(_params[idx]);
+            BondTorsion *torsion = dynamic_cast<BondTorsion *>(_params[idx]);
             Rot = new RotamerMap;
             if (!_params[idx]->coversMainChain())
             {
                 Rot->initialAngle  = torsion->refinedAngle();
                 Rot->RotamerValue = 0;
                 Rot->loaded = true;
-                _RotamerMemory[idx] = *Rot;
+                _RotMem[idx] = *Rot;
             }
         }
     }
@@ -168,7 +169,7 @@ void RotamerModifier::unifiedTorsionFetcher()
     {
         if (_params[idx]->isTorsion())
             {
-                BondTorsion *torsion = static_cast<BondTorsion *>(_params[idx]);
+                BondTorsion *torsion = dynamic_cast<BondTorsion *>(_params[idx]);
                 if (!_params[idx]->coversMainChain())
                 {
                     float initialTorsion = torsion->refinedAngle();
@@ -179,16 +180,16 @@ void RotamerModifier::unifiedTorsionFetcher()
                         // if (_mode == Slider) //Former function to test sliding through all the rotamers
                         // {
                         //     rotamerNumber = get(0) * (_lib->_allRotamers[resName].size()-1.f);
-                        //     _RotamerMemory[idx].loaded = false;
-                        //     _RotamerMemory[idx].RotamerValue = rotamerNumber;
+                        //     _RotMem[idx].loaded = false;
+                        //     _RotMem[idx].RotamerValue = rotamerNumber;
                         //     float targetTorsion = _lib->_allRotamers[resName][rotamerNumber].chi[torsion->shortDesc()[3]-1 - '0'];
                         //     return targetTorsion - initialTorsion;
                         // }
                         if (_mode == Reset)
                         {
-                            _RotamerMemory[idx].RotamerValue = 0;
-                            _RotamerMemory[idx].loaded = true;
-                            return _RotamerMemory[idx].initialAngle-initialTorsion;
+                            _RotMem[idx].RotamerValue = 0;
+                            _RotMem[idx].loaded = true;
+                            return _RotMem[idx].initialAngle-initialTorsion;
                         }
                         if (_mode == Map)
                         {
@@ -218,52 +219,12 @@ void RotamerModifier::generateRotamerMapPosition()
         }
         _bouquet->storeRotamers(_resBouquet);
         _resBouquet.clear();
-        if (_referential == false) // Rotating the helices to be aligned with the main referential
-        {
-            glm::mat3x3 R {_normal,_x,_y};
-            _normal = glm::inverse(R) * _normal;
-            _x = glm::inverse(R) * _x;
-            _y = glm::inverse(R) * _y;
-            _bouquet->updatePosition(R);
-            std::cout << "position tt" << std::endl;
-            _referential = true;
-        }
-        _bouquet->storeRotRes();
-        Result *r = new Result;
-        r->aps = _bouquet->extractForGUI(_bouquet->store);
-        r->transplantPositions();
-        r->destroy();
-        _map = true;
     }
 }
 
-glm::vec3 RotamerModifier::axisForChain(points p, std::string chainName)
+std::vector<glm::vec3> RotamerModifier::axisForChain(std::string const &chainName)
 {
-    glm::vec3 firstPosition {};
-    glm::vec3 secondPosition {};
-    bool firstFound = false;
-    for (auto atom : _group->atomVector())
-    {
-        if (atom->chain() == chainName && atom->isReporterAtom() && !firstFound)
-        {
-            firstPosition = atom->initialPosition();
-            firstFound = true;
-        }
-        if (atom->chain() == chainName && atom->isReporterAtom() && firstFound)
-        {
-            secondPosition = atom->initialPosition();
-        }
-    }
-    std::cout << "First atom position : " << firstPosition
-    << " and second atom position : " << secondPosition << std::endl;
-    _axis1 = secondPosition - firstPosition;
-    glm::vec3 endLine = firstPosition +_axis1*glm::vec3(1.1);
-    std::cout << "axisForChain :" << std::endl << "\tVector _axis1 :  " << _axis1 << std::endl;
-
-    if (p == Start)
-        return firstPosition-_axis1*glm::vec3(0.3);
-    if (p == End)
-        return endLine;
+    return _bouquet->axis(chainName);
 }
 
 void RotamerModifier::makePlan()
@@ -273,21 +234,37 @@ void RotamerModifier::makePlan()
  * - create two vectors that will enable movement of the moving helix
  */
 {
-    glm::vec3 p1 = axisForChain(Start, "A");
-    glm::vec3 p2 = axisForChain(End, "A");
-    _normal = glm::normalize(p2 - p1); //_normal == axis of the A chain
+    std::vector<glm::vec3> axisTemp = axisForChain("A");
+    _axisMain = (axisTemp[1] - axisTemp[0]);
+    axisTemp = axisForChain("B");
+    _axisSecondary = (axisTemp[1] - axisTemp[0]);
+    _normal = glm::normalize(_axisMain); //_normal == axis of the A chain
     _x = glm::normalize(cross(_normal, vec3(1.0,0.0,0)));
     _y = glm:: normalize(cross(_normal, _x));
+    if (_referential == false) // Rotating the helices to be aligned with the main referential
+    {
+        glm::mat3x3 R {_normal,_x,_y};
+        R = glm::inverse(R);
+        _normal = R * _normal;
+        _x = R * _x;
+        _y = R * _y;
+        _axisMain = R * _axisMain;
+        _axisSecondary = R * _axisSecondary;
+        _bouquet->move(R);
+        std::cout << "position tt" << std::endl;
+        _referential = true;
+        Result *r = new Result;
+        r->aps = _bouquet->extractForGUI();
+        r->transplantPositions();
+        r->destroy();
+        _map = true;
+    }
 }
 std::vector<glm::vec3> RotamerModifier::drawAxis()
 {
-    glm::vec3 startingPoint = {0,0,0};
-    std::vector<glm::vec3> axis;
-    axis.emplace_back(startingPoint);
-    axis.emplace_back(_normal);
-    axis.emplace_back(startingPoint);
-    axis.emplace_back(_x);
-    axis.emplace_back(startingPoint);
-    axis.emplace_back(_y);
-    return axis;
+    std::vector<glm::vec3> points = _bouquet->axis("A",true);
+    std::vector<glm::vec3> points2 = _bouquet->axis("B",true);
+    points.push_back(points2[0]);
+    points.push_back(points2[1]);
+    return points;
 }

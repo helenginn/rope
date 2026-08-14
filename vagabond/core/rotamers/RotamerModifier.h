@@ -27,7 +27,7 @@ public:
     void saveStructure(std::string name);
     void unifiedTorsionFetcher();
     void generateRotamerMapPosition();
-    glm::vec3 axisForChain(points p, std::string chainName);
+    std::vector<glm::vec3> axisForChain(std::string const &chainName);
 
     void makePlan();
     std::vector<glm::vec3> drawAxis();
@@ -42,11 +42,12 @@ private:
     std::vector<Parameter *> _params;
     RotamerLibrary *_lib;
     RotamerMap *Rot;
-    std::map<int, RotamerMap> _RotamerMemory;
+    std::map<int, RotamerMap> _RotMem;
 
-    Bouquet *_bouquet {};
+    Bouquet *_bouquet;
     parameter _mode;
-    glm::vec3 _axis1 {};
+    glm::vec3 _axisMain {};
+    glm::vec3 _axisSecondary {};
     glm::vec3 _x {};
     glm::vec3 _y {};
     glm::vec3 _normal {};

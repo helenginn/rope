@@ -36,12 +36,6 @@ void RotamerView::setup()
         addObject(t);
     }
     {
-        TextButton *n = new TextButton("RotaMap", this);
-        n->setRight(0.2, 0.9);
-        n->setReturnTag("rotaMap");
-        addObject(n);
-    }
-    {
         _line = new Line();
         _line2 = new Line();
         _line3 = new Line();
@@ -59,6 +53,7 @@ void RotamerView::setup()
         addObject(_line6);
         addObject(_line7);
         addObject(_para);
+        _line2->setColour(0.2, 0.9, 0.3);
     }
 }
 
@@ -68,21 +63,16 @@ void RotamerView::buttonPressed(std::string tag, Button *button)
     {
         _modifier->submitJobAndRetrieve(2.f, RotamerModifier::Reset);
     }
-    if (tag == "save") // saving current structure
+    if (tag == "collision") // saving current structure
     {
-        _line4->clearVertices();
-        _line5->clearVertices();
-        _line4->addPoint(_modifier->axisForChain(RotamerModifier::Start, "A"));
-        _line4->addPoint(_modifier->axisForChain(RotamerModifier::End, "A"));
-        _line5->addPoint(_modifier->axisForChain(RotamerModifier::Start, "B"));
-        _line5->addPoint(_modifier->axisForChain(RotamerModifier::End, "B"));
-
-
-    }
-    if (tag == "rotaMap")
-    {
-        _modifier->generateRotamerMapPosition();
-        std::cout << "beep" << std::endl;
+        if (_collision)
+        {
+            _collision = false;
+        }
+        else
+        {
+            _collision = true;
+        }
     }
     if (tag == "axis")
     {
@@ -126,15 +116,25 @@ void RotamerView::finishedDragging(std::string tag, double x, double y)
     {
         _modifier->move(x,RotamerModifier::MoveY);
     }
-    std::vector<std::pair<glm::vec3,glm::vec3>> drawing {};
-    drawing = _modifier->getVertices();
-    _para->clearVertices();
-    for (auto pair : drawing)
+    if (_collision)
     {
-        _para->addParallelepiped(pair.first,pair.second);
+        std::vector<std::pair<glm::vec3,glm::vec3>> drawing {};
+        drawing = _modifier->getVertices();
+        _para->clearVertices();
+        for (auto pair : drawing)
+        {
+            _para->addParallelepiped(pair.first,pair.second);
+        }
+        _para->setAlpha(1.0f);
+        _para-> forceRender();
     }
-    _para->setAlpha(1.0f);
-    _para-> forceRender();
+    _line2->clearVertices();
+    std::vector<glm::vec3> axePoints = _modifier->drawAxis();
+    _line2->addPoint(axePoints[0]);
+    _line2->addPoint(axePoints[1]);
+    _line2->addPoint(axePoints[2], false);
+    _line2->addPoint(axePoints[3]);
+    _line2->forceRender();
 }
 
 void RotamerView::setupSlider()
