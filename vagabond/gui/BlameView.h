@@ -37,10 +37,13 @@ public:
 	virtual void finishedDragging(std::string tag, double x, double y);
 	virtual void mousePressEvent(double x, double y, 
 	                             SDL_MouseButtonEvent button);
+    virtual void buttonPressed(std::string tag, Button *button = nullptr);
 private:
 	void refreshPlot();
 	float refreshPlot(Path *const &path);
 	virtual void sendObject(std::string tag, void *object);
+
+    void printMatrixToTerminal();
 
 	Blame *_blame{};
 	std::thread *_worker = nullptr;

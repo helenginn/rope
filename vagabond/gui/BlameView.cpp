@@ -17,6 +17,7 @@
 // Please email: vagabond @ hginn.co.uk for more details.
 
 #include <vagabond/gui/elements/Slider.h>
+#include <vagabond/gui/elements/TextButton.h>
 #include <vagabond/gui/VagWindow.h>
 #include <vagabond/core/paths/Blame.h>
 #include <mutex>
@@ -51,6 +52,13 @@ void BlameView::setup()
 	                                        "Calculating contacts");
 
 	_worker = new std::thread([this]() { _blame->process(); });
+
+    {
+        TextButton *t = new TextButton("Print to screen", this);
+		t->setRight(0.9, 0.1);
+		t->setReturnTag("print");
+		addObject(t);
+	}
 }
 
 void BlameView::mousePressEvent(double x, double y, 
@@ -154,3 +162,19 @@ void BlameView::refreshPlot()
 	_plot->update();
 }
 
+void BlameView::buttonPressed(std::string tag, Button *button)
+{
+    if (tag == "print")
+    {
+        printMatrixToTerminal();
+    }
+
+    Scene::buttonPressed(tag, button);
+}
+
+void BlameView::printMatrixToTerminal()
+{
+    std::cout << "Matrix values" << std::endl;
+
+    printMatrix(&_data);
+}
