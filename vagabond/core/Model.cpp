@@ -76,6 +76,7 @@ void to_json(json &j, const Model &value)
 		j["cliques"] = value._cliques;
 	}
 	j["datafile"] = value._dataFile;
+	j["proton_settings"] = value._protonSettings;
 }
 
 void from_json(const json &j, Model &value)
@@ -105,6 +106,11 @@ void from_json(const json &j, Model &value)
 	if (j.count("datafile"))
 	{
 		value._dataFile = j.at("datafile");
+	}
+
+	if (j.count("proton_settings"))
+	{
+		value._protonSettings = j.at("proton_settings");
 	}
 
 	value.clickTicker();

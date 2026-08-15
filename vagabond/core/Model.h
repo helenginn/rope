@@ -31,6 +31,7 @@
 #include "Ligand.h"
 #include "Responder.h"
 #include "AtomGroup.h"
+#include "CustomProtonSettings.h"
 
 #include <nlohmann/json.hpp>
 using nlohmann::json;
@@ -188,6 +189,16 @@ public:
 
 	const std::list<Clique> &cliques() const;
 	void setCliques(const std::list<Clique> &cliques);
+
+	CustomProtonSettings &protonSettings()
+	{
+		return _protonSettings;
+	}
+
+	const CustomProtonSettings &protonSettings() const
+	{
+		return _protonSettings;
+	}
 private:
 	void swapChainToEntity(std::string id, std::string entity);
 	void mergeAppropriatePolymers();
@@ -208,6 +219,8 @@ private:
 	std::list<Polymer> _polymers;
 	std::list<Ligand> _ligands;
 	std::list<Clique> _cliques;
+
+	CustomProtonSettings _protonSettings;
 
 	int _loadCounter = 0;
 	std::mutex *_loadMutex = nullptr;
