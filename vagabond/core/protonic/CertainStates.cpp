@@ -18,6 +18,7 @@
 
 #include "CertainStates.h"
 #include "ProbeResult.h"
+#include <vagabond/utils/maths.h>
 
 int dim_for_type(const hnet::Types &type)
 {
@@ -151,7 +152,7 @@ Eigen::MatrixXi CertainStates::distanceMatrix() const
 
 std::vector<float> CertainStates::probsForAve(float ave) const
 {
-	float rt = 2.57;
+	float rt = physiological_rt_kjmol;
 	std::vector<float> probs(state_count());
 	for (size_t i = 0; i < state_count(); i++)
 	{
@@ -163,7 +164,7 @@ std::vector<float> CertainStates::probsForAve(float ave) const
 
 std::vector<float> CertainStates::probsForLocalAve(float &ave) const
 {
-	float rt = 2.57;
+	float rt = physiological_rt_kjmol;
 	std::vector<float> scores(state_count());
 	float sum = 0;
 
