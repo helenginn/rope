@@ -21,6 +21,9 @@
 
 #include <list>
 #include <map>
+#include <optional>
+#include <utility>
+#include <cmath>
 
 #include <vagabond/utils/UndoStack.h>
 #include "Connector.h"
@@ -187,6 +190,38 @@ public:
 		return _model;
 	}
 
+	// ephemeral, non-persisted pH override for testing a small pH nudge
+	// (e.g. OccupanciesView's pH slider) without a full network rebuild -
+	// std::nullopt (the default) means "use the Model's own
+	// CustomProtonSettings::pH()", i.e. the pH this Network was actually
+	// built at. Read live by Network::applyPKaEnergy()'s own getDeltaG
+	// callback (hnet::Energy::energy_wrapper_for_protonation() - see its
+	// own comment for why that stays live even long after scoring).
+	// Does NOT touch the Model, so it never marks EditModel's "outdated"
+	// icon and is never persisted - only a real pH edit via AdjustPhPkas
+	// does that.
+	void setTestPH(std::optional<float> pH)
+	{
+		_testPH = pH;
+	}
+
+	float effectivePH() const;
+
+	// [lower, upper] pH bound within which every ionisable group this
+	// Network actually built still has the same coordination states
+	// available as it did at build time - i.e. how far setTestPH() can
+	// safely wander before results become approximate. A group whose
+	// other state was excluded at build time (chargeStatesForPKa()'s own
+	// >99%/<1% cutoff) because it was clearly irrelevant then doesn't
+	// come back just because a live pH nudge now favours it - the
+	// energy term can only reweight states that were actually built.
+	// {-INFINITY, INFINITY} if nothing this Network built ever sat close
+	// enough to its own pKa for a state to be excluded at all.
+	std::pair<float, float> safePHRange() const
+	{
+		return {_pHLowerBound, _pHUpperBound};
+	}
+
 	void updateModelCliques();
 	void firstOrderLogic();
 	
@@ -208,11 +243,22 @@ private:
 	void bundleRepulsionTerms();
 
 	void setupInactiveAtom(hnet::AtomConf atom);
+
+	// creates a definite covalent bond between two AtomConfs whose
+	// partner probe is already known to exist (ExistenceConnector +
+	// CovalentConnector/CovalentConstant + CovalentProbe, mutual-existence
+	// tied together when occupancies match). Extracted out of
+	// setupInactiveAtom()'s own topology walk so setupCysteine() can reuse
+	// it directly for a disulfide pair, which never goes through
+	// setupInactiveAtom() at all (both SGs register as "active").
+	void makeCertainCovalentBond(hnet::AtomConf atom, hnet::AtomConf connected);
+
 	bool setupAmineNitrogen(hnet::AtomConf atom);
 	bool setupGuessLigand(hnet::AtomConf atom);
 	bool setupCarbonylOxygen(hnet::AtomConf atom);
 	bool setupSingleAlcohol(hnet::AtomConf atom);
 	bool setupLysineAmine(hnet::AtomConf atom);
+	bool setupCysteine(hnet::AtomConf atom);
 	bool setupWater(hnet::AtomConf atom);
 	bool setupSodium(hnet::AtomConf atom);
 	bool setupArginine(hnet::AtomConf atom);
@@ -229,8 +275,48 @@ private:
 	// the CountProbe that displays/samples it, and marks every atom
 	// involved as charge-shared (Coordinated::setChargeShared()) so its
 	// own individual charge probe steps aside in favour of this one.
-	void shareCharges(const std::vector<hnet::AtomConf> &atoms,
-	                  const hnet::Count::Values &allowable);
+	// Returns the merged total connector itself, for callers (currently
+	// just setupHistidine()) that need to tie it into a further,
+	// redundant-but-acyclic constraint of their own.
+	// positionAtoms, if given, is averaged for the probe's on-screen
+	// position instead of atoms itself - e.g. Arginine's shared charge
+	// covers NE/NH1/NH2, whose own centroid sits right on top of CZ, so
+	// it positions the probe from just NH1/NH2 instead.
+	hnet::CountConnector &shareCharges(const std::vector<hnet::AtomConf> &atoms,
+	                                   const hnet::Count::Values &allowable,
+	                                   const std::vector<hnet::AtomConf> &positionAtoms = {});
+
+	// single-atom equivalent of shareCharges()'s CountConstant(sum,
+	// allowable) - pins one atom's own charge directly, for residues
+	// with only one ionisable atom (Lysine, Cysteine, Serine/Threonine/
+	// Tyrosine) rather than a merged multi-atom total.
+	void constrainCharge(hnet::AtomConf atom,
+	                     const hnet::Count::Values &allowable);
+
+	// Henderson-Hasselbalch, using this Network's Model's
+	// CustomProtonSettings (core/CustomProtonSettings.h) - falls back to
+	// a default-constructed one (pH 7, standard pKas) if this Network
+	// has no Model attached. Returns the OR of `protonated` and/or
+	// `deprotonated`, whichever exceed 1% equilibrium population at the
+	// current pH - one bit if pH sits clearly to one side of the named
+	// residue's pKa, both if it's close enough that either is a real
+	// possibility worth sampling.
+	hnet::Count::Values chargeStatesForPKa(const std::string &code,
+	                                       const hnet::Count::Values &protonated,
+	                                       const hnet::Count::Values &deprotonated);
+
+	// attaches the continuous counterpart of chargeStatesForPKa()'s hard
+	// cutoff: a CustomProtonSettings::deprotonationEnergy(code) kJ/mol
+	// term on whichever probe represents `representative`, read off
+	// `charge` at scoring time (Energy::energy_wrapper_for_protonation()).
+	// One call per independent ionisable group - `charge` is either that
+	// one atom's own charge() (single-atom residues) or the merged total
+	// shareCharges() returns (Arginine/Histidine/Asp-Glu), attached to a
+	// single representative member either way so the term is counted
+	// exactly once, never once per atom in a merged group.
+	void applyPKaEnergy(hnet::AtomConf representative, hnet::CountConnector &charge,
+	                    const std::string &code,
+	                    const hnet::Count::Values &deprotonated);
 
 	void findAtomCoordinations(hnet::AtomConf atom);
 
@@ -249,6 +335,14 @@ private:
 	std::list<Clique> _cliques;
 	Model *_model{};
 	Progressor *_progress{};
+
+	std::optional<float> _testPH;
+
+	// widened (see chargeStatesForPKa()'s own update to these) by every
+	// ionisable group actually built with only one of its two
+	// protonated/deprotonated states present - see safePHRange().
+	float _pHLowerBound = -INFINITY;
+	float _pHUpperBound = INFINITY;
 	hnet::Energy *_energy{};
 
 	std::vector<std::string> _impromptuCollapses;

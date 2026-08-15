@@ -41,6 +41,7 @@ public:
 		Angle,
 		Bulk,
 		Repulsion,
+		Protonation,
 		Unknown,
 	};
 
@@ -103,6 +104,36 @@ public:
 	    ExistenceConnector &groupExist,
 	    const std::vector<Probe::PendingRepulsion> &pairs,
 	    std::shared_ptr<GuiltVersion> lastRound);
+
+	/** turns a live ΔG getter (kJ/mol, deprotonated relative to protonated
+	 * - see CustomProtonSettings::deprotonationEnergyFor()) into a state-
+	 * dependent energy term: 0 while charge's own resolved value equals
+	 * deprotonated, getDeltaG() otherwise. Deliberately generic (knows
+	 * nothing about pH/pKa itself, or which residue this is) - the caller
+	 * has already reduced the whole Henderson-Hasselbalch relationship
+	 * down to a callback. Once CertainStates' own Boltzmann weighting
+	 * (score() -> probsForAve(), same physiological_rt_kjmol - see
+	 * maths.h) is applied across a fully-enumerated state set, the
+	 * resulting probability ratio between the two states reproduces
+	 * deprotonated:protonated = 10^(pH-pKa), independent of whatever
+	 * baseline the caller chose for the protonated side, since only the
+	 * *difference* the Boltzmann factor sees here ever matters.
+	 *
+	 * Deliberately bypasses modulate() (unlike every other energy source
+	 * here) - modulate() evaluates each source's raw function once per
+	 * GuiltVersion and bakes the result into the GetEnergy closure it
+	 * returns, which is exactly right for sources that only change
+	 * between scoring rounds, but wrong here: Network::setTestPH() (see
+	 * its own comment) needs a pH nudge to be reflected even in results
+	 * that reuse an already-scored GetScore/GetEnergy from a finished
+	 * exhaustive search (CertainStates::score() calling the same cached
+	 * closure repeatedly, long after the scoring round it was built in).
+	 * So this evaluates getDeltaG(), source_on(Protonation) and
+	 * amplification(Protonation) fresh on every single call instead. */
+	EnergyWrapper energy_wrapper_for_protonation(CountConnector &charge,
+	                                             ExistenceConnector &existence,
+	                                             Count::Values deprotonated,
+	                                             const std::function<float()> &getDeltaG);
 private:
 	
 	typedef std::pair<GetEnergy, Source> SourcedEnergy;

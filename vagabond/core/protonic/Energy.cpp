@@ -29,6 +29,7 @@ Energy::Energy()
 	_sources[Distance] = false;
 	_sources[Angle] = false;
 	_sources[Repulsion] = false;
+	_sources[Protonation] = false;
 }
 
 hnet::EnergyWrapper
@@ -380,6 +381,56 @@ Energy::energy_wrapper_for_clash_repulsion(
 		}
 
 		return inner(gv);
+	};
+}
+
+hnet::EnergyWrapper
+Energy::energy_wrapper_for_protonation(CountConnector &charge,
+                                       ExistenceConnector &existence,
+                                       Count::Values deprotonated,
+                                       const std::function<float()> &getDeltaG)
+{
+	return [this, &charge, &existence, 
+	        deprotonated, getDeltaG](GuiltVersion) -> hnet::GetEnergy
+	{
+		// an absent atom/group's charge is meaningless (never resolved to
+		// one value - see Network::applyPKaEnergy()'s own comment on
+		// CountProbe::certainValueAsInt()), so existence must be checked
+		// directly rather than folded into the deprotonated comparison
+		// below - reading charge.value() at all while absent is what
+		// broke the pH slider before this fix.
+		if (existence.value() == hnet::Existence::Absent)
+		{
+			return []() { return 0.f; };
+		}
+		// charge's own value is read HERE, once per GuiltVersion - same
+		// contract modulate() gives every other energy source.
+		// ExhaustiveSearch::score_wider_clique() calls Probe::energy(gv)
+		// exactly once per candidate state, with charge holding that
+		// candidate's own value at the time; reading it again later, from
+		// inside the returned GetEnergy, would just see charge's current
+		// resting value - the same one regardless of which state i this
+		// GetScore closure is nominally scoring - which would make this
+		// term a constant added to every state alike, cancelling out of
+		// probsForAve()'s (ave - score(i)) entirely and silently
+		// producing no effect at all.
+		bool isDeprotonated = (charge.value() == deprotonated);
+		
+		// getDeltaG()/source_on()/amplification(), unlike charge's own
+		// value above, deliberately do stay live - re-evaluated on every
+		// call to the returned GetEnergy, not just once here - see this
+		// function's own header comment for why (Network::setTestPH()
+		// needs to affect results even from an already-cached GetScore).
+		return [this, isDeprotonated, getDeltaG]() -> float
+		{
+			if (!source_on(Protonation))
+			{
+				return 0.f;
+			}
+			float full = getDeltaG() * exp(amplification(Protonation));
+			float split = (full / 2.f) * (isDeprotonated ? 1 : -1);
+			return split;
+		};
 	};
 }
 

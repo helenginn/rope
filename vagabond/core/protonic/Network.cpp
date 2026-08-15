@@ -97,8 +97,9 @@ shareProperty(Network *me, const std::vector<AtomConf> &atoms,
 	return sum;
 }
 
-void Network::shareCharges(const std::vector<AtomConf> &atoms,
-                           const Count::Values &allowable)
+CountConnector &Network::shareCharges(const std::vector<AtomConf> &atoms,
+                                      const Count::Values &allowable,
+                                      const std::vector<AtomConf> &positionAtoms)
 {
 	auto get_charges = [this](AtomConf atom)
 	{
@@ -107,9 +108,11 @@ void Network::shareCharges(const std::vector<AtomConf> &atoms,
 
 	CountConnector &shared = shareProperty(this, atoms, get_charges, allowable);
 
+	const std::vector<AtomConf> &posAtoms = positionAtoms.size() ?
+	                                        positionAtoms : atoms;
 	CountProbe &probe =
 	add_probe(new CountProbe(shared, *atomMap()[atoms.front()]->existence(),
-	                         atoms, 0), true);
+	                         posAtoms, 0), true);
 
 	// wire the shared charge probe into the others() graph against every
 	// atom it covers, so it joins whichever subnetwork/subdivision they
@@ -123,6 +126,111 @@ void Network::shareCharges(const std::vector<AtomConf> &atoms,
 		probeForAtom(ac)->register_probe(&probe);
 		probe.register_probe(probeForAtom(ac));
 	}
+
+	return shared;
+}
+
+void Network::constrainCharge(AtomConf atom, const Count::Values &allowable)
+{
+	CountConnector *charge = _atomMap[atom]->charge();
+	add_constraint(new CountConstant(*charge, allowable));
+}
+
+Count::Values Network::chargeStatesForPKa(const std::string &code,
+                                          const Count::Values &protonated,
+                                          const Count::Values &deprotonated)
+{
+	CustomProtonSettings defaults;
+	const CustomProtonSettings &settings =
+	_model ? _model->protonSettings() : defaults;
+
+	float pH = settings.pH();
+	float pKa = settings.pKa(code);
+
+	// Henderson-Hasselbalch: fraction deprotonated = 1 / (1 + 10^(pKa-pH))
+	float fracDeprotonated = 1.f / (1.f + pow(10.f, pKa - pH));
+
+	Count::Values result = Count::Values(0);
+
+	bool protonatedIncluded = (fracDeprotonated < 0.99f);
+	bool deprotonatedIncluded = (fracDeprotonated > 0.01f);
+
+	if (protonatedIncluded)
+	{
+		result = Count::Values(result | protonated);
+	}
+	if (deprotonatedIncluded)
+	{
+		result = Count::Values(result | deprotonated);
+	}
+
+	// widen the excluded side's bound on safePHRange() - see its own
+	// comment. log10(99) is the pH offset from pKa at which
+	// fracDeprotonated crosses 1%/99% (solving fracDeprotonated=0.01 or
+	// 0.99 in the formula above). A group with both states already
+	// built (the ordinary case near its own pKa) leaves both bounds
+	// untouched - nothing to lose by a pH nudge in either direction.
+	if (!deprotonatedIncluded)
+	{
+		_pHUpperBound = std::min(_pHUpperBound, pKa - log10(99.f));
+	}
+	if (!protonatedIncluded)
+	{
+		_pHLowerBound = std::max(_pHLowerBound, pKa + log10(99.f));
+	}
+
+	return result;
+}
+
+float Network::effectivePH() const
+{
+	if (_testPH)
+	{
+		return *_testPH;
+	}
+
+	CustomProtonSettings defaults;
+	const CustomProtonSettings &settings =
+	_model ? _model->protonSettings() : defaults;
+	return settings.pH();
+}
+
+void Network::applyPKaEnergy(AtomConf representative, CountConnector &charge,
+                             const std::string &code,
+                             const Count::Values &deprotonated)
+{
+	AtomProbe *probe = _atomMap[representative]->probe();
+
+	// re-reads this Network's own live effectivePH() (and the pKa this
+	// residue was built with, fixed) on every call, not just once here -
+	// see hnet::Energy::energy_wrapper_for_protonation()'s own comment
+	// for why that matters.
+	auto getDeltaG = [this, code]()
+	{
+		CustomProtonSettings defaults;
+		const CustomProtonSettings &settings =
+		_model ? _model->protonSettings() : defaults;
+		return CustomProtonSettings::deprotonationEnergyFor(settings.pKa(code),
+		                                                    effectivePH());
+	};
+
+	// CountProbe::certainValueAsInt() casts charge.value() straight to
+	// int regardless of *why* it's certain - including the case where
+	// this atom/group is certain only because it's Absent (existence
+	// false), which leaves charge's own belief holding every bit
+	// simultaneously (never resolved to a single state, since an absent
+	// atom's charge is meaningless) rather than the one true value. That
+	// full bitmask fails is_certain()'s popcount==1 check, so
+	// energy_wrapper_for_protonation must not trust charge.value() at
+	// all while existence disagrees - checked explicitly here rather
+	// than folded into the deprotonated comparison, since "absent" and
+	// "protonated" are both just "not deprotonated" but need to be told
+	// apart for display/debugging.
+	ExistenceConnector &exist = probe->existence();
+
+	probe->addEnergyWrapper(
+	energy().energy_wrapper_for_protonation(charge, exist,
+	                                        deprotonated, getDeltaG));
 }
 
 bool Network::setupSingleAlcohol(AtomConf atom)
@@ -141,6 +249,18 @@ bool Network::setupSingleAlcohol(AtomConf atom)
 
 	_atomMap[atom]->addCoordinationState(Count::Four, Count::Zero,
 	                                   Count::Six);
+	_atomMap[atom]->addCoordinationState(Count::Four, Count::mOne, Count::Six);
+
+	// Ser/Thr/Tyr's -OH deprotonating to an alkoxide/phenolate - default
+	// pKas (13.5/13.5/10.5, see CustomProtonSettings' constructor) are
+	// all high enough that this stays essentially always Zero at
+	// physiological pH, but genuinely opens up at high pH.
+	Count::Values chargeStates = chargeStatesForPKa(atom.ptr->code(),
+	                                                Count::Zero, Count::mOne);
+	constrainCharge(atom, chargeStates);
+	applyPKaEnergy(atom, *_atomMap[atom]->charge(), atom.ptr->code(),
+	              Count::mOne);
+
 	return true;
 }
 
@@ -151,8 +271,94 @@ bool Network::setupLysineAmine(AtomConf atom)
 		return false;
 	}
 
-	_atomMap[atom]->addCoordinationState(Count::Four, Count::One,
-	                                   Count::Five);
+	_atomMap[atom]->addCoordinationState(Count::Four, Count::Zero, Count::Five);
+	_atomMap[atom]->addCoordinationState(Count::Four, Count::One, Count::Five);
+
+	Count::Values chargeStates = chargeStatesForPKa("LYS", Count::One,
+	                                                Count::Zero);
+	constrainCharge(atom, chargeStates);
+	applyPKaEnergy(atom, *_atomMap[atom]->charge(), "LYS", Count::Zero);
+
+	return true;
+}
+
+bool Network::setupCysteine(AtomConf atom)
+{
+	if (!(atom.ptr->atomName() == "SG" && atom.ptr->code() == "CYS"))
+	{
+		return false;
+	}
+
+	// a disulfide-bonded SG is a different chemical species from a free
+	// thiol - always neutral, never protonatable (no free valence for
+	// either an -SH proton or a lone-pair-bearing thiolate). Knotter
+	// already perceives the cross-residue SG-SG BondLength (via the
+	// geometry dictionary's own disulfide entry), but that perception is
+	// per-Atom, not per-AtomConf, so it's only trusted here as far as "a
+	// candidate disulfide partner atom exists at all" - alt-confs can sit
+	// in and out of a disulfide independently (per-atom topology can't
+	// tell them apart), so the actual bonded-or-not decision for *this*
+	// conformer is made below from real 3D distance.
+	::Atom *partnerAtom = nullptr;
+	for (int i = 0; i < atom.ptr->bondLengthCount(); i++)
+	{
+		::Atom *connect = atom.ptr->connectedAtom(i);
+		if (connect->atomName() == "SG" && connect->code() == "CYS")
+		{
+			partnerAtom = connect;
+			break;
+		}
+	}
+
+	if (partnerAtom)
+	{
+		// borrows the partner's own conformer letter, same convention
+		// setupInactiveAtom()'s own cross-residue bond discovery already
+		// uses for every other inter-residue bond - not guaranteed to be
+		// the matching alt-conf, hence the distance check below rather
+		// than trusting it outright.
+		AtomConf partner = {partnerAtom, atom.conf};
+		float dist = glm::length(atom.soft_position() -
+		                         partner.soft_position());
+
+		// real S-S disulfide bonds sit close to 2.05 A; 2.5 A is
+		// generous while being nowhere near the scale of "this
+		// conformer isn't really the one that's bonded" - same margin
+		// setupInactiveAtom() uses for its own symmetry-mate sanity
+		// check.
+		if (dist < 2.5f)
+		{
+			_atomMap[atom]->addCoordinationState(Count::Four, Count::Zero,
+			                                     Count::Six);
+
+			// both SGs' own setupCysteine() call reach here independently
+			// - only one side should actually create the shared covalent
+			// bond, so an arbitrary but deterministic tie-break (AtomConf's
+			// own stable ordering) keeps it from being created twice.
+			if (atom < partner)
+			{
+				makeCertainCovalentBond(atom, partner);
+			}
+
+			return true;
+		}
+	}
+
+	// free thiol (SG neutral -SH, or deprotonated -1 thiolate).
+	// geometry/neutral-electron numbers borrowed from Methionine's own
+	// (non-ionisable) sulphur (setupMethionine()) for both states, by
+	// analogy rather than independent verification - unlike the other
+	// residues touched alongside this, Cysteine had no coordination
+	// modelling at all before this, so these two numbers specifically
+	// are worth double-checking against a real structure.
+	_atomMap[atom]->addCoordinationState(Count::Four, Count::Zero, Count::Six);
+	_atomMap[atom]->addCoordinationState(Count::Four, Count::mOne, Count::Six);
+
+	Count::Values chargeStates = chargeStatesForPKa("CYS", Count::Zero,
+	                                                Count::mOne);
+	constrainCharge(atom, chargeStates);
+	applyPKaEnergy(atom, *_atomMap[atom]->charge(), "CYS", Count::mOne);
+
 	return true;
 }
 
@@ -231,8 +437,52 @@ bool Network::setupHistidine(AtomConf atom)
 		return true;
 	}
 
-	const Count::Values charge_sum = Count::OneOrZero;
-	shareCharges({atom, partner}, charge_sum);
+	// histidine's imidazole has two relevant pKas (see
+	// CustomProtonSettings' constructor) - HIS2 gates the +1 (doubly
+	// protonated) <-> 0 (singly protonated) boundary, which is what
+	// each nitrogen's own Count::OneOrZero states above actually
+	// represent. HIS1 gates the far rarer 0 <-> -1 (imidazolate anion)
+	// boundary - read here for completeness, but masked back out below,
+	// since neither nitrogen has an mOne-compatible addCoordinationState
+	// yet to make that boundary actually representable; without the
+	// mask, a high enough pH could ask for an mOne total that the
+	// per-atom states can never satisfy.
+	Count::Values chargeSum = Count::Values(
+	(chargeStatesForPKa("HIS2", Count::One, Count::Zero) |
+	 chargeStatesForPKa("HIS1", Count::Zero, Count::mOne)));
+	CountConnector &sum = shareCharges({atom, partner}, chargeSum);
+	applyPKaEnergy(atom, sum, "HIS2", Count::Zero);
+
+	// redundant-but-acyclic tie from the shared charge total straight to
+	// the donor count. shareCharges()'s own CountAdder(chargeND1,
+	// chargeNE2, sum) can deadlock: each nitrogen's own charge derives
+	// from _covalent, which for a ring nitrogen is itself ambiguous (the
+	// imidazole's two Kekule resonance forms both satisfy CE1's own
+	// covalent-bond-count-to-4 constraint - see linkCovalentBonds() - so
+	// which specific ring bond is "double" never resolves on its own),
+	// and that ambiguity sits on a cycle through ND1, CE1, NE2 and back
+	// to sum, which plain pairwise CountAdder propagation can't see
+	// through. Each nitrogen's own H-bond-donor count doesn't have that
+	// problem though: it's 1 if this N bears the ring's proton (and so
+	// contributes to a positive charge), 0 if it doesn't (accepts only) -
+	// so donorND1 + donorNE2 always equals ring charge + 1, regardless of
+	// which tautomer holds the proton (0 -> 1 neutral, +1 -> 2 doubly
+	// protonated, -1 -> 0 imidazolate). Unlike the cyclic covalent route,
+	// this only depends on each nitrogen's own resolved donor decree, so
+	// it converges independently of the ring's Kekule ambiguity.
+	CountConnector *dND1 = _atomMap[partner]->allDonors();
+	CountConnector *dNE2 = _atomMap[atom]->allDonors();
+
+	CountConnector &totalDonors = add(new CountConnector());
+	totalDonors.setDesc("total donor bonds across His ring for " +
+	                    atom.desc());
+	add_constraint(new CountAdder(*dND1, *dNE2, totalDonors));
+
+	CountConnector &one = add(new CountConnector());
+	one.setDesc("constant one for His ring charge tie");
+	add_constraint(new CountConstant(one, Count::One));
+
+	add_constraint(new CountAdder(sum, one, totalDonors));
 
 	return true;
 }
@@ -277,24 +527,30 @@ bool Network::setupCarboxylOxygen(AtomConf atom)
 		return false;
 	}
 
-	Count::Values charge = Count::mOneOrZero;
-	Count::Values valency = Count::Three;
-	Count::Values charge_sum = Count::mOneOrZero;
-	charge_sum = Count::mOne;
-	const Count::Values coord_num = Count::Values(Count::Three | Count::Four);
-
 	_atomMap[atom]->addCoordinationState(Count::Three, Count::Zero, Count::Six);
 	_atomMap[atom]->addCoordinationState(Count::Three, Count::mOne, Count::Six);
+	_atomMap[atom]->showCharge(false);
 
 	_atomMap[p]->addCoordinationState(Count::Three, Count::Zero, Count::Six);
 	_atomMap[p]->addCoordinationState(Count::Three, Count::mOne, Count::Six);
+	_atomMap[p]->showCharge(false);
 
-//	_atomMap[atom]->showCharge(false);
-//	_atomMap[partner]->showCharge(false);
+	// OXT (the C-terminal carboxyl) isn't one of the tracked side
+	// chains - stays fixed fully deprotonated as before; ASP/GLU's own
+	// side chains are pH/pKa-aware.
+	Count::Values charge_sum = Count::mOne;
+	bool ionisable = (atom.ptr->code() == "ASP" || atom.ptr->code() == "GLU");
+	if (ionisable)
+	{
+		charge_sum = chargeStatesForPKa(atom.ptr->code(), Count::Zero,
+		                                Count::mOne);
+	}
 
-//	return true;
-
-	shareCharges({atom, p}, charge_sum);
+	CountConnector &sum = shareCharges({atom, p}, charge_sum);
+	if (ionisable)
+	{
+		applyPKaEnergy(atom, sum, atom.ptr->code(), Count::mOne);
+	}
 
 	return true;
 }
@@ -388,14 +644,14 @@ bool Network::setupArginine(AtomConf atom)
 		return true;
 	}
 
-	// the guanidinium is essentially always protonated at physiological
-	// pH, so - for now - the +1 delocalised across all three nitrogens is
-	// treated as a fixed total rather than an ambiguous one (unlike
-	// Histidine's OneOrZero). This is expected to become pH/pKa-aware
-	// (any total with, say, >1% likelihood) once that slider work lands;
-	// shareCharges()'s `allowable` is exactly the parameter that logic
-	// would come back and replace here.
-	shareCharges({atom, nh1, nh2}, Count::One);
+	// the +1 delocalised across all three nitrogens, pH/pKa-aware via
+	// ARG's own pKa (12.5 by default - see CustomProtonSettings'
+	// constructor) - stays fixed One at any physiologically realistic
+	// pH, but genuinely opens up toward Zero at high pH.
+	Count::Values chargeSum = chargeStatesForPKa("ARG", Count::One,
+	                                             Count::Zero);
+	CountConnector &sum = shareCharges({atom, nh1, nh2}, chargeSum, {nh1, nh2});
+	applyPKaEnergy(atom, sum, "ARG", Count::Zero);
 
 	return true;
 }
@@ -430,88 +686,87 @@ bool Network::setupTryptophan(AtomConf atom)
 	return true;
 }
 
+void Network::makeCertainCovalentBond(AtomConf atom, AtomConf connected)
+{
+	AtomProbe *probe = _atom2Probe[atom];
+	AtomProbe *other = _atom2Probe[connected];
+	std::ostringstream ss;
+	ss << atom << " and " << connected;
+
+	ExistenceConnector &covalent = add(new ExistenceConnector());
+	covalent.setDesc("covalent bond between " + ss.str());
+	ExistenceConnector &left = probe->existence();
+	ExistenceConnector &right = other->existence();
+
+	float diff = abs(atom.occupancy() - connected.occupancy());
+
+	if (diff < 0.05)
+	{
+		add_constraint(new MutualExistence(left, covalent));
+		add_constraint(new MutualExistence(covalent, left));
+		add_constraint(new MutualExistence(covalent, right));
+		add_constraint(new MutualExistence(right, covalent));
+
+		// both atoms' existence is unambiguously tied together here
+		// (matching-letter conformer, matching occupancy) - lets
+		// Coordinated::add_repulsion bundle a shared clash-repulsion
+		// term across them instead of each independently carrying
+		// its own (see registerMutualExistence()'s own comment). Only
+		// worth recording where there is actual alt-conf ambiguity
+		// nearby (at least one side has more than one conformer) -
+		// diff < 0.05 is trivially true for any ordinary
+		// single-conformer bond (occupancy always 1.0), so without
+		// this every covalent bond in the whole structure would
+		// qualify, turning mutualExistenceNeighbours() into the
+		// entire covalent backbone as one connected component.
+		if (atom.ptr->conformerList().size() > 1 ||
+		    connected.ptr->conformerList().size() > 1)
+		{
+			probe->registerMutualExistence(other);
+			other->registerMutualExistence(probe);
+		}
+	}
+	else
+	{
+		std::cout << "Mutual existence definition MISSING: [" << left << ", "
+		<< covalent << ", " << right << "] due to occupancy difference of "
+		<< diff << std::endl;
+		std::cout << "\t" << atom.occupancy() << " vs " <<
+		connected.occupancy() << std::endl;
+		add_constraint(new PeggedExistence(left, covalent, right));
+	}
+
+	std::cout << "Making certain bond between " << ss.str() << std::endl;
+
+	/*
+	bool dbond = false;
+	dbond |= either_are_named_couple("C", "O")(connected, atom);
+
+	if (atom.ptr->code() == "ASN" || atom.ptr->code() == "GLN")
+	{
+		dbond |= either_are_named_couple("CG", "OD1")(connected, atom);
+		dbond |= either_are_named_couple("CD", "OE1")(connected, atom);
+	}
+	*/
+
+	Covalent::Values status = covalent_status_for_bond(connected, atom);
+	CovalentConnector &cov = add(new CovalentConnector());
+	cov.setDesc("covalent bond between " + probe->desc() + " and " +
+	            other->desc());
+	add_constraint(new CovalentConstant(cov, status));
+	BondProbe &bp = add_probe(new CovalentProbe(*probe, *other,
+	                                             covalent, cov));
+	bp.addEnergyWrapper(energy().energy_wrapper_for_covalent(bp));
+
+	if (atom.ptr->elementSymbol() == "H" ||
+	    connected.ptr->elementSymbol() == "H")
+	{
+		bp.setHide(-1, false);
+	}
+}
+
 void Network::setupInactiveAtom(AtomConf atom)
 {
-	auto make_certain_covalent_bond = [this]
-	(AtomConf atom, AtomConf connected)
-	{
-		AtomProbe *probe = _atom2Probe[atom];
-		AtomProbe *other = _atom2Probe[connected];
-		std::ostringstream ss;
-		ss << atom << " and " << connected;
-
-		ExistenceConnector &covalent = add(new ExistenceConnector());
-		covalent.setDesc("covalent bond between " + ss.str());
-		ExistenceConnector &left = probe->existence();
-		ExistenceConnector &right = other->existence();
-
-		float diff = abs(atom.occupancy() - connected.occupancy());
-
-		if (diff < 0.05)
-		{
-			add_constraint(new MutualExistence(left, covalent));
-			add_constraint(new MutualExistence(covalent, left));
-			add_constraint(new MutualExistence(covalent, right));
-			add_constraint(new MutualExistence(right, covalent));
-
-			// both atoms' existence is unambiguously tied together here
-			// (matching-letter conformer, matching occupancy) - lets
-			// Coordinated::add_repulsion bundle a shared clash-repulsion
-			// term across them instead of each independently carrying
-			// its own (see registerMutualExistence()'s own comment). Only
-			// worth recording where there is actual alt-conf ambiguity
-			// nearby (at least one side has more than one conformer) -
-			// diff < 0.05 is trivially true for any ordinary
-			// single-conformer bond (occupancy always 1.0), so without
-			// this every covalent bond in the whole structure would
-			// qualify, turning mutualExistenceNeighbours() into the
-			// entire covalent backbone as one connected component.
-			if (atom.ptr->conformerList().size() > 1 ||
-			    connected.ptr->conformerList().size() > 1)
-			{
-				probe->registerMutualExistence(other);
-				other->registerMutualExistence(probe);
-			}
-		}
-		else
-		{
-			std::cout << "Mutual existence definition MISSING: [" << left << ", "
-			<< covalent << ", " << right << "] due to occupancy difference of "
-			<< diff << std::endl;
-			std::cout << "\t" << atom.occupancy() << " vs " <<
-			connected.occupancy() << std::endl;
-			add_constraint(new PeggedExistence(left, covalent, right));
-		}
-
-		std::cout << "Making certain bond between " << ss.str() << std::endl;
-
-		/*
-		bool dbond = false;
-		dbond |= either_are_named_couple("C", "O")(connected, atom);
-
-		if (atom.ptr->code() == "ASN" || atom.ptr->code() == "GLN")
-		{
-			dbond |= either_are_named_couple("CG", "OD1")(connected, atom);
-			dbond |= either_are_named_couple("CD", "OE1")(connected, atom);
-		}
-		*/
-
-		Covalent::Values status = covalent_status_for_bond(connected, atom);
-		CovalentConnector &cov = add(new CovalentConnector());
-		cov.setDesc("covalent bond between " + probe->desc() + " and " +
-		            other->desc());
-		add_constraint(new CovalentConstant(cov, status));
-		BondProbe &bp = add_probe(new CovalentProbe(*probe, *other,
-		                                             covalent, cov));
-		bp.addEnergyWrapper(energy().energy_wrapper_for_covalent(bp));
-
-		if (atom.ptr->elementSymbol() == "H" ||
-		    connected.ptr->elementSymbol() == "H")
-		{
-			bp.setHide(-1, false);
-		}
-	};
-
 	auto make_maybe_covalent_bond = [this]
 	(AtomConf atom, AtomConf connected)
 	{
@@ -618,7 +873,7 @@ void Network::setupInactiveAtom(AtomConf atom)
 		{
 			std::cout << "Definitive bond between " << atom << " and "
 			<< connected << std::endl;
-			make_certain_covalent_bond(atom, connected);
+			makeCertainCovalentBond(atom, connected);
 
 		}
 		else if (!other)
@@ -716,6 +971,7 @@ void Network::findAtomCoordinations(AtomConf atom)
 	{
 		found |= setupAmineNitrogen(atom);
 		found |= setupLysineAmine(atom);
+		found |= setupCysteine(atom);
 		found |= setupAsnGlnNitrogen(atom);
 		found |= setupCarbonylOxygen(atom);
 		found |= setupCarboxylOxygen(atom);
