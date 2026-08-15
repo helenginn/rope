@@ -29,10 +29,16 @@
 #include <vagabond/core/AtomGroup.h>
 #include <vagabond/core/Environment.h>
 #include <vagabond/core/ResidueRange.h>
+#include <vagabond/core/Progressor.h>
+#include <vagabond/core/Model.h>
+#include <vagabond/core/files/PdbFile.h>
 #include <vagabond/utils/DoJob.h>
 #include <vagabond/gui/CliqueView.h>
 #include <vagabond/gui/ProblemReviewView.h>
 #include <vagabond/gui/HBondAnalysisControl.h>
+#include <vagabond/gui/EditModel.h>
+#include <vagabond/gui/Toolkit.h>
+#include <vagabond/gui/VagWindow.h>
 #include <vagabond/gui/elements/AskYesNo.h>
 #include <vagabond/gui/elements/AskForText.h>
 #include <vagabond/gui/elements/BadChoice.h>
@@ -43,8 +49,8 @@
 #include <vagabond/gui/elements/Menu.h>
 #include <fstream>
 
-ProtonNetworkView::ProtonNetworkView(Scene *scene, Network &network) 
-: Scene(scene), Mouse3D(scene), IndexResponseView(scene), _network(network)
+ProtonNetworkView::ProtonNetworkView(Scene *scene, Model *model)
+: Scene(scene), Mouse3D(scene), IndexResponseView(scene), _model(model)
 {
 
 	_translation.z -= 50;
@@ -54,6 +60,14 @@ ProtonNetworkView::ProtonNetworkView(Scene *scene, Network &network)
 
 ProtonNetworkView::~ProtonNetworkView()
 {
+	// tells any build still running on a background thread (see
+	// buildNetwork()) to discard its result instead of touching this
+	// (about to be gone) view from its main-thread completion job.
+	if (_buildCancelled)
+	{
+		_buildCancelled->store(true);
+	}
+
 	delete _shifter;
 
 	// every ProbeAtom/ProbeBond/ProbeCharge/CliqueView added via
@@ -64,12 +78,171 @@ ProtonNetworkView::~ProtonNetworkView()
 	// point at freed memory.
 	deleteObjects();
 
-	delete &_network;
+	delete _network;
+}
+
+void ProtonNetworkView::clearNetworkObjects()
+{
+	// IndexResponseView keeps its own separate _responders list (for
+	// GPU-picking/interaction, populated by addIndexResponder() in
+	// findAtomProbes()) - untouched by removeObject()/deleteObjects(),
+	// and IndexResponder's own destructor doesn't self-unregister either
+	// (see its own header). Must run before the deletions below, while
+	// every entry is still a live object clearResponders() can safely
+	// call clearView() on - otherwise every one of these becomes a
+	// dangling pointer the moment its probe is deleted, silently
+	// tolerated on a one-off scene teardown (nothing reallocates over
+	// that freed memory before the process moves on) but fatal on a
+	// rebuild, where findAtomProbes() immediately allocates a fresh batch
+	// of probes highly likely to land in that same just-freed memory.
+	clearResponders();
+
+	// same explicit casts findAtomProbes() itself uses when adding these
+	// - ProbeAtom/ProbeBond/ProbeCharge each inherit Renderable via two
+	// distinct paths (their FloatingText/Image/FloatingImage half and
+	// their IndexResponder half), so an unqualified Renderable* conversion
+	// is ambiguous.
+	for (auto &pr : _textProbes)
+	{
+		removeObject((FloatingText *)pr.second);
+		delete pr.second;
+	}
+	_textProbes.clear();
+
+	for (auto &pr : _bondProbes)
+	{
+		removeObject((Image *)pr.second);
+		delete pr.second;
+	}
+	_bondProbes.clear();
+
+	for (auto &pr : _countProbes)
+	{
+		removeObject((FloatingImage *)pr.second);
+		delete pr.second;
+	}
+	_countProbes.clear();
+
+	_allProbes.clear();
+	_hProbes.clear();
+
+	if (_cv)
+	{
+		removeObject(_cv);
+		delete _cv;
+		_cv = nullptr;
+	}
+
+	if (_menuButton)
+	{
+		removeObject(_menuButton);
+		delete _menuButton;
+		_menuButton = nullptr;
+	}
+
+	delete _shifter;
+	_shifter = nullptr;
+	_reach.clear();
+
+	_manual = nullptr;
+	_active = nullptr;
+	_activeProbe = nullptr;
+	_activeClique = nullptr;
+	_analysing = false;
+
+	delete _network;
+	_network = nullptr;
+}
+
+void ProtonNetworkView::buildNetwork()
+{
+	// supersedes any build already in flight - the old one's completion
+	// job checks the flag it captured (a different shared_ptr instance
+	// than whatever _buildCancelled holds after the line below), not this
+	// member, so this alone is enough to make it discard its result
+	// rather than touching a _network that has since moved on again.
+	if (_buildCancelled)
+	{
+		_buildCancelled->store(true);
+	}
+
+	auto cancelled = std::make_shared<std::atomic<bool>>(false);
+	_buildCancelled = cancelled;
+
+	Model *model = _model;
+
+	// flush this view's own live clique state (renames etc via
+	// CliqueView, never necessarily pushed via an explicit "Save") into
+	// the Model before the background build below reads model->
+	// cliques() for the fresh Network - Model::cliques() is only ever
+	// as current as the last updateModelCliques() call (explicit Save,
+	// or a Network's own destructor), so without this, an unsaved
+	// rename made only to the live, in-memory _network would be built
+	// right over by a fresh Network reading the older, pre-rename
+	// snapshot still sitting in Model - and by the time clearNetworkObjects()
+	// later deletes the old _network (also calling updateModelCliques()
+	// via its destructor), the new one has already been built from stale
+	// data, so that flush arrives too late to help it.
+	if (_network)
+	{
+		_network->updateModelCliques();
+	}
+
+	struct NetworkBuildProgress : public Progressor {};
+	NetworkBuildProgress *progress = new NetworkBuildProgress();
+
+	auto cancelJob = [cancelled]()
+	{
+		cancelled->store(true);
+	};
+
+	// tick count must match Network's own constructor - see its header
+	// comment for where each clickTicker() call lives.
+	VagWindow::window()->requestProgressBar(14, "Building proton network",
+	                                        progress, cancelJob);
+
+	auto build = [this, model, cancelled, progress]()
+	{
+		std::string pdb = model->filename();
+		PdbFile file(pdb);
+		file.parse();
+		AtomGroup *grp = file.atoms();
+		std::string spg_name = file.spaceGroupName();
+		std::array<double, 6> uc = file.unitCell();
+
+		Network *fresh = new Network(grp, spg_name, uc, model, progress);
+
+		// hands off to the main thread rather than touching this Scene's
+		// state directly from the background thread - VagWindow (unlike
+		// this Scene) is guaranteed to still be alive whenever this runs.
+		VagWindow::window()->addMainThreadJob(
+		[this, fresh, cancelled, progress]()
+		{
+			delete progress;
+
+			// checked again here: cancellation (this view destroyed, or
+			// superseded by another rebuild) may have landed after the
+			// background build finished but before this job got to run.
+			if (cancelled->load())
+			{
+				delete fresh;
+				return;
+			}
+
+			clearNetworkObjects();
+			_network = fresh;
+			findAtomProbes();
+			makeMainMenu();
+			refreshNextRender();
+		});
+	};
+
+	new DoJob(build);
 }
 
 void ProtonNetworkView::findAtomProbes()
 {
-	for (AtomProbe *const &probe : _network.atomProbes())
+	for (AtomProbe *const &probe : _network->atomProbes())
 	{
 		if (probe->is_bulk())
 		{
@@ -92,7 +265,7 @@ void ProtonNetworkView::findAtomProbes()
 		addIndexResponder(text);
 	}
 
-	for (HydrogenProbe *const &probe : _network.hydrogenProbes())
+	for (HydrogenProbe *const &probe : _network->hydrogenProbes())
 	{
 		// _right is only ever set for a real, bridging H-bond (see
 		// HydrogenProbe::display()'s own comment) - a placeholder
@@ -115,7 +288,7 @@ void ProtonNetworkView::findAtomProbes()
 		addIndexResponder(text);
 	}
 
-	for (BondProbe *const &probe : _network.bondProbes())
+	for (BondProbe *const &probe : _network->bondProbes())
 	{
 		// same placeholder skip as the HydrogenProbe loop above - keeps
 		// _textProbes/_bondProbes consistent (a placeholder's rod would
@@ -139,7 +312,7 @@ void ProtonNetworkView::findAtomProbes()
 		                   _textProbes[&probe->right()]);
 	}
 
-	for (CountProbe *const &probe : _network.chargeProbes())
+	for (CountProbe *const &probe : _network->chargeProbes())
 	{
 		ProbeCharge *charge = new ProbeCharge(this, probe);
 		addObject((FloatingImage *)charge);
@@ -149,14 +322,14 @@ void ProtonNetworkView::findAtomProbes()
 		addIndexResponder(charge);
 	}
 
-	shiftToCentre(_network.centre(), 50);
+	shiftToCentre(_network->centre(), 50);
 	setMakesSelections();
 	IndexResponseView::setup();
 //	preparePingPongBuffers();
 
 	auto check_for_collapses = [this]()
 	{
-		std::vector<std::string> messages = _network.impromptuCollapses();
+		std::vector<std::string> messages = _network->impromptuCollapses();
 		
 		if (!messages.size())
 		{
@@ -193,7 +366,7 @@ void ProtonNetworkView::findAtomProbes()
 	{
 		return [this, job] ()
 		{
-			if (!_network._reclique)
+			if (!_network->_reclique)
 			{
 				job();
 				return;
@@ -201,7 +374,7 @@ void ProtonNetworkView::findAtomProbes()
 
 			auto recalculate_cliques = [this, job]()
 			{
-				_network.cliques().clear();
+				_network->cliques().clear();
 				job();
 			};
 
@@ -219,7 +392,7 @@ void ProtonNetworkView::findAtomProbes()
 				setModal(ayn);
 			});
 
-			_network._reclique = false;
+			_network->_reclique = false;
 		};
 	};
 	
@@ -503,7 +676,7 @@ void ProtonNetworkView::leave2D()
 	}
 	else
 	{
-		shiftToCentre(_network.centre(), 50);
+		shiftToCentre(_network->centre(), 50);
 	}
 }
 
@@ -566,7 +739,7 @@ void ProtonNetworkView::ensureCliqueView()
 		return;
 	}
 
-	_cv = new CliqueView(this, _network);
+	_cv = new CliqueView(this, *_network);
 
 	auto kill = [this]()
 	{
@@ -597,6 +770,15 @@ void ProtonNetworkView::showCliqueView()
 
 void ProtonNetworkView::makeMainMenu()
 {
+	// idempotent - a rebuild calls this again, and the previous button
+	// (if any) would otherwise be orphaned rather than replaced.
+	if (_menuButton)
+	{
+		removeObject(_menuButton);
+		delete _menuButton;
+		_menuButton = nullptr;
+	}
+
 	auto browse_cliques = [this]()
 	{
 		showCliqueView();
@@ -610,12 +792,12 @@ void ProtonNetworkView::makeMainMenu()
 		AskYesNo *ayn = new AskYesNo(this, text);
 		ayn->addJob("yes", [this]()
 		{
-			_network.cliques().clear();
-			_network.updateModelCliques();
+			_network->cliques().clear();
+			_network->updateModelCliques();
 
 			// browse_cliques() re-shows the existing _cv rather than
 			// rebuilding it if one is already around, so its cached list
-			// (populated once at construction from _network.cliques() as
+			// (populated once at construction from _network->cliques() as
 			// it was then) would keep showing the just-deleted cliques.
 			// Destroy it so the next "Browse cliques" click reconstructs
 			// it fresh and re-discovers from the now-empty network.
@@ -634,6 +816,7 @@ void ProtonNetworkView::makeMainMenu()
 	};
 
 	TextButton *text = new TextButton("Menu", this);
+	_menuButton = text;
 	auto make_menu = [this, browse_cliques, reset_cliques, text]()
 	{
 		if (hasObject(_cv))
@@ -642,18 +825,19 @@ void ProtonNetworkView::makeMainMenu()
 		}
 		glm::vec2 c = text->xy();
 		Menu *m = new Menu(this, this, "options");
+
+		m->addOption("Save", [this]()
+		{
+			_network->updateModelCliques();
+			Environment::environment().save();
+		});
+
 		if (!_activeClique)
 		{
 			m->addOption("Browse cliques", browse_cliques);
 			m->addOption("Reset cliques", reset_cliques);
 		}
 
-		m->addOption("Save", [this]()
-		{
-			_network.updateModelCliques();
-			Environment::environment().save();
-		});
-		
 		m->addOption("Export H-bonds", [this]()
         {
 	              exportHBonds();
@@ -662,7 +846,7 @@ void ProtonNetworkView::makeMainMenu()
 		auto control_analysis = [this]()
 		{
 			HBondAnalysisControl *hbac = 
-			new HBondAnalysisControl(this, _activeClique, _network);
+			new HBondAnalysisControl(this, _activeClique, *_network);
 			hbac->show();
 		};
 
@@ -714,6 +898,16 @@ void ProtonNetworkView::makeMainMenu()
 			});
 		}
 
+		if (ropeDevToolsEnabled())
+		{
+			m->addOption("Edit model...", [this]()
+			{
+				EditModel *em = new EditModel(this, *_network,
+				                              [this]() { buildNetwork(); });
+				em->show();
+			});
+		}
+
 		m->setup(c.x, c.y);
 		setModal(m);
 	};
@@ -728,8 +922,21 @@ void ProtonNetworkView::setup()
 {
 	addTitle("Proton network");
 
-	findAtomProbes();
-	makeMainMenu();
+	// a mis-click into this view (or away from it again while a
+	// recalculate is in flight) shouldn't leave the progress bar
+	// floating over whatever screen comes next - the build itself still
+	// runs to completion (Network's constructor has no internal
+	// cancellation points), but ~ProtonNetworkView()'s own
+	// _buildCancelled->store(true) already stops its result from being
+	// applied; this just also clears the now-irrelevant bar immediately
+	// rather than leaving it up until that background build happens to
+	// finish.
+	setBackJob([]()
+	{
+		VagWindow::window()->requestProgressBarRemoval();
+	});
+
+	buildNetwork();
 }
 
 void ProtonNetworkView::setMenu(Menu *menu)
@@ -743,7 +950,7 @@ void ProtonNetworkView::setMenu(Menu *menu)
 
 void ProtonNetworkView::focusOnResidue(std::string chain, int res)
 {
-	AtomGroup *atoms = _network.atoms();
+	AtomGroup *atoms = _network->atoms();
 	Atom *chosen = atoms->atomByIdName({res}, "CA", chain);
 	if (!chosen)
 	{
@@ -823,7 +1030,7 @@ void ProtonNetworkView::makeNewClique()
 	aft->setDefaultText("Custom clique");
 	aft->setReturnJob([this, probes](std::string name)
 	{
-		Clique *clique = _network.newClique(probes);
+		Clique *clique = _network->newClique(probes);
 		// setName(), not setDisplayName() - CliqueView::insertClique()
 		// re-derives displayName from name() on insertion (add_clique's
 		// clique->setDisplayName(clique->name())), which would otherwise
@@ -886,7 +1093,7 @@ void ProtonNetworkView::selectUsingPlan(std::string plan)
 	auto build = [this, tokens, plan, numResidues](int n)
 	{
 		std::vector<OpSet<Probe *>> groups =
-		CliqueFinder::probeGroupsForResidues(_network, tokens);
+		CliqueFinder::probeGroupsForResidues(*_network, tokens);
 		OpSet<Probe *> connected =
 		CliqueFinder::connectGroups(groups, n, false);
 
@@ -941,7 +1148,7 @@ void ProtonNetworkView::selectUsingPlan(std::string plan)
 		aft->setReturnJob([this, connected, planText](std::string name)
 		{
 			ensureCliqueView();
-			Clique *clique = _network.newClique(connected);
+			Clique *clique = _network->newClique(connected);
 			clique->setPlanText(planText);
 			// setName(), not setDisplayName() - CliqueView::insertClique()
 		// re-derives displayName from name() on insertion (add_clique's
@@ -1035,7 +1242,7 @@ void ProtonNetworkView::setManualAdjust(ProbeAtom *probe)
 void ProtonNetworkView::exportHBonds()
 {
 	std::ostringstream tsv;
-	AtomGroup *write = _network.assignCertainHydrogens(tsv);
+	AtomGroup *write = _network->assignCertainHydrogens(tsv);
 	write->writeToFile("tmp_h.pdb");
 	delete write;
 

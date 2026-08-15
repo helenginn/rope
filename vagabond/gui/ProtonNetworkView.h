@@ -25,6 +25,8 @@
 #include <vagabond/gui/elements/Renderable.h>
 #include <vagabond/core/Responder.h>
 #include <vagabond/utils/OpSet.h>
+#include <memory>
+#include <atomic>
 
 class PositionShifter;
 class HydrogenProbe;
@@ -34,6 +36,8 @@ class ProbeBond;
 class ProbeAtom;
 class BondProbe;
 class AtomProbe;
+class TextButton;
+class Model;
 class Probe;
 class Menu;
 
@@ -41,13 +45,23 @@ class ProtonNetworkView : public Mouse3D, public Responder<Probe>,
 public IndexResponseView
 {
 public:
-	ProtonNetworkView(Scene *scene, Network &network);
+	ProtonNetworkView(Scene *scene, Model *model);
 	~ProtonNetworkView();
-	
+
 	Network &network()
 	{
-		return _network;
+		return *_network;
 	}
+
+	// (re)builds _network from scratch on a background thread - title and
+	// back button only until it finishes, same treatment whether this is
+	// the first build (called from setup()) or a rebuild requested via
+	// EditModel's "Recalculate proton network" (see its own comment for
+	// why a pH/pKa change needs a full rebuild rather than a lighter
+	// update). Safe to call again while a previous build/rebuild is still
+	// in flight - the old one's completion job checks the same
+	// _buildCancelled flag this bumps first and quietly does nothing.
+	void buildNetwork();
 
 	virtual void setup();
 	
@@ -99,7 +113,18 @@ private:
 	void askForSelectionPlan();
 	void selectUsingPlan(std::string plan);
 
-	
+	// tears down every renderable that points into the current _network
+	// (probe/bond/charge renderables, the clique view, the 2D layout
+	// shifter) and deletes _network itself - everything findAtomProbes()
+	// builds, undone. Immediate (not deleteLater()) deletion throughout,
+	// same ordering constraint the old destructor already documented:
+	// these renderables hold raw pointers into _network's Probes and must
+	// be gone before it is. Leaves the title/back button/menu button
+	// alone - unlike deleteObjects(), this only touches network-derived
+	// state, so it is also what a live rebuild (not just final teardown)
+	// needs.
+	void clearNetworkObjects();
+
 	std::map<Probe *, ProbeAtom *> _textProbes;
 	std::map<Probe *, ProbeBond *> _bondProbes;
 	std::map<Probe *, ProbeCharge *> _countProbes;
@@ -122,12 +147,30 @@ private:
 
 	ProbeAtom *_manual{};
 
-	Network &_network;
+	Model *_model = nullptr;
+	Network *_network = nullptr;
+
+	// set (to a fresh, independent flag) each time buildNetwork() starts
+	// a background build - the background thread's completion job and
+	// this view's own destructor/next buildNetwork() call both check the
+	// specific flag *that build* captured, so an in-flight build whose
+	// result is no longer wanted (view destroyed, or superseded by
+	// another rebuild) can be told to discard itself instead of touching
+	// a _network that has since moved on - same shared_ptr<atomic<bool>>
+	// idiom ViewCorrelations::viewAll() uses for its own cancellable
+	// background assembly.
+	std::shared_ptr<std::atomic<bool>> _buildCancelled;
 
 	ProbeAtom *_activeProbe = nullptr;
 	Renderable *_active = nullptr;
 	CliqueView *_cv = nullptr;
-	
+
+	// created (or re-created, on a rebuild) by makeMainMenu() - the only
+	// piece of findAtomProbes()/makeMainMenu()'s output that isn't
+	// already tracked in one of the maps/sets above, so clearNetworkObjects()
+	// needs its own handle to remove it too.
+	TextButton *_menuButton = nullptr;
+
 	Clique *_activeClique = nullptr;
 	
 	std::function<void()> _onClick{};

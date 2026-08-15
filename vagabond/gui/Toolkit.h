@@ -24,6 +24,11 @@
 
 class Scene;
 
+// gates developer-only features out of the GUI unless explicitly opted
+// into - set ROPE_DEV=1 (any non-empty value) in the environment to
+// reveal them.
+bool ropeDevToolsEnabled();
+
 class Toolkit : public ImageButton, public ButtonResponder
 {
 public:

@@ -19,6 +19,7 @@
 #include "Model.h"
 #include "Energy.h"
 #include "Network.h"
+#include <vagabond/core/Progressor.h>
 #include "OrCount.h"
 #include "SymMates.h"
 #include "AtomGroup.h"
@@ -32,6 +33,7 @@
 #include "And.h"
 #include <queue>
 #include <memory>
+#include <cmath>
 
 using namespace hnet;
 
@@ -131,13 +133,13 @@ bool Network::setupSingleAlcohol(AtomConf atom)
 	{ return false; }
 	
 	std::string str = atom.ptr->code() == "SER" ? "Ser" : "";
-	
+
 	if (str == "")
 	{
 		str = atom.ptr->code() == "TYR" ? "Tyr" : "Thr";
 	}
 
-	_atomMap[atom]->addCoordinationState(Count::Four, Count::Zero, 
+	_atomMap[atom]->addCoordinationState(Count::Four, Count::Zero,
 	                                   Count::Six);
 	return true;
 }
@@ -149,7 +151,7 @@ bool Network::setupLysineAmine(AtomConf atom)
 		return false;
 	}
 
-	_atomMap[atom]->addCoordinationState(Count::Four, Count::One, 
+	_atomMap[atom]->addCoordinationState(Count::Four, Count::One,
 	                                   Count::Five);
 	return true;
 }
@@ -286,10 +288,10 @@ bool Network::setupCarboxylOxygen(AtomConf atom)
 
 	_atomMap[p]->addCoordinationState(Count::Three, Count::Zero, Count::Six);
 	_atomMap[p]->addCoordinationState(Count::Three, Count::mOne, Count::Six);
-	
+
 //	_atomMap[atom]->showCharge(false);
 //	_atomMap[partner]->showCharge(false);
-	
+
 //	return true;
 
 	shareCharges({atom, p}, charge_sum);
@@ -430,8 +432,6 @@ bool Network::setupTryptophan(AtomConf atom)
 
 void Network::setupInactiveAtom(AtomConf atom)
 {
-	AtomProbe *probe = _atom2Probe[atom];
-	
 	auto make_certain_covalent_bond = [this]
 	(AtomConf atom, AtomConf connected)
 	{
@@ -446,7 +446,7 @@ void Network::setupInactiveAtom(AtomConf atom)
 		ExistenceConnector &right = other->existence();
 
 		float diff = abs(atom.occupancy() - connected.occupancy());
-		
+
 		if (diff < 0.05)
 		{
 			add_constraint(new MutualExistence(left, covalent));
@@ -476,19 +476,19 @@ void Network::setupInactiveAtom(AtomConf atom)
 		else
 		{
 			std::cout << "Mutual existence definition MISSING: [" << left << ", "
-			<< covalent << ", " << right << "] due to occupancy difference of " 
+			<< covalent << ", " << right << "] due to occupancy difference of "
 			<< diff << std::endl;
 			std::cout << "\t" << atom.occupancy() << " vs " <<
 			connected.occupancy() << std::endl;
 			add_constraint(new PeggedExistence(left, covalent, right));
 		}
-		
+
 		std::cout << "Making certain bond between " << ss.str() << std::endl;
-		
+
 		/*
 		bool dbond = false;
 		dbond |= either_are_named_couple("C", "O")(connected, atom);
-		
+
 		if (atom.ptr->code() == "ASN" || atom.ptr->code() == "GLN")
 		{
 			dbond |= either_are_named_couple("CG", "OD1")(connected, atom);
@@ -501,11 +501,11 @@ void Network::setupInactiveAtom(AtomConf atom)
 		cov.setDesc("covalent bond between " + probe->desc() + " and " +
 		            other->desc());
 		add_constraint(new CovalentConstant(cov, status));
-		BondProbe &bp = add_probe(new CovalentProbe(*probe, *other, 
+		BondProbe &bp = add_probe(new CovalentProbe(*probe, *other,
 		                                             covalent, cov));
 		bp.addEnergyWrapper(energy().energy_wrapper_for_covalent(bp));
 
-		if (atom.ptr->elementSymbol() == "H" || 
+		if (atom.ptr->elementSymbol() == "H" ||
 		    connected.ptr->elementSymbol() == "H")
 		{
 			bp.setHide(-1, false);
@@ -1001,10 +1001,18 @@ Network::~Network()
 	delete _energy;
 }
 
+void Network::tick()
+{
+	if (_progress)
+	{
+		_progress->clickTicker();
+	}
+}
+
 Network::Network(AtomGroup *group, const std::string &spg_name,
                  const std::array<double, 6> &unit_cell,
-                 Model *const &model)
-: _model(model)
+                 Model *const &model, Progressor *progress)
+: _model(model), _progress(progress)
 {
 	_energy = new hnet::Energy();
 
@@ -1030,6 +1038,7 @@ Network::Network(AtomGroup *group, const std::string &spg_name,
 	_originalAndMates->add(_original);
 	_originalAndMates->orderByResidueId();
 	_originalAndMates->writeToFile("tmp.pdb");
+	tick();
 
 	AtomGroup *donors = hydrogenDonorsFrom(_original);
 	AtomGroup *symDonors = hydrogenDonorsFrom(_originalAndMates);
@@ -1060,6 +1069,7 @@ Network::Network(AtomGroup *group, const std::string &spg_name,
 	// atomMap(), it just never gets a real coordination treatment below.
 	_originalAndMates->do_op([this](::Atom *atom) { establishAtom(atom); });
 	deadMates->do_op([this](::Atom *atom) { establishAtom(atom); });
+	tick();
 
 	// here is when the coordination is prepared - _originalAndMates
 	// only (not the raw atomMap(), which also now holds the dead
@@ -1076,6 +1086,7 @@ Network::Network(AtomGroup *group, const std::string &spg_name,
 	{
 		setupInactiveAtom({a, conf});
 	}));
+	tick();
 
 	// here is when the coordination is finalised - symDonors (original +
 	// live mates), not just donors: a symmetry mate now gets the same
@@ -1088,6 +1099,7 @@ Network::Network(AtomGroup *group, const std::string &spg_name,
 	{
 		_atomMap[{a, conf}]->prepareCoordination();
 	}));
+	tick();
 
 	std::cout << "================================" << std::endl;
 	std::cout << "==   COVALENT BOND SEARCH     ==" << std::endl;
@@ -1099,6 +1111,7 @@ Network::Network(AtomGroup *group, const std::string &spg_name,
 	{
 		linkCovalentBonds({a, conf});
 	}));
+	tick();
 
 	// record the hydrogen-bonding neighbours for each atom
 	// generate connectors for each acquired bond
@@ -1106,7 +1119,7 @@ Network::Network(AtomGroup *group, const std::string &spg_name,
 	{
 		_atomMap[{a, conf}]->uninvolvedCoordinators();
 	}));
-
+	tick();
 
 	std::cout << "================================" << std::endl;
 	std::cout << "==      FIND NEIGHBOURS       ==" << std::endl;
@@ -1119,6 +1132,7 @@ Network::Network(AtomGroup *group, const std::string &spg_name,
 	OpSet<AtomConf> symDonorSet = Coordinated::expandGroupToSet(symDonors);
 	OpSet<AtomConf> originalAndMatesSet =
 	Coordinated::expandGroupToSet(_originalAndMates);
+	tick();
 
 	// record the hydrogen-bonding neighbours for each atom
 	// generate connectors for each acquired bond
@@ -1126,7 +1140,7 @@ Network::Network(AtomGroup *group, const std::string &spg_name,
 	{
 		_atomMap[{a, conf}]->attachToNeighbours(symDonorSet);
 	}));
-
+	tick();
 
 	// find sets of bonds which can/cannot participate in bonding together
 	symDonors->do_op(on_each_conf([this, &originalAndMatesSet]
@@ -1134,12 +1148,13 @@ Network::Network(AtomGroup *group, const std::string &spg_name,
 	{
 		_atomMap[{a, conf}]->mutualExclusions(originalAndMatesSet);
 	}));
+	tick();
 
 	// add clash logic - reuses the same expansion of _originalAndMates
 	// computed above instead of redoing it a third time.
 	OpSet<AtomConf> searchGroup = originalAndMatesSet;
 	searchGroup += Coordinated::expandGroupToSet(_hAtoms);
-	
+
 	std::cout << "================================" << std::endl;
 	std::cout << "==        CLASH LOGIC         ==" << std::endl;
 	std::cout << "================================" << std::endl;
@@ -1149,24 +1164,26 @@ Network::Network(AtomGroup *group, const std::string &spg_name,
 	{
 		_atomMap[{a, conf}]->clashLogic(searchGroup);
 	}));
+	tick();
 
 	// every atom has now staged at most one candidate (Coordinated::
 	// clashLogic() -> add_repulsion -> Probe::setPendingRepulsion()) -
 	// this turns those into actual EnergyWrapper objects, one per
 	// mutual-existence-connected group rather than one per atom.
 	bundleRepulsionTerms();
+	tick();
 
 	std::cout << "================================" << std::endl;
 	std::cout << "==  FINALISING BOND COUNTERS  ==" << std::endl;
 	std::cout << "================================" << std::endl;
-	
+
 	// set the previously determined adder constraints linking actual
 	// bonding patterns to the coordinated atom.
 	auto job = [this](::Atom *a, char conf)
 	{
 		_atomMap[{a, conf}]->attachAdderConstraints();
 	};
-	
+
 	std::cout << "================================" << std::endl;
 	std::cout << "==     FINDING SYMMETRY       ==" << std::endl;
 	std::cout << "================================" << std::endl;
@@ -1182,24 +1199,32 @@ Network::Network(AtomGroup *group, const std::string &spg_name,
 	{
 		_atomMap[{a, conf}]->setupRealignment();
 	}));
+	tick();
 
 	symDonors->do_op(on_each_conf(job));
+	tick();
 
 	int failCount = 0;
 	symDonors->do_op(on_each_conf([this, &failCount](::Atom *a, char conf)
 	{
 		failCount += (atomMap()[{a, conf}]->failedCheck()) ? 1 : 0;
 	}));
-	
+
 	std::cout << "Out of " << atomMap().size() << " coordinated atoms, ";
 	std::cout << failCount << " failed some logical check." << std::endl;
 	std::cout << std::endl;
-	
+
 	firstOrderLogic();
+	tick();
 
 	for (Clique &cl : _cliques)
 	{
 		cl.housekeeping(*this);
+	}
+
+	if (_progress)
+	{
+		_progress->finishTicker();
 	}
 }
 

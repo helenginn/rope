@@ -31,6 +31,7 @@
 class CountProbe;
 class CovalentProbe;
 class Model;
+class Progressor;
 
 namespace hnet
 {
@@ -43,9 +44,20 @@ class Network
 public:
 	Network();
 	~Network();
+
+	// progress, if given, gets one clickTicker() per major phase of
+	// construction (~15 - see the ASCII banners inside the constructor
+	// for the phase boundaries) and a finishTicker() right at the end -
+	// coarse, but this constructor is one long unbroken sweep with no
+	// natural per-atom yielding point, so phase-level is the cheapest
+	// granularity that still gives a genuinely moving progress bar. Safe
+	// to run this constructor itself off the main thread (see
+	// ProtonNetworkView's own build/rebuild methods) - nothing in here
+	// touches GL or other main-thread-only state, only AtomGroup/Atom
+	// (core) and Probe/Connector (also core, no rendering).
 	Network(AtomGroup *group, const std::string &spg_name,
-	        const std::array<double, 6> &unit_cell = {}, 
-	        Model *const &model = {});
+	        const std::array<double, 6> &unit_cell = {},
+	        Model *const &model = {}, Progressor *progress = nullptr);
 
 	template <class Connector>
 	auto &add(Connector *const &connector)
@@ -169,7 +181,12 @@ public:
 	{
 		return *_energy;
 	}
-	
+
+	Model *const &model() const
+	{
+		return _model;
+	}
+
 	void updateModelCliques();
 	void firstOrderLogic();
 	
@@ -217,6 +234,8 @@ private:
 
 	void findAtomCoordinations(hnet::AtomConf atom);
 
+	void tick();
+
 	std::list<hnet::AnyConnector> _connectors;
 	std::list<hnet::ConstraintBase *> _constraints;
 	std::list<AtomProbe *> _atomProbes;
@@ -229,6 +248,7 @@ private:
 	
 	std::list<Clique> _cliques;
 	Model *_model{};
+	Progressor *_progress{};
 	hnet::Energy *_energy{};
 
 	std::vector<std::string> _impromptuCollapses;

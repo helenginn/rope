@@ -44,7 +44,6 @@
 #include <vagabond/gui/elements/TextButton.h>
 #include <vagabond/gui/elements/Menu.h>
 #include <vagabond/c4x/ClusterTSNE.h>
-#include <vagabond/core/files/PdbFile.h>
 
 #include <vagabond/core/Entity.h>
 #include <vagabond/core/Environment.h>
@@ -541,26 +540,14 @@ void ConfSpaceView::buttonPressed(std::string tag, Button *button)
 	{
 		Instance *i = static_cast<Instance *>(button->returnObject());
 		i->load();
-		std::string pdb = i->model()->filename();
-		PdbFile file(pdb);
-		file.parse();
-		AtomGroup *grp = file.atoms();
-		std::string spg_name = file.spaceGroupName();
-		std::array<double, 6> uc = file.unitCell();
-		
-		std::chrono::time_point<std::chrono::system_clock> start, end;
 
-		start = std::chrono::system_clock::now();
-
-		ProtonNetworkView *sb;
-		sb = new ProtonNetworkView(this, *(new Network(grp, spg_name, 
-		                                               uc, i->model())));
+		// PDB parse + Network construction both now happen on a
+		// background thread, kicked off from ProtonNetworkView's own
+		// setup() (see ProtonNetworkView::buildNetwork()) - this view
+		// shows only its title and back button behind a progress bar
+		// until that finishes.
+		ProtonNetworkView *sb = new ProtonNetworkView(this, i->model());
 		sb->show();
-
-		end = std::chrono::system_clock::now();
-		std::chrono::duration<float> fsec = end - start;
-		std::chrono::milliseconds ms = std::chrono::duration_cast<std::chrono::milliseconds>(fsec);
-		std::cout << ms.count() << " ms to set up" << std::endl;
 	}
 	
 	if (tag == "set_as_reference")

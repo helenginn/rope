@@ -27,10 +27,7 @@
 #include <vagabond/core/ModelManager.h>
 #include <cstdlib>
 
-// gates developer-only tools (e.g. "test matrix") out of the toolkit menu
-// unless explicitly opted into - set ROPE_DEV=1 (any non-empty value) in
-// the environment to reveal them.
-static bool ropeDevToolsEnabled()
+bool ropeDevToolsEnabled()
 {
 	return std::getenv("ROPE_DEV") != nullptr;
 }
