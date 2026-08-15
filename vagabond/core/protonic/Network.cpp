@@ -152,8 +152,8 @@ Count::Values Network::chargeStatesForPKa(const std::string &code,
 
 	Count::Values result = Count::Values(0);
 
-	bool protonatedIncluded = (fracDeprotonated < 0.99f);
-	bool deprotonatedIncluded = (fracDeprotonated > 0.01f);
+	bool protonatedIncluded = (fracDeprotonated < 0.99f) || true;
+	bool deprotonatedIncluded = (fracDeprotonated > 0.01f) || true;
 
 	if (protonatedIncluded)
 	{
