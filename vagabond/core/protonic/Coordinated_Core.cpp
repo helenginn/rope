@@ -463,9 +463,25 @@ void Coordinated::prepareCoordination()
 			return;
 		}
 
-		CountProbe &probe = 
+		CountProbe &probe =
 		_network.add_probe(new CountProbe(*_charge, *_existence, atomConf()),
 		                   true);
+
+		// wire this atom's own charge probe into the others() graph so it
+		// becomes part of whichever subnetwork/subdivision this atom does
+		// (Subdivide::finish_ends()) and gets exhaustively sampled
+		// alongside its bonds/existence (ExhaustiveSearch::setup()) -
+		// skipped once Network::shareCharges() has merged this atom's
+		// charge with a partner's (see setChargeShared()), since the
+		// separately-registered shared CountProbe is the correct thing to
+		// sample then, not this raw per-atom one. An atom whose own
+		// charge is merely ambiguous (never merged) still gets registered
+		// here as normal.
+		if (!_chargeShared)
+		{
+			_probe->register_probe(&probe);
+			probe.register_probe(_probe);
+		}
 	};
 
 	add_charge_display();

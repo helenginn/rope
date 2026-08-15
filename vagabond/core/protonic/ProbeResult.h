@@ -58,8 +58,16 @@ struct ProbeTypePair : public std::pair<Probe *, hnet::Types>
 
 inline std::ostream &operator<<(std::ostream &ss, const ProbeTypePair &ptp)
 {
-	if (ptp.first) ss << ptp.first->desc()
-	<< (ptp.second == hnet::BondType ? " bonding" : " existence");
+	if (ptp.first)
+	{
+		ss << ptp.first->desc();
+		switch (ptp.second)
+		{
+			case hnet::BondType: ss << " bonding"; break;
+			case hnet::ChargeType: ss << " charge"; break;
+			default: ss << " existence"; break;
+		}
+	}
 	return ss;
 }
 

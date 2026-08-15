@@ -35,34 +35,67 @@
 
 using namespace hnet;
 
+// sums any number (2+) of atoms' properties into one connector
+// constrained to `allowable` - a genuine chain of int-arithmetic
+// CountAdders (see CountAdder.h), not a bitmask OR, so it works the same
+// way for two atoms (Histidine, carboxylates) or three (Arginine's
+// guanidinium). Only the final link in the chain is constrained to
+// `allowable`; intermediate partial sums are left free, since e.g. two
+// of three atoms sharing a +1 total could split it as 1+0 or 0+1.
 template <typename Obtain>
 CountConnector &
-shareProperty(Network *me, AtomConf left, AtomConf right, 
-                   const Obtain &obtain, const Count::Values &allowable)
+shareProperty(Network *me, const std::vector<AtomConf> &atoms,
+             const Obtain &obtain, const Count::Values &allowable)
 {
 	CountConnector &sum = me->add(new CountConnector());
-	sum.setDesc("shared charge for " + left.desc() + " and " +
-	            right.desc());
+	std::ostringstream desc;
+	desc << "shared charge for";
+	for (const AtomConf &ac : atoms)
+	{
+		desc << " " << ac.desc();
+	}
+	sum.setDesc(desc.str());
 	me->add_constraint(new CountConstant(sum, allowable));
-	
-	CountConnector *lConnect = obtain(left);
-	CountConnector *rConnect = obtain(right);
-	
-	if (lConnect && rConnect)
-	{
-		me->probeForAtom(left)->register_probe(me->probeForAtom(right));
-		me->probeForAtom(right)->register_probe(me->probeForAtom(left));
 
-		me->add_constraint(new CountAdder(*lConnect, *rConnect, sum));
-	}
-	else
+	std::vector<CountConnector *> connectors;
+	for (const AtomConf &ac : atoms)
 	{
-		std::cout << "WARNING: left/right not found" << std::endl;
+		CountConnector *c = obtain(ac);
+		if (!c)
+		{
+			std::cout << "WARNING: " << ac << " not found for shared charge"
+			<< std::endl;
+			return sum;
+		}
+		connectors.push_back(c);
 	}
+
+	for (size_t i = 0; i < atoms.size(); i++)
+	{
+		for (size_t j = i + 1; j < atoms.size(); j++)
+		{
+			me->probeForAtom(atoms[i])->register_probe(me->probeForAtom(atoms[j]));
+			me->probeForAtom(atoms[j])->register_probe(me->probeForAtom(atoms[i]));
+		}
+	}
+
+	CountConnector *running = connectors[0];
+	for (size_t i = 1; i < connectors.size(); i++)
+	{
+		bool last = (i + 1 == connectors.size());
+		CountConnector &target = last ? sum : me->add(new CountConnector());
+		if (!last)
+		{
+			target.setDesc("partial shared charge");
+		}
+		me->add_constraint(new CountAdder(*running, *connectors[i], target));
+		running = &target;
+	}
+
 	return sum;
 }
 
-CountConnector &Network::shareCharges(AtomConf left, AtomConf right,
+void Network::shareCharges(const std::vector<AtomConf> &atoms,
                            const Count::Values &allowable)
 {
 	auto get_charges = [this](AtomConf atom)
@@ -70,10 +103,24 @@ CountConnector &Network::shareCharges(AtomConf left, AtomConf right,
 		return _atomMap[atom]->charge();
 	};
 
-	CountConnector &shared = shareProperty(this, left, right, 
-	                                       get_charges, allowable);
-	
-	return shared;
+	CountConnector &shared = shareProperty(this, atoms, get_charges, allowable);
+
+	CountProbe &probe =
+	add_probe(new CountProbe(shared, *atomMap()[atoms.front()]->existence(),
+	                         atoms, 0), true);
+
+	// wire the shared charge probe into the others() graph against every
+	// atom it covers, so it joins whichever subnetwork/subdivision they
+	// do (Subdivide::finish_ends()) and gets exhaustively sampled
+	// (ExhaustiveSearch::setup()). Marking each atom charge-shared tells
+	// its own add_charge_display() (Coordinated_Core.cpp) to skip wiring
+	// its raw, individual CountProbe in alongside this merged one.
+	for (const AtomConf &ac : atoms)
+	{
+		_atomMap[ac]->setChargeShared(true);
+		probeForAtom(ac)->register_probe(&probe);
+		probe.register_probe(probeForAtom(ac));
+	}
 }
 
 bool Network::setupSingleAlcohol(AtomConf atom)
@@ -160,26 +207,31 @@ bool Network::setupHistidine(AtomConf atom)
 	
 	const Count::Values charge = Count::OneOrZero;
 
-	const Count::Values charge_sum = Count::OneOrZero;
-
 	_atomMap[atom]->addCoordinationState(Count::Three, charge, Count::Five);
 	_atomMap[atom]->showCharge(false);
 
-	std::string other = atom.ptr->atomName() == "ND1" ? "NE2" : "ND1";
-	AtomConf partner = find_partner(atom, other);
-	if (!partner.ptr || !atomMap()[partner]->charge())
+	// only trigger the merge once per residue, from NE2 - ND1 gets set up
+	// individually above regardless of dispatch order (this function
+	// runs once per atom, so both ND1 and NE2 reach this point
+	// independently). find_partner() walks the idealised per-residue-type
+	// geometry dictionary rather than anything set up by this function,
+	// so it resolves ND1 correctly here without needing ND1 to have been
+	// processed first.
+	if (atom.ptr->atomName() != "NE2")
 	{
-		std::cout << "Did not find " << partner << " with a charge "\
-		"on it yet" << std::endl;
-		return true; // wait until the partner comes round
+		return true;
 	}
 
-	hnet::CountConnector &shared = shareCharges(atom, partner, charge_sum);
+	AtomConf partner = find_partner(atom, "ND1");
+	if (!partner.ptr)
+	{
+		std::cout << "Did not find ND1 for " << atom << std::endl;
+		return true;
+	}
 
-	CountProbe &probe = 
-	add_probe(new CountProbe(shared, *atomMap()[atom]->existence(), 
-	                         {atom, partner}, 0), true);
-	
+	const Count::Values charge_sum = Count::OneOrZero;
+	shareCharges({atom, partner}, charge_sum);
+
 	return true;
 }
 
@@ -240,12 +292,8 @@ bool Network::setupCarboxylOxygen(AtomConf atom)
 	
 //	return true;
 
-	hnet::CountConnector &shared = shareCharges(atom, p, charge_sum);
+	shareCharges({atom, p}, charge_sum);
 
-	CountProbe &probe = 
-	add_probe(new CountProbe(shared, *atomMap()[atom]->existence(), 
-	                         {atom, p}, 0), true);
-	
 	return true;
 }
 
@@ -320,6 +368,32 @@ bool Network::setupArginine(AtomConf atom)
 
 	_atomMap[atom]->addCoordinationState(Count::Three, Count::Zero, Count::Five);
 	_atomMap[atom]->addCoordinationState(Count::Three, Count::One, Count::Five);
+	_atomMap[atom]->showCharge(false);
+
+	// only trigger the merge once per residue, from NE - NH1/NH2 get set
+	// up individually above regardless of dispatch order, same as
+	// setupHistidine()'s equivalent guard.
+	if (atom.ptr->atomName() != "NE")
+	{
+		return true;
+	}
+
+	AtomConf nh1 = find_partner(atom, "NH1");
+	AtomConf nh2 = find_partner(atom, "NH2");
+	if (!nh1.ptr || !nh2.ptr)
+	{
+		std::cout << "Did not find NH1/NH2 for " << atom << std::endl;
+		return true;
+	}
+
+	// the guanidinium is essentially always protonated at physiological
+	// pH, so - for now - the +1 delocalised across all three nitrogens is
+	// treated as a fixed total rather than an ambiguous one (unlike
+	// Histidine's OneOrZero). This is expected to become pH/pKa-aware
+	// (any total with, say, >1% likelihood) once that slider work lands;
+	// shareCharges()'s `allowable` is exactly the parameter that logic
+	// would come back and replace here.
+	shareCharges({atom, nh1, nh2}, Count::One);
 
 	return true;
 }
@@ -406,7 +480,7 @@ void Network::setupInactiveAtom(AtomConf atom)
 			<< diff << std::endl;
 			std::cout << "\t" << atom.occupancy() << " vs " <<
 			connected.occupancy() << std::endl;
-			add_constraint(new SubExistence(left, covalent, right));
+			add_constraint(new PeggedExistence(left, covalent, right));
 		}
 		
 		std::cout << "Making certain bond between " << ss.str() << std::endl;
@@ -456,7 +530,7 @@ void Network::setupInactiveAtom(AtomConf atom)
 		ExistenceConnector &left = probe->existence();
 		ExistenceConnector &right = other->existence();
 
-		add_constraint(new SubExistence(left, covalent, right));
+		add_constraint(new PeggedExistence(left, covalent, right));
 
 		std::cout << "Making maybe-bond between " << atom << " and "
 		<< connected << std::endl;

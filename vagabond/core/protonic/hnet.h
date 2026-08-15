@@ -112,6 +112,7 @@ enum Types
 	Unassigned = 0,
 	BondType,
 	ExistenceType,
+	ChargeType,
 };
 
 struct AtomConf

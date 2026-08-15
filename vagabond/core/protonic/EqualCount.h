@@ -16,8 +16,8 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __vagabond__EqualBonds__
-#define __vagabond__EqualBonds__
+#ifndef __vagabond__EqualCount__
+#define __vagabond__EqualCount__
 
 #include "hnet.h"
 #include "ConstraintBase.h"

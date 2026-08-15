@@ -161,6 +161,22 @@ public:
 		_showCharge = show;
 	}
 
+	// set by Network::shareCharges() on both atoms it merges - once a
+	// pair's charges are summed into one shared CountConnector/CountProbe
+	// (Histidine ND1/NE2, carboxylate oxygen pairs), that merged probe is
+	// the correct representation and add_charge_display() (Coordinated_
+	// Core.cpp) must not also wire either atom's own, individual
+	// CountProbe into the others() graph - display is untouched, only
+	// subnetwork/ExhaustiveSearch sampling eligibility. An atom that was
+	// never merged this way keeps sampling its own charge regardless of
+	// whether that charge is ambiguous (e.g. Arginine's NH1/NH2/NE, each
+	// independently One-or-Zero) - ambiguity alone is not the signal,
+	// only an actual merge is.
+	void setChargeShared(bool shared)
+	{
+		_chargeShared = shared;
+	}
+
 	void eitherOr(const ABPair &first, const ABPair &second,
 	              bool break_only);
 
@@ -253,6 +269,7 @@ private:
 	bool _failedCheck = false;
 	bool _ionic = false;
 	bool _showCharge = true;
+	bool _chargeShared = false;
 	bool _calculatedCov = false;
 
 	// counts candidate hydrogens made off this atom, so each gets a

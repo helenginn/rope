@@ -49,7 +49,13 @@ bool Subdivide::finish_ends(OpSet<Probe *> &chunk)
 	// alt-confs specifically. This is separate from, and much broader
 	// than, Probe::bondedNeighbours() (the GUI's 2D-layout weighting),
 	// which deliberately excludes every one of these same edges - see
-	// its own comment for why.
+	// its own comment for why. Also pulls in an atom's own CountProbe
+	// (its charge, shared or single-atom - see add_charge_display() in
+	// Coordinated_Core.cpp and setupHistidine()/setupCarboxylOxygen() in
+	// Network.cpp) wherever one was registered into others(): skipped
+	// only for an atom whose charge was merged into a shared CountProbe
+	// elsewhere (Network::shareCharges() - Histidine, carboxylates), not
+	// for a merely ambiguous, unmerged one (e.g. Arginine's).
 	bool add_alt_confs_and_clashes = true;
 
 	for (Probe *const &probe : chunk)
@@ -80,7 +86,7 @@ bool Subdivide::finish_ends(OpSet<Probe *> &chunk)
 					continue;
 				}
 
-				if (!other->is_atom())
+				if (!other->is_atom() && !other->is_charge())
 				{
 					continue;
 				}

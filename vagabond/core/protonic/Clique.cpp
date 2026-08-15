@@ -19,6 +19,7 @@
 #include "Network.h"
 #include "Clique.h"
 #include "Probe.h"
+#include "Coordinated_Helpers.h"
 
 Clique::Clique(const OpSet<Probe *> &probes) : _probes(probes)
 {
@@ -248,6 +249,32 @@ namespace
 		}
 		return false;
 	}
+
+	// a placeholder hydrogen/bond (Coordinated::makePlaceholderHydrogen())
+	// is a speculative, not-yet-resolved coordination slot rather than a
+	// real bond - same reasoning Subdivide.cpp's is_placeholder_related()
+	// already applies when deciding what belongs in a searched
+	// subdivision, mirrored here for Communication Choice's candidate
+	// list. _h is only ever set on the HydrogenProbe itself (in case one
+	// is ever reached directly); a placeholder BondProbe's own _h stays
+	// null, so is_bond()'s check on the underlying BondConnector's
+	// _placeholder flag is what actually catches it in practice.
+	bool is_placeholder(Probe *const &probe)
+	{
+		if (probe->_h && hnet::is_placeholder_hydrogen_name(probe->_h->atomName()))
+		{
+			return true;
+		}
+		if (probe->is_bond())
+		{
+			BondProbe *bp = static_cast<BondProbe *>(probe);
+			if (bp->_obj._placeholder)
+			{
+				return true;
+			}
+		}
+		return false;
+	}
 }
 
 OpSet<Probe *> Clique::nonWaterProbes()
@@ -271,8 +298,19 @@ OpSet<Probe *> Clique::nonWaterProbes()
 			{
 				for (Probe *connected : pr->others())
 				{
+					// charge probes (Network::shareCharges()/Coordinated::
+					// add_charge_display()) are wired into others() so they
+					// join subnetworks/ExhaustiveSearch, but aren't
+					// choosable Communication Choice signals yet -
+					// CertainStates::correlate()'s get_index() only checks
+					// bits 0-3, which isn't wide enough for every
+					// hnet::Count::Values charge state (see its own
+					// comment), so picking a charge as a signal would
+					// silently misbehave there.
 					if (!connected->is_covalent() && !connected->is_certain() &&
-					    !is_symmetry_mate(connected))
+					    !connected->is_charge() &&
+					    !is_symmetry_mate(connected) &&
+					    !is_placeholder(connected))
 					{
 						nonwater.insert(connected);
 					}

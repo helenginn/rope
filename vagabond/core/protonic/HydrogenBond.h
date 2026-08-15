@@ -162,19 +162,35 @@ struct HydrogenBond : public ConstraintBase
 
 		// --- absorbed from Coordinated_Constraints.cpp's
 		// create_two_half_hydrogen_bonds (formerly separate Stricter/
-		// StricterBond/SubExistence constraints) ---
+		// StricterBond/PeggedExistence constraints) ---
 		//
 		// NOTE: the "half-bond existence <-> protonation slot (hSlot)
-		// subservience" (formerly SubExistence(le, hSlot, re, false)) and
-		// "non_existent_bonds" rules used to live here too, but both are
-		// symmetric under swapping left/right and only ever touch shared/
-		// both-sides connectors - since HydrogenBond is always constructed
-		// in a mirrored (left,right)/(right,left) pair sharing the same
-		// hSlot, inlining them here meant every check() cycle derived the
-		// same two conclusions twice over. They're back to being their own
-		// constraints, added once per H-bond pair, right where the two
-		// HydrogenBonds themselves are constructed
-		// (create_two_half_hydrogen_bonds()).
+		// subservience" (formerly PeggedExistence(le, hSlot, re), now two
+		// mirrored AndExistence(le, re, hSlot, Present)/AndExistence(re,
+		// le, hSlot, Present) instances - see create_two_half_hydrogen_
+		// bonds()'s own comment) and "non_existent_bonds" rules used to
+		// live here too, but both are symmetric under swapping left/right
+		// and only ever touch shared/both-sides connectors - since
+		// HydrogenBond is always constructed in a mirrored (left,right)/
+		// (right,left) pair sharing the same hSlot, inlining them here
+		// meant every check() cycle derived the same two conclusions
+		// twice over. They're back to being their own constraints, added
+		// once per H-bond pair, right where the two HydrogenBonds
+		// themselves are constructed (create_two_half_hydrogen_bonds()).
+		//
+		// AndExistence has no equivalent of PeggedExistence's other
+		// forward rule though (leftExist Absent + rightExist Absent =>
+		// hSlot Absent) - unlike the subservience rule above, this one's
+		// cheap and trivially symmetric already (no ordering/direction to
+		// it - just tests both connectors' current value), so evaluating
+		// it twice over via the mirrored HydrogenBond pair costs nothing
+		// worth extracting it out for.
+		if (_leftExist.value() == Existence::Absent &&
+		    _rightExist.value() == Existence::Absent)
+		{
+			assign(_hSlot, Existence::Absent, "both half-bonds were absent "\
+			       "so the protonation slot between them should be too");
+		}
 
 		// lone pair / hydrogen mutual exclusion - formerly
 		// lone_pair_cannot_brace_hydrogen (four call sites collapse to two
@@ -204,7 +220,7 @@ struct HydrogenBond : public ConstraintBase
 		}
 
 		// non_existent_bonds moved out to create_two_half_hydrogen_bonds()
-		// alongside the SubExistence rule above - see this file's own note
+		// alongside the PeggedExistence rule above - see this file's own note
 		// further up for why.
 
 		// if every part of the H-bond is definitely sampled and the other

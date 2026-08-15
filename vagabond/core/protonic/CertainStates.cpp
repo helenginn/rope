@@ -211,8 +211,13 @@ ProbeCorrelation CertainStates::correlate(const ProbeTypePair &left,
 	corr.mat = Eigen::MatrixXf(rows, cols);
 	corr.mat.setZero();
 	
-	// func: based on a value coming out of the probe result, we convert it 
+	// func: based on a value coming out of the probe result, we convert it
 	// to an index.
+	// only checks bits 0-3: fine for Bond::Values/Existence::Values
+	// (ExhaustiveSearch.cpp), but hnet::Count::Values (charge, e.g.
+	// Count::mOne = 1 << 16) can set bits well past that - correlate()
+	// isn't yet called with a ChargeType pair anywhere, so this hasn't
+	// mattered, but it will need widening before it is.
 	auto get_index = [](const int &v)
 	{
 		for (int i = 0; i <= 3; i++)

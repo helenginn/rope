@@ -39,7 +39,9 @@ CommunicationChoice::CommunicationChoice(Scene *prev, Clique *clique)
 	// (H-bond) BondProbe reached from a certain atom's neighbours - but
 	// toVector() dumps them in OpSet's own sorted order, which
 	// interleaves the two rather than grouping them. stable_partition
-	// keeps each group in that same relative order, just grouped.
+	// keeps each group in that same relative order, just grouped. Charge
+	// probes and placeholder hydrogens/bonds never reach here at all -
+	// nonWaterProbes() filters both out (see its own comment).
 	std::stable_partition(_candidates.begin(), _candidates.end(),
 	                      [](Probe *p) { return p->is_atom(); });
 }
@@ -230,6 +232,17 @@ Renderable *CommunicationChoice::getLine(int i)
 				                   atom->shortResidueName() :
 				                   default_signal_name(atom);
 				aft->setDefaultText(def);
+			}
+			else
+			{
+				// non-atom candidates (H-bonds, charges) have no single
+				// atom to build a short name from - fall back to the
+				// probe's own description rather than leaving the field
+				// blank (this branch was previously only ever exercised
+				// by H-bond candidates, which is presumably why the
+				// missing default went unnoticed until charges, now also
+				// non-atom candidates here, made it far more common).
+				aft->setDefaultText(desc);
 			}
 			aft->setReturnJob([this, desc](std::string name)
 			{

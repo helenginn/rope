@@ -381,8 +381,22 @@ void Coordinated::attachToNeighbours(const OpSet<AtomConf> &searchSet)
 		// once per mirrored instance above - reaches the same conclusions
 		// without redundantly re-deriving them a second time every check().
 
-		// half-bond existence <-> protonation slot subservience
-		add_constraint(new SubExistence(le, hExist, re, false));
+		// half-bond existence <-> protonation slot subservience - two
+		// mirrored AndExistence instances (same le/re-swap trick as the
+		// two HydrogenBonds above) rather than PeggedExistence: forward,
+		// le present + re present => hExist present, from either
+		// instance; backward, whichever of le/re is not yet resolved
+		// gets forced Absent once hExist is confirmed Absent AND the
+		// other of le/re is already confirmed Absent (PeggedExistence's
+		// weaker "still merely possible" back-propagation - forcing
+		// both le and re Absent simultaneously whenever neither is yet
+		// resolved - is deliberately not reproduced here; see its own
+		// comment for why that wasn't sound). AndExistence has no
+		// equivalent of PeggedExistence's other forward rule (le Absent
+		// + re Absent => hExist Absent) - that one's handled directly in
+		// HydrogenBond::check() instead, see its own comment for why.
+		add_constraint(new AndExistence(le, re, hExist, Existence::Present));
+		add_constraint(new AndExistence(re, le, hExist, Existence::Present));
 
 		// an unsampled half-bond whose other side isn't a donor/acceptor
 		// either means the protonation slot is believed unsampled

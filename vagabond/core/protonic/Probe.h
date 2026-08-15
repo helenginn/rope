@@ -94,6 +94,11 @@ public:
 		return false;
 	}
 
+	virtual bool is_charge()
+	{
+		return false;
+	}
+
 	virtual bool is_bulk()
 	{
 		return _bulk;
@@ -136,7 +141,7 @@ public:
 	 * setupInactiveAtom()'s make_certain_covalent_bond() is the one
 	 * caller: when a covalent bond's matching-letter conformer resolves
 	 * unambiguously AND occupancies agree (diff < 0.05), it uses
-	 * hnet::MutualExistence rather than SubExistence, meaning both atoms'
+	 * hnet::MutualExistence rather than PeggedExistence, meaning both atoms'
 	 * existence is tied together - unlike a bond-probe-mediated edge
 	 * (already in others(), reached one hop further out through the
 	 * BondProbe), this is a genuinely new direct atom<->atom link that

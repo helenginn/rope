@@ -87,6 +87,7 @@ ABPair Coordinated::makePlaceholderHydrogen(const glm::vec3 &pos)
 	AtomConf hAtom = makeHydrogenAtom(pos);
 	BondConnector &new_bond = add(new BondConnector());
 	new_bond._placeholder = true;
+	new_bond.setDesc("placeholder H-bond off " + _atomConf.desc());
 	ExistenceConnector &h = add(new ExistenceConnector());
 	h.setDesc("protonation state of placeholder hydrogen off " + 
 	          _atomConf.desc());

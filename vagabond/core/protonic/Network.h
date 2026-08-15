@@ -207,9 +207,13 @@ private:
 
 	void linkCovalentBonds(hnet::AtomConf atom);
 
-	hnet::CountConnector &shareCharges(hnet::AtomConf left,
-	                                   hnet::AtomConf right,
-	                                   const hnet::Count::Values &allowable);
+	// merges any number (2+) of atoms' charges into one shared total
+	// (chained CountAdders, see shareProperty() in Network.cpp), creates
+	// the CountProbe that displays/samples it, and marks every atom
+	// involved as charge-shared (Coordinated::setChargeShared()) so its
+	// own individual charge probe steps aside in favour of this one.
+	void shareCharges(const std::vector<hnet::AtomConf> &atoms,
+	                  const hnet::Count::Values &allowable);
 
 	void findAtomCoordinations(hnet::AtomConf atom);
 

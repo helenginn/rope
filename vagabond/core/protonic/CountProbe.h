@@ -54,6 +54,11 @@ public:
 		return false;
 	}
 
+	virtual bool is_charge()
+	{
+		return true;
+	}
+
 	virtual float transparency()
 	{
 		float val = 0;

@@ -16,8 +16,8 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __vagabond__SubExistence__
-#define __vagabond__SubExistence__
+#ifndef __vagabond__PeggedExistence__
+#define __vagabond__PeggedExistence__
 
 #include "hnet.h"
 #include "ConstraintBase.h"
@@ -25,32 +25,30 @@
 namespace hnet
 {
 /* logic for determining hydrogen bonding patterns between two heavier atoms */
-struct SubExistence : public ConstraintBase
+struct PeggedExistence : public ConstraintBase
 {
-	SubExistence(ExistenceConnector &left, ExistenceConnector &sub,
-	             ExistenceConnector &right, bool strong = false)
-	: _strong(strong), _left(left), _sub(sub), _right(right)
+	PeggedExistence(ExistenceConnector &left, ExistenceConnector &sub,
+	             ExistenceConnector &right)
+	: _left(left), _sub(sub), _right(right)
 	{
 		prep_constraints_and_forgets(this, {&left, &sub, &right});
 	}
-	
+
 	std::string desc()
 	{
 		std::ostringstream ss;
-		ss << "subservient existence of " << _sub << 
+		ss << "subservient existence of " << _sub <<
 		" dependent on " << _left << " and " << _right;
 		return ss.str();
 
 	}
-	
+
 	bool check(const GuiltVersion &gv, CheckList &list)
 	{
 		auto assign = make_assign_and_say(this, gv, list);
 
-		if ((_left.value() == Existence::Present && 
-		    _right.value() == Existence::Present) || (_strong &&
-		    (_left.value() == Existence::Present || 
-		    _right.value() == Existence::Present)))
+		if (_left.value() == Existence::Present &&
+		    _right.value() == Existence::Present)
 		{
 			assign(_sub, Existence::Present);
 		}
@@ -61,8 +59,8 @@ struct SubExistence : public ConstraintBase
 			assign(_sub, Existence::Absent, "both left and right existences"\
 			       " were absent so middle existence should also be absent");
 		}
-		
-		if (_sub.value() == Existence::Absent && !_strong)
+
+		if (_sub.value() == Existence::Absent)
 		{
 			if (_left.value() & Existence::Absent)
 			{
@@ -79,7 +77,6 @@ struct SubExistence : public ConstraintBase
 		return assign.okay();
 	}
 
-	bool _strong = false;
 	ExistenceConnector &_left;
 	ExistenceConnector &_sub;
 	ExistenceConnector &_right;

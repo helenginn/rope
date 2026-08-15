@@ -18,6 +18,7 @@
 
 #include "ExhaustiveSearch.h"
 #include "CertainStates.h"
+#include "CountProbe.h"
 #include "Network.h"
 #include <random>
 #include <algorithm>
@@ -72,12 +73,28 @@ void ExhaustiveSearch::setup()
 		if (probe->_exist.is_certain()) { return nullptr; }
 		if (probe->is_covalent()) { return nullptr; };
 		std::vector<hnet::Existence::Values> options = probe->_exist.values();
-		IteratedProbe *ip = 
+		IteratedProbe *ip =
 		new IterateDecree<hnet::ExistenceConnector, hnet::Existence::Values>
 		(probe, probe->_exist, probe->_exist, options, "exist");
 		return ip;
 	};
-	
+
+	// a charge probe's own existence is already covered by its atom's
+	// AtomProbe (both reached independently via _all, for the shared
+	// case both atoms' - see setupHistidine()/setupCarboxylOxygen() in
+	// Network.cpp), so only its value (_obj, which state of charge) ever
+	// needs its own decree here, same as make_bond_decree() below for a
+	// bond's kind.
+	auto make_charge_decree = [this](CountProbe *probe) -> IteratedProbe *
+	{
+		if (probe->_obj.is_certain()) { return nullptr; }
+		std::vector<hnet::Count::Values> options = probe->_obj.values();
+		IteratedProbe *ip =
+		new IterateDecree<hnet::CountConnector, hnet::Count::Values>
+		(probe, probe->_obj, probe->_exist, options, "charge");
+		return ip;
+	};
+
 	for (Probe *const &probe : _all)
 	{
 		if (probe->is_bond())
@@ -113,7 +130,25 @@ void ExhaustiveSearch::setup()
 			if (ip) { _iterations.push_back(ip); }
 		}
 	}
-	
+
+	// charge decrees last, after bond kind: a shared/straightforward
+	// charge (Coordinated::finishOptions()'s _options ties geometry,
+	// charge and outershell_neutral_e together as one combinatorial
+	// choice) is only genuinely underdetermined once the atom's own
+	// existence and bond pattern have settled - e.g. a carboxylate's
+	// {Three, Zero, Six} vs {Three, mOne, Six} states share the same
+	// geometry/neutral-electron count and only differ in charge, so
+	// nothing else here would ever pin it down without its own decree.
+	for (Probe *const &probe : _all)
+	{
+		if (probe->is_charge())
+		{
+			CountProbe *cp = static_cast<CountProbe *>(probe);
+			IteratedProbe *ip = make_charge_decree(cp);
+			if (ip) { _iterations.push_back(ip); }
+		}
+	}
+
 	hnet::ConnectBase::_silent = true;
 }
 	
@@ -268,7 +303,7 @@ bool ExhaustiveSearch::next()
 				(dynamic_cast<HydrogenProbe *>(probe) != nullptr);
 
 				if (!probe->is_bond() && !probe->is_atom() &&
-				    !isHydrogenProtonation)
+				    !probe->is_charge() && !isHydrogenProtonation)
 				{
 					continue;
 				}
@@ -281,6 +316,11 @@ bool ExhaustiveSearch::next()
 				if (probe->is_bond())
 				{
 					result.addResult({probe, hnet::Types::BondType,
+					                  probe->certainValueAsInt()});
+				}
+				else if (probe->is_charge())
+				{
+					result.addResult({probe, hnet::Types::ChargeType,
 					                  probe->certainValueAsInt()});
 				}
 				else
