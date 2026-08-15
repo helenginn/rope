@@ -537,12 +537,14 @@ inline std::string to_string(int val)
 		str = "[" + str + "]";
 	}
 
+	/*
 	str += " 0b";
 	for (int j = 31; j >= 0; j--)
 	{
 		unsigned char byte = (val >> j) & 1;
 		str += (byte ? "1" : "0");
 	}
+	*/
 	return str;
 }
 

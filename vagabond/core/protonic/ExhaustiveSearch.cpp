@@ -139,13 +139,14 @@ void ExhaustiveSearch::setup()
 	// {Three, Zero, Six} vs {Three, mOne, Six} states share the same
 	// geometry/neutral-electron count and only differ in charge, so
 	// nothing else here would ever pin it down without its own decree.
+	int charge_count = 0;
 	for (Probe *const &probe : _all)
 	{
 		if (probe->is_charge())
 		{
 			CountProbe *cp = static_cast<CountProbe *>(probe);
 			IteratedProbe *ip = make_charge_decree(cp);
-			if (ip) { _iterations.push_back(ip); }
+			if (ip) { _iterations.push_back(ip); charge_count++; }
 		}
 	}
 
@@ -201,6 +202,10 @@ GetScore ExhaustiveSearch::score_wider_clique()
 		if (contrib)
 		{
 			jobs.push_back(contrib);
+		}
+		else
+		{
+
 		}
 	}
 

@@ -365,7 +365,7 @@ void CliqueView::addHelpButton()
 {
 	std::string text =
 	"To create a new clique, shift + drag and select atoms with the mouse,\n"\
-	"or right click empty space and click 'select from plan'.\n\n"\
+	"or right click empty space and click 'select using plan'.\n\n"\
 	"To examine the hydrogen-bonding network behaviour of a clique,\n"\
 	"right click the clique's name in the list and choose 'analyse'.";
 
