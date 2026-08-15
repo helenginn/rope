@@ -150,7 +150,19 @@ public:
 	{
 		return _donors;
 	}
-	
+
+	// explicit + twirling donor bonds combined (donors() alone is just
+	// the explicit half). Created in the constructor itself, not
+	// prepareCoordination() - unlike donors()/acceptors()/etc, it's
+	// already valid (broad Count::ZeroOrMore domain, not yet narrowed)
+	// by the time any setupX() residue handler runs, so those can
+	// reference it in a constraint of their own. See the constructor's
+	// own comment for why that ordering matters.
+	hnet::CountConnector *const &allDonors() const
+	{
+		return _allDonors;
+	}
+
 	hnet::CountConnector *const &charge() const
 	{
 		return _charge;
@@ -248,6 +260,7 @@ private:
 
 	hnet::CountConnector *_geometries{};
 	hnet::CountConnector *_donors{};
+	hnet::CountConnector *_allDonors{};
 	hnet::CountConnector *_acceptors{};
 	hnet::CountConnector *_present{};
 	hnet::CountConnector *_lonepair{};

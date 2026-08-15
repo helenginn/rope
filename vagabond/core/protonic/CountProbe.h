@@ -124,6 +124,10 @@ public:
 
 	virtual int certainValueAsInt()
 	{
+		if (_exist.value() == hnet::Existence::Absent)
+		{
+			return (int)_exist.value();
+		}
 		return (int)_obj.value();
 	}
 

@@ -54,6 +54,19 @@ Coordinated::Coordinated(Network &network, ::Atom *atom, char conf)
 	CountConnector &charge = add(new CountConnector());
 	charge.setDesc("charge on " + _atomConf.desc());
 	_charge = &charge;
+
+	// created (with a broad, non-empty Count::ZeroOrMore domain) here
+	// rather than alongside the rest of prepareCoordination()'s own
+	// bond-counters, purely so that setupX() residue handlers (dispatched
+	// via Network::findAtomCoordinations(), which for every atom runs
+	// before any atom's prepareCoordination() - see Network::establish())
+	// can already reference a valid connector for a cross-atom constraint
+	// of their own (e.g. Histidine's ring donor-count tie). Its actual
+	// definitional wiring (expl_donors + twirling_donors = all_donors)
+	// still only happens in prepareCoordination(), same as before.
+	CountConnector &all_donors = add_zero_or_positive_connector();
+	all_donors.setDesc("all donor bonds of " + _atomConf.desc());
+	_allDonors = &all_donors;
 }
 
 auto find_close(const hnet::AtomConf &ref, const glm::vec3 &v,
@@ -320,8 +333,9 @@ void Coordinated::prepareCoordination()
 	expl_donors.setDesc("explicit donors of " + _atomConf.desc());
 	CountConnector &twirling_donors = add_zero_or_positive_connector();
 	twirling_donors.setDesc("twirling donors of " + _atomConf.desc());
-	CountConnector &all_donors = add_zero_or_positive_connector();
-	all_donors.setDesc("all donor bonds of " + _atomConf.desc());
+
+	// created earlier, in the constructor itself - see its own comment.
+	CountConnector &all_donors = *_allDonors;
 
 	CountConnector &twirling_lp = add_zero_or_positive_connector();
 	CountConnector &all_lp = add_zero_or_positive_connector();
