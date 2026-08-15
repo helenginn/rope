@@ -31,11 +31,26 @@
 #include <vagabond/gui/elements/TextButton.h>
 #include <vagabond/gui/elements/TickBoxes.h>
 #include <vagabond/gui/elements/Slider.h>
+#include <vagabond/gui/elements/Image.h>
+#include <vagabond/gui/VagWindow.h>
+#include <vagabond/core/Progressor.h>
+#include <vagabond/utils/DoJob.h>
 
 OccupanciesView::OccupanciesView(Scene *prev, Clique *clique, Network &network)
 : Scene(prev), IndexResponseView(prev), _clique(clique), _network(network)
 {
 
+}
+
+OccupanciesView::~OccupanciesView()
+{
+	// tells a scan still running on a background thread (see scanPH()) to
+	// discard its result instead of touching this (about to be gone)
+	// view from its main-thread completion job.
+	if (_scanCancelled)
+	{
+		_scanCancelled->store(true);
+	}
 }
 
 
@@ -81,14 +96,61 @@ void OccupanciesView::setup()
 	              toggle_type("Liberation into bulk solvent",
 	               hnet::Energy::Bulk),
 	               e.source_on(hnet::Energy::Bulk));
-	tix->addOption("Van der Waals repulsion",
-	              toggle_type("Van der Waals repulsion",
-	               hnet::Energy::Repulsion),
-	               e.source_on(hnet::Energy::Repulsion));
+	tix->addOption("pH/pKa protonation",
+	              toggle_type("pH/pKa protonation",
+	               hnet::Energy::Protonation),
+	               e.source_on(hnet::Energy::Protonation));
 	tix->setVertical(true);
 	tix->setOneOnly(false);
-	tix->arrange(0.15, 0.52, 0.32, 0.83);
+	tix->arrange(0.15, 0.52, 0.32, 0.82);
 	addObject(tix);
+
+	// live pH nudge (Network::setTestPH()) - see its own comment, and
+	// updatePhDisplay()'s for the warning icon. Doesn't itself trigger a
+	// recompute - like the energy-source sliders above, its effect only
+	// shows up on the next "Check occupancies" click.
+	_phValueText = new Text("");
+	_phValueText->resize(0.6);
+	_phValueText->setLeft(0.15, 0.14);
+	addObject(_phValueText);
+
+	// next to the "Test pH" label - see scanPH()'s own comment.
+	TextButton *scanBtn = new TextButton("Scan", this);
+	scanBtn->resize(0.6);
+	scanBtn->setLeft(0.30, 0.19);
+	scanBtn->setReturnJob([this]() { scanPH(); });
+	addObject(scanBtn);
+
+	_phWarning = new Image("assets/images/warning.png");
+	_phWarning->resize(0.025);
+	_phWarning->setLeft(0.29, 0.135);
+	_phWarning->addAltTag("Test pH is outside the range this network was "\
+	                      "built to represent accurately - recalculate the "\
+	                      "proton network for a reliable result at this pH.");
+	addObject(_phWarning);
+
+	Slider *phSlider = new Slider();
+	auto phDrag = [this](double x, double)
+	{
+		_network.setTestPH((float)x);
+		updatePhDisplay((float)x);
+	};
+
+	// same ordering as slider() above and its own comment: setup()'s
+	// internal dot-seeding fires the drag function once as a side
+	// effect before we ever get to call setStart(), so the starting pH
+	// is read into a local first and re-applied via setStart() below,
+	// rather than trusted to survive setup() unmolested.
+	float startPh = _network.effectivePH();
+	phSlider->setDragFunction(phDrag);
+	phSlider->resize(0.15);
+	phSlider->setup("", 0.0, 15.0, 0.1, false);
+	phSlider->setStart(startPh / 15.0, 0.);
+	phSlider->setLeft(0.15, 0.19);
+	addObject(phSlider);
+	_phSlider = phSlider;
+
+	updatePhDisplay(startPh);
 
 	// top-left display filters - purely cosmetic (see rebuildGraph()'s
 	// own comment): neither changes what estimates() itself computes,
@@ -121,7 +183,7 @@ void OccupanciesView::setup()
 	slider("", hnet::Energy::Distance, 0.62);
 	slider("", hnet::Energy::Angle, 0.67);
 	slider("", hnet::Energy::Bulk, 0.72);
-	slider("", hnet::Energy::Repulsion, 0.77);
+	slider("", hnet::Energy::Protonation, 0.77);
 
 	IndexResponseView::setup();
 }
@@ -155,6 +217,149 @@ void OccupanciesView::slider(std::string msg, const hnet::Energy::Source &src,
 	s->setCentre(0.1, y);
 	addObject(s);
 
+}
+
+void OccupanciesView::updatePhDisplay(float pH)
+{
+	if (_phValueText)
+	{
+		_phValueText->setText("Test pH: " + f_to_str(pH, 1));
+		_phValueText->resize(0.6);
+	}
+
+	if (_phWarning)
+	{
+		std::pair<float, float> range = _network.safePHRange();
+		bool outside = (pH < range.first || pH > range.second);
+		_phWarning->setDisabled(!outside);
+	}
+}
+
+void OccupanciesView::scanPH()
+{
+	// supersedes a scan already in flight - the old one's completion job
+	// checks the flag it captured (a different shared_ptr instance than
+	// whatever _scanCancelled holds after the line below), not this
+	// member, so this alone is enough to make it discard its result.
+	if (_scanCancelled)
+	{
+		_scanCancelled->store(true);
+	}
+
+	auto cancelled = std::make_shared<std::atomic<bool>>(false);
+	_scanCancelled = cancelled;
+
+	struct ScanProgress : public Progressor {};
+	ScanProgress *progress = new ScanProgress();
+
+	auto cancelJob = [cancelled]()
+	{
+		cancelled->store(true);
+	};
+
+	// 0.0 to 14.0 inclusive, 0.25 steps.
+	const int steps = 57;
+
+	VagWindow::window()->requestProgressBar(steps, "Scanning pH", progress,
+	                                        cancelJob);
+
+	float originalPH = _network.effectivePH();
+	bool showWaters = _showWaters;
+	bool cliqueOnly = _cliqueOnly;
+	Clique *clique = _clique;
+
+	// captures this (main-thread) Scene, but only ever dereferences it
+	// from the main-thread completion job below, guarded by cancelled -
+	// same idiom ProtonNetworkView::buildNetwork() uses. estimates()
+	// itself, called here on the background thread, only reads Network/
+	// Clique/Probe state (no GL, no Renderables), same as the rest of
+	// this sweep.
+	auto scan = [this, progress, cancelled, originalPH, showWaters,
+	            cliqueOnly, clique]()
+	{
+		std::vector<std::pair<float, float>> points;
+
+		for (int i = 0; i < 57; i++)
+		{
+			if (cancelled->load())
+			{
+				break;
+			}
+
+			float pH = 0.25f * (float)i;
+			_network.setTestPH(pH);
+
+			EstimateMap est = estimates();
+
+			// same filtered-correlation logic as rebuildGraph()'s own CC,
+			// just against this sweep's own local estimate rather than
+			// _lastEstimates - the on-screen scatter plot is untouched by
+			// a scan (see this method's own header comment).
+			CorrelData cd = empty_CD();
+			for (auto &pair : est)
+			{
+				const ProbeTypePair &ptp = pair.first;
+				Atom *atom = ptp.first->atom();
+
+				if (!showWaters && atom && atom->code() == "HOH")
+				{
+					continue;
+				}
+				if (cliqueOnly && clique->probes().count(ptp.first) == 0)
+				{
+					continue;
+				}
+
+				add_to_CD(&cd, pair.second.calculated, pair.second.observed);
+			}
+
+			points.push_back({pH, (float)evaluate_CD(cd)});
+			progress->clickTicker();
+		}
+
+		progress->finishTicker();
+
+		// read-only exploratory sweep - put the pH back where the user
+		// actually left it, whether or not the scan ran to completion.
+		_network.setTestPH(originalPH);
+
+		VagWindow::window()->addMainThreadJob(
+		[this, points, cancelled, progress, originalPH]()
+		{
+			delete progress;
+
+			// cancellation (this view destroyed, or superseded by
+			// another scan) may have landed after the loop above
+			// finished but before this job got to run.
+			if (cancelled->load())
+			{
+				return;
+			}
+
+			if (_phSlider)
+			{
+				// re-applies originalPH (both the display and
+				// _network's own testPH) via the slider's own drag
+				// job - see its own setup()-time comment for why
+				// setStart() is what actually re-triggers that,
+				// not just a visual move.
+				_phSlider->setStart(originalPH / 15.0, 0.);
+			}
+
+			Graph *graph = new Graph();
+			for (const std::pair<float, float> &p : points)
+			{
+				graph->addPoint(0, p.first, p.second);
+			}
+			graph->setAxisLabel('x', "pH");
+			graph->setAxisLabel('y', "Correlation");
+
+			GraphView *gv = new GraphView(this, graph);
+			gv->show();
+		});
+	};
+
+	new DoJob(scan);
 }
 
 OccupanciesView::EstimateMap OccupanciesView::estimates()
@@ -296,6 +501,7 @@ void OccupanciesView::rebuildGraph()
 
 	deleteTemps();
 	CorrelData cd = empty_CD();
+	std::vector<float> calcs, obs;
 
 	Graph *graph = new Graph();
 	graph->style = Graph::StyleScatter;
@@ -373,6 +579,8 @@ void OccupanciesView::rebuildGraph()
 		graph->addPoint(0, calculated, observed, ptp.first->desc(), 1.f,
 		                pointType);
 		add_to_CD(&cd, calculated, observed);
+		calcs.push_back(calculated);
+		obs.push_back(observed);
 
 		std::cout << observed << " " << calculated << " " << samples << " " <<
 		ptp.first->atomConf() << "\n";
@@ -387,6 +595,31 @@ void OccupanciesView::rebuildGraph()
 	graph->setIndexResponder(this);
 	_graph = graph;
 	addTempObject(graph);
+
+	// y = ax + b / R / CC summary just under the graph (setup(0.4, 0.5)
+	// + addToGraphPosition(0.75, 0.5) puts its bottom edge at roughly
+	// y=0.75) - no line drawn on the plot itself, just the numbers.
+	float intercept = 0.f, gradient = 0.f;
+	regression_line(calcs, obs, &intercept, &gradient);
+
+	std::vector<double> dcalcs(calcs.begin(), calcs.end());
+	std::vector<double> dobs(obs.begin(), obs.end());
+	double r = calcs.size() ? r_factor(dcalcs, dobs) : 0.0;
+
+	std::string sign = (intercept < 0) ? " - " : " + ";
+	std::string eqn = "y = " + f_to_str(gradient, 3) + "x" + sign +
+	f_to_str(fabs(intercept), 3);
+
+	Text *eqnText = new Text(eqn);
+	eqnText->resize(0.6);
+	eqnText->setRight(0.95, 0.05);
+	addTempObject(eqnText);
+
+	Text *statsText = new Text("R = " + f_to_str((float)r, 3) +
+	                           "    CC = " + f_to_str(cc, 3));
+	statsText->resize(0.6);
+	statsText->setRight(0.95, 0.1);
+	addTempObject(statsText);
 }
 
 void OccupanciesView::interactedWithNothing(bool left, bool hover)

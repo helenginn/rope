@@ -28,4 +28,10 @@ void GraphView::setup()
 {
 	addTitle("Graph");
 
+	if (_graph)
+	{
+		_graph->setup(0.7, 0.6);
+		_graph->addToGraphPosition(0.5, 0.55);
+		addObject(_graph);
+	}
 }
