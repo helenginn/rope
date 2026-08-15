@@ -238,6 +238,7 @@ Energy::energy_wrapper_for_half_hbond(HydrogenProbe *probe, BondProbe &bp,
 			}
 			return contrib;
 		}
+		return 0.f;
 	};
 
 	auto hbond_dist = [evaluate, probe, pos]()
@@ -427,11 +428,6 @@ Energy::modulate(const std::vector<SourcedEnergy> &sources)
 				if (*entry.ptr)
 				{
 					total += entry.energy * exp(*entry.amp);
-				}
-				if (total != total)
-				{
-					std::cout << "Entry: " << *entry.ptr << " " << *entry.amp << " " <<
-					entry.energy << std::endl;
 				}
 			}
 
