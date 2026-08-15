@@ -422,6 +422,13 @@ void PositionShifter::setPosition(void *ptr, glm::vec3 pos)
 	Element *e = _map[ptr];
 	if (e)
 	{
+		// same lock move()'s own adjustment-application loop already
+		// takes around this exact getter()/setter() pair - callable from
+		// the main thread at any time (e.g. a drag), and without this,
+		// racing the physics thread's own concurrent write/read of
+		// whatever the getter/setter actually touch (e.g. ClusterPlot's
+		// _vertices[idx].pos) is unsynchronized, undefined behaviour.
+		std::unique_lock<std::mutex> lock(_partialMutex);
 		e->setter(pos);
 	}
 }
@@ -431,6 +438,11 @@ glm::vec3 PositionShifter::getPosition(void *ptr)
 	Element *e = _map[ptr];
 	if (e)
 	{
+		// see setPosition()'s own comment - same race, read side. Called
+		// every frame by e.g. ClusterPlot::updatePoints() while the
+		// physics thread may simultaneously be applying its own write to
+		// the same underlying storage inside move()'s locked section.
+		std::unique_lock<std::mutex> lock(_partialMutex);
 		return e->getter();
 	}
 	else return {};
