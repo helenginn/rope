@@ -164,7 +164,7 @@ void HBondAnalysisControl::setup()
 
 				TickBoxes *tick = new TickBoxes(this, this);
 				tick->addOption("", "active", run.active);
-				tick->arrange(0.02, y, 0.09, y + 0.045);
+				tick->arrange(0.06, y, 0.10, y + 0.035);
 				tick->setInert("active", inert);
 				tick->setReturnJob([this, tick, ptr]()
 				{
@@ -174,9 +174,9 @@ void HBondAnalysisControl::setup()
 				});
 				addTempObject(tick);
 
-				TextButton *name = new TextButton(run.description(), nullptr);
+				TextButton *name = new TextButton(run.displayName(), nullptr);
 				name->resize(0.45);
-				name->setLeft(0.10, y);
+				name->setLeft(0.12, y);
 				name->setInert(inert, true);
 				name->setReturnJob([this, ptr]()
 				{

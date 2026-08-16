@@ -54,9 +54,15 @@ public:
 	bool active = false;
 	time_t timestamp = 0;
 
-	/** short auto-generated label for the tickbox row, e.g. "6 nodes,
-	 * 3 samples" or "Brute force" - full details (clique count, average
-	 * node count, timestamp) belong in a details view instead. */
+	/** user-chosen override for displayName() (set via
+	 * HBondAnalysisControl's subdivision-run details "Rename" button) -
+	 * empty until renamed, meaning displayName() falls back to the
+	 * auto-generated description(). */
+	std::string name;
+
+	/** short auto-generated label, e.g. "12-node guide size, 3 samples"
+	 * or "Brute force" - full details (clique count, average node
+	 * count, timestamp) belong in a details view instead. */
 	std::string description() const
 	{
 		if (bruteForce)
@@ -64,8 +70,16 @@ public:
 			return "Brute force";
 		}
 
-		return std::to_string(maxNodes) + " nodes, " +
+		return std::to_string(maxNodes) + "-node guide size, " +
 		       std::to_string(samplesPerNode) + " samples";
+	}
+
+	/** what the tickbox row/details view should actually show as this
+	 * run's name - the user's rename if they gave one, else the
+	 * auto-generated description(). */
+	std::string displayName() const
+	{
+		return name.empty() ? description() : name;
 	}
 
 	friend void to_json(json &j, const SubdivisionRun &value);
@@ -564,6 +578,11 @@ inline void to_json(json &j, const SubdivisionRun &r)
 	j["brute_force"] = r.bruteForce;
 	j["active"] = r.active;
 	j["timestamp"] = (long long)r.timestamp;
+
+	if (r.name.size())
+	{
+		j["name"] = r.name;
+	}
 }
 
 inline void from_json(const json &j, SubdivisionRun &r)
@@ -574,6 +593,7 @@ inline void from_json(const json &j, SubdivisionRun &r)
 	r.bruteForce = j.value("brute_force", false);
 	r.active = j.value("active", false);
 	r.timestamp = (time_t)j.value("timestamp", (long long)0);
+	r.name = j.value("name", std::string());
 }
 
 #endif
