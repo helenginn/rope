@@ -423,13 +423,15 @@ Energy::energy_wrapper_for_protonation(CountConnector &charge,
 		// needs to affect results even from an already-cached GetScore).
 		return [this, isDeprotonated, getDeltaG]() -> float
 		{
+			if (!isDeprotonated)
+			{
+				return 0.f;
+			}
 			if (!source_on(Protonation))
 			{
 				return 0.f;
 			}
-			float full = getDeltaG() * exp(amplification(Protonation));
-			float split = (full / 2.f) * (isDeprotonated ? 1 : -1);
-			return split;
+			return getDeltaG() * exp(amplification(Protonation));
 		};
 	};
 }
