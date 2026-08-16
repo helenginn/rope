@@ -34,8 +34,17 @@
 #include <queue>
 #include <memory>
 #include <cmath>
+#include <cstdlib>
 
 using namespace hnet;
+
+// mirrors gui/Toolkit.h's ropeDevToolsEnabled() (core can't depend on gui) -
+// set ROPE_DEV=1 (any non-empty value) in the environment to reveal
+// developer-only behaviour.
+static bool ropeDevEnabled()
+{
+	return std::getenv("ROPE_DEV") != nullptr;
+}
 
 // sums any number (2+) of atoms' properties into one connector
 // constrained to `allowable` - a genuine chain of int-arithmetic
@@ -154,6 +163,19 @@ Count::Values Network::chargeStatesForPKa(const std::string &code,
 
 	bool protonatedIncluded = (fracDeprotonated < 0.99f);
 	bool deprotonatedIncluded = (fracDeprotonated > 0.01f);
+
+	// outside dev mode, only pKas extreme enough to be physiologically
+	// unambiguous (comfortably outside any pH the model could plausibly be
+	// tested at) still get a state excluded here - mid-range pKas keep
+	// both protonation states available regardless of the current pH/pKa
+	// gap, so non-dev users always see every state a dev build could
+	// reach via the (dev-only, see OccupanciesView/gui::Toolkit.h's
+	// ropeDevToolsEnabled()) test pH slider.
+	if (!ropeDevEnabled() && pKa >= 3.f && pKa <= 12.f)
+	{
+		protonatedIncluded = true;
+		deprotonatedIncluded = true;
+	}
 
 	if (protonatedIncluded)
 	{

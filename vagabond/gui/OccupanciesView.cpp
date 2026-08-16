@@ -33,6 +33,7 @@
 #include <vagabond/gui/elements/Slider.h>
 #include <vagabond/gui/elements/Image.h>
 #include <vagabond/gui/VagWindow.h>
+#include <vagabond/gui/Toolkit.h>
 #include <vagabond/core/Progressor.h>
 #include <vagabond/utils/DoJob.h>
 
@@ -96,10 +97,13 @@ void OccupanciesView::setup()
 	              toggle_type("Liberation into bulk solvent",
 	               hnet::Energy::Bulk),
 	               e.source_on(hnet::Energy::Bulk));
-	tix->addOption("pH/pKa protonation",
-	              toggle_type("pH/pKa protonation",
-	               hnet::Energy::Protonation),
-	               e.source_on(hnet::Energy::Protonation));
+	if (ropeDevToolsEnabled())
+	{
+		tix->addOption("pH/pKa protonation",
+		              toggle_type("pH/pKa protonation",
+		               hnet::Energy::Protonation),
+		               e.source_on(hnet::Energy::Protonation));
+	}
 	tix->setVertical(true);
 	tix->setOneOnly(false);
 	tix->arrange(0.15, 0.52, 0.32, 0.82);
@@ -108,49 +112,55 @@ void OccupanciesView::setup()
 	// live pH nudge (Network::setTestPH()) - see its own comment, and
 	// updatePhDisplay()'s for the warning icon. Doesn't itself trigger a
 	// recompute - like the energy-source sliders above, its effect only
-	// shows up on the next "Check occupancies" click.
-	_phValueText = new Text("");
-	_phValueText->resize(0.6);
-	_phValueText->setLeft(0.15, 0.14);
-	addObject(_phValueText);
-
-	// next to the "Test pH" label - see scanPH()'s own comment.
-	TextButton *scanBtn = new TextButton("Scan", this);
-	scanBtn->resize(0.6);
-	scanBtn->setLeft(0.30, 0.19);
-	scanBtn->setReturnJob([this]() { scanPH(); });
-	addObject(scanBtn);
-
-	_phWarning = new Image("assets/images/warning.png");
-	_phWarning->resize(0.025);
-	_phWarning->setLeft(0.29, 0.135);
-	_phWarning->addAltTag("Test pH is outside the range this network was "\
-	                      "built to represent accurately - recalculate the "\
-	                      "proton network for a reliable result at this pH.");
-	addObject(_phWarning);
-
-	Slider *phSlider = new Slider();
-	auto phDrag = [this](double x, double)
+	// shows up on the next "Check occupancies" click. Dev-only (see
+	// gui/Toolkit.h's ropeDevToolsEnabled()) - the underlying
+	// Network::setTestPH()/effectivePH() machinery stays live either way,
+	// this just hides the manual test-pH controls from regular users.
+	if (ropeDevToolsEnabled())
 	{
-		_network.setTestPH((float)x);
-		updatePhDisplay((float)x);
-	};
+		_phValueText = new Text("");
+		_phValueText->resize(0.6);
+		_phValueText->setLeft(0.15, 0.14);
+		addObject(_phValueText);
 
-	// same ordering as slider() above and its own comment: setup()'s
-	// internal dot-seeding fires the drag function once as a side
-	// effect before we ever get to call setStart(), so the starting pH
-	// is read into a local first and re-applied via setStart() below,
-	// rather than trusted to survive setup() unmolested.
-	float startPh = _network.effectivePH();
-	phSlider->setDragFunction(phDrag);
-	phSlider->resize(0.15);
-	phSlider->setup("", 0.0, 15.0, 0.1, false);
-	phSlider->setStart(startPh / 15.0, 0.);
-	phSlider->setLeft(0.15, 0.19);
-	addObject(phSlider);
-	_phSlider = phSlider;
+		// next to the "Test pH" label - see scanPH()'s own comment.
+		TextButton *scanBtn = new TextButton("Scan", this);
+		scanBtn->resize(0.6);
+		scanBtn->setLeft(0.30, 0.19);
+		scanBtn->setReturnJob([this]() { scanPH(); });
+		addObject(scanBtn);
 
-	updatePhDisplay(startPh);
+		_phWarning = new Image("assets/images/warning.png");
+		_phWarning->resize(0.025);
+		_phWarning->setLeft(0.29, 0.135);
+		_phWarning->addAltTag("Test pH is outside the range this network was "\
+		                      "built to represent accurately - recalculate the "\
+		                      "proton network for a reliable result at this pH.");
+		addObject(_phWarning);
+
+		Slider *phSlider = new Slider();
+		auto phDrag = [this](double x, double)
+		{
+			_network.setTestPH((float)x);
+			updatePhDisplay((float)x);
+		};
+
+		// same ordering as slider() above and its own comment: setup()'s
+		// internal dot-seeding fires the drag function once as a side
+		// effect before we ever get to call setStart(), so the starting pH
+		// is read into a local first and re-applied via setStart() below,
+		// rather than trusted to survive setup() unmolested.
+		float startPh = _network.effectivePH();
+		phSlider->setDragFunction(phDrag);
+		phSlider->resize(0.15);
+		phSlider->setup("", 0.0, 15.0, 0.1, false);
+		phSlider->setStart(startPh / 15.0, 0.);
+		phSlider->setLeft(0.15, 0.19);
+		addObject(phSlider);
+		_phSlider = phSlider;
+
+		updatePhDisplay(startPh);
+	}
 
 	// top-left display filters - purely cosmetic (see rebuildGraph()'s
 	// own comment): neither changes what estimates() itself computes,
@@ -183,7 +193,10 @@ void OccupanciesView::setup()
 	slider("", hnet::Energy::Distance, 0.62);
 	slider("", hnet::Energy::Angle, 0.67);
 	slider("", hnet::Energy::Bulk, 0.72);
-	slider("", hnet::Energy::Protonation, 0.77);
+	if (ropeDevToolsEnabled())
+	{
+		slider("", hnet::Energy::Protonation, 0.77);
+	}
 
 	IndexResponseView::setup();
 }
