@@ -37,11 +37,18 @@ public:
 	                    check_probe, int max_jumps = INT_MAX);
 
 	/** exclude_placeholders (on by default) drops placeholder hydrogens/
-	 * bonds (Probe::is_placeholder()) from the walk - they're speculative,
-	 * not-yet-resolved coordination slots that shouldn't be offered as
-	 * part of a chosen region of interest for analysis, nor searched by
-	 * ExhaustiveSearch. SearchAll's own energy-widening expansion passes
-	 * false here so they still contribute to the energy calculation. */
+	 * bonds (Probe::is_placeholder()) from the RETURNED set - they're
+	 * speculative, not-yet-resolved coordination slots that shouldn't be
+	 * offered as part of a chosen region of interest for analysis, nor
+	 * searched by ExhaustiveSearch. Filtered only after the walk
+	 * completes, not during it - the walk itself still steps through
+	 * placeholders freely, since one can be the only link between two
+	 * different atoms' own candidate hydrogens (see the H-H clash
+	 * MaxOne/register_probe pair in Coordinated_Hydrogens.cpp's
+	 * makePlaceholderHydrogen()); refusing to step onto one at all
+	 * fragments the walk into far smaller, disconnected regions.
+	 * SearchAll's own energy-widening expansion passes false here so
+	 * placeholders still contribute to the energy calculation. */
 	static
 	OpSet<Probe *> expandSelectionToNeighbours(const OpSet<Probe *> &done,
 	                                           int max_jumps = INT_MAX,

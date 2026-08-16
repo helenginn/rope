@@ -63,7 +63,7 @@ bool Subdivide::finish_ends(OpSet<Probe *> &chunk)
 		{
 			for (Probe *const &other : probe->others())
 			{
-				if (other->is_definitely_not_present() || other->is_placeholder())
+				if (other->is_definitely_not_present())
 				{
 					continue;
 				}
@@ -80,7 +80,7 @@ bool Subdivide::finish_ends(OpSet<Probe *> &chunk)
 		{
 			for (Probe *const &other : probe->others())
 			{
-				if (other->is_definitely_not_present() || other->is_placeholder())
+				if (other->is_definitely_not_present())
 				{
 					continue;
 				}
@@ -139,8 +139,7 @@ static int bounded_bfs(Probe *root, int radius, std::map<Probe *, int> &dist)
 
 		for (Probe *const &other : current->others())
 		{
-			if (other->is_definitely_not_present() || other->is_placeholder() ||
-			    dist.count(other))
+			if (other->is_definitely_not_present() || dist.count(other))
 			{
 				continue;
 			}
@@ -276,15 +275,19 @@ void Subdivide::prune(OpSet<Probe *> &chunk)
 	              {
 		             // placeholders (Probe::is_placeholder()) are
 		             // speculative, not-yet-resolved coordination slots
-		             // that don't belong in a searched/stored subdivision
-		             // - see the task this served (excluding them from
-		             // Clique/ExhaustiveSearch while keeping them in the
-		             // energy calculation via SearchAll's wider expansion).
-		             // finish_ends()/bounded_bfs() already skip growing
-		             // INTO a placeholder, but a chunk's own starting
-		             // probe (grow_clique's `start`, drawn from
-		             // _clique->probes()) can itself be one, so this is
-		             // still needed as a backstop.
+		             // that don't belong in a searched/stored subdivision -
+		             // excluded from Clique/ExhaustiveSearch while still
+		             // keeping them in the energy calculation via
+		             // SearchAll's wider expansion. Deliberately only
+		             // filtered out HERE, after growth, rather than in
+		             // finish_ends()/bounded_bfs() above: a placeholder
+		             // hydrogen can be the only link between two different
+		             // atoms' own candidate hydrogens (the H-H clash
+		             // MaxOne/register_probe pair in Coordinated_Hydrogens.
+		             // cpp's makePlaceholderHydrogen()), so blocking growth
+		             // from stepping onto one at all fragments the walkable
+		             // graph into far smaller, disconnected chunks instead
+		             // of just omitting it from the result.
 		             return probe->is_certain() || probe->is_placeholder();
 		          });
 }

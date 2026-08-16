@@ -78,8 +78,7 @@ CliqueFinder::expandSelectionToNeighbours(const OpSet<Probe *> &done,
 {
 	auto initial_assessment = [](Probe *){};
 
-	auto check_probe =
-	[with_covalent, exclude_placeholders](Probe *other, Probe *prev) -> bool
+	auto check_probe = [with_covalent](Probe *other, Probe *prev) -> bool
 	{
 		if (!with_covalent && other->is_covalent())
 		{
@@ -91,17 +90,27 @@ CliqueFinder::expandSelectionToNeighbours(const OpSet<Probe *> &done,
 			return false;
 		}
 
-		if (exclude_placeholders && other->is_placeholder())
-		{
-			return false;
-		}
-
 		return true;
 	};
-	
+
 	OpSet<Probe *> ps =
 	CliqueFinder::completeOnCondition(done, initial_assessment,
 	                                  check_probe, max_jumps);
+
+	// filtered out of the RESULT only, not the walk itself above: a
+	// placeholder hydrogen can be the only link between two different
+	// atoms' own candidate hydrogens (the H-H clash MaxOne/register_probe
+	// pair in Coordinated_Hydrogens.cpp's makePlaceholderHydrogen()), so
+	// having check_probe refuse to step onto one at all used to fragment
+	// the walk into far smaller, disconnected regions instead of just
+	// omitting placeholders from the region of interest they help define.
+	if (exclude_placeholders)
+	{
+		ps.filter([](Probe *const &probe)
+		{
+			return !probe->is_placeholder();
+		});
+	}
 
 	return ps;
 }
