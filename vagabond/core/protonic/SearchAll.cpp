@@ -33,8 +33,15 @@ void SearchAll::run()
 	std::list<Clique> &subs = _clique->subdivisions();
 	_clique->removeChildren();
 
+	// exclude_placeholders = false: this wider set only ever feeds
+	// ExhaustiveSearch's energy scoring (score_wider_clique()), never the
+	// decreed/searched set itself (that's `clique.probes()` below, which
+	// already excludes placeholders - see Subdivide::prune()), so
+	// placeholder hydrogens/bonds should stay in it and keep contributing
+	// to the energy calculation.
 	OpSet<Probe *> expanded =
-	CliqueFinder::expandSelectionToNeighbours(_clique->probes(), 15, true);
+	CliqueFinder::expandSelectionToNeighbours(_clique->probes(), 15, true,
+	                                          false);
 
 	for (Clique &clique : subs)
 	{

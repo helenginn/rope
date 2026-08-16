@@ -73,11 +73,13 @@ completeOnCondition(const OpSet<Probe *> &start,
 
 OpSet<Probe *>
 CliqueFinder::expandSelectionToNeighbours(const OpSet<Probe *> &done,
-                                          int max_jumps, bool with_covalent)
+                                          int max_jumps, bool with_covalent,
+                                          bool exclude_placeholders)
 {
 	auto initial_assessment = [](Probe *){};
 
-	auto check_probe = [with_covalent](Probe *other, Probe *prev) -> bool
+	auto check_probe =
+	[with_covalent, exclude_placeholders](Probe *other, Probe *prev) -> bool
 	{
 		if (!with_covalent && other->is_covalent())
 		{
@@ -85,6 +87,11 @@ CliqueFinder::expandSelectionToNeighbours(const OpSet<Probe *> &done,
 		}
 
 		if (other->is_definitely_not_present())
+		{
+			return false;
+		}
+
+		if (exclude_placeholders && other->is_placeholder())
 		{
 			return false;
 		}

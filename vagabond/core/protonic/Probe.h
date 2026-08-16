@@ -21,6 +21,7 @@
 
 #define Z_DEF (-0)
 #include "Connector.h"
+#include "Coordinated_Helpers.h"
 #include "Guilt.h"
 #include <memory>
 #include <optional>
@@ -105,6 +106,17 @@ public:
 	}
 
 	virtual bool is_definitely_not_present()
+	{
+		return false;
+	}
+
+	/** true for a placeholder hydrogen/bond (Coordinated::
+	 * makePlaceholderHydrogen()) - a speculative, not-yet-resolved
+	 * coordination slot rather than a real, decided bond. Overridden by
+	 * HydrogenProbe and BondProbe; every other Probe subtype is never a
+	 * placeholder. Single source of truth for this check - previously
+	 * duplicated as free functions in Clique.cpp/Subdivide.cpp. */
+	virtual bool is_placeholder()
 	{
 		return false;
 	}
@@ -644,6 +656,11 @@ public:
 		        _exist.value() == hnet::Existence::Absent);
 	}
 
+	virtual bool is_placeholder()
+	{
+		return hnet::is_placeholder_hydrogen_name(_h->atomName());
+	}
+
 	virtual float transparency()
 	{
 		if (!_exist.is_certain(true))
@@ -758,6 +775,11 @@ public:
 	virtual bool is_definitely_not_present()
 	{
 		return !(_obj.value() & hnet::Bond::Bonded);
+	}
+
+	virtual bool is_placeholder()
+	{
+		return _obj._placeholder;
 	}
 
 	virtual std::string value()

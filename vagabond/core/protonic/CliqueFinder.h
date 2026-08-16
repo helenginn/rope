@@ -36,10 +36,17 @@ public:
 	                    std::function<bool(Probe *probe, Probe *prev)>
 	                    check_probe, int max_jumps = INT_MAX);
 
+	/** exclude_placeholders (on by default) drops placeholder hydrogens/
+	 * bonds (Probe::is_placeholder()) from the walk - they're speculative,
+	 * not-yet-resolved coordination slots that shouldn't be offered as
+	 * part of a chosen region of interest for analysis, nor searched by
+	 * ExhaustiveSearch. SearchAll's own energy-widening expansion passes
+	 * false here so they still contribute to the energy calculation. */
 	static
 	OpSet<Probe *> expandSelectionToNeighbours(const OpSet<Probe *> &done,
 	                                           int max_jumps = INT_MAX,
-	                                           bool with_covalent = false);
+	                                           bool with_covalent = false,
+	                                           bool exclude_placeholders = true);
 
 	/** walks covalent bonds only, filling in the rest of every residue
 	 * already represented in `start` (never reaching into a *new*

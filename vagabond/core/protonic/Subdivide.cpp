@@ -19,7 +19,6 @@
 #include "Subdivide.h"
 #include "Probe.h"
 #include "Clique.h"
-#include "Coordinated_Helpers.h"
 #include <algorithm>
 #include <random>
 #include <queue>
@@ -64,7 +63,7 @@ bool Subdivide::finish_ends(OpSet<Probe *> &chunk)
 		{
 			for (Probe *const &other : probe->others())
 			{
-				if (other->is_definitely_not_present())
+				if (other->is_definitely_not_present() || other->is_placeholder())
 				{
 					continue;
 				}
@@ -81,7 +80,7 @@ bool Subdivide::finish_ends(OpSet<Probe *> &chunk)
 		{
 			for (Probe *const &other : probe->others())
 			{
-				if (other->is_definitely_not_present())
+				if (other->is_definitely_not_present() || other->is_placeholder())
 				{
 					continue;
 				}
@@ -140,7 +139,8 @@ static int bounded_bfs(Probe *root, int radius, std::map<Probe *, int> &dist)
 
 		for (Probe *const &other : current->others())
 		{
-			if (other->is_definitely_not_present() || dist.count(other))
+			if (other->is_definitely_not_present() || other->is_placeholder() ||
+			    dist.count(other))
 			{
 				continue;
 			}
@@ -269,47 +269,31 @@ bool has_non_water(const OpSet<Probe *> &chunk)
 	return false;
 }
 
-// true for a placeholder hydrogen itself (Probe::_h's atom name tagged
-// "H!" - see Coordinated::makeHydrogenAtom()'s own comment) or the
-// (also placeholder-flagged) BondConnector wrapping one - see
-// Coordinated::makePlaceholderHydrogen(). Before the real bond a given
-// coordination slot resolves to is known, developSeed()/expandAllSeeds()
-// can mint several of these per atom (one per seed that reaches that
-// slot) representing the same open slot - is_placeholder_hydrogen_name()
-// alone doesn't tell BondProbe/HydrogenProbe apart, so both are checked
-// explicitly rather than relying on desc() string content.
-static bool is_placeholder_related(Probe *probe)
-{
-	if (probe->_h && hnet::is_placeholder_hydrogen_name(probe->_h->atomName()))
-	{
-		return true;
-	}
-
-	if (probe->is_bond())
-	{
-		BondProbe *bp = static_cast<BondProbe *>(probe);
-		if (bp->_obj._placeholder)
-		{
-			return true;
-		}
-	}
-
-	return false;
-}
-
 void Subdivide::prune(OpSet<Probe *> &chunk)
 {
 	std::erase_if(chunk,
 	              [](Probe *const &probe)
 	              {
-		             return probe->is_certain();// || probe->is_covalent();
+		             // placeholders (Probe::is_placeholder()) are
+		             // speculative, not-yet-resolved coordination slots
+		             // that don't belong in a searched/stored subdivision
+		             // - see the task this served (excluding them from
+		             // Clique/ExhaustiveSearch while keeping them in the
+		             // energy calculation via SearchAll's wider expansion).
+		             // finish_ends()/bounded_bfs() already skip growing
+		             // INTO a placeholder, but a chunk's own starting
+		             // probe (grow_clique's `start`, drawn from
+		             // _clique->probes()) can itself be one, so this is
+		             // still needed as a backstop.
+		             return probe->is_certain() || probe->is_placeholder();
 		          });
 }
 
 // throwaway view of a (already pruned) chunk used ONLY to decide whether
 // two subdivisions are near-duplicates of each other in subdivide() below
-// - never stored, never searched. Placeholder hydrogens/bonds (see
-// is_placeholder_related()'s own comment) and covalent bonds don't
+// - never stored, never searched. Placeholder hydrogens/bonds (Probe::
+// is_placeholder() - prune() already strips these before this ever runs,
+// so this erase_if is a no-op backstop) and covalent bonds don't
 // meaningfully distinguish one subdivision from another once the real,
 // uncertain H-bond network membership already agrees, so both are
 // stripped; mutual-existence neighbours (unambiguous matching-letter-
@@ -362,7 +346,7 @@ static OpSet<Probe *> comparison_key(const OpSet<Probe *> &chunk)
 	std::erase_if(key,
 	              [](Probe *const &probe)
 	              {
-		             return is_placeholder_related(probe) || probe->is_covalent();
+		             return probe->is_placeholder() || probe->is_covalent();
 		          });
 
 	return key;

@@ -19,7 +19,6 @@
 #include "Network.h"
 #include "Clique.h"
 #include "Probe.h"
-#include "Coordinated_Helpers.h"
 
 Clique::Clique(const OpSet<Probe *> &probes) : _probes(probes)
 {
@@ -249,32 +248,6 @@ namespace
 		}
 		return false;
 	}
-
-	// a placeholder hydrogen/bond (Coordinated::makePlaceholderHydrogen())
-	// is a speculative, not-yet-resolved coordination slot rather than a
-	// real bond - same reasoning Subdivide.cpp's is_placeholder_related()
-	// already applies when deciding what belongs in a searched
-	// subdivision, mirrored here for Communication Choice's candidate
-	// list. _h is only ever set on the HydrogenProbe itself (in case one
-	// is ever reached directly); a placeholder BondProbe's own _h stays
-	// null, so is_bond()'s check on the underlying BondConnector's
-	// _placeholder flag is what actually catches it in practice.
-	bool is_placeholder(Probe *const &probe)
-	{
-		if (probe->_h && hnet::is_placeholder_hydrogen_name(probe->_h->atomName()))
-		{
-			return true;
-		}
-		if (probe->is_bond())
-		{
-			BondProbe *bp = static_cast<BondProbe *>(probe);
-			if (bp->_obj._placeholder)
-			{
-				return true;
-			}
-		}
-		return false;
-	}
 }
 
 OpSet<Probe *> Clique::nonWaterProbes()
@@ -310,7 +283,7 @@ OpSet<Probe *> Clique::nonWaterProbes()
 					if (!connected->is_covalent() && !connected->is_certain() &&
 					    !connected->is_charge() &&
 					    !is_symmetry_mate(connected) &&
-					    !is_placeholder(connected))
+					    !connected->is_placeholder())
 					{
 						nonwater.insert(connected);
 					}
