@@ -393,7 +393,7 @@ static OpSet<Probe *> comparison_key(const OpSet<Probe *> &chunk)
 void Subdivide::one()
 {
 	OpSet<Probe *> expanded = _clique->probes();
-	_clique->setSubdivisions({Clique(expanded)});
+	_clique->addSubdivisionRun({Clique(expanded)}, _max, 0, true);
 }
 
 void Subdivide::subdivide(int samples)
@@ -545,6 +545,6 @@ void Subdivide::subdivide(int samples)
 
 	std::cout << "Found " << cliques.size() << std::endl;
 
-	_clique->setSubdivisions(cliques);
+	_clique->addSubdivisionRun(cliques, _max, samples, false);
 }
 

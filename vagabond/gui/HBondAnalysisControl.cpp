@@ -21,10 +21,12 @@
 #include "ViewCorrelations.h"
 #include "HBondAnalysisControl.h"
 #include "CommunicationChoice.h"
+#include "SubdivisionRunDetails.h"
 #include <vagabond/gui/elements/AskYesNo.h>
 #include <vagabond/gui/elements/TextButton.h>
 #include <vagabond/gui/elements/ChooseRange.h>
 #include <vagabond/gui/elements/ImageButton.h>
+#include <vagabond/gui/elements/TickBoxes.h>
 #include <vagabond/gui/elements/Window.h>
 #include <vagabond/core/protonic/Subdivide.h>
 #include <vagabond/core/protonic/SearchAll.h>
@@ -145,50 +147,52 @@ void HBondAnalysisControl::setup()
 			ib->setInert(searchIsRunning(), true);
 		};
 
-		auto add_subdiv_summary = [this]()
+		auto add_subdivision_run_rows = [this]()
 		{
-			const std::list<Clique> &subs = _clique->subdivisions();
-			if (subs.size() == 0)
+			std::list<SubdivisionRun> &runs = _clique->subdivisionRuns();
+			if (runs.size() == 0)
 			{
 				return;
 			}
-			int sum = 0;
-			for (const Clique &sub : subs)
-			{
-				sum += sub.probes().size();
-			}
-			float ave = sum / (float)subs.size();
 
-			std::string summary = std::to_string(subs.size()) + " groups of \n"\
-			"average " + f_to_str(ave, 1) + " nodes";
+			bool inert = searchIsRunning();
+			float y = 0.68f;
 
-			Text *num = new Text(summary);
-			num->resize(0.6);
-			num->setCentre(0.18, 0.7);
-			addTempObject(num);
-		};
-		
-		auto delete_subdiv_button = [this]()
-		{
-			auto delete_subdivs = [this]()
+			for (SubdivisionRun &run : runs)
 			{
-				_clique->setSubdivisions({});
-				refresh();
-			};
+				SubdivisionRun *ptr = &run;
 
-			if (_clique->subdivisions().size() && !searchIsRunning())
-			{
-				ImageButton *ib = new ImageButton("assets/images/cross.png", this);
-				ib->resize(0.06);
-				ib->setLeft(0.25, 0.7);
-				ib->setReturnJob(delete_subdivs);
-				addTempObject(ib);
+				TickBoxes *tick = new TickBoxes(this, this);
+				tick->addOption("", "active", run.active);
+				tick->arrange(0.02, y, 0.09, y + 0.045);
+				tick->setInert("active", inert);
+				tick->setReturnJob([this, tick, ptr]()
+				{
+					bool nowTicked = tick->isTicked("active");
+					_clique->setActiveSubdivisionRun(nowTicked ? ptr : nullptr);
+					refresh();
+				});
+				addTempObject(tick);
+
+				TextButton *name = new TextButton(run.description(), nullptr);
+				name->resize(0.45);
+				name->setLeft(0.10, y);
+				name->setInert(inert, true);
+				name->setReturnJob([this, ptr]()
+				{
+					SubdivisionRunDetails *details =
+					new SubdivisionRunDetails(this, _clique, ptr,
+					                          [this]() { refresh(); });
+					setModal(details);
+				});
+				addTempObject(name);
+
+				y += 0.05;
 			}
 		};
 
 		_refreshes.push_back(enable_subdivide_button);
-		_refreshes.push_back(add_subdiv_summary);
-		_refreshes.push_back(delete_subdiv_button);
+		_refreshes.push_back(add_subdivision_run_rows);
 	}
 	
 	auto exhaustive_search = [this]()

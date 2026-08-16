@@ -24,6 +24,7 @@
 #include <vagabond/core/Item.h>
 #include <atomic>
 #include <memory>
+#include <ctime>
 
 #include <nlohmann/json.hpp>
 using nlohmann::json;
@@ -32,6 +33,49 @@ class Probe;
 class Network;
 class ProbeResult;
 class CertainStates;
+class Clique;
+
+/** one call to Subdivide::subdivide()/one() worth of results, kept
+ * alongside any earlier/later runs rather than overwriting them (see
+ * Clique::subdivisionRuns()) so a user can compare runs made with
+ * different settings and choose which one downstream occupancy/
+ * signalling-choice/communication analysis should respond to (the
+ * `active` flag, exactly one true at a time within a Clique's
+ * subdivisionRuns() - see Clique::activeSubdivisionRun()). */
+class SubdivisionRun
+{
+public:
+	SubdivisionRun() {}
+
+	std::list<Clique> subdivisions;
+	int maxNodes = 0;
+	int samplesPerNode = 0;
+	bool bruteForce = false;
+	bool active = false;
+	time_t timestamp = 0;
+
+	/** short auto-generated label for the tickbox row, e.g. "6 nodes,
+	 * 3 samples" or "Brute force" - full details (clique count, average
+	 * node count, timestamp) belong in a details view instead. */
+	std::string description() const
+	{
+		if (bruteForce)
+		{
+			return "Brute force";
+		}
+
+		return std::to_string(maxNodes) + " nodes, " +
+		       std::to_string(samplesPerNode) + " samples";
+	}
+
+	friend void to_json(json &j, const SubdivisionRun &value);
+	friend void from_json(const json &j, SubdivisionRun &value);
+};
+
+// to_json/from_json for SubdivisionRun are defined below Clique's own
+// (de)serialization, since they need Clique to be a complete type
+// (SubdivisionRun::subdivisions is std::list<Clique>, fine to declare
+// with an incomplete type but not to json-(de)serialize with one).
 
 class Clique : public Item
 {
@@ -234,34 +278,52 @@ public:
 		return _descToCommune.at(desc);
 	}
 	
+	/** the currently active run's own subdivisions (or an empty list if
+	 * there are no runs / none marked active) - kept as the accessor
+	 * every existing caller (SearchAll, ViewCorrelations, OccupanciesView,
+	 * HBondAnalysisControl) already used before subdivisions could have
+	 * more than one run, so occupancy/signalling-choice/communication
+	 * analysis transparently follows whichever run is ticked active
+	 * without each of those call sites needing to know about runs at
+	 * all. */
 	std::list<Clique> &subdivisions()
 	{
-		return _subdivs;
-	}
-
-	void setSubdivisions(const OpSet<Clique> &cliques)
-	{
-		// SearchAll::run() registers searched subdivisions as Items of
-		// this Clique (addItem(&clique), where &clique is the address of
-		// the Clique living inside _subdivs). Item::~Item() does not
-		// self-deregister, so replacing _subdivs without first removing
-		// those entries here would leave this->_items holding dangling
-		// pointers into the about-to-be-destroyed old list - only
-		// noticed later, whenever something (e.g. browsing cliques)
-		// walks this Clique's items. removeItem() is a harmless no-op
-		// for any subdivision that was never actually registered.
-		for (Clique &old : _subdivs)
+		SubdivisionRun *run = activeSubdivisionRun();
+		if (!run)
 		{
-			removeItem(&old);
+			static std::list<Clique> empty;
+			return empty;
 		}
 
-		_subdivs = std::list(cliques.begin(), cliques.end());
+		return run->subdivisions;
 	}
-	
-	void addSubdivision(const Clique &sub)
+
+	std::list<SubdivisionRun> &subdivisionRuns()
 	{
-		_subdivs.push_back(sub);
+		return _subdivisionRuns;
 	}
+
+	/** nullptr if there are no runs, or none is currently marked
+	 * active. */
+	SubdivisionRun *activeSubdivisionRun();
+
+	/** flips `active` on exactly the given run (which must already be
+	 * an element of subdivisionRuns()) and off on every other run. */
+	void setActiveSubdivisionRun(SubdivisionRun *run);
+
+	/** appends a fresh run built from a Subdivide::subdivide()/one()
+	 * result and makes it the active one, leaving any earlier runs
+	 * (and their already-searched states()) untouched and available to
+	 * switch back to later. */
+	void addSubdivisionRun(const OpSet<Clique> &cliques, int maxNodes,
+	                        int samplesPerNode, bool bruteForce);
+
+	/** removes one run (deregistering any Items SearchAll::run()
+	 * registered for its subdivisions first, same reasoning as the old
+	 * setSubdivisions({}) had) - if the removed run was active, no run
+	 * is left active afterwards; the caller/GUI should tick another one
+	 * if it wants analysis to keep responding to something. */
+	void removeSubdivisionRun(SubdivisionRun *run);
 
 	/** shared with whichever SearchAll is currently iterating/mutating
 	 * this Clique's subdivisions on a worker thread (if any), so any
@@ -332,18 +394,19 @@ public:
 private:
 	/** Item::_items/_parent are raw, non-owning pointers that Item's own
 	 * (compiler-generated) copy/assignment copies verbatim - fine for
-	 * most Items, but _subdivs is a std::list<Clique> held by value, so
-	 * copying a Clique also deep-copies its subdivisions to fresh
-	 * addresses while Item's shallow copy leaves _items/_parent pointing
-	 * at the SOURCE's addresses. Left uncorrected, this dangles as soon
-	 * as the source is destroyed (e.g. Network::~Network() ->
+	 * most Items, but _subdivisionRuns holds std::list<Clique> subdivisions
+	 * by value, so copying a Clique also deep-copies its subdivisions to
+	 * fresh addresses while Item's shallow copy leaves _items/_parent
+	 * pointing at the SOURCE's addresses. Left uncorrected, this dangles
+	 * as soon as the source is destroyed (e.g. Network::~Network() ->
 	 * updateModelCliques() copying into Model, then the live Network's
-	 * own _cliques/_subdivs being destroyed right after) - the crash this
-	 * fixes surfaces later, in LineGroup/ItemLine, when CliqueView's
-	 * wireDescendants() walks a re-entered ProtonNetworkView's (by then
-	 * doubly-copied) clique tree via items(). Called from both the copy
-	 * constructor and copy assignment right after the member-wise copy,
-	 * to re-home _items/_parent onto this object's own state. */
+	 * own _cliques/_subdivisionRuns being destroyed right after) - the
+	 * crash this fixes surfaces later, in LineGroup/ItemLine, when
+	 * CliqueView's wireDescendants() walks a re-entered
+	 * ProtonNetworkView's (by then doubly-copied) clique tree via
+	 * items(). Called from both the copy constructor and copy assignment
+	 * right after the member-wise copy, to re-home _items/_parent onto
+	 * this object's own state. */
 	void fixupItemsAfterCopy(const Clique &other);
 
 	class ProbeKey : public OpSet<Probe *>
@@ -390,7 +453,7 @@ private:
 	std::map<std::string, std::string> _descToCommune;
 	OpSet<std::string> _descs;
 	std::shared_ptr<CertainStates> _states{};
-	std::list<Clique> _subdivs;
+	std::list<SubdivisionRun> _subdivisionRuns;
 	std::shared_ptr<std::atomic<bool>> _searchRunning;
 	std::shared_ptr<std::atomic<bool>> _searchCancelled;
 	std::string _watchedDesc;
@@ -424,9 +487,9 @@ inline void to_json(json &j, const Clique &cl)
 		j["communication"] = cl._communication;
 	}
 	
-	if (cl._subdivs.size())
+	if (cl._subdivisionRuns.size())
 	{
-		j["subdivisions"] = cl._subdivs;
+		j["subdivision_runs"] = cl._subdivisionRuns;
 	}
 
 	if (cl._planText.size())
@@ -463,9 +526,18 @@ inline void from_json(const json &j, Clique &cl)
 		}
 	}
 
-	if (j.count("subdivisions"))
+	if (j.count("subdivision_runs"))
 	{
-		cl._subdivs = j.at("subdivisions");
+		cl._subdivisionRuns = j.at("subdivision_runs").get<std::list<SubdivisionRun>>();
+	}
+	else if (j.count("subdivisions"))
+	{
+		// pre-multi-run save format: a flat list<Clique>, migrated into
+		// a single active run so old saved models keep working.
+		SubdivisionRun run;
+		run.subdivisions = j.at("subdivisions").get<std::list<Clique>>();
+		run.active = true;
+		cl._subdivisionRuns.push_back(run);
 	}
 
 	if (j.count("plan"))
@@ -482,6 +554,26 @@ inline void from_json(const json &j, Clique &cl)
 	{
 		cl._watchedDesc = j.at("watched_signal");
 	}
+}
+
+inline void to_json(json &j, const SubdivisionRun &r)
+{
+	j["subdivisions"] = r.subdivisions;
+	j["max_nodes"] = r.maxNodes;
+	j["samples_per_node"] = r.samplesPerNode;
+	j["brute_force"] = r.bruteForce;
+	j["active"] = r.active;
+	j["timestamp"] = (long long)r.timestamp;
+}
+
+inline void from_json(const json &j, SubdivisionRun &r)
+{
+	r.subdivisions = j.at("subdivisions").get<std::list<Clique>>();
+	r.maxNodes = j.value("max_nodes", 0);
+	r.samplesPerNode = j.value("samples_per_node", 0);
+	r.bruteForce = j.value("brute_force", false);
+	r.active = j.value("active", false);
+	r.timestamp = (time_t)j.value("timestamp", (long long)0);
 }
 
 #endif

@@ -35,7 +35,7 @@ Clique::Clique(const Clique &other)
 _planText(other._planText), _sampleWeight(other._sampleWeight),
 _communication(other._communication),
 _descToCommune(other._descToCommune), _descs(other._descs),
-_states(other._states), _subdivs(other._subdivs),
+_states(other._states), _subdivisionRuns(other._subdivisionRuns),
 _searchRunning(other._searchRunning), _watchedDesc(other._watchedDesc),
 _searchText(other._searchText)
 {
@@ -58,7 +58,7 @@ Clique &Clique::operator=(const Clique &other)
 	_descToCommune = other._descToCommune;
 	_descs = other._descs;
 	_states = other._states;
-	_subdivs = other._subdivs;
+	_subdivisionRuns = other._subdivisionRuns;
 	_searchRunning = other._searchRunning;
 	_watchedDesc = other._watchedDesc;
 	_searchText = other._searchText;
@@ -70,8 +70,8 @@ Clique &Clique::operator=(const Clique &other)
 void Clique::fixupItemsAfterCopy(const Clique &other)
 {
 	// whatever Item's own copy just gave _items/_parent, it points at
-	// OTHER's state, not this object's freshly-copied _subdivs above -
-	// drop it all before re-registering the right addresses.
+	// OTHER's state, not this object's freshly-copied _subdivisionRuns
+	// above - drop it all before re-registering the right addresses.
 	clearParent();
 
 	std::vector<Item *> stale = items();
@@ -80,28 +80,34 @@ void Clique::fixupItemsAfterCopy(const Clique &other)
 		removeItem(item);
 	}
 
-	// _subdivs was copied element-for-element from other._subdivs, so
-	// the two lists correspond 1:1 in the same order - re-register only
-	// the subdivisions that OTHER itself had registered as items
-	// (SearchAll::run()'s addItem(&clique) once a subdivision has
-	// actually been searched), pointing at our own copies instead.
-	auto srcIt = other._subdivs.begin();
-	auto dstIt = _subdivs.begin();
-	for (; srcIt != other._subdivs.end(); srcIt++, dstIt++)
+	// _subdivisionRuns, and each run's own subdivisions, were copied
+	// element-for-element from other's, so the corresponding lists line
+	// up 1:1 in the same order - re-register only the subdivisions that
+	// OTHER itself had registered as items (SearchAll::run()'s
+	// addItem(&clique) once a subdivision has actually been searched),
+	// pointing at our own copies instead.
+	auto srcRunIt = other._subdivisionRuns.begin();
+	auto dstRunIt = _subdivisionRuns.begin();
+	for (; srcRunIt != other._subdivisionRuns.end(); srcRunIt++, dstRunIt++)
 	{
-		bool wasItem = false;
-		for (Item *item : other.items())
+		auto srcIt = srcRunIt->subdivisions.begin();
+		auto dstIt = dstRunIt->subdivisions.begin();
+		for (; srcIt != srcRunIt->subdivisions.end(); srcIt++, dstIt++)
 		{
-			if (item == &(*srcIt))
+			bool wasItem = false;
+			for (Item *item : other.items())
 			{
-				wasItem = true;
-				break;
+				if (item == &(*srcIt))
+				{
+					wasItem = true;
+					break;
+				}
 			}
-		}
 
-		if (wasItem)
-		{
-			addItem(&(*dstIt));
+			if (wasItem)
+			{
+				addItem(&(*dstIt));
+			}
 		}
 	}
 }
@@ -187,13 +193,16 @@ void Clique::housekeeping(Network &network)
 	}
 	_descs = {};
 
-	std::list<Clique> cleaned;
-	for (Clique cl : _subdivs)
+	for (SubdivisionRun &run : _subdivisionRuns)
 	{
-		cl.housekeeping(network);
-		cleaned.push_back(cl);
+		std::list<Clique> cleaned;
+		for (Clique cl : run.subdivisions)
+		{
+			cl.housekeeping(network);
+			cleaned.push_back(cl);
+		}
+		run.subdivisions = cleaned;
 	}
-	_subdivs = cleaned;
 }
 
 void Clique::prepareForStorage()
@@ -214,9 +223,75 @@ void Clique::prepareForStorage()
 	// whether they are still valid.
 	clearResponders();
 
-	for (Clique &sub : _subdivs)
+	for (SubdivisionRun &run : _subdivisionRuns)
 	{
-		sub.prepareForStorage();
+		for (Clique &sub : run.subdivisions)
+		{
+			sub.prepareForStorage();
+		}
+	}
+}
+
+SubdivisionRun *Clique::activeSubdivisionRun()
+{
+	for (SubdivisionRun &run : _subdivisionRuns)
+	{
+		if (run.active)
+		{
+			return &run;
+		}
+	}
+
+	return nullptr;
+}
+
+void Clique::setActiveSubdivisionRun(SubdivisionRun *run)
+{
+	for (SubdivisionRun &candidate : _subdivisionRuns)
+	{
+		candidate.active = (&candidate == run);
+	}
+}
+
+void Clique::addSubdivisionRun(const OpSet<Clique> &cliques, int maxNodes,
+                                int samplesPerNode, bool bruteForce)
+{
+	for (SubdivisionRun &run : _subdivisionRuns)
+	{
+		run.active = false;
+	}
+
+	SubdivisionRun run;
+	run.subdivisions = std::list<Clique>(cliques.begin(), cliques.end());
+	run.maxNodes = maxNodes;
+	run.samplesPerNode = samplesPerNode;
+	run.bruteForce = bruteForce;
+	run.active = true;
+	run.timestamp = time(nullptr);
+
+	_subdivisionRuns.push_back(run);
+}
+
+void Clique::removeSubdivisionRun(SubdivisionRun *run)
+{
+	for (auto it = _subdivisionRuns.begin(); it != _subdivisionRuns.end(); it++)
+	{
+		if (&(*it) != run)
+		{
+			continue;
+		}
+
+		// same reasoning as the old setSubdivisions({}) had: Items may
+		// have been registered (SearchAll::run()'s addItem(&clique))
+		// against addresses inside this run's subdivisions list, which
+		// is about to be destroyed.
+		for (Clique &sub : it->subdivisions)
+		{
+			removeItem(&sub);
+		}
+
+		_subdivisionRuns.erase(it);
+		return;
 	}
 }
 
