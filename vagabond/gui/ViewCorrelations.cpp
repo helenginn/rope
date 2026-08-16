@@ -141,10 +141,7 @@ void ViewCorrelations::setup()
 
 	setBackJob([this]()
 	{
-		if (_cancelled)
-		{
-			_cancelled->store(true);
-		}
+		cancelStage2();
 		VagWindow::window()->requestProgressBarRemoval();
 	});
 
@@ -306,6 +303,12 @@ void ViewCorrelations::resetStateSelection()
 
 ViewCorrelations::~ViewCorrelations()
 {
+	// first: any completion job fill_gaps/assemble already queued (main-
+	// thread jobs run on a later frame, possibly after this destructor has
+	// finished) checks this before touching `this`.
+	*_alive = false;
+	cancelStage2();
+
 	for (auto &pair : _prevJobs)
 	{
 		pair.first->setSelectJob(pair.second);
@@ -649,13 +652,13 @@ void ViewCorrelations::viewAll()
 	// wipes whatever the user was looking at before (e.g. a subnetwork's
 	// own view, or a previous "All" screen) and shows the toggle right
 	// away, rather than only once assembly finishes - stage 1 below is
-	// already safely cancellable (see makeTopLevelViewToggle()'s own
-	// comment on why stage 2 is handled differently).
+	// already safely cancellable, and clearScreen() above also cancels and
+	// joins stage 2 (FloydWarshall gap-filling) if that was running
+	// instead - see cancelStage2()'s own comment.
 	clearScreen();
 	_correlationMatrixButton = nullptr;
 	_subnetworkClusteringButton = nullptr;
 	_matrixComplete = false;
-	_stage2Running = false;
 
 	// this (and finishAssembly(), further down) is what displays the
 	// correlation matrix grid - but this is also the parent clique's own
@@ -851,13 +854,14 @@ void ViewCorrelations::finishAssembly()
 	// once it finished.
 	MatrixPlot *mp = buildCorrelationMatrixUI(false);
 
-	// not cancellable - the comparison matrix isn't usable until this
-	// finishes, so there is nothing sensible to fall back to if aborted.
-	// makeTopLevelViewToggle() and viewSubnetwork() both refuse to
-	// navigate away for exactly this window (see _stage2Running's own
-	// comment) so nothing deletes mp while fw's background thread still
-	// holds a raw pointer to it, calling update() on it.
-	_stage2Running = true;
+	// the actual computation isn't cancellable mid-(i,j) - there's nothing
+	// sensible to fall back to part-way through a Floyd-Warshall pass - but
+	// run() now checks _cancelled once per k-iteration (see FloydWarshall's
+	// own comment) and bails out promptly instead of running to completion
+	// regardless. clearScreen() (via cancelStage2()) joins _stage2Thread
+	// before deleteTemps()-ing mp, so mp is guaranteed to outlive every
+	// update() call this thread makes, however many land before it notices
+	// cancellation.
 
 	struct GapFillProgress : public Progressor {};
 
@@ -872,6 +876,7 @@ void ViewCorrelations::finishAssembly()
 
 		FloydWarshall fw(_result, combine, true);
 		fw.addDisplayMatrix(_matrix, _mutex, [mp]() { mp->update(); });
+		fw.setCancelFlag(_cancelled);
 
 		GapFillProgress *progress = new GapFillProgress();
 		fw.addTickJob([progress]() { progress->clickTicker(); });
@@ -886,15 +891,24 @@ void ViewCorrelations::finishAssembly()
 
 		setInformation("Finished deriving intermediates");
 
-		addMainThreadJob([this]()
+		addMainThreadJob([this, alive = _alive]()
 		{
+			// this job is queued from the background thread and may not
+			// be drained until a later frame - if this Scene was torn
+			// down (cancelStage2() -> _stage2Thread.join() in the
+			// destructor) in the meantime, `this` is already freed by
+			// the time this runs; _alive (a separate heap allocation,
+			// flipped false as the first thing the destructor does) is
+			// the only thing safe to read at that point.
+			if (!*alive)
+			{
+				return;
+			}
+
 			// lets showTopLevelView() reuse this run's _matrix/_correlative
 			// instantly instead of re-running the whole assembly if the
-			// user switches to subnetwork clustering and back - also
-			// re-enables the "Subnetwork clustering" button, disabled
-			// until now (see makeTopLevelViewToggle()).
+			// user switches to subnetwork clustering and back.
 			_matrixComplete = true;
-			_stage2Running = false;
 			makeTopLevelViewToggle();
 			addCommunicationAnalysisButton();
 
@@ -902,7 +916,17 @@ void ViewCorrelations::finishAssembly()
 		});
 	};
 
-	new DoJob(fill_gaps);
+	// owned directly (rather than the fire-and-forget detached DoJob used
+	// for stage 1's "assemble") so cancelStage2() can join it - see
+	// _stage2Thread's own comment. clearScreen() already joined whatever
+	// the previous run left behind before viewAll() got this far, but
+	// guard against it defensively too in case a future caller reaches
+	// finishAssembly() without going through clearScreen() first.
+	if (_stage2Thread.joinable())
+	{
+		_stage2Thread.join();
+	}
+	_stage2Thread = std::thread(fill_gaps);
 }
 
 void ViewCorrelations::viewSubnetwork(Clique &clique)
@@ -916,24 +940,16 @@ void ViewCorrelations::viewSubnetwork(Clique &clique)
 	// its own MatrixPlot/button on top of whatever this subnetwork's own
 	// view is showing by then - same mechanism the toggle buttons and
 	// back button already use; a no-op if nothing is currently running.
-	if (_cancelled)
-	{
-		_cancelled->store(true);
-	}
+	// Also cancels/joins stage 2 (FloydWarshall gap-filling) if that's what
+	// is running instead, ahead of clearScreen() below doing the same - a
+	// harmless redundant call there, but starting it here gives the
+	// background thread the earliest possible chance to notice. This used
+	// to just return here instead, refusing to navigate at all for as
+	// long as stage 2 was running (which had no cancellation support
+	// either, so that could be several seconds of a click silently doing
+	// nothing).
+	cancelStage2();
 	VagWindow::window()->requestProgressBarRemoval();
-
-	// stage 2 (FloydWarshall gap-filling, "fill_gaps" in finishAssembly())
-	// has no cancellation support at all, and its background thread holds
-	// a raw pointer to the MatrixPlot finishAssembly() already added,
-	// calling update() on it for as long as it runs - deleteTemps()-ing
-	// that same MatrixPlot below would race that still-live thread. The
-	// toggle buttons already refuse to switch away for exactly this
-	// window (see _stage2Running's own comment); do the same here rather
-	// than let this list bypass it.
-	if (_stage2Running)
-	{
-		return;
-	}
 
 	// a state index only means anything relative to this specific
 	// subnetwork's own CertainStates - carrying it over into a different
@@ -1507,6 +1523,12 @@ void ViewCorrelations::placeClusterPlot(ClusterPlot *cp)
 
 void ViewCorrelations::clearScreen()
 {
+	// must come before deleteTemps(): guarantees stage 2's background
+	// thread (if any is still running) has genuinely stopped touching any
+	// MatrixPlot before deleteTemps() below frees it - see cancelStage2()'s
+	// own comment.
+	cancelStage2();
+
 	deleteTemps();
 
 	// see this method's own header comment - deleteTemps() alone leaves
@@ -1516,22 +1538,21 @@ void ViewCorrelations::clearScreen()
 	_activeClusterPlot = nullptr;
 }
 
+void ViewCorrelations::cancelStage2()
+{
+	if (_cancelled)
+	{
+		_cancelled->store(true);
+	}
+
+	if (_stage2Thread.joinable())
+	{
+		_stage2Thread.join();
+	}
+}
+
 void ViewCorrelations::makeTopLevelViewToggle()
 {
-	// stage 1 (the correlation assembly itself, DoJob "assemble" in
-	// viewAll() - typically the slower of the two) is already safely
-	// cancellable via the same _cancelled flag the back button uses, so
-	// switching away from it is fine. Stage 2 (FloydWarshall gap-filling
-	// in finishAssembly()'s "fill_gaps") has no cancellation support at
-	// all, and its background thread holds a raw MatrixPlot* it keeps
-	// calling update() on for as long as it runs - switching away and
-	// deleteTemps()-ing that same MatrixPlot while stage 2 is still
-	// running would race exactly the class of bug fixed for
-	// StateClusterPlot/ThickLine earlier (a background thread touching a
-	// Renderable the main thread is concurrently freeing). So: disabled
-	// only in the one specific window where stage 1 has hand off to
-	// finishAssembly() (_assembling false) but stage 2 hasn't fully
-	// finished yet (_matrixComplete false).
 	// see this method's own comment (header) - cleans up whichever pair
 	// it previously built itself, if a caller hasn't already wiped them
 	// via deleteTemps() (and nulled these two members) since. Without
@@ -1553,22 +1574,7 @@ void ViewCorrelations::makeTopLevelViewToggle()
 		_subnetworkClusteringButton = nullptr;
 	}
 
-	// stage 1 (the correlation assembly itself, DoJob "assemble" in
-	// viewAll() - typically the slower of the two) is already safely
-	// cancellable via the same _cancelled flag the back button uses, so
-	// switching away from it is fine. Stage 2 (FloydWarshall gap-filling
-	// in finishAssembly()'s "fill_gaps") has no cancellation support at
-	// all, and its background thread holds a raw MatrixPlot* it keeps
-	// calling update() on for as long as it runs - switching away and
-	// deleteTemps()-ing that same MatrixPlot while stage 2 is still
-	// running would race exactly the class of bug fixed for
-	// StateClusterPlot/ThickLine earlier (a background thread touching a
-	// Renderable the main thread is concurrently freeing). So: disabled
-	// only while _stage2Running is true (see its own comment on why that
-	// is not simply derived from _assembling/_matrixComplete).
-	bool stage2Running = _stage2Running;
-
-	auto make_button = [this, stage2Running](const std::string &label,
+	auto make_button = [this](const std::string &label,
 	                          TopLevelView mode, float x) -> TextButton *
 	{
 		TextButton *tb = new TextButton(label, this);
@@ -1576,11 +1582,9 @@ void ViewCorrelations::makeTopLevelViewToggle()
 		tb->setCentre(x, 0.205);
 
 		bool active = (_topLevelView == mode);
-		bool blocked = (!active && mode == TopLevelView::SubnetworkClustering
-		               && stage2Running);
-		tb->setInert(active || blocked, true);
+		tb->setInert(active, true);
 
-		if (!blocked)
+		if (!active)
 		{
 			tb->setReturnJob([this, mode]()
 			{
@@ -1590,11 +1594,11 @@ void ViewCorrelations::makeTopLevelViewToggle()
 				}
 
 				// same mechanism the back button uses (see setup()) - a
-				// no-op if nothing is currently assembling.
-				if (_cancelled)
-				{
-					_cancelled->store(true);
-				}
+				// no-op if nothing is currently assembling. showTopLevelView()
+				// below calls clearScreen(), which does the same for stage 2
+				// (and joins it) before deleteTemps()-ing whatever this
+				// button's own matrix/plot was.
+				cancelStage2();
 				VagWindow::window()->requestProgressBarRemoval();
 
 				_topLevelView = mode;

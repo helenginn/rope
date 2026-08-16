@@ -29,6 +29,7 @@
 #include <mutex>
 #include <atomic>
 #include <memory>
+#include <thread>
 #include <list>
 #include <vector>
 
@@ -260,6 +261,15 @@ private:
 	// same reason (see its own comment).
 	void clearScreen();
 
+	// signals _cancelled (if set) and then joins _stage2Thread if it is
+	// still running - called from clearScreen() (so nothing deleteTemps()s
+	// a MatrixPlot stage 2 still holds a raw pointer to) and from the
+	// destructor (so the same is true if the whole Scene is being torn
+	// down instead, e.g. via the "back" button, which used to just flag
+	// cancellation and move straight on to deleting the Scene without
+	// waiting for the background thread to actually notice).
+	void cancelStage2();
+
 	// non-owning - whichever ClusterPlot placeClusterPlot() last
 	// registered as an IndexResponder, purely so a later call can tell
 	// clearResponders() to drop it before the temp object itself gets
@@ -361,25 +371,26 @@ private:
 	// true once finishAssembly()'s FloydWarshall pass has fully finished
 	// for the current _matrix/_correlative/_result - lets
 	// showTopLevelView() reuse them instantly instead of re-running the
-	// whole assembly, and also gates makeTopLevelViewToggle()'s
-	// "Subnetwork clustering" button (see its own comment). Reset false
-	// at the start of every fresh viewAll() run, since _result is about
-	// to be replaced and won't have been gap-filled yet.
+	// whole assembly. Reset false at the start of every fresh viewAll()
+	// run, since _result is about to be replaced and won't have been
+	// gap-filled yet.
 	bool _matrixComplete = false;
 
-	// true only for the exact duration of finishAssembly()'s "fill_gaps"
-	// DoJob (FloydWarshall, which has no cancellation support and holds a
-	// raw MatrixPlot* it keeps calling update() on) - NOT simply derived
-	// from (!_assembling && !_matrixComplete), which is also true after a
-	// stage 1 run gets cancelled before ever reaching finishAssembly() (a
-	// perfectly safe state to navigate away from, no background thread
-	// involved at all) and would otherwise stay stuck indistinguishable
-	// from "stage 2 genuinely running" until the next full viewAll() -
-	// exactly the bug that made viewSubnetwork() silently refuse to
-	// navigate at all after switching to Subnetwork clustering mid-
-	// assembly. Both makeTopLevelViewToggle() and viewSubnetwork() gate
-	// on this directly instead.
-	bool _stage2Running = false;
+	// owns finishAssembly()'s "fill_gaps" background thread directly
+	// (rather than the fire-and-forget detached DoJob used elsewhere in
+	// this class) specifically so cancelStage2() can join it - i.e. block
+	// until the thread has genuinely stopped touching the MatrixPlot* it
+	// was given, not just until cancellation has been requested.
+	std::thread _stage2Thread;
+
+	// separate from _cancelled (which is reassigned to a fresh flag by
+	// every viewAll() run, and is also legitimately set true for a
+	// still-alive Scene that just navigated elsewhere) - this one is only
+	// ever flipped false, once, in the destructor, and lets a completion
+	// job queued by fill_gaps/assemble but not yet drained by the time
+	// this Scene is destroyed detect that and skip touching `this`
+	// instead of running against freed memory.
+	std::shared_ptr<bool> _alive = std::make_shared<bool>(true);
 
 	// makeList() borrows _clique's and its subdivisions' select jobs
 	// (shared Item state, not view-local) for the duration this view is

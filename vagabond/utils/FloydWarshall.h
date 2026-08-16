@@ -21,6 +21,8 @@
 
 #include <functional>
 #include <mutex>
+#include <atomic>
+#include <memory>
 #include "Eigen/Dense"
 
 class FloydWarshall
@@ -54,6 +56,18 @@ public:
 		_tick = tick;
 	}
 
+	// checked once per outer-loop (k) iteration, same cadence as the tick
+	// job above - lets a caller (ViewCorrelations, sharing the same flag
+	// its "back"/navigation cancellation already sets) stop run() promptly
+	// instead of it running to completion regardless, which is what let a
+	// caller-owned raw pointer passed to addDisplayMatrix() above (e.g. a
+	// MatrixPlot*) get freed out from under a still-running background
+	// thread that kept calling the update callback on it.
+	void setCancelFlag(const std::shared_ptr<std::atomic<bool>> &cancelled)
+	{
+		_cancelled = cancelled;
+	}
+
 	void run();
 private:
 	Eigen::MatrixXf &_sqMat;
@@ -65,6 +79,7 @@ private:
 	VoidFunction _update{};
 	VoidFunction _done{};
 	VoidFunction _tick{};
+	std::shared_ptr<std::atomic<bool>> _cancelled{};
 };
 
 #endif

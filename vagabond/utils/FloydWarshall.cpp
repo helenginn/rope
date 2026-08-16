@@ -76,6 +76,15 @@ void FloydWarshall::run() // symmetric matrix
 
 	for (int k = 0; k < size; k++)
 	{
+		if (_cancelled && _cancelled->load())
+		{
+			// bail out without the trailing refresh_display()/_done() below
+			// touching whatever addDisplayMatrix()'s caller-owned mat/mutex/
+			// update callback point to - cancellation means the caller is
+			// already tearing those down.
+			return;
+		}
+
 		// row k and column k are never written to during this k-iteration
 		// (the i == k / j == k skip below guarantees it), so snapshot
 		// them once into contiguous buffers instead of re-reading them
