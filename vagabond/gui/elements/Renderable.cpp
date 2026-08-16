@@ -256,23 +256,25 @@ void Renderable::runProgram()
 		_delegate->_program = _program;
 	}
 
+	std::string id = " (" + name() + ", " + typeid(*this).name() + ")";
+
 	glUseProgram(_program);
-	
-	checkErrors("use program");
+
+	checkErrors("use program" + id);
 	rebindVBOBuffers();
-	checkErrors("rebinding program");
+	checkErrors("rebinding program" + id);
 
 	_model = _usesProj ? getModel() : glm::mat4(1.f);
 	_uModel = glGetUniformLocation(_program, "model");
 	_glModel = glm::transpose(model());
 	glUniformMatrix4fv(_uModel, 1, GL_FALSE, &_model[0][0]);
-	checkErrors("rebinding model");
+	checkErrors("rebinding model" + id);
 
 	_proj = _usesProj ? _gl->getProjection() : glm::mat4(1.f);
 	_uProj = glGetUniformLocation(_program, "projection");
 	_glProj = glm::transpose(projection());
 	glUniformMatrix4fv(_uProj, 1, GL_FALSE, &_proj[0][0]);
-	checkErrors("rebinding projection");
+	checkErrors("rebinding projection" + id);
 
 	if (_delegate && _delegate != this)
 	{
@@ -282,7 +284,7 @@ void Renderable::runProgram()
 	slabbing();
 	extraUniforms();
 
-	checkErrors("rebinding extras");
+	checkErrors("rebinding extras" + id);
 
 	if (hasTexture())
 	{
@@ -297,10 +299,10 @@ void Renderable::runProgram()
 	{
 		std::unique_lock<std::mutex> buffers(_buffLock);
 
-		checkErrors("before drawing elements");
+		checkErrors("before drawing elements" + id);
 		glDrawElements(_renderType, indexCount(), GL_UNSIGNED_INT, 0);
 
-		if (checkErrors("drawing elements"))
+		if (checkErrors("drawing elements" + id))
 		{
 			std::cout << indexCount() << " + " << _shaderGets->iSize() / sizeof(GLuint) << " ";
 			std::cout << "... " << name() << std::endl;
