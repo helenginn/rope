@@ -33,6 +33,38 @@ Subdivide::Subdivide(Clique *clique, int max) : _clique(clique)
 	}
 }
 
+// true for a symmetry-mate atom (Atom::symmetryCopyOf() non-null) or a
+// bond touching one - mirrors Clique.cpp's own is_symmetry_mate(), which
+// can't be reused directly since it lives in that file's anonymous
+// namespace. Crystallographic symmetry mates are folded into the same
+// probe graph Network builds (see Network::Network()) so they resolve
+// their own H-bonding independently, but a subdivision chunk searched by
+// ExhaustiveSearch is meant to represent one physically real, contiguous
+// region of the asymmetric unit - pulling in a mate atom or a bond to one
+// mixes in a duplicate, independently-resolving copy of that region
+// instead of extending it. Unlike placeholders (Probe::is_placeholder(),
+// filtered only from the RESULT - see prune()'s own comment), a symmetry
+// mate is excluded from the WALK itself: it is never a bridge to some
+// other real, distinct region the way a placeholder can be, only ever a
+// duplicate of a region already reachable through the real atom instead.
+static bool is_symmetry_related(Probe *probe)
+{
+	if (probe->atom())
+	{
+		return probe->atom()->symmetryCopyOf() != nullptr;
+	}
+
+	if (probe->is_bond())
+	{
+		BondProbe *bp = static_cast<BondProbe *>(probe);
+		Atom *l = bp->left().atom();
+		Atom *r = bp->right().atom();
+		return (l && l->symmetryCopyOf()) || (r && r->symmetryCopyOf());
+	}
+
+	return false;
+}
+
 bool Subdivide::finish_ends(OpSet<Probe *> &chunk)
 {
 	bool follow_hydrogens = true;
@@ -63,7 +95,8 @@ bool Subdivide::finish_ends(OpSet<Probe *> &chunk)
 		{
 			for (Probe *const &other : probe->others())
 			{
-				if (other->is_definitely_not_present())
+				if (other->is_definitely_not_present() ||
+				    is_symmetry_related(other))
 				{
 					continue;
 				}
@@ -80,7 +113,8 @@ bool Subdivide::finish_ends(OpSet<Probe *> &chunk)
 		{
 			for (Probe *const &other : probe->others())
 			{
-				if (other->is_definitely_not_present())
+				if (other->is_definitely_not_present() ||
+				    is_symmetry_related(other))
 				{
 					continue;
 				}
@@ -139,7 +173,8 @@ static int bounded_bfs(Probe *root, int radius, std::map<Probe *, int> &dist)
 
 		for (Probe *const &other : current->others())
 		{
-			if (other->is_definitely_not_present() || dist.count(other))
+			if (other->is_definitely_not_present() ||
+			    is_symmetry_related(other) || dist.count(other))
 			{
 				continue;
 			}
