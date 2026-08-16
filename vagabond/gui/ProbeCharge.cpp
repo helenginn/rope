@@ -28,6 +28,7 @@ ProbeCharge::ProbeCharge(ProtonNetworkView *view, CountProbe *probe)
 		            "assets/images/circle_minus.png",
 		            "assets/images/circle_2minus.png",
 		            "assets/images/circle_3minus.png",
+		            "assets/images/circle_question.png",
 		            "assets/images/transparency.png"});
 
 	_view = view;
