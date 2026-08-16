@@ -349,12 +349,10 @@ OpSet<Probe *> Clique::nonWaterProbes()
 					// charge probes (Network::shareCharges()/Coordinated::
 					// add_charge_display()) are wired into others() so they
 					// join subnetworks/ExhaustiveSearch, but aren't
-					// choosable Communication Choice signals yet -
-					// CertainStates::correlate()'s get_index() only checks
-					// bits 0-3, which isn't wide enough for every
-					// hnet::Count::Values charge state (see its own
-					// comment), so picking a charge as a signal would
-					// silently misbehave there.
+					// choosable Communication Choice signals yet - kept
+					// out here deliberately, not because of a bug (see
+					// CertainStates::correlate()'s get_index(), which now
+					// handles ChargeType).
 					if (!connected->is_covalent() && !connected->is_certain() &&
 					    !connected->is_charge() &&
 					    !is_symmetry_mate(connected) &&

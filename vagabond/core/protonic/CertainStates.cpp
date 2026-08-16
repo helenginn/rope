@@ -22,7 +22,22 @@
 
 int dim_for_type(const hnet::Types &type)
 {
-	return (type == hnet::Types::BondType ? 3 : 2);
+	if (type == hnet::Types::BondType)
+	{
+		return 3;
+	}
+
+	// ChargeType states span mTwo(-2)..Two(+2) per hnet::Count::Values -
+	// five bits, five indices. NOTE: Count::Values has no bit for +/-3 or
+	// beyond, so a triply-charged ion (e.g. Fe3+) still isn't
+	// representable; adding one without also widening get_index() below
+	// will reintroduce an out-of-bounds write here.
+	if (type == hnet::Types::ChargeType)
+	{
+		return 5;
+	}
+
+	return 2;
 }
 
 CertainStates::CertainStates(const std::vector<ProbeResult> &results)
@@ -213,14 +228,26 @@ ProbeCorrelation CertainStates::correlate(const ProbeTypePair &left,
 	corr.mat.setZero();
 	
 	// func: based on a value coming out of the probe result, we convert it
-	// to an index.
-	// only checks bits 0-3: fine for Bond::Values/Existence::Values
-	// (ExhaustiveSearch.cpp), but hnet::Count::Values (charge, e.g.
-	// Count::mOne = 1 << 16) can set bits well past that - correlate()
-	// isn't yet called with a ChargeType pair anywhere, so this hasn't
-	// mattered, but it will need widening before it is.
-	auto get_index = [](const int &v)
+	// to an index. Bond::Values/Existence::Values only ever set bits 0-3,
+	// but hnet::Count::Values (charge) also uses bits 16/17 (mOne/mTwo)
+	// for negative charge - those need their own branch, matching the
+	// 5-wide dimension dim_for_type() now gives ChargeType.
+	// NOTE: this only covers what Count::Values currently defines
+	// (-2..+2); an ion needing wider charge (e.g. Fe3+) will fall through
+	// to -1 here and reproduce the out-of-bounds write below until this
+	// mapping is widened too.
+	auto get_index = [](const hnet::Types &type, const int &v)
 	{
+		if (type == hnet::Types::ChargeType)
+		{
+			if (v & (1 << 17)) { return 0; } // mTwo, -2
+			if (v & (1 << 16)) { return 1; } // mOne, -1
+			if (v & (1 << 0))  { return 2; } // Zero,  0
+			if (v & (1 << 1))  { return 3; } // One,  +1
+			if (v & (1 << 2))  { return 4; } // Two,  +2
+			return -1;
+		}
+
 		for (int i = 0; i <= 3; i++)
 		{
 			if (v & (1 << i))
@@ -262,8 +289,8 @@ ProbeCorrelation CertainStates::correlate(const ProbeTypePair &left,
 			continue;
 		}
 
-		int l = get_index(mv);
-		int r = get_index(nv);
+		int l = get_index(corr.left.second, mv);
+		int r = get_index(corr.right.second, nv);
 
 		// for Boltzmann energy calculation
 		corr.mat(l, r) += prob;
