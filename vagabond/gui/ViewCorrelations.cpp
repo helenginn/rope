@@ -715,7 +715,7 @@ void ViewCorrelations::viewAll()
 		OpSet<ProbeTypePair> all =
 		Correlative::probeTypePairs(clique->subdivisions(), all_ave);
 
-		Correlative *correl = new Correlative(all, all_ave, false);
+		Correlative *correl = new Correlative(all, all_ave);
 
 		for (Clique &sub : clique->subdivisions())
 		{
