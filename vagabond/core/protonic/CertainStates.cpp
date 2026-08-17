@@ -345,10 +345,12 @@ std::map<int, float> CertainStates::proportions(ProbeTypePair ptp,
 
 	int n = (*this)(ptp);
 
-	// how many times this node was sampled - independent of
-	// Clique::sampleWeight() (subnetworks merged into one another), see
-	// sampleCount()'s own comment.
-	float correction = (float)sampleCount(ptp);
+	// average sample count across this whole clique/subnetwork, not just
+	// this node's own - a per-node correction here would multiply totals
+	// and sum alike and cancel out once normalised downstream (see
+	// averageSampleCount()'s own comment), independent of
+	// Clique::sampleWeight() (subnetworks merged into one another).
+	float correction = averageSampleCount();
 
 	std::map<int, float> totals;
 	std::map<int, int> counts;
