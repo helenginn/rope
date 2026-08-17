@@ -21,6 +21,7 @@
 
 #include <vagabond/gui/elements/IndexResponseView.h>
 #include <vagabond/core/protonic/Energy.h>
+#include <vagabond/core/protonic/OccupancyPredictor.h>
 #include <unordered_map>
 #include <memory>
 #include <atomic>
@@ -41,14 +42,6 @@ public:
 
 	virtual void setup();
 	void occupancies();
-	
-	struct OccData
-	{
-		float calculated{};
-		float observed{};
-		float probs{};
-		size_t samples{};
-	};
 
 protected:
 	virtual void interactedWithNothing(bool left, bool hover = false);
@@ -73,8 +66,7 @@ private:
 	// _graph, so the scatter plot on screen is untouched throughout.
 	void scanPH();
 
-	typedef std::map<ProbeTypePair, OccData> EstimateMap;
-	EstimateMap estimates();
+	typedef OccupancyPredictor::EstimateMap EstimateMap;
 
 	// (re)builds _graph from _lastEstimates, applying the current
 	// _showWaters/_cliqueOnly filters - shared by occupancies() (which
@@ -88,6 +80,11 @@ private:
 	void rebuildGraph();
 
 	Clique *_clique{};
+
+	// constructed once when this view is set up (see setup()), then reused
+	// across every "Check occupancies" run and pH-scan sweep for the
+	// lifetime of this view, rather than recreated per call.
+	std::unique_ptr<OccupancyPredictor> _predictor;
 
 	Graph *_graph{};
 	Network &_network;
