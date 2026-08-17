@@ -21,6 +21,8 @@
 
 #include <vagabond/gui/elements/Box.h>
 #include <map>
+#include <functional>
+#include <optional>
 
 class Scatter;
 class ThickLine;
@@ -91,7 +93,23 @@ public:
 	// found). A no-op if the hovered point has no coordinate set.
 	// Reverted back to plain black by clearLabels() once the mouse leaves
 	// every point (see its own comment).
+	//
+	// Also computes a "local correlation": the same x/y data addPoint()
+	// was given, correlated with every other coordinate-bearing point
+	// weighted by exp(-d^2), d being that point's own hoverColour()
+	// distance normalised by the largest distance found (0 at the hovered
+	// point itself, dropping off with distance) - and reports it via
+	// setHoverInfoCallback() below.
 	void hoverColour(int series, int idx);
+
+	// called with the local correlation (see hoverColour()'s own comment)
+	// on hover, and std::nullopt once the mouse leaves every point (same
+	// moment resetColours() reverts the colouring) - lets a caller (e.g.
+	// OccupanciesView) surface it, e.g. via setInformation().
+	void setHoverInfoCallback(std::function<void(std::optional<double>)> cb)
+	{
+		_hoverInfoCallback = cb;
+	}
 private:
 	void resetColours();
 	struct DataPoint
@@ -141,6 +159,9 @@ private:
 	// engaged, so callers that never supply setSeriesCoordinates() see no
 	// change from before this feature existed.
 	bool _hoverColoured = false;
+
+	// see setHoverInfoCallback()/hoverColour().
+	std::function<void(std::optional<double>)> _hoverInfoCallback;
 
 	// see clearLabels()/noteLabelShown() - counts consecutive clearLabels()
 	// calls since the last noteLabelShown(), so a lone stray miss (mouse

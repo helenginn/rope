@@ -19,6 +19,7 @@
 #include "Graph.h"
 #include "Scatter.h"
 #include "ColourLegend.h"
+#include <vagabond/utils/maths.h>
 //#include <vagabond/utils/FileReader.h>
 #include <vagabond/gui/elements/ThickLine.h>
 #include <vagabond/gui/elements/Window.h>
@@ -429,6 +430,11 @@ void Graph::resetColours()
 	}
 
 	_hoverColoured = false;
+
+	if (_hoverInfoCallback)
+	{
+		_hoverInfoCallback(std::nullopt);
+	}
 }
 
 void Graph::hoverColour(int series, int idx)
@@ -485,6 +491,41 @@ void Graph::hoverColour(int series, int idx)
 	}
 
 	_hoverColoured = true;
+
+	if (_hoverInfoCallback)
+	{
+		// weighted correlation of the plotted x/y data itself (whatever
+		// addPoint() was given - calculated vs observed occupancy for
+		// OccupanciesView) across every coordinate-bearing point, each
+		// weighted by exp(-d^2) where d is that point's own distance
+		// above, normalised into the same [0, 1] the colouring uses -
+		// i.e. points near the hovered one dominate, points at maxDist
+		// contribute almost nothing.
+		CorrelData cd = empty_CD();
+
+		for (const auto &pair : _coords)
+		{
+			auto dataIt = _data.find(pair.first);
+			if (dataIt == _data.end())
+			{
+				continue;
+			}
+
+			const std::vector<DataPoint> &points = dataIt->second;
+			size_t n = std::min(pair.second.size(), points.size());
+
+			for (size_t i = 0; i < n; i++)
+			{
+				float dist = glm::length(pair.second[i] - origin);
+				float prop = (maxDist > 0 ? dist / maxDist : 0.f);
+				double weight = exp(-double(prop) * prop);
+				add_to_CD(&cd, (double)points[i].point.x,
+				         (double)points[i].point.y, weight);
+			}
+		}
+
+		_hoverInfoCallback(evaluate_CD(cd));
+	}
 }
 
 void Graph::clearLabels()

@@ -616,7 +616,25 @@ void OccupanciesView::rebuildGraph()
 
 	graph->setSeriesCoordinates(0, coords);
 
-	setInformation("Correlation: " + f_to_str(cc, 3));
+	// base info line, always shown; hovering a point appends its own
+	// exp(-d^2)-weighted "local" correlation (see Graph::hoverColour()'s
+	// own comment) alongside it, reverting back to just this on
+	// mouse-away (Graph reports std::nullopt then).
+	std::string baseInfo = "Correlation: " + f_to_str(cc, 3);
+	setInformation(baseInfo);
+
+	graph->setHoverInfoCallback([this, baseInfo](std::optional<double> local)
+	{
+		if (!local)
+		{
+			setInformation(baseInfo);
+			return;
+		}
+
+		setInformation(baseInfo + "    Local correlation: " +
+		              f_to_str((float)*local, 3));
+	});
+
 	graph->setup(0.4, 0.5);
 	graph->addToGraphPosition(0.75, 0.5);
 	graph->setIndexResponder(this);
