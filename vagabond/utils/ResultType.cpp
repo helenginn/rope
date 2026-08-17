@@ -26,6 +26,8 @@
 #ifdef ROPE_INLINE_TESTS
 #include <doctest/doctest.h>
 
+using namespace rust_type;
+
 // Error type with toString
 struct CustomTestError {
   std::string msg;

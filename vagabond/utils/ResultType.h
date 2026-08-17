@@ -26,10 +26,14 @@
 #include <utility>
 #include <variant>
 
+namespace rust_type{
+
+namespace details {
 template <typename T>
 concept HasToString = requires(T obj) {
   { obj.toString() } -> std::convertible_to<std::string>;
 };
+} // namespace details
 
 template <typename T> struct Ok {
   T value;
@@ -126,7 +130,7 @@ public:
   }
 
   T expect(const std::string &msg) &&
-    requires HasToString<E>
+    requires details::HasToString<E>
   {
     if (is_err()) {
       throw std::runtime_error(msg + ": " + error().toString());
@@ -135,7 +139,7 @@ public:
   }
 
   T expect(const std::string &msg) &&
-    requires(!HasToString<E>)
+    requires(!details::HasToString<E>)
   {
     if (is_err()) {
       throw std::runtime_error(msg);
@@ -144,7 +148,7 @@ public:
   }
 
   E expect_err(const std::string &msg) &&
-    requires HasToString<T>
+    requires details::HasToString<T>
   {
     if (is_ok()) {
       throw std::runtime_error(msg + ": " + std::get<0>(data_).toString());
@@ -153,7 +157,7 @@ public:
   }
 
   E expect_err(const std::string &msg) &&
-    requires(!HasToString<T>)
+    requires(!details::HasToString<T>)
   {
     if (is_ok()) {
       throw std::runtime_error(msg);
@@ -276,7 +280,7 @@ public:
   }
 
   void expect(const std::string &msg) &&
-    requires HasToString<E>
+    requires details::HasToString<E>
   {
     if (is_err()) {
       throw std::runtime_error(msg + ": " + error().toString());
@@ -284,7 +288,7 @@ public:
   }
 
   void expect(const std::string &msg) &&
-    requires(!HasToString<E>)
+    requires(!details::HasToString<E>)
   {
     if (is_err()) {
       throw std::runtime_error(msg);
@@ -353,3 +357,5 @@ public:
     return std::nullopt;
   }
 };
+
+} // namespace rust_type

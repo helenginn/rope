@@ -56,6 +56,8 @@ std::unique_ptr<File> validateInput(std::string first, std::string last) {
 };
 } // namespace
 
+using namespace rust_type;
+
 Result<int, std::string> divide(int a, int b) {
   if (b == 0) {
     return Err(std::string("Division by 0 is not allowed!"));
