@@ -441,6 +441,13 @@ static OpSet<Probe *> comparison_key(const OpSet<Probe *> &chunk)
 void Subdivide::one()
 {
 	OpSet<Probe *> expanded = _clique->probes();
+	// same as grow_clique()'s own prune() call in subdivide() below -
+	// without this, a clique that only ever goes through one() (never
+	// algorithmically subdivided) kept its placeholder hydrogens/bonds
+	// (Probe::is_placeholder()) as full members of the resulting
+	// subnetwork instead of just contributing to energy scoring, leaking
+	// them into ExhaustiveSearch's decreed set and the correlation matrix.
+	prune(expanded);
 	_clique->addSubdivisionRun({Clique(expanded)}, _max, 0, true);
 }
 
