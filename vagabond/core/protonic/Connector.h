@@ -228,12 +228,13 @@ struct Connector : public ConnectBase
 			return false;
 		}
 
+		value();
+
 		if (_update)
 		{
-			value();
 			_update(false);
 		}
-		
+
 		add_to_forget_list(gv, list);
 		
 		return true;
