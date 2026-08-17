@@ -164,7 +164,7 @@ void HBondAnalysisControl::setup()
 
 				TickBoxes *tick = new TickBoxes(this, this);
 				tick->addOption("", "active", run.active);
-				tick->arrange(0.06, y, 0.10, y + 0.035);
+				tick->arrange(0.08, y, 0.10, y + 0.035);
 				tick->setInert("active", inert);
 				tick->setReturnJob([this, tick, ptr]()
 				{

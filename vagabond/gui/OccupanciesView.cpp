@@ -106,7 +106,8 @@ void OccupanciesView::setup()
 	}
 	tix->setVertical(true);
 	tix->setOneOnly(false);
-	tix->arrange(0.15, 0.52, 0.32, 0.82);
+	float end_vert = (ropeDevToolsEnabled() ? 0.82 : 0.77);
+	tix->arrange(0.15, 0.52, 0.32, end_vert);
 	addObject(tix);
 
 	// live pH nudge (Network::setTestPH()) - see its own comment, and
