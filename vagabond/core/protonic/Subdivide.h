@@ -52,6 +52,11 @@ private:
 	// under-sampled nodes instead of picking uniformly at random - see
 	// shoot()'s own comment for why.
 	std::map<Probe *, int> _nodeCounts;
+
+	// the `samples` argument passed to the current subdivide() call, kept
+	// here so shoot() can tell when every candidate endpoint it could pick
+	// is already oversampled - see shoot()'s own comment for why.
+	int _samples = 0;
 };
 
 #endif
