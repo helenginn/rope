@@ -74,16 +74,6 @@ void BreakMatrix::accounting()
 			be.exist = it->second;
 			be.index = count;
 
-			for (const ABPair &ab : _coord->bonds())
-			{
-				if (ab.second != it->first)
-				{
-					continue;
-				}
-				Coordinated *other = _coord->atomMap()[ab.first];
-				break;
-			}
-			
 			_entries.push_back(be);
 		}
 	}
@@ -138,36 +128,36 @@ void BreakMatrix::setup(const OpSet<AcceptableGroup> &groups)
 Eigen::MatrixXi BreakMatrix::partialMatrix(const std::vector<BondConnector *> 
                                            &partial)
 {
-	std::map<BondConnector *, int> lookup;
-	for (int i = 0; i < partial.size(); i++)
+	std::vector<int> idx(partial.size(), -1);
+	bool all_found = true;
+
+	for (size_t i = 0; i < partial.size(); i++)
 	{
-		lookup[partial[i]] = i;
+		auto it = _indexing.find(partial[i]);
+		if (it == _indexing.end())
+		{
+			// likely an uninvolved coordinator
+			all_found = false;
+			continue;
+		}
+		idx[i] = it->second;
+	}
+
+	if (all_found)
+	{
+		return _matrix(idx, idx);
 	}
 
 	Eigen::MatrixXi tmp(partial.size(), partial.size());
 	tmp.setZero();
 
-	for (BondConnector *const &left : partial)
+	for (size_t i = 0; i < partial.size(); i++)
 	{
-		if (_indexing.count(left) == 0)
+		if (idx[i] < 0) { continue; }
+		for (size_t j = 0; j < partial.size(); j++)
 		{
-			// likely an uninvolved coordinator
-			continue;
-		}
-		int li = _indexing[left];
-		int lj = lookup[left];
-		for (BondConnector *const &right : partial)
-		{
-			if (_indexing.count(right) == 0)
-			{
-				// likely an uninvolved coordinator
-				continue;
-			}
-
-			int ri = _indexing[right];
-			int rj = lookup[right];
-			
-			tmp(lj, rj) = _matrix(li, ri);
+			if (idx[j] < 0) { continue; }
+			tmp(i, j) = _matrix(idx[i], idx[j]);
 		}
 	}
 

@@ -23,6 +23,7 @@
 #include "ConstraintBase.h"
 #include "Connector.h"
 #include <vagabond/utils/Eigen/Dense>
+#include <unordered_map>
 
 namespace hnet
 {
@@ -73,7 +74,7 @@ private:
 	ConnectMap _bonds;
 	CountConnector &_unbrokenCount;
 	ExistenceConnector &_myExist;
-	std::map<BondConnector *, int> _indexing{};
+	std::unordered_map<BondConnector *, int> _indexing{};
 	Eigen::MatrixXi _matrix{};
 	
 	std::vector<BreakEntry> _entries;
