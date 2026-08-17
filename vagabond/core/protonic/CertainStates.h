@@ -123,12 +123,24 @@ public:
 	// how many times ptp.first turned up while sampling the parent
 	// clique's subdivisions - see Clique::sampleCounts(). Defaults to 1
 	// (no correction) for states built without sample counts supplied,
-	// e.g. loaded from old data or produced by Subdivide::one().
+	// e.g. loaded from old data or produced by Subdivide::one(), or
+	// while sSampleCorrectionEnabled is switched off.
 	int sampleCount(const ProbeTypePair &ptp) const
 	{
+		if (!sSampleCorrectionEnabled)
+		{
+			return 1;
+		}
+
 		auto it = _sampleCounts.find(ptp.first);
 		return (it == _sampleCounts.end()) ? 1 : std::max(1, it->second);
 	}
+
+	// TEMPORARY: on/off switch for the sampleCount() correction above,
+	// wired to a checkbox in ViewCorrelations/OccupanciesView so Helen
+	// can A/B compare corrected vs. uncorrected results. Remove this
+	// (and the checkboxes) once the correction's effect has been judged.
+	static inline bool sSampleCorrectionEnabled = true;
 
 private:
 	// a set, not a vector, so header (row) order is a deterministic

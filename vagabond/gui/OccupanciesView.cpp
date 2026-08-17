@@ -180,13 +180,27 @@ void OccupanciesView::setup()
 		rebuildGraph();
 	}, _cliqueOnly);
 
+	// TEMPORARY: lets Helen A/B compare estimates()'s sample-count
+	// correction against the old uncorrected behaviour - see
+	// CertainStates::sSampleCorrectionEnabled's own comment. Unlike the
+	// two filters above, this changes what estimates() computes, not
+	// just what's plotted, so it re-runs occupancies() rather than just
+	// rebuildGraph(). Remove this checkbox once the correction's effect
+	// has been judged.
+	displayTix->addOption("Correct for node sampling", [this]()
+	{
+		CertainStates::sSampleCorrectionEnabled =
+		!CertainStates::sSampleCorrectionEnabled;
+		occupancies();
+	}, CertainStates::sSampleCorrectionEnabled);
+
 	displayTix->setVertical(true);
 	displayTix->setOneOnly(false);
 
 	// same x-range as the energy-source tickboxes below (tix), just
 	// higher up - was top-left (0.02, 0.06) but that overlapped the back
 	// button.
-	displayTix->arrange(0.15, 0.25, 0.32, 0.35);
+	displayTix->arrange(0.15, 0.25, 0.32, 0.42);
 	addObject(displayTix);
 
 	slider("", hnet::Energy::Torsion, 0.52);

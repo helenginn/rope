@@ -31,6 +31,7 @@
 #include <vagabond/gui/elements/BadChoice.h>
 #include <vagabond/gui/elements/ImageButton.h>
 #include <vagabond/gui/elements/TextButton.h>
+#include <vagabond/gui/elements/TickBoxes.h>
 #include <vagabond/gui/elements/Menu.h>
 #include <vagabond/gui/elements/Text.h>
 #include <vagabond/gui/elements/Image.h>
@@ -136,6 +137,20 @@ void ViewCorrelations::setup()
 	setMakesSelections();
 
 	addTitle("Sub-network correlations");
+
+	// TEMPORARY: lets Helen A/B compare Correlative/OccupanciesView's
+	// sample-count correction against the old uncorrected behaviour -
+	// see CertainStates::sSampleCorrectionEnabled's own comment. Remove
+	// this checkbox once the correction's effect has been judged.
+	TickBoxes *correctionTix = new TickBoxes(this, this);
+	correctionTix->addOption("Correct for node sampling", [this]()
+	{
+		CertainStates::sSampleCorrectionEnabled =
+		!CertainStates::sSampleCorrectionEnabled;
+		viewAll();
+	}, CertainStates::sSampleCorrectionEnabled);
+	correctionTix->arrange(0.02, 0.90, 0.30, 0.98);
+	addObject(correctionTix);
 
 	makeList();
 
