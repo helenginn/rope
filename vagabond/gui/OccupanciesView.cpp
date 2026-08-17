@@ -424,14 +424,13 @@ OccupanciesView::EstimateMap OccupanciesView::estimates()
 
 		for (const ProbeTypePair &ptp : states.ptps())
 		{
+			// the node-sample-count correction (see
+			// CertainStates::sampleCount()) is applied inside proportions()
+			// itself, not here - sampleWeight is the separate, independent
+			// subdivision-merge correction (Clique::sampleWeight()).
 			float sum = 0; // sum of all energy contributions, populated next
 			std::map<int, float> occs = states.proportions(ptp, sum, probs);
-
-			// correct for nodes that were oversampled relative to others
-			// during Subdivide::subdivide() - see
-			// Clique::sampleCounts()/CertainStates::sampleCount().
-			float sampleWeight = (float)clique.sampleWeight() /
-			                     (float)states.sampleCount(ptp);
+			float sampleWeight = (float)clique.sampleWeight();
 
 			occupancies[ptp].push_back({occs, sum, states.state_count(),
 			                            sampleWeight});

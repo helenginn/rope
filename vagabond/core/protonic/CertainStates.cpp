@@ -264,6 +264,12 @@ ProbeCorrelation CertainStates::correlate(const ProbeTypePair &left,
 	// to partial energy knowledge.
 	float total_probs = 0;
 
+	// how many times left/right's own node was sampled - independent of
+	// Clique::sampleWeight() (subnetworks merged into one another), see
+	// sampleCount()'s own comment - divided through per contribution so
+	// a node sampled twice doesn't count twice as much as one sampled once.
+	float correction = (float)sampleCount(left) * (float)sampleCount(right);
+
 	for (int i = 0; i < state_count(); i++)
 	{
 		int mv = value(i, m);
@@ -275,7 +281,7 @@ ProbeCorrelation CertainStates::correlate(const ProbeTypePair &left,
 		// histogram or total_probs.
 
 		// we also want to figure out the total sum of energy weights
-		float prob = probs[i];
+		float prob = probs[i] / correction;
 
 		if (mv == -1 && nv == -1)
 		{
@@ -339,6 +345,11 @@ std::map<int, float> CertainStates::proportions(ProbeTypePair ptp,
 
 	int n = (*this)(ptp);
 
+	// how many times this node was sampled - independent of
+	// Clique::sampleWeight() (subnetworks merged into one another), see
+	// sampleCount()'s own comment.
+	float correction = (float)sampleCount(ptp);
+
 	std::map<int, float> totals;
 	std::map<int, int> counts;
 	sum = 0;
@@ -346,7 +357,7 @@ std::map<int, float> CertainStates::proportions(ProbeTypePair ptp,
 	for (int i = 0; i < state_count(); i++)
 	{
 		int nv = value(i, n);
-		float contrib = probs[i];
+		float contrib = probs[i] / correction;
 		totals[nv] += contrib;
 		counts[nv]++;
 		sum += contrib;

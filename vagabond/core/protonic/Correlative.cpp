@@ -118,18 +118,16 @@ void Correlative::addStates(const CertainStates &states, float weight)
 			}
 			int y = _insertions[right].first;
 			int n = _insertions[right].second;
+			// the node-sample-count correction (see
+			// CertainStates::sampleCount()) is applied inside correlate()
+			// itself, not here - weight is the separate, independent
+			// subdivision-merge correction (Clique::sampleWeight()).
 			ProbeCorrelation c = states.correlate(left, right, probs, false);
 
-			// correct for nodes that were oversampled relative to others
-			// during Subdivide::subdivide() - see
-			// Clique::sampleCounts()/CertainStates::sampleCount().
-			float correction = weight / (float)(states.sampleCount(left) *
-			                                    states.sampleCount(right));
-
-			Eigen::MatrixXf cc = c.mat * correction;
+			Eigen::MatrixXf cc = c.mat * weight;
 			Eigen::MatrixXf csq = c.mat;
 			csq.setOnes();
-			csq *= correction;
+			csq *= weight;
 
 			_overall(seqN(x, m), seqN(y, n)) += cc;
 			_written(seqN(x, m), seqN(y, n)) += csq;
