@@ -152,11 +152,13 @@ void TextEntry::keyPressed(char key)
 			const char *ch = SDL_GetClipboardText();
 			std::string str(ch);
 			_scratch += str;
+			_isDefault = false;
 		}
 
 		if (_gl && !_gl->controlPressed() && validateKey(key))
 		{
 			_scratch += key;
+			_isDefault = false;
 		}
 	}
 
@@ -177,6 +179,7 @@ void TextEntry::keyPressed(SDL_Keycode other)
 	if (other == SDLK_RETURN && _gl->shiftPressed() && _multiLine)
 	{
 		_scratch += "\n";
+		_isDefault = false;
 		showInsert();
 		if (_stretch)
 		{
@@ -185,7 +188,13 @@ void TextEntry::keyPressed(SDL_Keycode other)
 	}
 	else if (other == SDLK_BACKSPACE)
 	{
-		if (_scratch.length() > 0)
+		if (_isDefault)
+		{
+			_scratch.clear();
+			_isDefault = false;
+			showInsert();
+		}
+		else if (_scratch.length() > 0)
 		{
 			_scratch.pop_back();
 			showInsert();

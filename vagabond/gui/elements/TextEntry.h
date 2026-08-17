@@ -65,6 +65,15 @@ public:
 	void setScratch(std::string scratch)
 	{
 		_scratch = scratch;
+		_isDefault = false;
+	}
+
+	// pre-fills the entry with text that a single backspace will wipe
+	// entirely, rather than editing it letter-by-letter
+	void setDefault(std::string scratch)
+	{
+		_scratch = scratch;
+		_isDefault = true;
 	}
 
 	virtual void click(bool left = true);
@@ -88,6 +97,7 @@ private:
 	ButtonResponder *_responder = nullptr;
 	std::function<void(TextEntry *)> _stretch;
 	bool _multiLine{false};
+	bool _isDefault{false};
 };
 
 #endif

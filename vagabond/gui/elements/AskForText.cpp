@@ -50,7 +50,7 @@ AskForText::AskForText(Scene *scene, std::string text, std::string tag,
 
 void AskForText::setDefaultText(const std::string &text)
 {
-	_text->setScratch(text);
+	_text->setDefault(text);
 
 	// showInsert() (not a plain setText() call - see there) both
 	// rebuilds the correctly-sized quad AND re-snapshots
