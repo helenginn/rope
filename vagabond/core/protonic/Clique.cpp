@@ -280,6 +280,31 @@ void Clique::setActiveSubdivisionRun(SubdivisionRun *run)
 	{
 		candidate.active = (&candidate == run);
 	}
+
+	// Item::_items (what LineGroup/ViewCorrelations actually render) is a
+	// flat list populated by explicit addItem() calls from SearchAll::run()
+	// as each subdivision finishes searching - it isn't derived from
+	// subdivisions()/activeSubdivisionRun(), so switching the active run
+	// has to re-sync it by hand or the view keeps showing whichever run's
+	// subdivisions were last added.
+	std::vector<Item *> stale = items();
+	for (Item *item : stale)
+	{
+		removeItem(item);
+	}
+
+	if (run == nullptr)
+	{
+		return;
+	}
+
+	for (Clique &sub : run->subdivisions)
+	{
+		if (sub.states() != nullptr)
+		{
+			addItem(&sub);
+		}
+	}
 }
 
 void Clique::addSubdivisionRun(const OpSet<Clique> &cliques, int maxNodes,
