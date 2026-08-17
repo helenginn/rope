@@ -129,7 +129,9 @@ Energy::energy_wrapper_for_covalent(BondProbe &bp)
 			}
 		}
 
-		return sum;
+		float base = 0.5;
+
+		return sum * base;
 	};
 	return modulate({{func, Torsion}});
 }
@@ -238,20 +240,22 @@ Energy::energy_wrapper_for_half_hbond(HydrogenProbe *probe, BondProbe &bp,
 	auto hbond_base = [evaluate, &bp]()
 	{
 		float base = 1.0;
-		if (evaluate(hnet::Bond::Acceptor, true))
+		if (evaluate(hnet::Bond::Acceptor, false))
 		{
 			float contrib = -base;
 			return contrib;
 		}
+		/*
 		else if (evaluate(hnet::Bond::Acceptor, false))
 		{
 			float contrib = -base;
 			if (bp.existence().value() & hnet::Existence::Absent)
 			{
-				contrib /= 2.f;
+//				contrib /= 2.f;
 			}
 			return contrib;
 		}
+		*/
 		return 0.f;
 	};
 
