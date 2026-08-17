@@ -290,7 +290,21 @@ bool ExhaustiveSearch::next()
 				{
 					continue;
 				}
-				
+
+				// _wider deliberately still holds placeholder hydrogens/
+				// bonds (SearchAll.cpp passes exclude_placeholders=false
+				// when building it) so score_wider_clique() above keeps
+				// counting them towards the energy sum - but recording
+				// them here too would feed them straight into this
+				// result's own CertainStates/correlation-matrix headers,
+				// which should stay placeholder-free the same way
+				// Subdivide::prune() already keeps them out of the
+				// decreed/searched set itself.
+				if (probe->is_placeholder())
+				{
+					continue;
+				}
+
 				// a bridging hydrogen's own "protonation state" connector
 				// (HydrogenProbe::_obj) is neither is_bond() nor is_atom()
 				// (both false, unoverridden base Probe defaults) - unlike
