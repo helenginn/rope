@@ -9,7 +9,8 @@ HeatMapVDW::HeatMapVDW(Scene *prev, const std::vector<PathGroup> &paths) : Scene
     int rows, cols;
     std::map<Instance*, std::size_t> rowMap, colMap;
 
-    PathGroup::PathMatrixDims dims = PathGroup::matricise(paths);
+    std::vector<PathGroup> sortedPaths = PathGroup::alphabetise(paths);
+    PathGroup::PathMatrixDims dims = PathGroup::matricise(sortedPaths);
 
     for (const auto& [rowInst, colInst] : dims)
     {
@@ -41,13 +42,13 @@ HeatMapVDW::HeatMapVDW(Scene *prev, const std::vector<PathGroup> &paths) : Scene
         _colNames.push_back(inst->desc());
     }
 
-	_rectData = Eigen::MatrixXf((int)_rowNames.size(), (int)_colNames.size());
+	_rectData = Eigen::MatrixXf::Constant((int)_rowNames.size(), (int)_colNames.size(), NAN);
 
-	for (const PathGroup& p : paths)
+	for (PathGroup& p : sortedPaths)
 	{
         auto r = rowMap[p.front()->startInstance()];
         auto c = colMap[p.front()->endInstance()];
-		_rectData(r, c) = p.front()->activationEnergy();
+		_rectData(r, c) = p.averageMetrics();
 	}
 }
 

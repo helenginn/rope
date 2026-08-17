@@ -53,6 +53,10 @@ public:
     typedef std::vector<std::pair<Instance *, Instance *>> PathMatrixDims;
 
     static PathMatrixDims matricise(const std::vector<PathGroup> paths);
+
+    static std::vector<PathGroup> alphabetise(std::vector<PathGroup> paths);
+
+    float averageMetrics() const;
 private:
 
 };

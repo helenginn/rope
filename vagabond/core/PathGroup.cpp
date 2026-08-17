@@ -93,7 +93,7 @@ PathGroup::PathMatrixDims PathGroup::matricise(const std::vector<PathGroup> path
 {
     PathMatrixDims dims;
 
-    for(const PathGroup p : paths)
+    for(const PathGroup &p : paths)
     {
         std::pair<Instance *, Instance *> pair;
         pair = {p.front()->startInstance(), p.front()->endInstance()};
@@ -102,4 +102,40 @@ PathGroup::PathMatrixDims PathGroup::matricise(const std::vector<PathGroup> path
     }
 
     return dims;
+}
+
+std::vector<PathGroup> PathGroup::alphabetise(std::vector<PathGroup> paths)
+{
+    auto start = [](const PathGroup &p)
+    {
+        return p.front()->startInstance()->desc();
+    };
+ 
+    auto end = [](const PathGroup &p)
+    {
+        return p.front()->endInstance()->desc();
+    };
+  
+    std::sort(paths.begin(), paths.end(), [&](const PathGroup &a, const PathGroup &b)
+    {
+        if (start(a) != start(b))
+        {
+            return start(a) < start(b);
+        }
+        return end(a) < end(b);
+    });
+
+    return paths;
+}
+
+float PathGroup::averageMetrics() const
+{
+    float vdw = 0.0f;
+
+    for (Path *const &path : *this)
+	{
+		vdw += path->activationEnergy();
+	}
+
+    return vdw / size();
 }
