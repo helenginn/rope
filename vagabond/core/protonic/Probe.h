@@ -346,9 +346,18 @@ public:
 		}
 	}
 
-	hnet::GetEnergy energy(GuiltVersion gv)
+	/** appends this probe's own non-empty energy jobs directly into the
+	 * caller's flat vector, rather than bundling them into their own
+	 * separate summing closure first - lets a caller building a jobs list
+	 * across many probes (ExhaustiveSearch::score_wider_clique(), the only
+	 * caller) end up with one flat vector and one level of std::function
+	 * indirection per source term, instead of one level per probe PLUS one
+	 * level per source term. That extra per-probe layer (energy()'s own
+	 * summing lambda, below) used to be evaluated once per accepted config
+	 * for every single wider probe - the dominant cost in a profile of
+	 * CertainStates::probsForLocalAve(). */
+	void collectEnergy(GuiltVersion gv, std::vector<hnet::GetEnergy> &jobs)
 	{
-		std::vector<hnet::GetEnergy> jobs;
 		for (const hnet::EnergyWrapper &wrapper : _energy)
 		{
 			hnet::GetEnergy job = wrapper(gv);
@@ -357,6 +366,13 @@ public:
 				jobs.push_back(job);
 			}
 		}
+	}
+
+	hnet::GetEnergy energy(GuiltVersion gv)
+	{
+		std::vector<hnet::GetEnergy> jobs;
+		jobs.reserve(_energy.size());
+		collectEnergy(gv, jobs);
 
 		if (jobs.size() == 0)
 		{

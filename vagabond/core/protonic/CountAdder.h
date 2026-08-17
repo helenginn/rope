@@ -88,8 +88,11 @@ struct CountAdder : public ConstraintBase
 		}
 
 		/* impose options on left */
+		// right_options is still valid here - only _sum was assign()-ed
+		// above, so re-deriving it from _right.value() would just repeat
+		// the same possible_values() call (and its allocation) for the
+		// same answer.
 		std::vector<int> sum_options = possible_values(_sum.value());
-		right_options = possible_values(_right.value());
 
 		{
 			std::vector<int> options = permutations(sum_options, right_options,

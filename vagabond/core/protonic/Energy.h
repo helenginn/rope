@@ -48,11 +48,23 @@ public:
 	void alter_amplification(const Source &src, float amp)
 	{
 		_amplifiers[src] = amp;
+		// precomputed here, where this only runs when a GUI slider actually
+		// moves - modulate()'s inner closure (and energy_wrapper_for_
+		// protonation) both run this exp() on every single scoring call
+		// otherwise, including every replay of an already-cached GetScore
+		// during CertainStates::probsForLocalAve(), which is by far the
+		// hotter path.
+		_expAmplifiers[src] = exp(amp);
 	}
 
 	float amplification(const Source &src)
 	{
 		return _amplifiers.count(src) ? _amplifiers.at(src) : 0.f;
+	}
+
+	float expAmplification(const Source &src)
+	{
+		return _expAmplifiers.count(src) ? _expAmplifiers.at(src) : 1.f;
 	}
 
 	void alter_source(const Source &src, bool on)
@@ -142,6 +154,7 @@ private:
 
 	std::map<Source, bool> _sources;
 	std::map<Source, float> _amplifiers;
+	std::map<Source, float> _expAmplifiers;
 };
 };
 

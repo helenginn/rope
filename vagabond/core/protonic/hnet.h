@@ -25,6 +25,7 @@
 #include <vector>
 #include <list>
 #include <functional>
+#include <bit>
 #include "Guilt.h"
 #include "Atom.h"
 
@@ -846,8 +847,11 @@ inline Count::Values values_as_count(const Container &values)
 /* for integers, but can also be unassigned or contradictory */
 inline std::vector<int> possible_values(const Count::Values &count)
 {
-	
+
 	std::vector<int> results;
+	// avoids reallocation as results grows - called several times per
+	// CountAdder::check(), itself run on every constraint-propagation pass.
+	results.reserve(std::popcount((unsigned int)count));
 	for (int i = 0; i < 32; i++)
 	{
 		Count::Values check = (Count::Values)(1 << i);

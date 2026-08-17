@@ -195,18 +195,16 @@ GetScore ExhaustiveSearch::score_wider_clique()
 	// new round, count it again".
 	GuiltVersion gv = Guilt::issueNext();
 
+	// flat, not one GetEnergy-per-probe: each probe used to bundle its own
+	// wrappers into its own summing closure first (Probe::energy()), which
+	// this then summed again one level up - two layers of std::function
+	// indirection (and two heap allocations) per source term instead of
+	// one. collectEnergy() appends every wider probe's jobs straight into
+	// this single vector instead.
 	std::vector<hnet::GetEnergy> jobs;
 	for (Probe *const &probe : _wider)
 	{
-		hnet::GetEnergy contrib = probe->energy(gv);
-		if (contrib)
-		{
-			jobs.push_back(contrib);
-		}
-		else
-		{
-
-		}
+		probe->collectEnergy(gv, jobs);
 	}
 
 	return [jobs]()

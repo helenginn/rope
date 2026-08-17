@@ -18,6 +18,7 @@
 
 #include "Energy.h"
 #include "matrix_functions.h"
+#include <array>
 
 using namespace hnet;
 
@@ -30,6 +31,18 @@ Energy::Energy()
 	_sources[Angle] = false;
 	_sources[Repulsion] = false;
 	_sources[Protonation] = false;
+
+	// seeded to exp(0) = 1 up front for every source, not just the ones
+	// with a GUI slider (Repulsion has none - see OccupanciesView::setup())
+	// - modulate() takes a pointer via _expAmplifiers[src], and operator[]
+	// on a map default-constructs a missing key to 0.f, not 1.f, which
+	// would silently zero out that source's contribution instead of
+	// leaving it unamplified until alter_amplification() is ever called.
+	for (const Source &src : {Torsion, Acceptor, Distance, Angle, Bulk,
+	                          Repulsion, Protonation})
+	{
+		_expAmplifiers[src] = 1.f;
+	}
 }
 
 hnet::EnergyWrapper
@@ -431,7 +444,7 @@ Energy::energy_wrapper_for_protonation(CountConnector &charge,
 			{
 				return 0.f;
 			}
-			return getDeltaG() * exp(amplification(Protonation));
+			return getDeltaG() * expAmplification(Protonation);
 		};
 	};
 }
@@ -448,11 +461,19 @@ Energy::modulate(const std::vector<SourcedEnergy> &sources)
 		struct Cached
 		{
 			bool *ptr;
-			float *amp;
+			float *expAmp;
 			float energy;
 		};
 
-		std::vector<Cached> cache;
+		// every call site above passes at most 2 sources - a fixed inline
+		// buffer instead of a std::vector avoids a heap alloc/free on
+		// every single evaluation of this closure, which runs once per
+		// accepted config x per wider probe in ExhaustiveSearch (the
+		// dominant source of the "freeing/memsetting" time seen in
+		// profiles of Energy::modulate).
+		constexpr size_t MaxSources = 4;
+		std::array<Cached, MaxSources> cache;
+		size_t count = 0;
 
 		for (const SourcedEnergy &se : sources)
 		{
@@ -464,23 +485,30 @@ Energy::modulate(const std::vector<SourcedEnergy> &sources)
 			if (cached_energy != cached_energy)
 			{
 				continue;
-				cached_energy = 0.f;
 			}
 			bool *source_ptr = &_sources[se.second];
-			float *amp_ptr = &_amplifiers[se.second];
-			cache.push_back({source_ptr, amp_ptr, cached_energy});
+			// exp(amp) is precomputed by alter_amplification() (only run
+			// when a GUI slider actually moves) rather than here - this
+			// closure is replayed on every CertainStates::probsForLocalAve()
+			// call, far more often than the amplifier itself ever changes,
+			// so calling exp() on every replay was pure waste.
+			float *exp_amp_ptr = &_expAmplifiers[se.second];
+			if (count < MaxSources)
+			{
+				cache[count++] = {source_ptr, exp_amp_ptr, cached_energy};
+			}
 		}
-		
-		if (cache.size() == 0) return {};
-		
-		return [this, cache]()
+
+		if (count == 0) return {};
+
+		return [this, cache, count]()
 		{
 			float total = 0;
-			for (const auto &entry : cache)
+			for (size_t i = 0; i < count; i++)
 			{
-				if (*entry.ptr)
+				if (*cache[i].ptr)
 				{
-					total += entry.energy * exp(*entry.amp);
+					total += cache[i].energy * (*cache[i].expAmp);
 				}
 			}
 
