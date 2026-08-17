@@ -47,6 +47,7 @@ HBondAnalysisControl::HBondAnalysisControl(Scene *prev, Clique *clique,
 void HBondAnalysisControl::setup()
 {
 	addTitle("Analysis overview");
+	setInformation("Subnetwork: " + _clique->name());
 
 	auto subdivide_with_values = [this](int max, int samples)
 	{
