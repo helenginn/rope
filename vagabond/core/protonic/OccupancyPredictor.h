@@ -49,8 +49,19 @@ public:
 	typedef std::map<ProbeTypePair, OccData> EstimateMap;
 	EstimateMap estimates();
 
+	// off by default - not currently judged to help (see its own toggle
+	// on OccupanciesView). When on, de-weights subnetworks that overlap
+	// heavily with one another (see estimates()' own comment on
+	// redundancy_weights()) rather than letting a cluster of
+	// near-duplicate subnetworks outweigh a single independent one.
+	void setRedundancyWeightingEnabled(bool on)
+	{
+		_redundancyWeightingEnabled = on;
+	}
+
 private:
 	Clique *_clique{};
+	bool _redundancyWeightingEnabled = false;
 };
 
 #endif
