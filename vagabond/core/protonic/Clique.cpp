@@ -290,7 +290,12 @@ void Clique::setActiveSubdivisionRun(SubdivisionRun *run)
 	std::vector<Item *> stale = items();
 	for (Item *item : stale)
 	{
-		removeItem(item);
+		// bare removeItem() only pops item out of _items - it leaves
+		// item->_parent still pointing at this Clique (only removeSelf()/
+		// deleteItem() clear that), which then makes addItem()'s "already a
+		// child" guard (item->parent() == this) silently no-op when we try
+		// to re-add these same subdivisions below on the very next switch.
+		item->removeSelf(true);
 	}
 
 	if (run == nullptr)
