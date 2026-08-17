@@ -249,8 +249,33 @@ private:
 	// this points to positionSource's own _shifter instead - see the
 	// constructor's own comment for why one shared physics thread is
 	// enough for both diagrams. _ownsShifter records which case this is.
+	// Deliberately a plain (not shared_ptr) pointer even for a mirror -
+	// see _sourceAlive's own comment for why a mirror must never touch
+	// this once positionSource may have already freed it, rather than
+	// keeping it alive by refcount: the owner's own per-tick position
+	// getter/setter closures (addPosition() below) capture its own
+	// Renderables with no alive-flag guard at all (unlike every Tidy job
+	// here), relying entirely on the owner's own destructor stopping the
+	// physics thread synchronously before those Renderables are freed -
+	// a shared_ptr keeping the PositionShifter (and its thread) alive
+	// past the owner's own destructor just because a mirror still held a
+	// reference would turn every one of those into a use-after-free.
 	PositionShifter *_shifter = nullptr;
 	bool _ownsShifter = true;
+
+	// mirror-only: a copy of positionSource's own _alive flag (see its
+	// own comment - same shared_ptr<atomic<bool>> idiom, safe to read
+	// even after positionSource itself has been fully destroyed and
+	// freed, unlike dereferencing _positionSource directly). The
+	// destructor uses this to tell whether positionSource has already
+	// torn down the shared _shifter (and its physics thread) by the time
+	// this mirror is destructed - a mirror's own ~HBondDiagram() must
+	// only call _shifter->waitForTidy() while that is still known-false,
+	// since positionSource freeing _shifter (once it stops owning any
+	// live reference to it) is exactly what leaves this mirror's own
+	// copy of the pointer dangling. Null/never checked for a
+	// non-mirror instance.
+	std::shared_ptr<std::atomic<bool>> _sourceAlive;
 
 	// see the constructor's own comment - only meaningful for a mirror
 	// instance, added to every position syncPositionsFrom() copies across.

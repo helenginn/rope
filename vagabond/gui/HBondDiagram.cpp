@@ -100,6 +100,7 @@ HBondDiagram::HBondDiagram(const OpSet<ProbeTypePair> &nodes,
 		_shifter = positionSource->_shifter;
 		_ownsShifter = false;
 		_positionSource = positionSource;
+		_sourceAlive = positionSource->_alive;
 	}
 	else
 	{
@@ -202,9 +203,25 @@ HBondDiagram::~HBondDiagram()
 	// in-flight call has completely finished before we let that happen -
 	// crashed in exactly this window before this existed (a background-
 	// thread pthread_mutex_lock deep inside syncPositionsFrom, racing a
-	// mirror's destruction from ViewCorrelations::deleteTemps()). Skipped
-	// only if _shifter was never set up in the first place.
-	if (_shifter)
+	// mirror's destruction from ViewCorrelations::deleteTemps()).
+	//
+	// A mirror instance has a second, later way to reach a dangling
+	// _shifter, though: if positionSource has already been destructed
+	// first (see _ownsShifter's own comment - deleteTemps() has no
+	// notion of this pair's dependency, so either order is possible),
+	// its own destructor has already deleted the shared _shifter this
+	// mirror's own copy of the pointer still refers to - calling
+	// waitForTidy() on it here would itself be the dangling-pointer
+	// mutex lock this comment is warning about, not the race it is
+	// guarding against. _sourceAlive (still false-checkable long after
+	// positionSource itself is gone - see its own comment) is what
+	// distinguishes the two: skip entirely once it reads false, since
+	// positionSource's own destructor already fully stopped and joined
+	// the physics thread before freeing _shifter, so there is no
+	// in-flight tick left to wait for anyway.
+	bool shifterStillLive = _ownsShifter ||
+	                        (_sourceAlive && _sourceAlive->load());
+	if (_shifter && shifterStillLive)
 	{
 		_shifter->waitForTidy();
 	}
