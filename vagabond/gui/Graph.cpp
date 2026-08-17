@@ -456,7 +456,7 @@ void Graph::hoverColour(int series, int idx)
 
 	if (!_legend)
 	{
-		_legend = new ColourLegend(BlueOrange, true, nullptr);
+		_legend = new ColourLegend(BlackYellow, true, nullptr);
 		_legend->disableButtons();
 	}
 

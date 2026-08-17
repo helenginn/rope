@@ -50,6 +50,12 @@ ColourScheme::ColourScheme(Scheme scheme, bool vert)
 		addFixedPoint(1.0, glm::vec4(1.0, 1.0, 1.0, 1.0), 3.0);
 		setScheme(Heat);
 	}
+	else if (scheme == BlackYellow)
+	{
+		addFixedPoint(0.0, glm::vec4(0.0, 0.0, 0.0, 1.0));
+		addFixedPoint(1.0, glm::vec4(1.0, 1.0, 0.0, 1.0));
+		setScheme(BlackYellow);
+	}
 	else if (scheme == Cluster4x)
 	{
 		addFixedPoint(-1.0, glm::vec4(0.0, 0.0, 0.0, 1.0));

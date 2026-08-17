@@ -33,6 +33,7 @@ enum Scheme
 	OrangeWhitePurple,
 	Heat,
 	Cluster4x,
+	BlackYellow,
 	Nothing = 0,
 };
 
@@ -44,6 +45,7 @@ NLOHMANN_JSON_SERIALIZE_ENUM( Scheme,
 	                            {OrangeWhitePurple, "orangewhitepurple"},
 	                            {Cluster4x, "cluster4x"},
 	                            {Heat, "heat"},
+	                            {BlackYellow, "blackyellow"},
                              })
 
 class HasMetadata;

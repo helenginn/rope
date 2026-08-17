@@ -87,7 +87,7 @@ public:
 
 	// called by Scatter::interacted() on hover - recolours every point
 	// across every series by its coordinate's distance from the hovered
-	// point's own coordinate (BlueOrange, scaled 0 to the largest distance
+	// point's own coordinate (BlackYellow, scaled 0 to the largest distance
 	// found). A no-op if the hovered point has no coordinate set.
 	// Reverted back to plain black by clearLabels() once the mouse leaves
 	// every point (see its own comment).
@@ -130,7 +130,7 @@ private:
 	// see setSeriesCoordinates()/hoverColour() - keyed the same as _data.
 	std::map<int, std::vector<glm::vec3>> _coords;
 
-	// lazily created on first hoverColour() call, BlueOrange scheme -
+	// lazily created on first hoverColour() call, BlackYellow scheme -
 	// see hoverColour()'s own comment.
 	ColourLegend *_legend = nullptr;
 
