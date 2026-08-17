@@ -180,32 +180,6 @@ void OccupanciesView::setup()
 		rebuildGraph();
 	}, _cliqueOnly);
 
-	// TEMPORARY: lets Helen A/B compare estimates()'s sample-count
-	// correction against the old uncorrected behaviour - see
-	// CertainStates::sSampleCorrectionEnabled's own comment. Unlike the
-	// two filters above, this changes what estimates() computes, not
-	// just what's plotted, so it re-runs occupancies() rather than just
-	// rebuildGraph(). Remove this checkbox once the correction's effect
-	// has been judged.
-	displayTix->addOption("Correct for node sampling", [this]()
-	{
-		CertainStates::sSampleCorrectionEnabled =
-		!CertainStates::sSampleCorrectionEnabled;
-		occupancies();
-	}, CertainStates::sSampleCorrectionEnabled);
-
-	// TEMPORARY: lets Helen A/B compare proportions() discarding a node's
-	// whole result as soon as one state never recorded a value for it,
-	// against folding those unassigned states into their own bucket - see
-	// CertainStates::sRejectIncompleteEnabled's own comment. Re-runs
-	// occupancies() for the same reason the checkbox above does.
-	displayTix->addOption("Reject incomplete nodes", [this]()
-	{
-		CertainStates::sRejectIncompleteEnabled =
-		!CertainStates::sRejectIncompleteEnabled;
-		occupancies();
-	}, CertainStates::sRejectIncompleteEnabled);
-
 	displayTix->setVertical(true);
 	displayTix->setOneOnly(false);
 

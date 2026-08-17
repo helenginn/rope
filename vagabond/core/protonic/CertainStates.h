@@ -120,59 +120,6 @@ public:
 		_sampleCounts = counts;
 	}
 
-	// how many times ptp.first turned up while sampling the parent
-	// clique's subdivisions - see Clique::sampleCounts(). Defaults to 1
-	// (no correction) for states built without sample counts supplied,
-	// e.g. loaded from old data or produced by Subdivide::one(), or
-	// while sSampleCorrectionEnabled is switched off.
-	int sampleCount(const ProbeTypePair &ptp) const
-	{
-		if (!sSampleCorrectionEnabled)
-		{
-			return 1;
-		}
-
-		auto it = _sampleCounts.find(ptp.first);
-		return (it == _sampleCounts.end()) ? 1 : std::max(1, it->second);
-	}
-
-	// average of sampleCount() across every node this CertainStates knows
-	// a sample count for - used by proportions() in place of a single
-	// node's own sampleCount(). Using the node's own count there made the
-	// correction cancel out (it multiplies that node's own totals and sum
-	// alike, see proportions()'s own comment), so it needs the clique/
-	// subnetwork-wide average instead to actually bias the pooled estimate
-	// in OccupanciesView::estimates() towards subdivisions sampled more
-	// often overall.
-	float averageSampleCount() const
-	{
-		if (!sSampleCorrectionEnabled || _sampleCounts.empty())
-		{
-			return 1.f;
-		}
-
-		float sum = 0;
-		for (const auto &pair : _sampleCounts)
-		{
-			sum += (float)std::max(1, pair.second);
-		}
-		return sum / (float)_sampleCounts.size();
-	}
-
-	// TEMPORARY: on/off switch for the sampleCount() correction above,
-	// wired to a checkbox in ViewCorrelations/OccupanciesView so Helen
-	// can A/B compare corrected vs. uncorrected results. Remove this
-	// (and the checkboxes) once the correction's effect has been judged.
-	static inline bool sSampleCorrectionEnabled = true;
-
-	// TEMPORARY: on/off switch, wired to a checkbox in OccupanciesView, for
-	// whether proportions() bails out with an empty map as soon as it hits
-	// a state where this ptp's node was never recorded (value() == -1),
-	// rather than folding that state into a totals[-1] bucket alongside
-	// the real states. Off by default to preserve existing behaviour -
-	// remove this (and the checkbox) once Helen has judged which is right.
-	static inline bool sRejectIncompleteEnabled = false;
-
 private:
 	// a set, not a vector, so header (row) order is a deterministic
 	// function of which probes are present - not of the order they
