@@ -23,7 +23,7 @@ public:
     void redrawHeatMap(double num);
     void showMatBox(Eigen::MatrixXf matrix);
 
-    void scaleMatrix(Eigen::MatrixXf &matrix, std::vector<double> entropyVals);
+    void scaleMatrix(Eigen::MatrixXf &matrix, std::vector<float> entropyVals);
     void sumHeatMap();
 
     virtual void finishedDragging(std::string tag, double x, double y);

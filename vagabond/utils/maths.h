@@ -63,7 +63,7 @@ T mean(std::vector<T> &vec1)
 	return sum_x / sum_weight;
 }
 
-double standard_deviation(std::vector<double> &values);
+float standard_deviation(std::vector<float> &values);
 
 void regression_line(std::vector<float> xs, std::vector<float> ys,
                      float *intercept, float *gradient, int max = 0);
