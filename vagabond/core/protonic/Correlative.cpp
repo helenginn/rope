@@ -120,10 +120,16 @@ void Correlative::addStates(const CertainStates &states, float weight)
 			int n = _insertions[right].second;
 			ProbeCorrelation c = states.correlate(left, right, probs, false);
 
-			Eigen::MatrixXf cc = c.mat * weight;
+			// correct for nodes that were oversampled relative to others
+			// during Subdivide::subdivide() - see
+			// Clique::sampleCounts()/CertainStates::sampleCount().
+			float correction = weight / (float)(states.sampleCount(left) *
+			                                    states.sampleCount(right));
+
+			Eigen::MatrixXf cc = c.mat * correction;
 			Eigen::MatrixXf csq = c.mat;
 			csq.setOnes();
-			csq *= weight;
+			csq *= correction;
 
 			_overall(seqN(x, m), seqN(y, n)) += cc;
 			_written(seqN(x, m), seqN(y, n)) += csq;

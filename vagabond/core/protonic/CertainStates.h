@@ -111,6 +111,25 @@ public:
 	// every single call.
 	std::map<int, float> proportions(ProbeTypePair ptp, float &sum,
 	                                 const std::vector<float> &probs) const;
+
+	// Clique::sampleCounts(), handed in by SearchAll once this
+	// CertainStates has been built - see its own comment for why it
+	// lives on the parent clique rather than being computed here.
+	void setSampleCounts(const std::map<Probe *, int> &counts)
+	{
+		_sampleCounts = counts;
+	}
+
+	// how many times ptp.first turned up while sampling the parent
+	// clique's subdivisions - see Clique::sampleCounts(). Defaults to 1
+	// (no correction) for states built without sample counts supplied,
+	// e.g. loaded from old data or produced by Subdivide::one().
+	int sampleCount(const ProbeTypePair &ptp) const
+	{
+		auto it = _sampleCounts.find(ptp.first);
+		return (it == _sampleCounts.end()) ? 1 : std::max(1, it->second);
+	}
+
 private:
 	// a set, not a vector, so header (row) order is a deterministic
 	// function of which probes are present - not of the order they
@@ -126,6 +145,8 @@ private:
 	Eigen::MatrixXi _data;
 
 	std::vector<GetScore> _scores;
+
+	std::map<Probe *, int> _sampleCounts;
 };
 
 #endif

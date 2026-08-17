@@ -195,6 +195,24 @@ public:
 		_sampleWeight = weight;
 	}
 
+	/** how many times each probe turned up in a searched (post-prune)
+	 * chunk during the Subdivide::subdivide() run that produced this
+	 * clique's subdivisions - see Subdivide's own _nodeCounts comment.
+	 * Kept on the parent (subdivided) clique, since one subdivide() call
+	 * and its single _nodeCounts tally covers every subdivision it
+	 * produces; SearchAll hands this to each subdivision's CertainStates
+	 * so Correlative/OccupanciesView can correct per-node contributions
+	 * by how heavily oversampled that node was relative to others. */
+	const std::map<Probe *, int> &sampleCounts() const
+	{
+		return _sampleCounts;
+	}
+
+	void setSampleCounts(const std::map<Probe *, int> &counts)
+	{
+		_sampleCounts = counts;
+	}
+
 	bool is_certain() const;
 	
 	int num_waters() const;
@@ -463,6 +481,7 @@ private:
 	std::string _name{};
 	std::string _planText{};
 	int _sampleWeight = 1;
+	std::map<Probe *, int> _sampleCounts;
 	std::map<std::string, OpSet<std::string>> _communication;
 	std::map<std::string, std::string> _descToCommune;
 	OpSet<std::string> _descs;

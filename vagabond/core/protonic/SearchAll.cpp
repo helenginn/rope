@@ -58,6 +58,7 @@ void SearchAll::run()
 		search.setCancelFlag(_cancel);
 		search.search();
 		clickTicker();
+		search.states()->setSampleCounts(_clique->sampleCounts());
 		clique.setStates(search.states());
 		int num_nodes = search.probe_count();
 		int num_results = search.states()->state_count();

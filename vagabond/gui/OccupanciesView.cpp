@@ -407,12 +407,18 @@ OccupanciesView::EstimateMap OccupanciesView::estimates()
 		// average_score() + probsForAve(ave) pair this used to be.
 		float ave = 0;
 		std::vector<float> probs = states.probsForLocalAve(ave);
-		float sampleWeight = (float)clique.sampleWeight();
 
 		for (const ProbeTypePair &ptp : states.ptps())
 		{
 			float sum = 0; // sum of all energy contributions, populated next
 			std::map<int, float> occs = states.proportions(ptp, sum, probs);
+
+			// correct for nodes that were oversampled relative to others
+			// during Subdivide::subdivide() - see
+			// Clique::sampleCounts()/CertainStates::sampleCount().
+			float sampleWeight = (float)clique.sampleWeight() /
+			                     (float)states.sampleCount(ptp);
+
 			occupancies[ptp].push_back({occs, sum, states.state_count(),
 			                            sampleWeight});
 		}

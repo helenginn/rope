@@ -599,6 +599,7 @@ void Subdivide::subdivide(int samples)
 
 	std::cout << "Found " << cliques.size() << std::endl;
 
+	_clique->setSampleCounts(_nodeCounts);
 	_clique->addSubdivisionRun(cliques, _max, samples, false);
 }
 
