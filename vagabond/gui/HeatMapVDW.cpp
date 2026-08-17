@@ -2,6 +2,7 @@
 #include "MatrixPlot.h"
 #include "MatrixBox.h"
 #include "PathGroup.h"
+#include <vagabond/utils/maths.h>
 #include <vagabond/gui/elements/TextButton.h>
 
 HeatMapVDW::HeatMapVDW(Scene *prev, const std::vector<PathGroup> &paths) : Scene(prev)
@@ -43,13 +44,34 @@ HeatMapVDW::HeatMapVDW(Scene *prev, const std::vector<PathGroup> &paths) : Scene
     }
 
 	_rectData = Eigen::MatrixXf::Constant((int)_rowNames.size(), (int)_colNames.size(), NAN);
+    
+    std::vector<float> rectDataVector;
 
 	for (PathGroup& p : sortedPaths)
 	{
         auto r = rowMap[p.front()->startInstance()];
         auto c = colMap[p.front()->endInstance()];
 		_rectData(r, c) = p.averageMetrics();
+
+        rectDataVector.push_back(p.averageMetrics());
 	}
+
+    scaleMatrix(rectDataVector);
+}
+
+void HeatMapVDW::scaleMatrix(std::vector<float> rectDataVector)
+{
+   float dataMean = mean(rectDataVector);
+   float dataStd = standard_deviation(rectDataVector);
+
+   for(Eigen::Index i = 0; i < _rectData.size(); i++)
+   {
+       if(!isnan(_rectData(i)))
+       {
+           _rectData(i) -= dataMean;
+           _rectData(i) /= dataStd;
+       }
+   }
 }
 
 void HeatMapVDW::resetMatrix()

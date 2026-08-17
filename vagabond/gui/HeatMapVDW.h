@@ -14,10 +14,12 @@ public:
     HeatMapVDW(Scene *prev, const std::vector<PathGroup> &paths);
 
     virtual void setup();
-private:
+
     void resetMatrix();
+    void scaleMatrix(std::vector<float> dataVector);
     void printMatrixToTerminal();
 
+private:
 	std::vector<std::string> _squareNames;
 	std::vector<std::string> _rowNames;
 	std::vector<std::string> _colNames;
