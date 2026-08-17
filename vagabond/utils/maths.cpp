@@ -11,27 +11,27 @@
 #include <vector>
 #include <iostream>
 
-double standard_deviation(std::vector<double> &values) 
+float standard_deviation(std::vector<float> &values) 
 {
-	double squaredSum = 0;
-	double weightSqSum = 0;
-	double ave = mean(values);
+	float squaredSum = 0;
+	float weightSqSum = 0;
+	float ave = mean(values);
 
 	for (int i = 0; i < values.size(); i++)
 	{
-		double value = values[i];
+		float value = values[i];
 
 		if (value != value || value == FLT_MAX)
 		continue;
 
 		squaredSum += pow(ave - value, 2);
 
-		double weight = 1;
+		float weight = 1;
 
 		weightSqSum += weight;
 	}
 
-	double stdev = sqrt(squaredSum / weightSqSum);
+	float stdev = sqrt(squaredSum / weightSqSum);
 
 	return stdev;
 }
