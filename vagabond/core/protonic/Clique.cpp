@@ -181,9 +181,28 @@ void Clique::housekeeping(Network &network)
 	for (const std::string &desc : _descs)
 	{
 		Probe *probe = network.probeForDesc(desc);
-		if (probe)
+		if (probe && probe->is_placeholder())
+		{
+			// dropped silently, same as prepareForStorage/
+			// completeToResidues now do going forward - this branch only
+			// still fires for cliques saved before that filtering existed.
+			continue;
+		}
+		else if (probe)
 		{
 			_probes.insert(probe);
+		}
+		// old saves made before placeholders were excluded from storage
+		// (see prepareForStorage's own comment) can carry a placeholder
+		// desc that no longer resolves at all, once the placeholder itself
+		// has since been recalculated away - recognisable by its fixed
+		// "Placeholder Hbond for " prefix (Coordinated_Constraints.cpp's
+		// setDesc() call). Drop those quietly too instead of warning and
+		// prompting a reclique for something that was never meant to be
+		// stored in the first place.
+		else if (desc.rfind("Placeholder Hbond for ", 0) == 0)
+		{
+			continue;
 		}
 		else
 		{
