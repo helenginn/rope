@@ -20,6 +20,7 @@
 #define __vagabond__Subdivide__
 
 #include <vagabond/utils/OpSet.h>
+#include <map>
 
 class Probe;
 class Clique;
@@ -44,6 +45,13 @@ private:
 	// shoot() keeps every probe within this many hops of *some* shortest
 	// path between its chosen endpoints, not just one arbitrary path.
 	int _slack = 5;
+
+	// how many times each probe has already turned up in a searched
+	// (post-prune) chunk this subdivide() call, kept across successive
+	// grow_clique() walks so shoot() can bias its end-node choice towards
+	// under-sampled nodes instead of picking uniformly at random - see
+	// shoot()'s own comment for why.
+	std::map<Probe *, int> _nodeCounts;
 };
 
 #endif

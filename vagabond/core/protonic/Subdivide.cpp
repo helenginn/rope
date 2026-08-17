@@ -241,8 +241,46 @@ void Subdivide::shoot(OpSet<Probe *> &chunk)
 	}
 
 	static thread_local std::mt19937 rng{std::random_device{}()};
-	std::uniform_int_distribution<size_t> pick(0, farthest_layer.size() - 1);
-	Probe *end = farthest_layer[pick(rng)];
+
+	// bias the endpoint towards whichever candidate(s) in the farthest
+	// layer have turned up in the fewest searched chunks so far this
+	// subdivide() call, rather than picking uniformly at random - a purely
+	// random pick keeps re-visiting whichever nodes happen to be easy to
+	// reach from `start`, and as `samples` grows that overweights those
+	// nodes' regions relative to ones a random pick rarely lands on. Ties
+	// (including the common case where nothing has been sampled yet, i.e.
+	// every count is 0) are still broken at random among the least-sampled
+	// candidates, so the very first walks behave exactly as before.
+	int min_count = -1;
+	for (Probe *const &candidate : farthest_layer)
+	{
+		int count = 0;
+		auto it = _nodeCounts.find(candidate);
+		if (it != _nodeCounts.end())
+		{
+			count = it->second;
+		}
+
+		if (min_count < 0 || count < min_count)
+		{
+			min_count = count;
+		}
+	}
+
+	std::vector<Probe *> least_sampled;
+	for (Probe *const &candidate : farthest_layer)
+	{
+		auto it = _nodeCounts.find(candidate);
+		int count = (it == _nodeCounts.end()) ? 0 : it->second;
+
+		if (count == min_count)
+		{
+			least_sampled.push_back(candidate);
+		}
+	}
+
+	std::uniform_int_distribution<size_t> pick(0, least_sampled.size() - 1);
+	Probe *end = least_sampled[pick(rng)];
 
 	std::map<Probe *, int> dist_end;
 	bounded_bfs(end, d + _slack, dist_end);
@@ -410,6 +448,11 @@ void Subdivide::subdivide(int samples)
 
 	OpSet<Probe *> to_chunk = _clique->probes();
 
+	// reset per-call so a fresh subdivide() doesn't inherit bias from a
+	// previous one, e.g. one() or an earlier subdivide() run on this same
+	// Subdivide instance.
+	_nodeCounts.clear();
+
 	// A/B toggle, temporary - flip to true to compare against
 	// comparison_key()'s (+mutual neighbours, -placeholders, -covalent)
 	// view for near-duplicate detection instead of the plain original
@@ -449,6 +492,17 @@ void Subdivide::subdivide(int samples)
 			if (chunk.size() == 0 || !has_non_water(chunk))
 			{
 				continue;
+			}
+
+			// record this chunk's membership so future shoot() calls (from
+			// later walks in this same subdivide()) bias their endpoint
+			// choice away from nodes already well covered - see shoot()'s
+			// own comment for why. Counted here rather than inside
+			// grow_clique() itself so a chunk discarded just above (empty,
+			// or water-only) doesn't count towards sampling coverage.
+			for (Probe *const &member : chunk)
+			{
+				_nodeCounts[member]++;
 			}
 
 			OpSet<Probe *> key = USE_COMPARISON_KEY ?
