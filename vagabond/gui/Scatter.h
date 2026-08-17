@@ -37,8 +37,16 @@ public:
 
 	virtual void reindex();
 
-	void addPoint(glm::vec3 vec, glm::vec3 colour, int pointType, 
+	void addPoint(glm::vec3 vec, glm::vec3 colour, int pointType,
 	              float alpha = 1.f);
+
+	// overwrites vertex idx's colour (alpha untouched) without uploading -
+	// call refreshColour() once after any number of these to actually
+	// reflect the change on screen. Used by Graph::hoverColour().
+	void setPointColour(size_t idx, glm::vec3 colour);
+	void setAllColour(glm::vec3 colour);
+	void refreshColour();
+
 	virtual void interacted(int idx, bool hover, bool left);
 	virtual void extraUniforms();
 private:

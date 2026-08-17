@@ -58,6 +58,33 @@ void Scatter::addPoint(glm::vec3 p, glm::vec3 colour, int pointType,
 	addIndex(-1);
 }
 
+void Scatter::setPointColour(size_t idx, glm::vec3 colour)
+{
+	if (idx >= vertexCount())
+	{
+		return;
+	}
+
+	Vertex v = vertex(idx);
+	v.color = glm::vec4(colour, v.color.a);
+	setVertex(idx, v);
+}
+
+void Scatter::setAllColour(glm::vec3 colour)
+{
+	for (size_t i = 0; i < vertexCount(); i++)
+	{
+		setPointColour(i, colour);
+	}
+
+	refreshColour();
+}
+
+void Scatter::refreshColour()
+{
+	forceRender(true, false);
+}
+
 void Scatter::extraUniforms()
 {
 	const char *uniform_name = "size";
@@ -89,6 +116,12 @@ void Scatter::interacted(int idx, bool hover, bool left)
 		pos.y += 0.04;
 		t->setPosition(pos);
 		addTempObject(t);
-	}
 
+		// hover (not a click - see IndexResponseView::checkIndexBuffer()'s
+		// two call sites) over an actual point: recolour by distance.
+		// Reverting on mouse-away is handled by Graph::clearLabels(),
+		// which fires via interactedWithNothing() once nothing is
+		// hovered, same debounce as the label itself.
+		_graph->hoverColour(_index, idx);
+	}
 }

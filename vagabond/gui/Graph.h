@@ -25,6 +25,7 @@
 class Scatter;
 class ThickLine;
 class IndexResponseView;
+class ColourLegend;
 
 class Graph : public Box
 {
@@ -74,7 +75,25 @@ public:
 	// cancels whatever run of clearLabels() misses had built up so far.
 	void noteLabelShown();
 	void clear();
+
+	// optional per-point world-space coordinates (e.g. atom positions),
+	// independent of the plotted x/y data itself and purely for
+	// hoverColour() below - supplying none leaves points on their default
+	// per-series colour/black, unchanged from before this existed.
+	// Replaces whichever coordinates were previously set for this series,
+	// so it can be resupplied/updated freely; indices should line up with
+	// the order addPoint() was called for that series.
+	void setSeriesCoordinates(int series, std::vector<glm::vec3> coords);
+
+	// called by Scatter::interacted() on hover - recolours every point
+	// across every series by its coordinate's distance from the hovered
+	// point's own coordinate (BlueOrange, scaled 0 to the largest distance
+	// found). A no-op if the hovered point has no coordinate set.
+	// Reverted back to plain black by clearLabels() once the mouse leaves
+	// every point (see its own comment).
+	void hoverColour(int series, int idx);
 private:
+	void resetColours();
 	struct DataPoint
 	{
 		glm::vec2 point;
@@ -103,6 +122,25 @@ private:
 	std::map<int, glm::vec3> _colours;
 	
 	std::vector<Scatter *> _scatters;
+	// series each entry of _scatters was built from, same order/length -
+	// lets hoverColour()/resetColours() map a Scatter back to the
+	// coordinates (if any) set for its series.
+	std::vector<int> _scatterSeries;
+
+	// see setSeriesCoordinates()/hoverColour() - keyed the same as _data.
+	std::map<int, std::vector<glm::vec3>> _coords;
+
+	// lazily created on first hoverColour() call, BlueOrange scheme -
+	// see hoverColour()'s own comment.
+	ColourLegend *_legend = nullptr;
+
+	// true once hoverColour(hover=true) has actually recoloured a point -
+	// lets resetColours() (called on every debounced clearLabels(), i.e.
+	// on essentially every mouse move over the graph) skip touching the
+	// scatters' colours at all when hover-distance colouring was never
+	// engaged, so callers that never supply setSeriesCoordinates() see no
+	// change from before this feature existed.
+	bool _hoverColoured = false;
 
 	// see clearLabels()/noteLabelShown() - counts consecutive clearLabels()
 	// calls since the last noteLabelShown(), so a lone stray miss (mouse

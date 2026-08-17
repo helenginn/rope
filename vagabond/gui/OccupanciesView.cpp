@@ -522,6 +522,10 @@ void OccupanciesView::rebuildGraph()
 	deleteTemps();
 	CorrelData cd = empty_CD();
 	std::vector<float> calcs, obs;
+	// parallel to graph->addPoint() below (series 0) - lets the scatter
+	// icons be recoloured by pairwise atom distance on hover (see
+	// Graph::hoverColour()'s own comment).
+	std::vector<glm::vec3> coords;
 
 	Graph *graph = new Graph();
 	graph->style = Graph::StyleScatter;
@@ -598,6 +602,7 @@ void OccupanciesView::rebuildGraph()
 
 		graph->addPoint(0, calculated, observed, ptp.first->desc(), 1.f,
 		                pointType);
+		coords.push_back(atom ? atom->initialPosition() : glm::vec3(0.f));
 		add_to_CD(&cd, calculated, observed);
 		calcs.push_back(calculated);
 		obs.push_back(observed);
@@ -608,6 +613,8 @@ void OccupanciesView::rebuildGraph()
 	std::cout << std::flush;
 
 	float cc = evaluate_CD(cd);
+
+	graph->setSeriesCoordinates(0, coords);
 
 	setInformation("Correlation: " + f_to_str(cc, 3));
 	graph->setup(0.4, 0.5);

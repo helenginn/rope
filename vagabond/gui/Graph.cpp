@@ -18,12 +18,14 @@
 
 #include "Graph.h"
 #include "Scatter.h"
+#include "ColourLegend.h"
 //#include <vagabond/utils/FileReader.h>
 #include <vagabond/gui/elements/ThickLine.h>
 #include <vagabond/gui/elements/Window.h>
 #include <vagabond/gui/elements/Text.h>
 #include <sstream>
 #include <iomanip>
+#include <algorithm>
 
 Graph::Graph()
 {
@@ -324,6 +326,7 @@ void Graph::addPoints(float width, float height, int series,
 	glm::vec2 diff = {xmax - xmin, ymax - ymin};
 	Scatter *sc = new Scatter(this, _scatters.size());
 	_scatters.push_back(sc);
+	_scatterSeries.push_back(series);
 
 	for (const DataPoint &dp : line)
 	{
@@ -357,7 +360,9 @@ void Graph::clear()
 {
 	clearObjects();
 	_scatters.clear();
+	_scatterSeries.clear();
 	_missesSinceShown = 0;
+	_hoverColoured = false;
 }
 
 void Graph::setup(float width, float height)
@@ -404,6 +409,84 @@ void Graph::noteLabelShown()
 	_missesSinceShown = 0;
 }
 
+void Graph::setSeriesCoordinates(int series, std::vector<glm::vec3> coords)
+{
+	_coords[series] = coords;
+}
+
+void Graph::resetColours()
+{
+	if (!_hoverColoured)
+	{
+		return;
+	}
+
+	glm::vec3 black{0.f, 0.f, 0.f};
+
+	for (Scatter *sc : _scatters)
+	{
+		sc->setAllColour(black);
+	}
+
+	_hoverColoured = false;
+}
+
+void Graph::hoverColour(int series, int idx)
+{
+	auto it = _coords.find(series);
+	if (it == _coords.end() || idx < 0 || idx >= (int)it->second.size())
+	{
+		return;
+	}
+
+	const glm::vec3 &origin = it->second[idx];
+
+	float maxDist = 0.f;
+	for (const auto &pair : _coords)
+	{
+		for (const glm::vec3 &coord : pair.second)
+		{
+			float dist = glm::length(coord - origin);
+			if (dist > maxDist)
+			{
+				maxDist = dist;
+			}
+		}
+	}
+
+	if (!_legend)
+	{
+		_legend = new ColourLegend(BlueOrange, true, nullptr);
+		_legend->disableButtons();
+	}
+
+	for (size_t s = 0; s < _scatters.size(); s++)
+	{
+		int ser = _scatterSeries[s];
+		auto coordIt = _coords.find(ser);
+		if (coordIt == _coords.end())
+		{
+			continue;
+		}
+
+		const std::vector<glm::vec3> &coords = coordIt->second;
+		Scatter *sc = _scatters[s];
+		size_t n = std::min(sc->vertexCount(), coords.size());
+
+		for (size_t i = 0; i < n; i++)
+		{
+			float dist = glm::length(coords[i] - origin);
+			float prop = (maxDist > 0 ? dist / maxDist : 0.f);
+			glm::vec4 c = _legend->colour(prop);
+			sc->setPointColour(i, glm::vec3(c));
+		}
+
+		sc->refreshColour();
+	}
+
+	_hoverColoured = true;
+}
+
 void Graph::clearLabels()
 {
 	// IndexResponseView::checkIndexBuffer() picks per-pixel, straight off
@@ -429,4 +512,9 @@ void Graph::clearLabels()
 	{
 		sc->deleteTemps();
 	}
+
+	// same debounce as the label clear above - only actually revert the
+	// hover distance-colouring once the mouse has genuinely left every
+	// point, not on a single edge-jitter miss.
+	resetColours();
 }
