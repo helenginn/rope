@@ -494,14 +494,19 @@ void Graph::hoverColour(int series, int idx)
 
 	if (_hoverInfoCallback)
 	{
-		// weighted correlation of the plotted x/y data itself (whatever
-		// addPoint() was given - calculated vs observed occupancy for
-		// OccupanciesView) across every coordinate-bearing point, each
-		// weighted by exp(-d^2) where d is that point's own distance
-		// above, normalised into the same [0, 1] the colouring uses -
-		// i.e. points near the hovered one dominate, points at maxDist
-		// contribute almost nothing.
-		CorrelData cd = empty_CD();
+		// correlation of the plotted x/y data itself (whatever addPoint()
+		// was given - calculated vs observed occupancy for
+		// OccupanciesView) across only the closest half (by this same
+		// distance) of every coordinate-bearing point to the hovered one
+		// - the furthest half is discarded outright rather than
+		// down-weighted.
+		struct Ranked
+		{
+			float dist;
+			double x, y;
+		};
+
+		std::vector<Ranked> ranked;
 
 		for (const auto &pair : _coords)
 		{
@@ -517,11 +522,23 @@ void Graph::hoverColour(int series, int idx)
 			for (size_t i = 0; i < n; i++)
 			{
 				float dist = glm::length(pair.second[i] - origin);
-				float prop = (maxDist > 0 ? dist / maxDist : 0.f);
-				double weight = exp(-double(prop) * prop);
-				add_to_CD(&cd, (double)points[i].point.x,
-				         (double)points[i].point.y, weight);
+				ranked.push_back({dist, (double)points[i].point.x,
+				                 (double)points[i].point.y});
 			}
+		}
+
+		std::sort(ranked.begin(), ranked.end(),
+		         [](const Ranked &a, const Ranked &b)
+		{
+			return a.dist < b.dist;
+		});
+
+		size_t closestHalf = (ranked.size() + 1) / 2;
+
+		CorrelData cd = empty_CD();
+		for (size_t i = 0; i < closestHalf; i++)
+		{
+			add_to_CD(&cd, ranked[i].x, ranked[i].y);
 		}
 
 		_hoverInfoCallback(evaluate_CD(cd));

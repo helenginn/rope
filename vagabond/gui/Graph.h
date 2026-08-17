@@ -95,11 +95,11 @@ public:
 	// every point (see its own comment).
 	//
 	// Also computes a "local correlation": the same x/y data addPoint()
-	// was given, correlated with every other coordinate-bearing point
-	// weighted by exp(-d^2), d being that point's own hoverColour()
-	// distance normalised by the largest distance found (0 at the hovered
-	// point itself, dropping off with distance) - and reports it via
-	// setHoverInfoCallback() below.
+	// was given, correlated across only the closest half (by this same
+	// distance) of every coordinate-bearing point to the hovered one -
+	// the furthest half is discarded outright, not down-weighted - and
+	// reports it via setHoverInfoCallback() below. Doesn't touch the
+	// colouring above, which still spans every point.
 	void hoverColour(int series, int idx);
 
 	// called with the local correlation (see hoverColour()'s own comment)
