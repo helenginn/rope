@@ -194,6 +194,18 @@ void OccupanciesView::setup()
 		occupancies();
 	}, CertainStates::sSampleCorrectionEnabled);
 
+	// TEMPORARY: lets Helen A/B compare proportions() discarding a node's
+	// whole result as soon as one state never recorded a value for it,
+	// against folding those unassigned states into their own bucket - see
+	// CertainStates::sRejectIncompleteEnabled's own comment. Re-runs
+	// occupancies() for the same reason the checkbox above does.
+	displayTix->addOption("Reject incomplete nodes", [this]()
+	{
+		CertainStates::sRejectIncompleteEnabled =
+		!CertainStates::sRejectIncompleteEnabled;
+		occupancies();
+	}, CertainStates::sRejectIncompleteEnabled);
+
 	displayTix->setVertical(true);
 	displayTix->setOneOnly(false);
 

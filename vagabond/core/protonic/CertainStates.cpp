@@ -359,6 +359,12 @@ std::map<int, float> CertainStates::proportions(ProbeTypePair ptp,
 	for (int i = 0; i < state_count(); i++)
 	{
 		int nv = value(i, n);
+
+		if (nv == -1 && sRejectIncompleteEnabled)
+		{
+			return {};
+		}
+
 		float contrib = probs[i] / correction;
 		totals[nv] += contrib;
 		counts[nv]++;

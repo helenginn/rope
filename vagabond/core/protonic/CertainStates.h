@@ -165,6 +165,14 @@ public:
 	// (and the checkboxes) once the correction's effect has been judged.
 	static inline bool sSampleCorrectionEnabled = true;
 
+	// TEMPORARY: on/off switch, wired to a checkbox in OccupanciesView, for
+	// whether proportions() bails out with an empty map as soon as it hits
+	// a state where this ptp's node was never recorded (value() == -1),
+	// rather than folding that state into a totals[-1] bucket alongside
+	// the real states. Off by default to preserve existing behaviour -
+	// remove this (and the checkbox) once Helen has judged which is right.
+	static inline bool sRejectIncompleteEnabled = false;
+
 private:
 	// a set, not a vector, so header (row) order is a deterministic
 	// function of which probes are present - not of the order they
