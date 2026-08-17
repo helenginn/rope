@@ -124,7 +124,6 @@ private:
 	std::map<ProbeTypePair, int> _lookup;
 
 	Eigen::MatrixXi _data;
-//	Eigen::VectorXf _scores;
 
 	std::vector<GetScore> _scores;
 };
