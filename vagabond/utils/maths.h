@@ -18,13 +18,13 @@
 #include <stdlib.h>
 #include <float.h>
 
-// physiological RT (~310 K) in kJ/mol - shared between CertainStates'
+// physiological RT (~298 K) in kJ/mol - shared between CertainStates'
 // Boltzmann weighting of a state's total energy into a probability
 // (score() -> probsForAve()) and any energy term meant to reproduce a
 // known population ratio from that same weighting (e.g.
 // CustomProtonSettings' pKa/pH-derived protonation energies) - kept in
 // one place so the two can never drift out of sync with each other.
-constexpr float physiological_rt_kjmol = 2.57f;
+constexpr float physiological_rt_kjmol = 2.48;
 
 double r_factor(std::vector<double> &set1, std::vector<double> &set2);
 

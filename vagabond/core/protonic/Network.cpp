@@ -161,8 +161,8 @@ Count::Values Network::chargeStatesForPKa(const std::string &code,
 
 	Count::Values result = Count::Values(0);
 
-	bool protonatedIncluded = (fracDeprotonated < 0.99f);
-	bool deprotonatedIncluded = (fracDeprotonated > 0.01f);
+	bool protonatedIncluded = (fracDeprotonated < 0.999f);
+	bool deprotonatedIncluded = (fracDeprotonated > 0.001f);
 
 	// outside dev mode, only pKas extreme enough to be physiologically
 	// unambiguous (comfortably outside any pH the model could plausibly be
@@ -194,11 +194,11 @@ Count::Values Network::chargeStatesForPKa(const std::string &code,
 	// untouched - nothing to lose by a pH nudge in either direction.
 	if (!deprotonatedIncluded)
 	{
-		_pHUpperBound = std::min(_pHUpperBound, pKa - log10(99.f));
+		_pHUpperBound = std::min(_pHUpperBound, pKa - log10(999.f));
 	}
 	if (!protonatedIncluded)
 	{
-		_pHLowerBound = std::max(_pHLowerBound, pKa + log10(99.f));
+		_pHLowerBound = std::max(_pHLowerBound, pKa + log10(999.f));
 	}
 
 	return result;
