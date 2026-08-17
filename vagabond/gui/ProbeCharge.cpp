@@ -47,7 +47,7 @@ void ProbeCharge::quickUpdate()
 	([this]()
 	{
 		FloatingImage::changeImage("assets/images/" + _probe->display() + ".png");
-		FloatingImage::setAlpha(_selected ? 1.0 : _probe->alpha());
+		FloatingImage::setAlpha(_probe->alpha());
 		FloatingImage::forceRender(true, true);
 	});
 }
@@ -56,14 +56,21 @@ void ProbeCharge::fullUpdate()
 {
 	FloatingImage::setPosition(_probe->position());
 	FloatingImage::changeImage("assets/images/" + _probe->display() + ".png");
-	FloatingImage::setAlpha(_selected ? 1.0 : _probe->alpha());
+	FloatingImage::setAlpha(_probe->alpha());
 	FloatingImage::forceRender(true, true);
 }
 
 void ProbeCharge::selected(int idx, bool inverse)
 {
 	_selected = !inverse;
-	quickUpdate();
+
+	// same additive highlight tint as ProbeBond::selected() - color[3]
+	// (set via setAlpha elsewhere) is a separate blend-alpha for this
+	// tint, not the texture's opacity, so don't touch it here; only the
+	// rgb tint itself toggles.
+	float colour = (inverse ? 0.f : 0.3f);
+	FloatingImage::setColour(colour, colour, colour * 2.f);
+	FloatingImage::forceRender(true, false);
 }
 
 
