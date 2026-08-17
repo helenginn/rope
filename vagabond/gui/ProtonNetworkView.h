@@ -131,6 +131,10 @@ private:
 	
 	OpSet<Probe *> _allProbes;
 	OpSet<Probe *> _hProbes;
+	// bulk solvent AtomProbes - never given an on-screen representation
+	// (see findAtomProbes()), but still registered here so selectProbes()
+	// can find them instead of falling through to "Could not find probe".
+	OpSet<Probe *> _bulkProbes;
 
 	PositionShifter *_shifter{};
 

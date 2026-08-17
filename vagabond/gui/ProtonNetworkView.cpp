@@ -125,6 +125,7 @@ void ProtonNetworkView::clearNetworkObjects()
 
 	_allProbes.clear();
 	_hProbes.clear();
+	_bulkProbes.clear();
 
 	if (_cv)
 	{
@@ -246,6 +247,17 @@ void ProtonNetworkView::findAtomProbes()
 	{
 		if (probe->is_bulk())
 		{
+			// bulk solvent has no meaningful position, so it's never
+			// drawn - but it still needs to be registered so it can be
+			// looked up by pointer (e.g. selectProbes() when a clique
+			// containing it is selected), rather than falling through to
+			// "Could not find probe". Kept out of _textProbes (rather
+			// than mapped to a null ProbeAtom*) because that map's
+			// entries are dereferenced unconditionally all over this
+			// file.
+			_bulkProbes.insert(probe);
+			_allProbes.insert(probe);
+			probe->setResponder(this);
 			continue;
 		}
 
@@ -1003,9 +1015,18 @@ void ProtonNetworkView::selectProbes(const OpSet<Probe *> &probes, bool on)
 		{
 			_textProbes[other]->selected(0, (on ? 0 : 1));
 		}
+		else if (_bulkProbes.count(other))
+		{
+			// bulk solvent: registered for lookup, but has no on-screen
+			// representation to highlight (see findAtomProbes()).
+		}
 		else if (_bondProbes.count(other))
 		{
 			_bondProbes[other]->selected(0, (on ? 0 : 1));
+		}
+		else if (_countProbes.count(other))
+		{
+			_countProbes[other]->selected(0, (on ? 0 : 1));
 		}
 		else
 		{

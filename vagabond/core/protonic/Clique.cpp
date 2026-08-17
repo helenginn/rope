@@ -209,6 +209,16 @@ void Clique::prepareForStorage()
 {
 	for (Probe *const &probe : _probes)
 	{
+		// placeholders are speculative, not-yet-resolved coordination
+		// slots (see CliqueFinder::expandSelectionToNeighbours's own
+		// comment) - they may not resolve to a stable probe on reload,
+		// so keeping them out of storage avoids a "Missing probe for
+		// desc" warning next session.
+		if (probe->is_placeholder())
+		{
+			continue;
+		}
+
 		_descs += probe->desc();
 	}
 	_probes = ProbeKey();

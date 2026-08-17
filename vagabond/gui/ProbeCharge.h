@@ -47,6 +47,8 @@ public:
 		return false;
 	}
 
+	virtual void selected(int idx, bool inverse);
+
 	virtual void reindex();
 	void quickUpdate();
 private:
@@ -54,6 +56,7 @@ private:
 
 	CountProbe *_probe = nullptr;
 	ProtonNetworkView *_view = nullptr;
+	bool _selected = false;
 
 };
 

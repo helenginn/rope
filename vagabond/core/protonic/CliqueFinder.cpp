@@ -164,8 +164,20 @@ CliqueFinder::completeToResidues(const OpSet<Probe *> &start,
 		return true;
 	};
 
-	return CliqueFinder::completeOnCondition(start, initial_assessment,
-	                                         check_probe);
+	OpSet<Probe *> ps = CliqueFinder::completeOnCondition(start,
+	                                                      initial_assessment,
+	                                                      check_probe);
+
+	// same reasoning as expandSelectionToNeighbours: placeholders are
+	// speculative, not-yet-resolved coordination slots that shouldn't be
+	// offered as part of a chosen region of interest, so they're dropped
+	// from the RESULT only, not the walk itself.
+	ps.filter([](Probe *const &probe)
+	{
+		return !probe->is_placeholder();
+	});
+
+	return ps;
 }
 
 std::vector<OpSet<Probe *>>

@@ -47,7 +47,7 @@ void ProbeCharge::quickUpdate()
 	([this]()
 	{
 		FloatingImage::changeImage("assets/images/" + _probe->display() + ".png");
-		FloatingImage::setAlpha(_probe->alpha());
+		FloatingImage::setAlpha(_selected ? 1.0 : _probe->alpha());
 		FloatingImage::forceRender(true, true);
 	});
 }
@@ -56,8 +56,14 @@ void ProbeCharge::fullUpdate()
 {
 	FloatingImage::setPosition(_probe->position());
 	FloatingImage::changeImage("assets/images/" + _probe->display() + ".png");
-	FloatingImage::setAlpha(_probe->alpha());
+	FloatingImage::setAlpha(_selected ? 1.0 : _probe->alpha());
 	FloatingImage::forceRender(true, true);
+}
+
+void ProbeCharge::selected(int idx, bool inverse)
+{
+	_selected = !inverse;
+	quickUpdate();
 }
 
 
