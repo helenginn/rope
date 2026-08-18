@@ -41,10 +41,19 @@ public:
 private:
 	Clique *_clique{};
 
+	// shoot()'s own growth budget, in log2-penalty units rather than a
+	// plain node count - see node_penalty()/shoot()'s own comments in
+	// Subdivide.cpp for the per-node-type weights and why the same
+	// numeric value carries over unconverted from the old node-count
+	// meaning. finish_ends()/finish_hbonds() are NOT governed by this at
+	// all - they run independently, uncapped, after shoot() finishes.
 	int _max = 0;
 
-	// shoot() keeps every probe within this many hops of *some* shortest
-	// path between its chosen endpoints, not just one arbitrary path.
+	// shoot() keeps every probe within this much extra log2-penalty cost
+	// of *some* shortest path between its chosen endpoints, not just one
+	// arbitrary path - was a plain hop count before node_penalty()
+	// weighting replaced _max as shoot()'s budget; may need retuning by
+	// eye now that the unit has changed.
 	int _slack = 5;
 
 	// how many times each probe has already turned up in a searched

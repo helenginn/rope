@@ -169,6 +169,13 @@ static void add_leg_member(OpSet<Probe *> &chunk, Probe *other)
 // looping is finish_ends()'s job for alt-confs/clashes, not this one's.
 void Subdivide::finish_hbonds(OpSet<Probe *> &chunk)
 {
+	// temporary testing toggle: stop each leg at the hydrogen (protonation
+	// state) instead of continuing on to the opposing half/atom, to check
+	// whether that's what's driving the combinatorial blow-up before
+	// deciding whether the full four-hop leg is too much. Flip back to
+	// false to restore the full atom->half->hydrogen->half->atom leg.
+	const bool STOP_AT_HYDROGEN = false;
+
 	std::vector<Probe *> snapshot(chunk.begin(), chunk.end());
 
 	for (Probe *const &probe : snapshot)
@@ -219,7 +226,7 @@ void Subdivide::finish_hbonds(OpSet<Probe *> &chunk)
 			}
 
 			add_leg_member(chunk, hydrogen);
-			if (!hydrogen)
+			if (!hydrogen || STOP_AT_HYDROGEN)
 			{
 				continue;
 			}
@@ -246,24 +253,80 @@ void Subdivide::finish_hbonds(OpSet<Probe *> &chunk)
 	}
 }
 
-// BFS out to `radius` hops from `root`, respecting the same
-// is_definitely_not_present() filter the old random walk used. Fills
-// `dist` with every reached probe's hop count from `root` and returns
-// the farthest distance actually reached (capped at `radius`).
-static int bounded_bfs(Probe *root, int radius, std::map<Probe *, int> &dist)
+// incremental cost (in log2 units - i.e. a step of N here means the region
+// being grown gets roughly 2^N times as combinatorially large) of adding
+// `node` to a region that already reached every key of `included` - this
+// is what shoot()'s own growth is now budgeted against, in place of a
+// plain node count. Categories, per Helen's own guessed weights:
+//  - a covalent bond (CovalentProbe) or the atom on its far side: free -
+//    a covalently bonded atom was never an independent combinatorial
+//    choice to begin with.
+//  - a hydrogen (protonation state) or a charge (CountProbe): also free
+//    here - its own real cost is charged at the half-hydrogen-bond/atom
+//    hop that reaches it, not charged twice.
+//  - a half-hydrogen-bond (a non-covalent BondProbe): 2^4 - by far the
+//    most expensive single node, since each one is its own existence
+//    constraint cluster (h/hExist/le/re - see HydrogenBond).
+//  - an atom whose existence is already tied (mutualExistenceNeighbours())
+//    to something already reached: free, same reasoning as the covalent
+//    case - it isn't a new independent choice either.
+//  - any other atom (an independent existence choice - includes ordinary
+//    steric-clash partners): 2^1.
+static int node_penalty(Probe *node, const std::map<Probe *, int> &included)
+{
+	if (node->is_covalent())
+	{
+		return 0;
+	}
+
+	if (node->is_bond())
+	{
+		return 4;
+	}
+
+	if (!node->is_atom())
+	{
+		return 0; // hydrogen or charge
+	}
+
+	for (Probe *const &mate : node->mutualExistenceNeighbours())
+	{
+		if (included.count(mate))
+		{
+			return 0;
+		}
+	}
+
+	return 1;
+}
+
+// Dijkstra out from `root`, weighting each step by node_penalty() rather
+// than a flat 1 hop, and stopping expansion once a node's own cumulative
+// cost reaches `budget` (a log2-penalty threshold, not a hop count - see
+// node_penalty()'s own comment for the unit). Fills `dist` with every
+// reached probe's cheapest cumulative cost from `root` and returns the
+// highest cost actually reached (capped at `budget`). Same
+// is_definitely_not_present()/is_symmetry_related() filter the old
+// unweighted BFS used.
+static int bounded_bfs(Probe *root, int budget, std::map<Probe *, int> &dist)
 {
 	dist[root] = 0;
-	std::queue<Probe *> frontier;
-	frontier.push(root);
+	using Entry = std::pair<int, Probe *>;
+	std::priority_queue<Entry, std::vector<Entry>, std::greater<Entry>> frontier;
+	frontier.push({0, root});
 	int farthest = 0;
 
 	while (!frontier.empty())
 	{
-		Probe *current = frontier.front();
+		auto [d, current] = frontier.top();
 		frontier.pop();
-		int d = dist[current];
 
-		if (d >= radius)
+		if (d > dist[current])
+		{
+			continue; // a cheaper path to `current` was already relaxed
+		}
+
+		if (d >= budget)
 		{
 			continue;
 		}
@@ -271,41 +334,59 @@ static int bounded_bfs(Probe *root, int radius, std::map<Probe *, int> &dist)
 		for (Probe *const &other : current->others())
 		{
 			if (other->is_definitely_not_present() ||
-			    is_symmetry_related(other) || dist.count(other))
+			    is_symmetry_related(other))
 			{
 				continue;
 			}
 
-			dist[other] = d + 1;
-			farthest = std::max(farthest, d + 1);
-			frontier.push(other);
+			int cost = d + node_penalty(other, dist);
+
+			auto it = dist.find(other);
+			if (it != dist.end() && it->second <= cost)
+			{
+				continue;
+			}
+
+			dist[other] = cost;
+			farthest = std::max(farthest, cost);
+			frontier.push({cost, other});
 		}
 	}
 
 	return farthest;
 }
 
-// Picks a probe roughly _max hops from the start (biased to the farthest
-// layer at which another member of the clique being subdivided is
-// reached, so chunks are deep chains rather than the old
-// shuffle-and-backtrack random walk, which tended to meander), then keeps
-// the union of every probe within _slack hops of some shortest path
-// between the two - not just one arbitrary shortest path - since real
-// signalling paths fork and converge rather than being a single strand.
-// The path between them, and the kept "lens" around it, may still pass
-// through probes outside the clique (e.g. bridging waters) - only the
-// choice of endpoint itself is restricted to clique members.
+// Picks a probe roughly _max penalty units (see node_penalty()) from the
+// start (biased to the farthest layer at which another member of the
+// clique being subdivided is reached, so chunks are deep chains rather
+// than the old shuffle-and-backtrack random walk, which tended to
+// meander), then keeps the union of every probe within _slack of some
+// shortest path between the two - not just one arbitrary shortest path -
+// since real signalling paths fork and converge rather than being a
+// single strand. The path between them, and the kept "lens" around it,
+// may still pass through probes outside the clique (e.g. bridging
+// waters) - only the choice of endpoint itself is restricted to clique
+// members.
+//
+// _max is user-set "guidance size" for how big a subdivision should be,
+// originally a plain node count - now spent as a log2-penalty budget
+// instead (node_penalty()'s own comment has the per-node-type weights),
+// so the SAME numeric value is reused unconverted, on the guess that an
+// average node costs somewhere around 2^1 (i.e. this budget spends
+// roughly _max independent-atom-equivalents rather than literally _max
+// nodes) - may need retuning by eye once this is in use. finish_ends()/
+// finish_hbonds() no longer draw against this budget at all (they run
+// independently, uncapped, after shoot() finishes), so the old halving
+// that reserved half of _max as headroom for them is gone too - shoot()
+// now spends the whole budget on the path/lens itself.
 void Subdivide::shoot(OpSet<Probe *> &chunk)
 {
 	Probe *start = *chunk.begin();
 
-	// leave headroom under _max for finish_ends() to patch hydrogen-bond
-	// halves and alt-confs afterward, rather than filling the whole
-	// budget with the path itself.
-	int radius = _max / 2;
+	int budget = _max;
 
 	std::map<Probe *, int> dist_start;
-	bounded_bfs(start, radius, dist_start);
+	bounded_bfs(start, budget, dist_start);
 
 	// the chosen endpoint must itself belong to the clique being
 	// subdivided - the walk between start and end is still free to pass
@@ -422,14 +503,40 @@ void Subdivide::shoot(OpSet<Probe *> &chunk)
 		                return a.sum < b.sum;
 		             });
 
-	// cap at half of _max here too, leaving the other half of the budget
-	// as headroom for finish_ends() to patch hydrogen-bond halves and
-	// alt-confs afterward, matching the radius reservation above.
+	// accept candidates closest-first (same ranking as before), spending
+	// each one's own node_penalty() against `budget` as it's accepted -
+	// this replaces the old plain node-count cap, and stops (rather than
+	// skipping over an expensive one to keep packing cheaper, farther-out
+	// candidates) at the first candidate that would exceed the budget, so
+	// the accepted region stays a genuine "grow outward until the budget
+	// runs out" lens rather than a scattered cheapest-first selection.
 	OpSet<Probe *> result;
-	size_t cap = std::min((size_t)radius, candidates.size());
-	for (size_t i = 0; i < cap; i++)
+	std::map<Probe *, int> included;
+	int spent = 0;
+
+	// the walk's own seed atom is always kept regardless of budget - it's
+	// where every one of this shoot() call's own hops originated from,
+	// not itself a new combinatorial addition to weigh against it.
+	result += start;
+	included[start] = 0;
+
+	for (const Candidate &candidate : candidates)
 	{
-		result += candidates[i].probe;
+		if (candidate.probe == start)
+		{
+			continue;
+		}
+
+		int cost = node_penalty(candidate.probe, included);
+
+		if (spent + cost > budget)
+		{
+			break;
+		}
+
+		included[candidate.probe] = 0;
+		result += candidate.probe;
+		spent += cost;
 	}
 
 	chunk = result;
