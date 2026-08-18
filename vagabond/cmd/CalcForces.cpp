@@ -17,7 +17,6 @@
 // Please email: vagabond @ hginn.co.uk for more details.
 
 #include "CalcForces.h"
-#include "../utils/ResultType.h"
 #include "files/File.h"
 #include "forces/ForceAnalysis.h"
 #include <exception>
@@ -56,27 +55,7 @@ std::unique_ptr<File> validateInput(std::string first, std::string last) {
 };
 } // namespace
 
-using namespace rust_type;
-
-Result<int, std::string> divide(int a, int b) {
-  if (b == 0) {
-    return Err(std::string("Division by 0 is not allowed!"));
   }
-  return Ok(a / b);
-}
-
-void handleTestResult(std::string first, std::string last) {
-  int success = divide(10, 2).unwrap();
-  std::cout << "10 / 2 = " << success << std::endl;
-
-  int fallback = divide(10, 0).unwrap_or(-1);
-  std::cout << "10 / 0 = " << fallback << std::endl;
-
-  auto res = divide(5,0);
-  if (res.is_err()) {
-    std::cout << "Aborted: " << res.error() << std::endl;
-  }
-}
 
 void handleCalcForces(std::string first, std::string last) {
   auto file = validateInput(first, last);
