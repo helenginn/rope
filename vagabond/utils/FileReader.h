@@ -23,7 +23,7 @@ void check_path_and_make(const std::filesystem::path &path);
 bool file_exists(const std::string &name);
 void escape_filename(std::string &file);
 
-std::string getPath(std::string whole);
+std::string getPath(std::string filename);
 std::string getFilename(std::string filename);
 
 /** removes file extension and path */

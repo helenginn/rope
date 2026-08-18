@@ -39,6 +39,112 @@
 
 std::string FileReader::outputDir;
 
+/**
+ * Check if a file exists (cross-platform compatible)
+ *
+ * @param name The name of the file to check
+ * @returns true if the file exists, false otherwise
+ * */
+bool file_exists(const std::string &name)
+{
+    const std::filesystem::path filePath(name);
+    return std::filesystem::exists(filePath);
+}
+
+/**
+ * Get the path from a full filename
+ * E.g. Returns "/path/to/" from "/path/to/file.txt"
+ *
+ * @param filename The full path to the file
+ * @return The path to the file, including trailing slash, or an empty string if no path exists
+ */
+std::string getPath(std::string filename)
+{
+    std::filesystem::path filePath(filename);
+    std::filesystem::path parentPath = filePath.parent_path();
+    if (parentPath.empty())
+    {
+        return "";
+    }
+    return parentPath.string() + std::string(1, std::filesystem::path::preferred_separator);
+}
+
+/**
+ * Get the filename from a path (including extension)
+ * E.g. Returns "file.txt" from "/path/to/file.txt"
+ *
+ * @param filename The full path to the file
+ * @return The filename with extension
+ */
+std::string getFilename(std::string filename)
+{
+    const std::filesystem::path filePath(filename);
+    return filePath.filename().string();
+}
+
+/**
+ * Get the file extension from a filename
+ * E.g. Returns "txt" from "/path/to/file.txt"
+ *
+ * @param filename The full path to the file
+ * @return The file extension (without the dot), or an empty string if no extension exists
+ */
+std::string getExtension(std::string filename)
+{
+    const std::filesystem::path filePath(filename);
+    const std::string ext = filePath.extension().string();
+    return ext.length() > 1 ? ext.substr(1) : "";
+}
+
+/**
+ * Get the base filename (without extension) from a filename,
+ * aka the file stem.
+ * E.g. Returns "file" from "/path/to/file.txt"
+ *
+ * @param filename The full path to the file
+ * @return The base filename without extension
+ */
+std::string getBaseFilename(std::string filename)
+{
+    const std::filesystem::path filePath(filename);
+    return filePath.stem().string();
+}
+
+/**
+ * Get the base filename (without extension) from a filename,
+ * but keep the path.
+ * E.g. Returns "/path/to/file" from "/path/to/file.txt"
+ *
+ * @param filename The full path to the file
+ * @return The base filename with path, without extension
+ * */
+std::string getBaseFilenameWithPath(std::string filename)
+{
+    const std::filesystem::path filePath(filename);
+    return (filePath.parent_path() / filePath.stem()).string();
+}
+
+std::string findNextFilename(std::string file)
+{
+	std::string path = getPath(file);
+	std::string trial = getFilename(file);
+	int count = 0;
+
+	while (true)
+	{
+		std::string test = path + "/" + i_to_str(count) + "_" + trial;
+
+		if (!file_exists(test))
+		{
+			return test;
+		}
+
+		count++;
+	}
+}
+
+
+
 void FileReader::makeDirectoryIfNeeded(std::string _dir)
 {
     std::filesystem::path dir = std::filesystem::path(_dir);
@@ -220,18 +326,6 @@ void debom(std::string &name)
 	}
 }
 
-/**
- * Check if a file exists (cross-platform compatible)
- *
- * @param name The name of the file to check
- * @returns true if the file exists, false otherwise
- * */
-bool file_exists(const std::string &name)
-{
-	const std::filesystem::path filePath(name);
-    return std::filesystem::exists(filePath);
-}
-
 std::string get_file_contents(std::string filename)
 {
 	std::ifstream in(filename, std::ios::in | std::ios::binary);
@@ -276,85 +370,6 @@ void defenestrate(std::string &str)
 	}
 
 	str = ss.str();
-}
-
-std::string getPath(std::string whole)
-{
-	size_t pos = whole.rfind("/");
-	if(pos == std::string::npos)  //No path.
-	{
-		return "";
-	}
-	else
-	{
-		return whole.substr(0, pos + 1);
-	}
-}
-
-std::string getFilename(std::string filename)
-{
-	size_t pos = filename.rfind("/");
-	if(pos == std::string::npos)  //No path.
-	return filename;
-
-	return filename.substr(pos + 1, filename.length());
-}
-
-std::string getBaseFilenameWithPath(std::string filename)
-{
-	std::string fName = filename;
-	size_t pos = fName.rfind(".");
-	if(pos == std::string::npos)  //No extension.
-	return fName;
-
-	if(pos == 0)    //. is at the front. Not an extension.
-	return fName;
-
-	return fName.substr(0, pos);
-}
-
-std::string getExtension(std::string filename)
-{
-	std::string fName = getFilename(filename);
-	size_t pos = fName.rfind(".");
-	if (pos == std::string::npos || pos == fName.length() - 1)  //No extension
-	{
-		return "";
-	}
-
-	return fName.substr(pos + 1);
-}
-
-std::string getBaseFilename(std::string filename)
-{
-	std::string fName = getFilename(filename);
-	size_t pos = fName.rfind(".");
-	if(pos == std::string::npos)  //No extension.
-	return fName;
-
-	if(pos == 0)    //. is at the front. Not an extension.
-	return fName;
-
-	return fName.substr(0, pos);
-}
-
-std::string findNextFilename(std::string file)
-{
-	std::string path = getPath(file);
-	std::string trial = getFilename(file);
-	int count = 0;
-
-	while (true)
-	{
-		std::string test = path + "/" + i_to_str(count) + "_" + trial;
-
-		if (!file_exists(test))
-		{
-			return test;
-		}
-		
-		count++;
-	}
 }
 
 void trim(std::string &str)
