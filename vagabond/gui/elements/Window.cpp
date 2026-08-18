@@ -18,6 +18,9 @@
 #ifdef OS_WINDOWS
 #include <windows.h>
 #endif
+#ifdef OS_MACOSX
+#include <mach-o/dyld.h>
+#endif
 
 SDL_Renderer *Window::_renderer = NULL;
 SDL_Rect Window::_rect;
