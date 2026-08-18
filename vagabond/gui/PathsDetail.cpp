@@ -16,6 +16,7 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
+#include <filesystem>
 #include <gemmi/to_pdb.hpp>
 
 #ifdef __EMSCRIPTEN__
@@ -296,7 +297,7 @@ void PathsDetail::attemptEnsemble(const std::string &filename, const int &num)
 
 	if (path.length())
 	{
-		check_path_and_make(path);
+		check_path_and_make(std::filesystem::path(path));
 	}
 
 	PlausibleRoute *pr = _obj.toRoute();
@@ -327,7 +328,7 @@ void PathsDetail::attemptPerStruct(const std::string &filename, const int &num)
 	
 	if (path.length())
 	{
-		check_path_and_make(path);
+		check_path_and_make(std::filesystem::path(path));
 	}
 	
 	PlausibleRoute *pr = _obj.toRoute();

@@ -16,6 +16,7 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
+#include <filesystem>
 #include <vagabond/c4x/ClusterSVD.h>
 
 #include <vagabond/gui/elements/AskForText.h>
@@ -441,7 +442,9 @@ void AxisExplorer::buttonPressed(std::string tag, Button *button)
 
 		std::string path = getPath(filename);
 		std::string file = getFilename(filename);
-		check_path_and_make(path);
+
+	    std::filesystem::path dir = std::filesystem::path(path);
+		check_path_and_make(dir);
 
 		_instance->currentAtoms()->writeToFile(filename);
 	}

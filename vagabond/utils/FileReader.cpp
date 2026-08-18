@@ -6,6 +6,8 @@
 //  Copyright (c) 2014 Helen Ginn. All rights reserved.
 //
 
+#include <filesystem>
+
 #include "os.h"
 #ifdef OS_WINDOWS
     // windows.h needs to be imported first to prevent issues with compilers
@@ -504,47 +506,59 @@ int count_chars(const std::string &s, const char &ch)
 }
 
 
-void check_path_and_make(std::string &path)
+void check_path_and_make(const std::filesystem::path &path)
 {
-	if (path.length() == 0)
+    // Check if the path is empty
+	if (path.empty())
 	{
-		return;
+	    return;
 	}
 
-	if (path.back() == '/')
-	{
-		path.pop_back();
-	}
-	
-	if (count_chars(path, '/') > 1)
-	{
-		std::string err = ("Please no more than one subdirectory down."\
-		                   "\nI cannot cope with such complexities.");
-		throw std::runtime_error(err);
-	}
+    // Normalize path
+    std::filesystem::path normalized = path.lexically_normal();
 
-	if (path.find('.') != std::string::npos)
-	{
-		std::string err = ("If you are going to add a path, please don't "\
-		                   "\nuse full stops (periods), it is dangerous "\
-		                   "for your filesystem.");
-		throw std::runtime_error(err);
-	}
-	else if (path.find('/') == 0)
-	{
-		std::string err = ("If you are going to add a path, please don't "\
-		                   "\nstart with a forwardslash. I don't want to be "\
-		                   "\nresponsible for ruining your filesystem.");
-		throw std::runtime_error(err);
-	}
-	else if (file_exists(path) && !is_directory(path))
-	{
-		std::string err = ("This path already exists as a file and I refuse"\
-		                   "\nto overwrite it. Please choose another name.");
-		throw std::runtime_error(err);
-	}
+    // Reject absolute paths
+    if (normalized.is_absolute())
+    {
+        throw std::runtime_error(
+            "If you are going to add a path, please don't use an absolute path. "
+            "I don't want to be responsible for ruining your filesystem.\n" +
+            normalized.string()
+        );
+    }
 
-	FileReader::makeDirectoryIfNeeded(path);
+    // Reject paths with dots
+    if (normalized.string().find('.') != std::string::npos)
+    {
+        throw std::runtime_error(
+            "If you are going to add a path, please don't use full stops (periods). "
+            "It is dangerous for your filesystem.\n" +
+            normalized.string()
+        );
+    }
+
+	// Reject paths with more than one subdirectory
+    //  Example: "foo" or "foo/bar" are allowed, but "foo/bar/baz" is not.
+    std::filesystem::path relative = normalized.relative_path();
+    if (std::distance(relative.begin(), relative.end()) > 2)
+    {
+        throw std::runtime_error(
+            "Please no more than one subdirectory down. "
+            "I cannot cope with such complexities.\n"
+            + normalized.string()
+        );
+    }
+
+    // Refuse paths that already exist and are not directories
+    if (std::filesystem::exists(path) && !std::filesystem::is_directory(path))
+    {
+        throw std::runtime_error(
+            "This path already exists as a file and I refuse to overwrite it. "
+            "Please choose another name.\n" + normalized.string()
+        );
+    }
+
+	FileReader::makeDirectoryIfNeeded(path.string());
 
 }
 
