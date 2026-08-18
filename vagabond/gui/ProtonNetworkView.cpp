@@ -1046,7 +1046,7 @@ void ProtonNetworkView::makeNewClique()
 	probes += selected_probes(_bondProbes);
 
 	while (Subdivide::finish_ends(probes)) {};
-	while (Subdivide::finish_hbonds(probes)) {};
+	Subdivide::finish_hbonds(probes);
 
 	AskForText *aft = new AskForText(this, "Name for new clique:", "", this);
 	aft->setDefaultText("Custom clique");
@@ -1131,7 +1131,7 @@ void ProtonNetworkView::selectUsingPlan(std::string plan)
 		connected = CliqueFinder::completeToResidues(connected, true);
 
 		while (Subdivide::finish_ends(connected)) {}
-		while (Subdivide::finish_hbonds(connected)) {}
+		Subdivide::finish_hbonds(connected);
 
 		// symmetry mates now fully participate in the H-bond network (and
 		// so are reachable by the bridging search / backbone completion

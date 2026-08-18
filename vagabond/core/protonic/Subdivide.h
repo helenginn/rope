@@ -36,7 +36,7 @@ public:
 	void shoot(OpSet<Probe *> &chunk);
 	void prune(OpSet<Probe *> &chunk);
 	static bool finish_ends(OpSet<Probe *> &chunk);
-	static bool finish_hbonds(OpSet<Probe *> &chunk);
+	static void finish_hbonds(OpSet<Probe *> &chunk);
 
 private:
 	Clique *_clique{};

@@ -136,68 +136,114 @@ bool Subdivide::finish_ends(OpSet<Probe *> &chunk)
 	return false;
 }
 
-// companion to finish_ends() above, run separately (to its own fixpoint,
-// AFTER finish_ends() has already finished growing alt-confs/clashes to
-// its own fixpoint - see subdivide()'s grow_clique() for why these must
-// not be interleaved) rather than folded back into it. Starting only from
-// the heavy atoms (AtomProbe) already in the chunk, follows each one's own
-// hydrogen-bond halves (a non-covalent BondProbe on that atom's others() -
-// see CovalentProbe.h/Coordinated_Constraints.cpp's create_two_half_
-// hydrogen_bonds() for why a real H-bond is always exactly two BondProbes
-// sharing one HydrogenProbe, one per heavy-atom side) through to that
-// bond's own HydrogenProbe (the protonation state/role - h/hExist, see
-// Probe.h's own hnet h/hExist/le/re terminology comment) and on to the
-// bond's own other half and its opposing heavy atom, so a subdivision
-// chunk that already decided to include a donor or acceptor atom also
-// carries the H-bond machinery needed to actually resolve it, rather than
-// stopping dead on the hydrogen the way the old, single finish_ends() used
-// to (its follow_hydrogens branch could only ever complete a bond/
-// hydrogen already seeded into the chunk some other way, e.g. by shoot()'s
-// own path - it had no way to start pulling in a heavy atom's H-bonds in
-// the first place).
-bool Subdivide::finish_hbonds(OpSet<Probe *> &chunk)
+// adds `other` unless it's absent or a symmetry mate - same filter
+// finish_ends()/bounded_bfs() apply, factored out here since finish_hbonds()
+// below applies it at several different hops of the same leg rather than
+// once per call.
+static void add_leg_member(OpSet<Probe *> &chunk, Probe *other)
 {
-	for (Probe *const &probe : chunk)
+	if (!other || other->is_definitely_not_present() ||
+	    is_symmetry_related(other))
 	{
-		bool from_atom = probe->is_atom();
-		bool from_hbond_half = probe->is_bond() && !probe->is_covalent();
-		bool from_hydrogen = !probe->is_atom() && !probe->is_bond();
+		return;
+	}
 
-		if (!from_atom && !from_hbond_half && !from_hydrogen)
+	chunk += other;
+}
+
+// companion to finish_ends() above, run once (NOT to a fixpoint, and
+// strictly AFTER finish_ends() has already finished growing alt-confs/
+// clashes to its own fixpoint - see subdivide()'s grow_clique()) rather
+// than folded back into it or looped itself. A real H-bond is always
+// exactly two BondProbes (non-covalent - see CovalentProbe.h) sharing one
+// HydrogenProbe between them, one BondProbe per heavy-atom side (see
+// Coordinated_Constraints.cpp's create_two_half_hydrogen_bonds()) - i.e.
+// atom -> half -> hydrogen -> half -> atom, four hops end to end. Starting
+// from every atom, H-bond half, or hydrogen already in the chunk (a
+// snapshot taken up front, so a probe THIS call adds is never itself used
+// as a new starting point), this completes only the specific leg(s) that
+// probe already sits on, up to that leg's own far atom - never chaining
+// past that into whatever OTHER H-bonds the far atom happens to have.
+// That's what keeps this a single, bounded pass rather than a walk that
+// could otherwise creep across the whole H-bond network: chained fixpoint
+// looping is finish_ends()'s job for alt-confs/clashes, not this one's.
+void Subdivide::finish_hbonds(OpSet<Probe *> &chunk)
+{
+	std::vector<Probe *> snapshot(chunk.begin(), chunk.end());
+
+	for (Probe *const &probe : snapshot)
+	{
+		std::vector<Probe *> halves;
+
+		if (probe->is_atom())
 		{
-			continue;
+			for (Probe *const &other : probe->others())
+			{
+				if (other->is_bond() && !other->is_covalent())
+				{
+					halves.push_back(other);
+				}
+			}
+		}
+		else if (probe->is_bond() && !probe->is_covalent())
+		{
+			halves.push_back(probe);
+		}
+		else if (!probe->is_bond()) // hydrogen
+		{
+			for (Probe *const &other : probe->others())
+			{
+				if (other->is_bond() && !other->is_covalent())
+				{
+					halves.push_back(other);
+				}
+			}
+		}
+		else
+		{
+			continue; // covalent bond or charge: not on an H-bond leg
 		}
 
-		for (Probe *const &other : probe->others())
+		for (Probe *const &half : halves)
 		{
-			if (other->is_definitely_not_present() ||
-			    is_symmetry_related(other))
+			add_leg_member(chunk, half);
+
+			Probe *hydrogen = nullptr;
+			for (Probe *const &other : half->others())
+			{
+				if (!other->is_atom())
+				{
+					hydrogen = other;
+					break;
+				}
+			}
+
+			add_leg_member(chunk, hydrogen);
+			if (!hydrogen)
 			{
 				continue;
 			}
 
-			// a heavy atom may only step onto its own H-bond halves here -
-			// its covalent skeleton is finish_ends()'s job (via
-			// bounded_bfs()/shoot()), and its alt-conf/clash siblings are
-			// finish_ends()'s add_alt_confs_and_clashes branch, not this
-			// one. Once past the atom (i.e. from a bond half or the
-			// hydrogen itself), the walk is unrestricted, since both of
-			// those are only ever reached here as part of completing one
-			// specific H-bond.
-			if (from_atom && !(other->is_bond() && !other->is_covalent()))
+			for (Probe *const &other_half : hydrogen->others())
 			{
-				continue;
-			}
+				if (other_half == half || !other_half->is_bond() ||
+				    other_half->is_covalent())
+				{
+					continue;
+				}
 
-			if (chunk.count(other) == 0)
-			{
-				chunk += other;
-				return true;
+				add_leg_member(chunk, other_half);
+
+				for (Probe *const &far_atom : other_half->others())
+				{
+					if (far_atom->is_atom())
+					{
+						add_leg_member(chunk, far_atom);
+					}
+				}
 			}
 		}
 	}
-
-	return false;
 }
 
 // BFS out to `radius` hops from `root`, respecting the same
@@ -509,7 +555,7 @@ void Subdivide::subdivide(int samples)
 		OpSet<Probe *> chunk = {start};
 		shoot(chunk);
 		while (finish_ends(chunk)) {}
-		while (finish_hbonds(chunk)) {}
+		finish_hbonds(chunk);
 
 		prune(chunk);
 		return chunk;
