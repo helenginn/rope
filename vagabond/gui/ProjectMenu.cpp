@@ -297,7 +297,7 @@ void ProjectMenu::findExistingProjects()
 
 	if (FileReader::file_exists(project_file_name()))
 	{
-		std::string all = get_file_contents(project_file_name());
+		std::string all = FileReader::get_file_contents(project_file_name());
 		_projects = split(all, '\n');
 	}
 	

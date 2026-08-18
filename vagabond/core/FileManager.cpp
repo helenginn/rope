@@ -223,7 +223,7 @@ void FileManager::acceptDownload(void *me, std::string contents)
 
 void FileManager::loadGlobFiles()
 {
-	std::vector<std::string> globs = glob_pattern("*");
+	std::vector<std::string> globs = FileReader::glob_pattern("*");
 
 	for (std::string &g : globs)
 	{

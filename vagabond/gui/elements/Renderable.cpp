@@ -939,7 +939,7 @@ void Renderable::setShaderFile(std::string file, std::string *location,
 	*fLoc = file;
 	try
 	{
-		file = get_file_contents(path);
+		file = FileReader::get_file_contents(path);
 		*location = file;
 	}
 	catch (std::runtime_error err)

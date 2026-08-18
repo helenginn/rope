@@ -29,7 +29,7 @@ CheckList::CheckList(const std::string &filename)
 	{
 		try
 		{
-			std::string contents = get_file_contents(filename);
+			std::string contents = FileReader::get_file_contents(filename);
 			_progress.commands = split(contents, '\n');
 			std::cout << "Total commands: " << _progress.total() << std::endl;
 		}

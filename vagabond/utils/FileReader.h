@@ -16,10 +16,7 @@
 #include <string>
 #include <vector>
 
-std::string get_file_contents(std::string filename);
-
 std::vector<std::string> split(const std::string &s, char delim);
-void check_path_and_make(const std::filesystem::path &path);
 void escape_filename(std::string &file);
 
 inline std::string i_to_str(int val)
@@ -84,8 +81,6 @@ inline void urlencode(std::string &s)
 
 void print_cc_diff(std::ostream *_stream, double diff, int limit);
 
-std::vector<std::string> glob_pattern(const std::string &pattern);
-
 class FileReader
 {
 
@@ -97,41 +92,9 @@ public:
     static std::string getExtension(const std::string& filename);
     static std::string getBaseFilenameWithPath(const std::string& filename);
     static std::string findNextFilename(const std::string& filename);
-
 	static void makeDirectoryIfNeeded(std::string _dir);
-
-	static void setOutputDirectory(std::string _dir)
-	{
-		outputDir = _dir;
-
-		makeDirectoryIfNeeded(outputDir);
-	}
-
-	static std::string addOutputDirectory(std::string filename,
-	                                      std::string subdir = "")
-	{
-		if (!outputDir.length())
-		{
-			return filename;
-		}
-
-		if (outputDir[0] == '/')
-		{
-			return outputDir + "/" + filename;
-		}
-		
-		if (subdir.length())
-		{
-			makeDirectoryIfNeeded("./" + outputDir + "/" + subdir);
-			subdir += "/";
-		}
-
-		std::string fullPath = "./" + outputDir + "/" + subdir + filename;
-		return fullPath;
-	}
-
-private:
-	static std::string outputDir;
+    static std::string get_file_contents(std::string filename);
+    static std::vector<std::string> glob_pattern(const std::string &pattern);
 
 };
 

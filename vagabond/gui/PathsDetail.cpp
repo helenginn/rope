@@ -376,7 +376,7 @@ void PathsDetail::exportPDB(const std::string &filename, const int &num,
 #else
 	try
 	{
-		std::string contents = get_file_contents(filename);
+		std::string contents = FileReader::get_file_contents(filename);
 		EM_ASM_({ window.download = download; window.download($0, $1, $2) }, 
 		        filename.c_str(), contents.c_str(), contents.length());
 	}

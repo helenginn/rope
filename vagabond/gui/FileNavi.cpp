@@ -131,7 +131,7 @@ void FileNavi::getPathContents(std::string path)
 	std::string pattern = path + "/*";
 	
 	_currentPath = path;
-	std::vector<std::string> tmp = glob_pattern(pattern);
+	std::vector<std::string> tmp = FileReader::glob_pattern(pattern);
 
 	_paths.clear();
 	_paths.reserve(tmp.size() + 2);

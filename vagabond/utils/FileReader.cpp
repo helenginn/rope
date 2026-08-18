@@ -37,8 +37,6 @@
 #include <iomanip>
 #include <algorithm>
 
-std::string FileReader::outputDir;
-
 /**
  * Check if a file exists (cross-platform compatible)
  *
@@ -238,7 +236,35 @@ void FileReader::makeDirectoryIfNeeded(std::string _dir)
     #endif
 }
 
-std::vector<std::string> glob_pattern(const std::string &pattern)
+/**
+ * Read the entire contents of a file into a string.
+ * Throws an exception if the file cannot be opened or read.
+ *
+ * @param filename The name of the file to read
+ * @return The contents of the file as a string
+ */
+std::string FileReader::get_file_contents(std::string filename)
+{
+    std::ifstream in(filename, std::ios::in | std::ios::binary);
+
+    if (in)
+    {
+        std::string contents;
+        in.seekg(0, std::ios::end);
+        contents.resize((unsigned long)in.tellg());
+        in.seekg(0, std::ios::beg);
+        in.read(&contents[0], contents.size());
+        in.close();
+        return(contents);
+    }
+
+    std::string errString = "Could not get file contents for file " + std::string(filename);
+    std::cout << errString << std::endl;
+
+    throw(std::runtime_error(errString));
+}
+
+std::vector<std::string> FileReader::glob_pattern(const std::string &pattern)
 {
 #ifdef OS_UNIX
     using namespace std;
@@ -377,28 +403,6 @@ void debom(std::string &name)
 			}
 		}
 	}
-}
-
-std::string get_file_contents(std::string filename)
-{
-	std::ifstream in(filename, std::ios::in | std::ios::binary);
-
-	if (in)
-	{
-		std::string contents;
-		in.seekg(0, std::ios::end);
-		contents.resize((unsigned long)in.tellg());
-		in.seekg(0, std::ios::beg);
-		in.read(&contents[0], contents.size());
-		in.close();
-		return(contents);
-	}
-
-
-	std::string errString = "Could not get file contents for file " + std::string(filename);
-	std::cout << errString << std::endl;
-
-	throw(std::runtime_error(errString));
 }
 
 void remove_quotes(std::string &str)
@@ -561,62 +565,5 @@ int count_chars(const std::string &s, const char &ch)
 	}
 
 	return count;
-}
-
-
-void check_path_and_make(const std::filesystem::path &path)
-{
-    // Check if the path is empty
-	if (path.empty())
-	{
-	    return;
-	}
-
-    // Normalize path
-    std::filesystem::path normalized = path.lexically_normal();
-
-    // Reject absolute paths
-    if (normalized.is_absolute())
-    {
-        throw std::runtime_error(
-            "If you are going to add a path, please don't use an absolute path. "
-            "I don't want to be responsible for ruining your filesystem.\n" +
-            normalized.string()
-        );
-    }
-
-    // Reject paths with dots
-    if (normalized.string().find('.') != std::string::npos)
-    {
-        throw std::runtime_error(
-            "If you are going to add a path, please don't use full stops (periods). "
-            "It is dangerous for your filesystem.\n" +
-            normalized.string()
-        );
-    }
-
-	// Reject paths with more than one subdirectory
-    //  Example: "foo" or "foo/bar" are allowed, but "foo/bar/baz" is not.
-    std::filesystem::path relative = normalized.relative_path();
-    if (std::distance(relative.begin(), relative.end()) > 2)
-    {
-        throw std::runtime_error(
-            "Please no more than one subdirectory down. "
-            "I cannot cope with such complexities.\n"
-            + normalized.string()
-        );
-    }
-
-    // Refuse paths that already exist and are not directories
-    if (std::filesystem::exists(path) && !std::filesystem::is_directory(path))
-    {
-        throw std::runtime_error(
-            "This path already exists as a file and I refuse to overwrite it. "
-            "Please choose another name.\n" + normalized.string()
-        );
-    }
-
-	FileReader::makeDirectoryIfNeeded(path.string());
-
 }
 

@@ -36,7 +36,7 @@ void WholeModelPathSetupView::cheatSheet()
 		return;
 	}
 	
-	std::string contents = get_file_contents("cheat_sheet.txt");
+	std::string contents = FileReader::get_file_contents("cheat_sheet.txt");
 	std::vector<std::string> lines = split(contents, '\n');
 	std::cout << lines.size() << " interactions" << std::endl;
 	
