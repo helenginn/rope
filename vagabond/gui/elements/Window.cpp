@@ -2,16 +2,21 @@
 #include "Scene.h"
 #include "Renderable.h"
 #include "Library.h"
+#include <filesystem>
 
 #include <fstream>
 #include <iostream>
 #include <SDL2/SDL_image.h>
 #include "config/config.h"
 #include <vagabond/utils/os.h>
+#include <vagabond/utils/FileReader.h>
 
 #ifdef __EMSCRIPTEN__
 #include <emscripten.h>
 #include <canvas.h>
+#endif
+#ifdef OS_WINDOWS
+#include <windows.h>
 #endif
 
 SDL_Renderer *Window::_renderer = NULL;
@@ -110,7 +115,7 @@ void Window::instateGlew()
 		exit(1);
 	}
 
-	const std::string icon_path = dataDirectory() + "assets/images/cartoon.png";
+	const std::string icon_path = (assetsDirectory() / "images" / "cartoon.png").string();
 	SDL_Surface *icon = IMG_Load(icon_path.c_str());
 	if (icon != nullptr)
 	{
@@ -511,18 +516,101 @@ void Window::reloadScene(Scene *scene)
 	_current->refresh();
 }
 
-std::string Window::dataDirectory()
+std::filesystem::path Window::executableDirectory()
 {
-#ifdef __EMSCRIPTEN__
-	std::string data = "./";
-#else
-	std::string data = std::string(DATA_DIRECTORY) + "/";
-#endif
-	char *override_data = getenv("ROPE_DATA_DIRECTORY");
-	if (override_data != nullptr)
+	/**
+	 * Returns the directory containing the executable.
+	 * @return The directory containing the executable.
+	 */
+    #ifdef OS_WINDOWS
+    char buf[MAX_PATH];
+    GetModuleFileNameA(nullptr, buf, MAX_PATH);
+    return std::filesystem::path(buf).parent_path();
+    #else
+    #ifdef OS_MACOSX
+    char buf[1024];
+    uint32_t size = sizeof(buf);
+    _NSGetExecutablePath(buf, &size);
+    return std::filesystem::canonical(buf).parent_path();
+    #else
+    #ifdef OS_LINUX
+    return std::filesystem::read_symlink("/proc/self/exe").parent_path();
+    #endif
+    #endif
+    #endif
+    throw std::runtime_error("Unsupported OS for executableDirectory()");
+}
+
+std::filesystem::path Window::assetsDirectory()
+{
+    /*
+     * Returns the directory containing the assets.
+     * The search order is:
+     * 1. ROPE_DATA_DIRECTORY environment variable
+     * 2. Portable version (assets in the same directory as the executable)
+     * 3. Installed version (assets in a subdirectory of the executable directory)
+     * 4. Global install (DATA_DIRECTORY variable from compiler)
+     * If none of these are found, an exception is thrown.
+     * */
+
+    #ifdef __EMSCRIPTEN__
+    // Use the current path for the website
+    return std::filesystem::current_path();
+    #endif
+    // Check for environment variable
+    char *envvar = getenv("ROPE_DATA_DIRECTORY");
+    if (envvar != nullptr)
 	{
-		data = std::string(override_data) + "/";
+        std::filesystem::path data_dir(envvar);
+        if (! std::filesystem::exists(data_dir))
+        {
+            std::cout << "Warning: ROPE_DATA_DIRECTORY is set to " << data_dir <<
+                " but this path does not exist" << std::endl;
+        }
+
+        if (! std::filesystem::is_directory(data_dir))
+        {
+            std::cout << "Warning: ROPE_DATA_DIRECTORY is set to " << data_dir <<
+                " but this is not a directory" << std::endl;
+        }
+
+        return data_dir;
 	}
 
-	return data;
+    // Check for local install
+    std::filesystem::path exe = executableDirectory();
+    if (std::filesystem::exists(exe / "assets"))
+    {
+        // Portable / development install: assets are in the same directory as the executable
+        //  Useful when running from the build directory during development, or when distributing a portable version
+        //  of the application.
+        return exe;
+    }
+
+    std::filesystem::path installed = exe.parent_path() / "share" / "vagabond";
+    if (std::filesystem::exists(installed / "assets"))
+    {
+        // Installed version: assets are in a subdirectory of the executable directory
+        return installed;
+    }
+
+    // Check for global install (DATA_DIRECTORY variable from compiler)
+    #ifdef DATA_DIRECTORY
+    std::filesystem::path compiled = std::filesystem::path(DATA_DIRECTORY);
+    if (std::filesystem::exists(compiled / "assets"))
+    {
+        return compiled;
+    }
+    #endif
+
+    // Give up with an error
+    throw std::runtime_error(
+        "Could not find assets directory. Searched: \n"
+        "  - " + (exe / "assets").string() + "\n"
+        "  - " + (installed / "assets").string() + "\n"
+        #ifdef DATA_DIRECTORY
+        "  - " + (compiled / "assets").string() + "\n"
+        #endif
+        "Set ROPE_DATA_DIRECTORY environment variable or reinstall"
+    );
 }

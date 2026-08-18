@@ -1,6 +1,7 @@
 #ifndef __practical__Window__
 #define __practical__Window__
 
+#include <filesystem>
 #include <vagabond/utils/gl_import.h>
 #include <vagabond/gui/elements/HasRenderables.h>
 #include <SDL2/SDL.h>
@@ -117,7 +118,7 @@ public:
 		return _myWindow;
 	}
 	
-	static std::string dataDirectory();
+	static std::filesystem::path assetsDirectory();
 
 	static bool mustChooseWorkingDir()
 	{
@@ -158,6 +159,7 @@ private:
 	void recordEvent(const SDL_Event &event);
 	void handleWindowEvent(SDL_Event &event);
 	void deleteQueued();
+    static std::filesystem::path executableDirectory();
 	bool _test = false;
 
 	static SDL_Renderer *_renderer;

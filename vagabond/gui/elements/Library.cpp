@@ -79,12 +79,12 @@ GLuint Library::getTexture(std::string filename, int *w, int *h,
 
 void Library::correctFilename(std::string &filename)
 {
-	std::string path = Window::dataDirectory() + filename;
+	std::string path = (Window::assetsDirectory() / filename).string();
 #ifdef __CANCEL_THIS_CODE__
 	bool native = Window::isNativeApp();
 	if (!native)
 	{
-		path = std::string(DATA_DIRECTORY) + "/" + filename;
+		path = (std::filesystem::path(DATA_DIRECTORY) / filename).string();
 	}
 	else 
 	{
