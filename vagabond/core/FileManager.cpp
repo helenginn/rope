@@ -35,30 +35,37 @@ FileManager::FileManager()
 
 void FileManager::correctFilename(std::string &filename)
 {
-	FileManager *fm = Environment::fileManager();
-	std::string path = filename;
-	
-	if (FileReader::file_exists(path))
-	{
-		return;
-	}
+    // Get the file manager instance
+    FileManager *fm = Environment::fileManager();
 
-	if (fm->_dataDir.length() > 0)
-	{
-		path = fm->_dataDir + "/" + filename;
-	}
+    // Check if the file exists in the current directory
+    std::filesystem::path candidate(filename);
+    if (std::filesystem::exists(candidate))
+    {
+        // Normalize the path and update filename
+        filename = candidate.lexically_normal().string();
+        return;
+    }
 
-	if (!FileReader::file_exists(path) && fm->_userDir.length() > 0)
-	{
-		path = fm->_userDir + "/" + filename;
-	}
+    // Construct a set of potential directories to check
+    std::vector<std::filesystem::path> lookupDirs;
+    if (!fm->_dataDir.empty()) lookupDirs.push_back(std::filesystem::path(fm->_dataDir));
+    if (!fm->_userDir.empty()) lookupDirs.push_back(std::filesystem::path(fm->_userDir));
+    if (!std::string(DATA_DIRECTORY).empty()) lookupDirs.push_back(std::filesystem::path(DATA_DIRECTORY));
 
-	if (!FileReader::file_exists(path))
-	{
-		path = std::string(DATA_DIRECTORY) + "/" + filename;
-	}
+    // Iterate through the potential directories and return the first one where the file exists
+    for (const auto& dir : lookupDirs)
+    {
+        std::filesystem::path p = dir / filename;
+        if (std::filesystem::exists(p))
+        {
+            filename = p.lexically_normal().string();
+            return;
+        }
+    }
 
-	filename = path;
+    // If the file was not found in any of the directories, leave filename unchanged
+    filename = candidate.lexically_normal().string();
 }
 
 std::set<std::string> &FileManager::geometryFiles()
