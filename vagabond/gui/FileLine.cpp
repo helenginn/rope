@@ -16,6 +16,7 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
+#include <filesystem>
 #include "FileView.h"
 #include "FileLine.h"
 #include <vagabond/gui/elements/Image.h>
@@ -56,8 +57,9 @@ void FileLine::setup()
 	button->setReturnTag("file_" + _filename);
 	button->resize(0.9);
 	button->setLeft(0.0, 0);
-	
-	if (is_directory(_filename))
+
+    std::filesystem::path filepath = _filename;
+	if (std::filesystem::is_directory(filepath))
 	{
 		button->setInert(true);
 		button->setAlpha(-0.4);

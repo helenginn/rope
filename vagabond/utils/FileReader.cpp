@@ -7,6 +7,8 @@
 //
 
 #include <filesystem>
+#include <system_error>
+#include <stdexcept>
 
 #include "os.h"
 #ifdef OS_WINDOWS
@@ -39,45 +41,42 @@ std::string FileReader::outputDir;
 
 void FileReader::makeDirectoryIfNeeded(std::string _dir)
 {
-#ifdef OS_UNIX
-    // Try to open the directory
-    DIR *dir = opendir(_dir.c_str());
+    std::filesystem::path dir = std::filesystem::path(_dir);
 
-    // Close if it exists
-    if (dir)
+    if (std::filesystem::exists(dir))
     {
-        closedir(dir);
-    }
-    // If error was "does not exist", then create
-    else if (ENOENT == errno)
-    {
-        mkdir(_dir.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
-    }
-#else
-#ifdef OS_WINDOWS
-    // Get the file attributes for the path
-    DWORD attrs = GetFileAttributesA(_dir.c_str());
-
-    // Check if the path exists and is a directory
-    if (attrs != INVALID_FILE_ATTRIBUTES && (attrs & FILE_ATTRIBUTE_DIRECTORY))
-    {
-        return;
-    }
-
-    // Attempt to create the directory
-    if (!CreateDirectoryA(_dir.c_str(), nullptr))
-    {
-        DWORD err = GetLastError();
-        if (err != ERROR_ALREADY_EXISTS)
+        if (std::filesystem::is_directory(dir))
         {
-            std::ostringstream ss;
-            ss << "Failed to create directory \"" << _dir
-               << "\". GetLastError=" << err;
-            throw std::runtime_error(ss.str());
+            return; // Directory already exists
         }
+        throw std::runtime_error("Path already exists but is not a directory: " + dir.string());
     }
-#endif
-#endif
+
+    // Create directory and capture any errors
+    std::error_code ec;
+    std::filesystem::create_directories(dir, ec);
+    if (ec)
+    {
+        throw std::runtime_error("Failed to create directory: " + dir.string() +
+            "\nError: " + ec.message());
+    }
+
+    #ifdef OS_UNIX
+    // Update permissions on UNIX systems to 775 (rwxrwxr-x)
+    std::filesystem::perms perms =
+        std::filesystem::perms::owner_all |
+        std::filesystem::perms::group_all |
+        std::filesystem::perms::others_read |
+        std::filesystem::perms::others_exec;
+
+    std::error_code permsEc;
+    std::filesystem::permissions(dir, perms, std::filesystem::perm_options::replace, permsEc);
+    if (permsEc)
+    {
+        throw std::runtime_error("Failed to update permissions for directory: " + dir.string() +
+            "\nError: " + permsEc.message());
+    }
+    #endif
 }
 
 std::vector<std::string> glob_pattern(const std::string &pattern)
@@ -204,20 +203,6 @@ std::vector<std::string> split(const std::string &s, char delim) {
 	std::vector<std::string> elems;
 	split(s, delim, elems);
 	return elems;
-}
-
-bool is_directory(const std::string &name)
-{
-	struct stat st;
-	if(stat(name.c_str(),&st) == 0)
-	{
-		if ((st.st_mode & S_IFDIR) != 0)
-		{
-			return true;
-		}
-	}
-
-	return false;
 }
 
 void debom(std::string &name)

@@ -16,6 +16,7 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
+#include <filesystem>
 #include "FileNavi.h"
 #include <vagabond/utils/FileReader.h>
 #include <vagabond/gui/elements/TextButton.h>
@@ -105,8 +106,9 @@ Renderable *FileNavi::getLine(int i)
 	tb->setReturnTag(path);
 	tb->setReturnObject(this);
 	tb->setLeft(0.2, 0.0);
-	
-	if (!is_directory(_paths[i]) && i > 0)
+
+    std::filesystem::path _filepath = std::filesystem::path(_paths[i]);
+	if (!std::filesystem::is_directory(_filepath) && i > 0)
 	{
 		tb->setInert(true);
 		tb->setAlpha(-0.4);
