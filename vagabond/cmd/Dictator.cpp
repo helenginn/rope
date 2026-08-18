@@ -306,7 +306,7 @@ bool Dictator::checkForFile(std::string &first, std::string &last)
 		return false;
 	}
 	
-	if (file_exists(first))
+	if (FileReader::file_exists(first))
 	{
 		loadFiles(first);
 		return true;

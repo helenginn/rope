@@ -31,7 +31,7 @@ WholeModelPathSetupView::WholeModelPathSetupView(Scene *prev) : Scene(prev)
 
 void WholeModelPathSetupView::cheatSheet()
 {
-	if (!file_exists("cheat_sheet.txt"))
+	if (!FileReader::file_exists("cheat_sheet.txt"))
 	{
 		return;
 	}

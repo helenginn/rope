@@ -20,19 +20,7 @@ std::string get_file_contents(std::string filename);
 
 std::vector<std::string> split(const std::string &s, char delim);
 void check_path_and_make(const std::filesystem::path &path);
-bool file_exists(const std::string &name);
 void escape_filename(std::string &file);
-
-std::string getPath(std::string filename);
-std::string getFilename(std::string filename);
-
-/** removes file extension and path */
-std::string getBaseFilename(std::string filename);
-std::string getExtension(std::string filename);
-
-/** removes file extension */
-std::string getBaseFilenameWithPath(std::string filename);
-std::string findNextFilename(std::string file);
 
 inline std::string i_to_str(int val)
 {
@@ -102,6 +90,14 @@ class FileReader
 {
 
 public:
+    static bool file_exists(const std::string& filename);
+    static std::string getPath(const std::string& filename);
+    static std::string getFilename(const std::string& filename);
+    static std::string getBaseFilename(const std::string& filename);
+    static std::string getExtension(const std::string& filename);
+    static std::string getBaseFilenameWithPath(const std::string& filename);
+    static std::string findNextFilename(const std::string& filename);
+
 	static void makeDirectoryIfNeeded(std::string _dir);
 
 	static void setOutputDirectory(std::string _dir)

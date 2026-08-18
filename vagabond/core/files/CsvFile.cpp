@@ -31,7 +31,7 @@ File::Type CsvFile::cursoryLook()
 {
 	std::string path = toFilename(_filename);
 	
-	if (!file_exists(path))
+	if (!FileReader::file_exists(path))
 	{
 		std::cout << "Could not open file: " << _filename << std::endl;
 		return Nothing;

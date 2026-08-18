@@ -295,7 +295,7 @@ void ProjectMenu::findExistingProjects()
 	_projects.clear();
 	_names.clear();
 
-	if (file_exists(project_file_name()))
+	if (FileReader::file_exists(project_file_name()))
 	{
 		std::string all = get_file_contents(project_file_name());
 		_projects = split(all, '\n');

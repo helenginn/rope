@@ -251,7 +251,7 @@ void Warp::saveSpace(const std::string &filename)
 
 void loadJson(const std::string &filename, TorsionWarp *tw)
 {
-	if (!file_exists(filename))
+	if (!FileReader::file_exists(filename))
 	{
 		return;
 	}

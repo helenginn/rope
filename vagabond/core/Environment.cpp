@@ -98,7 +98,7 @@ void Environment::loadEntitiesBackwardsCompatible(const json &data)
 
 void Environment::load(std::string file)
 {
-	if (!file_exists(file))
+	if (!FileReader::file_exists(file))
 	{
 		std::cout << "Could not find json environment." << std::endl;
 		if (_pg)

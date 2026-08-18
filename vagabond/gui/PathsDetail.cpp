@@ -292,13 +292,7 @@ void PathsDetail::buttonPressed(std::string tag, Button *button)
 
 void PathsDetail::attemptEnsemble(const std::string &filename, const int &num)
 {
-	std::string path = getPath(filename);
-	std::string file = getFilename(filename);
-
-	if (path.length())
-	{
-		check_path_and_make(std::filesystem::path(path));
-	}
+	FileReader::makeDirectoryIfNeeded(FileReader::getPath(filename));
 
 	PlausibleRoute *pr = _obj.toRoute();
 	AtomGroup *grp = pr->instance()->currentAtoms();
@@ -322,14 +316,8 @@ void PathsDetail::attemptEnsemble(const std::string &filename, const int &num)
 
 void PathsDetail::attemptPerStruct(const std::string &filename, const int &num)
 {
-	std::string path = getPath(filename);
-	std::string base = getBaseFilename(filename);
-	std::string ext = getExtension(filename);
-	
-	if (path.length())
-	{
-		check_path_and_make(std::filesystem::path(path));
-	}
+    std::filesystem::path filePath(filename);
+	FileReader::makeDirectoryIfNeeded(FileReader::getPath(filename));
 	
 	PlausibleRoute *pr = _obj.toRoute();
 	AtomGroup *grp = pr->instance()->currentAtoms();
@@ -341,10 +329,14 @@ void PathsDetail::attemptPerStruct(const std::string &filename, const int &num)
 		float frac = i * step;
 		pr->submitJobAndRetrieve(frac, true);
 
-		std::string fullpath = path + "/" + base + "_" + std::to_string(i)
-		+ "." + ext;
+	    // Create a new filename per structure by appending the index to the original filename
+	    // E.g. "path/to/file.pdb" becomes "path/to/file_0.pdb", "path/to/file_1.pdb", etc.
+	    std::filesystem::path newPath = filePath.replace_filename(
+	        filePath.stem().string() +
+	        "_" + std::to_string(i) +
+	        filePath.extension().string());
 		
-		PdbFile::writeAtoms(grp, fullpath);
+		PdbFile::writeAtoms(grp, newPath.string());
 	}
 
 	_obj.cleanupRoute();

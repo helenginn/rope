@@ -199,7 +199,7 @@ void PdbFile::parseFileContents()
 {
 	std::string path = toFilename(_filename);
 
-	if (!file_exists(path.c_str()))
+	if (!FileReader::file_exists(path.c_str()))
 	{
 		throw std::runtime_error("Cannot find file: " + path);
 	}

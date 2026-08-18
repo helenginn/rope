@@ -440,11 +440,7 @@ void AxisExplorer::buttonPressed(std::string tag, Button *button)
 		TextEntry *te = static_cast<TextEntry *>(button);
 		std::string filename = te->scratch();
 
-		std::string path = getPath(filename);
-		std::string file = getFilename(filename);
-
-	    std::filesystem::path dir = std::filesystem::path(path);
-		check_path_and_make(dir);
+		FileReader::makeDirectoryIfNeeded(FileReader::getPath(filename));
 
 		_instance->currentAtoms()->writeToFile(filename);
 	}

@@ -62,7 +62,7 @@ std::string File::toFilename(std::string filename)
 {
 	std::string tmp = filename;
 #ifndef __EMSCRIPTEN__
-	if (!file_exists(tmp))
+	if (!FileReader::file_exists(tmp))
 	{
 		FileManager::correctFilename(filename);
 		tmp = filename;

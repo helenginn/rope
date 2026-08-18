@@ -42,12 +42,12 @@ std::string FileReader::outputDir;
 /**
  * Check if a file exists (cross-platform compatible)
  *
- * @param name The name of the file to check
+ * @param filename The name of the file to check
  * @returns true if the file exists, false otherwise
  * */
-bool file_exists(const std::string &name)
+bool FileReader::file_exists(const std::string& filename)
 {
-    const std::filesystem::path filePath(name);
+    const std::filesystem::path filePath(filename);
     return std::filesystem::exists(filePath);
 }
 
@@ -58,7 +58,7 @@ bool file_exists(const std::string &name)
  * @param filename The full path to the file
  * @return The path to the file, including trailing slash, or an empty string if no path exists
  */
-std::string getPath(std::string filename)
+std::string FileReader::getPath(const std::string& filename)
 {
     std::filesystem::path filePath(filename);
     std::filesystem::path parentPath = filePath.parent_path();
@@ -76,24 +76,10 @@ std::string getPath(std::string filename)
  * @param filename The full path to the file
  * @return The filename with extension
  */
-std::string getFilename(std::string filename)
+std::string FileReader::getFilename(const std::string& filename)
 {
     const std::filesystem::path filePath(filename);
     return filePath.filename().string();
-}
-
-/**
- * Get the file extension from a filename
- * E.g. Returns "txt" from "/path/to/file.txt"
- *
- * @param filename The full path to the file
- * @return The file extension (without the dot), or an empty string if no extension exists
- */
-std::string getExtension(std::string filename)
-{
-    const std::filesystem::path filePath(filename);
-    const std::string ext = filePath.extension().string();
-    return ext.length() > 1 ? ext.substr(1) : "";
 }
 
 /**
@@ -104,10 +90,24 @@ std::string getExtension(std::string filename)
  * @param filename The full path to the file
  * @return The base filename without extension
  */
-std::string getBaseFilename(std::string filename)
+std::string FileReader::getBaseFilename(const std::string& filename)
 {
     const std::filesystem::path filePath(filename);
     return filePath.stem().string();
+}
+
+/**
+ * Get the file extension from a filename
+ * E.g. Returns "txt" from "/path/to/file.txt"
+ *
+ * @param filename The full path to the file
+ * @return The file extension (without the dot), or an empty string if no extension exists
+ */
+std::string FileReader::getExtension(const std::string& filename)
+{
+    const std::filesystem::path filePath(filename);
+    const std::string ext = filePath.extension().string();
+    return ext.length() > 1 ? ext.substr(1) : "";
 }
 
 /**
@@ -118,36 +118,89 @@ std::string getBaseFilename(std::string filename)
  * @param filename The full path to the file
  * @return The base filename with path, without extension
  * */
-std::string getBaseFilenameWithPath(std::string filename)
+std::string FileReader::getBaseFilenameWithPath(const std::string& filename)
 {
     const std::filesystem::path filePath(filename);
     return (filePath.parent_path() / filePath.stem()).string();
 }
 
-std::string findNextFilename(std::string file)
+/**
+ * Find the next available filename by prepending a number to the base filename.
+ * E.g. If "file.txt" is provided, it will check for "0_file.txt", "1_file.txt", etc.
+ * and return the first filename that does not exist.
+ *
+ * @param filename The filename to check against
+ * @return A new filename that does not exist yet
+ */
+std::string FileReader::findNextFilename(const std::string& filename)
 {
-	std::string path = getPath(file);
-	std::string trial = getFilename(file);
-	int count = 0;
+    std::filesystem::path filePath(filename);
+    int count = 0;
+    while (true)
+    {
+        std::filesystem::path trial = filePath.parent_path() / (i_to_str(count) + "_" + filePath.filename().string());
 
-	while (true)
-	{
-		std::string test = path + "/" + i_to_str(count) + "_" + trial;
-
-		if (!file_exists(test))
-		{
-			return test;
-		}
-
-		count++;
-	}
+        if (std::filesystem::exists(trial))
+        {
+            count++;
+            continue;
+        }
+        return trial.string();
+    }
 }
 
-
-
+/**
+ * Create a directory if it does not already exist.
+ * Throws an exception if the path exists but is not a directory,
+ * or if the directory creation fails.
+ * On Unix systems, it also sets the permissions to 775 (rwxrwxr-x).
+ *
+ * @param _dir The directory path to create
+ */
 void FileReader::makeDirectoryIfNeeded(std::string _dir)
 {
     std::filesystem::path dir = std::filesystem::path(_dir);
+
+    // Check if the path is empty
+    if (dir.empty())
+    {
+        return;
+    }
+
+    // Normalize path
+    std::filesystem::path normalized = dir.lexically_normal();
+
+    // Reject absolute paths
+    if (normalized.is_absolute())
+    {
+        throw std::runtime_error(
+            "If you are going to add a path, please don't use an absolute path. "
+            "I don't want to be responsible for ruining your filesystem.\n" +
+            normalized.string()
+        );
+    }
+
+    // Reject paths with dots
+    if (normalized.string().find('.') != std::string::npos)
+    {
+        throw std::runtime_error(
+            "If you are going to add a path, please don't use full stops (periods). "
+            "It is dangerous for your filesystem.\n" +
+            normalized.string()
+        );
+    }
+
+    // Reject paths with more than one subdirectory
+    //  Example: "foo" or "foo/bar" are allowed, but "foo/bar/baz" is not.
+    std::filesystem::path relative = normalized.relative_path();
+    if (std::distance(relative.begin(), relative.end()) > 2)
+    {
+        throw std::runtime_error(
+            "Please no more than one subdirectory down. "
+            "I cannot cope with such complexities.\n"
+            + normalized.string()
+        );
+    }
 
     if (std::filesystem::exists(dir))
     {
@@ -460,7 +513,7 @@ std::string findNewFolder(std::string prefix)
 	{
 		std::string test = prefix + i_to_str(count);
 
-		if (!file_exists(test))
+		if (!FileReader::file_exists(test))
 		{
 			return test;
 		}

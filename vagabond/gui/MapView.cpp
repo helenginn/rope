@@ -96,7 +96,7 @@ void MapView::setup()
 
 void MapView::loadJson(const std::string &filename)
 {
-	if (!file_exists(filename))
+	if (!FileReader::file_exists(filename))
 	{
 		return;
 	}

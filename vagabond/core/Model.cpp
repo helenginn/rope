@@ -116,7 +116,7 @@ void Model::setFilename(std::string file)
 	
 	if (_name.length() == 0)
 	{
-		_name = getBaseFilename(_filename);
+		_name = FileReader::getBaseFilename(_filename);
 	}
 
 }

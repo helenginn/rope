@@ -605,7 +605,7 @@ std::vector<RingProgrammer *> *RingProgrammer::allProgrammers()
 	for (size_t i = 0; i < rings.size(); i++)
 	{
 		#ifndef __EMSCRIPTEN__
-		if (!file_exists(rings[i]))
+		if (!FileReader::file_exists(rings[i]))
 		{
 			FileManager::correctFilename(rings[i]);
 		}

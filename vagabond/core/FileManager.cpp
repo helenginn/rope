@@ -38,7 +38,7 @@ void FileManager::correctFilename(std::string &filename)
 	FileManager *fm = Environment::fileManager();
 	std::string path = filename;
 	
-	if (file_exists(path))
+	if (FileReader::file_exists(path))
 	{
 		return;
 	}
@@ -48,12 +48,12 @@ void FileManager::correctFilename(std::string &filename)
 		path = fm->_dataDir + "/" + filename;
 	}
 
-	if (!file_exists(path) && fm->_userDir.length() > 0)
+	if (!FileReader::file_exists(path) && fm->_userDir.length() > 0)
 	{
 		path = fm->_userDir + "/" + filename;
 	}
 
-	if (!file_exists(path))
+	if (!FileReader::file_exists(path))
 	{
 		path = std::string(DATA_DIRECTORY) + "/" + filename;
 	}
@@ -73,7 +73,7 @@ std::set<std::string> &FileManager::geometryFiles()
 	for (size_t i = 0; i < filteredCount(); i++)
 	{
 		std::string file = filtered(i);
-		if (!file_exists(file))
+		if (!FileReader::file_exists(file))
 		{
 			continue;
 		}
@@ -157,7 +157,7 @@ bool FileManager::acceptFile(std::string filename, bool force)
 	bool added = false;
 	bool already = std::find(_list.begin(), _list.end(), filename) != _list.end();
 
-	if ((file_exists(filename) && !already) || force)
+	if ((FileReader::file_exists(filename) && !already) || force)
 	{
 		addFile(filename);
 		added = true;
@@ -200,7 +200,7 @@ void FileManager::acceptDownload(void *me, std::string contents)
 	to_lower(code);
 	
 	std::string filename = code + ".pdb";
-	if (file_exists(filename))
+	if (FileReader::file_exists(filename))
 	{
 		std::cout << "filename " << filename << " already exists" << std::endl;
 	}
@@ -239,7 +239,7 @@ int FileManager::unloadMissingFiles(bool wipeUsing)
 	for (size_t i = 0; i < _list.size(); i++)
 	{
 		std::string &file = _list[i];
-		if (file_exists(file))
+		if (FileReader::file_exists(file))
 		{
 			continue;
 		}

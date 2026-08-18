@@ -35,7 +35,7 @@ int main(int argc, char **argv)
 	std::string file = "";
 	file = (argc > 1 ? argv[1] : "");
 
-	if (!file_exists(file))
+	if (!FileReader::file_exists(file))
 	{
 		std::ofstream f(file); f.close();
 	}
