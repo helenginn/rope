@@ -20,7 +20,7 @@ std::string get_file_contents(std::string filename);
 
 std::vector<std::string> split(const std::string &s, char delim);
 void check_path_and_make(const std::filesystem::path &path);
-bool file_exists(const std::string& name);
+bool file_exists(const std::string &name);
 void escape_filename(std::string &file);
 
 std::string getPath(std::string whole);

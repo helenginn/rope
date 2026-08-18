@@ -220,11 +220,16 @@ void debom(std::string &name)
 	}
 }
 
+/**
+ * Check if a file exists (cross-platform compatible)
+ *
+ * @param name The name of the file to check
+ * @returns true if the file exists, false otherwise
+ * */
 bool file_exists(const std::string &name)
 {
-	struct stat buffer;
-	bool found = (stat(name.c_str(), &buffer) == 0);
-	return found;
+	const std::filesystem::path filePath(name);
+    return std::filesystem::exists(filePath);
 }
 
 std::string get_file_contents(std::string filename)
