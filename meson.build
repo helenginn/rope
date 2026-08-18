@@ -20,9 +20,10 @@ gemmi = dependency('gemmi', modules: ['gemmi::gemmi_cpp'], required: is_native)
 gl = dependency('gl', method: 'system', required: false)
 glew = dependency('glew', required: false)
 glm = dependency('glm')
+cli11 = dependency('cli11', required: is_native)
 json = dependency('nlohmann_json')
-sdl2 = dependency('SDL2', required: false)
-sdl2image = dependency('SDL2_image', required: false)
+sdl2 = dependency('sdl2', required: false)
+sdl2image = dependency('sdl2_image', required: false)
 thread_dep = dependency('threads')  # Check: is this required for emscripten?
 zlib = dependency('zlib')
 
@@ -30,7 +31,7 @@ zlib = dependency('zlib')
 header_deps = [glm, json]
 core_deps = [curl, fftw, gemmi, thread_dep, zlib]
 graphics_deps = []
-cli_deps = [header_deps, core_deps]
+cli_deps = [header_deps, core_deps, cli11]
 
 if is_native
   graphics_deps = [gl, glew, sdl2, sdl2image]
@@ -66,6 +67,7 @@ subdir('vagabond/utils')
 subdir('vagabond/c4x')
 subdir('vagabond/core')
 subdir('vagabond/cmd')
+subdir('vagabond/cli')
 subdir('vagabond/gui/elements')
 subdir('vagabond/gui')
 
@@ -88,6 +90,13 @@ if is_native  # Native builds
 
   executable('rope', 'vagabond/cmd/main.cpp',
     link_with: [core, cli],
+    cpp_args: [compile_args],
+    link_args: [links],
+    dependencies: cli_deps,
+    install: true)
+
+  executable('rope.cli', 'vagabond/cli/main.cpp',
+    link_with: [core, cli2],
     cpp_args: [compile_args],
     link_args: [links],
     dependencies: cli_deps,

@@ -16,6 +16,7 @@ class Rope(ConanFile):
         self.requires("fftw/[*]")
         self.requires("gemmi/[*]")
         self.requires("glm/[*]")
+        self.requires("cli11/[*]")
         self.requires("nlohmann_json/[*]")
         self.requires("zlib/[*]")
         self.requires("doctest/[*]")
