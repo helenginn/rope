@@ -57,9 +57,9 @@ public:
 
 	void toggleReason(AbstractForce::Reason reason, bool include);
 
-	void convert();
+	void convert(bool calcWithUnits = false);
 	
-	void calculateUnknown();
+	void calculateUnknown(bool = false);
 	void resetUnknowns();
 
 private:
@@ -88,6 +88,7 @@ private:
 	
 	HandleTorque _handleTorque{};
 	HandleForce _handleForce{};
+	bool _calcWithUnits = false;
 	
 	OpSet<AbstractForce *> _allForces;
 };

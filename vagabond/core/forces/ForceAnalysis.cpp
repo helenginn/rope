@@ -140,7 +140,14 @@ void ForceAnalysis::createRods()
 		// FORCE ATTRIBUTABLE TO COMPRESSION/TENSION ON BOND LENGTH
 		Force *force = new Force(Force::StatusKnown, Force::ReasonBondLength);
     force->setUnitGetter(get_unit);
-		force->setMagGetter(get_mag);
+		if (_calcWithUnits)
+		{
+			force->setMagGetter(get_mag_units);
+		}
+		else
+		{
+			force->setMagGetter(get_mag);
+		}
 		// force->setSource(new RodSource(rod));
     
     // file << left->desc() << "-" << right->desc() << "," << get_mag() << "," << bond->as_signed_z_score(bond->measurement()) << "," << bond->stdev()/10. << std::endl;
@@ -277,10 +284,16 @@ void ForceAnalysis::createBondAngleTorques()
 		Torque *torque = new Torque(Torque::StatusKnown, 
 		                            Torque::ReasonBondAngle);
 		torque->setUnitGetter(get_moment_unit);
-		torque->setMagGetter(get_moment_mag);
+		std::function<float()> selected_mag = get_moment_mag;
+		if (_calcWithUnits)
+		{
+			selected_mag = get_moment_mag_units;
+		}
+		torque->setMagGetter(selected_mag);
+		float sign_mag = selected_mag();
 
-		applyTorque(centre, left, torque, 1, get_moment_mag() < 0);
-		applyTorque(centre, right, torque, -1, get_moment_mag() < 0);
+		applyTorque(centre, left, torque, 1, sign_mag < 0);
+		applyTorque(centre, right, torque, -1, sign_mag < 0);
 	}
 }
 
@@ -582,8 +595,9 @@ void ForceAnalysis::augmentSymmetry()
 	_group->add(mates);
 }
 
-void ForceAnalysis::convert()
+void ForceAnalysis::convert(bool calcWithUnits)
 {
+	_calcWithUnits = calcWithUnits;
 	augmentSymmetry();
 	createParticles();
 	createRods();
@@ -621,8 +635,9 @@ void ForceAnalysis::resetUnknowns()
 
 }
 
-void ForceAnalysis::calculateUnknown()
+void ForceAnalysis::calculateUnknown(bool calcWithUnits)
 {
+	_calcWithUnits = calcWithUnits;
 	resetUnknowns();
 
 	OpSet<AbstractForce *> active = _allForces;
@@ -658,5 +673,5 @@ void ForceAnalysis::calculateUnknown()
 		
 	}
 
-	_forces.calculateUnknowns(index_map);
+	_forces.calculateUnknowns(index_map, calcWithUnits);
 }

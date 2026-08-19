@@ -23,13 +23,69 @@
 #include <iostream>
 #include <memory>
 #include <string>
+#include <cctype>
 #include <variant>
 
 namespace {
 using FileResult = std::variant<std::unique_ptr<File>, std::string>;
+
+struct CalcForceArgs
+{
+  std::string path;
+  bool calcWithUnits = false;
+};
+
+bool parseBool(std::string value, bool &out)
+{
+  for (char &c : value)
+  {
+    c = std::tolower(static_cast<unsigned char>(c));
+  }
+
+  if (value == "true" || value == "1" || value == "yes" || value == "on")
+  {
+    out = true;
+    return true;
+  }
+
+  if (value == "false" || value == "0" || value == "no" || value == "off")
+  {
+    out = false;
+    return true;
+  }
+
+  return false;
+}
+
+bool parseCalcForceArgs(const std::string &last, CalcForceArgs &args)
+{
+  if (last.empty())
+  {
+    return false;
+  }
+
+  size_t comma = last.find(',');
+  args.path = (comma == std::string::npos) ? last : last.substr(0, comma);
+  args.calcWithUnits = false;
+
+  if (comma != std::string::npos)
+  {
+    std::string boolText = last.substr(comma + 1);
+    if (!parseBool(boolText, args.calcWithUnits))
+    {
+      std::cout << "Invalid unit toggle '" << boolText
+                << "'. Use true/false (or 1/0)." << std::endl;
+      return false;
+    }
+  }
+
+  return !args.path.empty();
+}
+
 std::unique_ptr<File> validateInput(std::string first, std::string last) {
   if (last.empty()) {
-    std::cout << "Usage: calc_stress_strain=/path/to/pdb" << std::endl;
+    std::cout << "Usage: calc_stress_strain=/path/to/pdb[,true|false]"
+              << std::endl;
     return nullptr;
   }
 
@@ -55,23 +111,29 @@ std::unique_ptr<File> validateInput(std::string first, std::string last) {
 };
 } // namespace
 
+void handleCalcForces(std::string first, std::string last) {
+  CalcForceArgs args;
+  if (!parseCalcForceArgs(last, args))
+  {
+    std::cout << "Usage: calc_stress_strain=/path/to/pdb[,true|false]"
+              << std::endl;
+    return;
   }
 
-void handleCalcForces(std::string first, std::string last) {
-  auto file = validateInput(first, last);
+  auto file = validateInput(first, args.path);
   if (!file) {
     return;
   }
 
   AtomContent *atoms = file->atoms();
   if (!atoms) {
-    std::cout << "Could not extract atom content from file: " << last
+    std::cout << "Could not extract atom content from file: " << args.path
               << std::endl;
     return;
   }
   ForceAnalysis analysis(atoms);
 
-  analysis.convert();
+  analysis.convert(args.calcWithUnits);
 
   analysis.toggleReason(AbstractForce::ReasonBondLength, false);
   analysis.toggleReason(AbstractForce::ReasonBondTorsion, false);
@@ -79,5 +141,5 @@ void handleCalcForces(std::string first, std::string last) {
   analysis.toggleReason(AbstractForce::ReasonElectrostaticContact, false);
 
   analysis.toggleReason(AbstractForce::ReasonBondAngle, true);
-  analysis.calculateUnknown();
+  analysis.calculateUnknown(args.calcWithUnits);
 }

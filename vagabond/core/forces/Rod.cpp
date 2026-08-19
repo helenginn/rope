@@ -1,19 +1,19 @@
 // vagabond
 // Copyright (C) 2022 Helen Ginn
-// 
+//
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-// 
+//
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-// 
+//
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
-// 
+//
 // Please email: vagabond @ hginn.co.uk for more details.
 
 #include "Rod.h"
@@ -44,47 +44,47 @@ void Rod::calculatedAsTension(std::ostream &ss, CorrelData *data)
 {
 	glm::vec3 sum{};
 	glm::vec3 length{};
-	
+
 	auto accumulate = [&sum, &length](Particle *particle, float dir)
-    {
-      for (const AppliedForce &applied : particle->forces())
-      {
+	{
+		for (const AppliedForce &applied : particle->forces())
+		{
 
-        if (applied.force->status() == Force::StatusCalculated)
-        {
-          sum += applied.force->get_vector() * applied.magnitude * dir;
-        }
-        else if (applied.force->reason() == Force::ReasonBondLength)
-        {
-          length += applied.force->get_vector() * applied.magnitude * dir;
-        }
-      }
-    };
+			if (applied.force->status() == Force::StatusCalculated)
+			{
+				sum += applied.force->get_vector() * applied.magnitude * dir;
+			}
+			else if (applied.force->reason() == Force::ReasonBondLength)
+			{
+				length += applied.force->get_vector() * applied.magnitude * dir;
+			}
+		}
+	};
 
-	auto accumulate_force_source= [this, &sum, &length](Particle *particle, float dir)
-    {
-      for (const AppliedForce &applied : particle->forces())
-      {
+	auto accumulate_force_source =
+	    [this, &sum, &length](Particle *particle, float dir)
+	{
+		for (const AppliedForce &applied : particle->forces())
+		{
 
-        if (applied.force->status() == Force::StatusCalculated)
-        {
-          sum += applied.force->get_vector() * applied.magnitude * dir;
-        }
-        else if (applied.force->reason() == Force::ReasonBondLength)
-        {
-          ForceSource *source = applied.force->source();
-          if (source && !source->contains(this))
-          {
-            continue;
-          }
-          length += applied.force->get_vector() * applied.magnitude * dir;
-        }
-      }
-    };
-	
+			if (applied.force->status() == Force::StatusCalculated)
+			{
+				sum += applied.force->get_vector() * applied.magnitude * dir;
+			}
+			else if (applied.force->reason() == Force::ReasonBondLength)
+			{
+				ForceSource *source = applied.force->source();
+				if (source && !source->contains(this))
+				{
+					continue;
+				}
+				length += applied.force->get_vector() * applied.magnitude * dir;
+			}
+		}
+	};
+
 	accumulate(_left, 1);
 	accumulate(_right, -1);
-
 
 	float unknown_dot = glm::dot(sum, bond_dir());
 	float length_dot = glm::dot(length, bond_dir());
@@ -119,9 +119,8 @@ glm::vec3 Rod::all_known_torques()
 	return sum;
 }
 
-void Rod::insertTorquesInto(const std::map<ForceCoordinate, int> 
-                            &indexing_map, int coord, 
-                            const InsertIntoRow &insert)
+void Rod::insertTorquesInto(const std::map<ForceCoordinate, int> &indexing_map,
+                            int coord, const InsertIntoRow &insert)
 {
 	for (AppliedTorque &applied : _torques)
 	{
@@ -139,28 +138,28 @@ void Rod::insertTorquesInto(const std::map<ForceCoordinate, int>
 			insert(index, ratio[coord]);
 		}
 	}
-
 }
 
-void Rod::insertCoupleInto(const std::map<ForceCoordinate, int> 
-                           &indexing_map, int coord, 
-                           const InsertIntoRow &insert, float &target)
+void Rod::insertCoupleInto(const std::map<ForceCoordinate, int> &indexing_map,
+                           int coord, const InsertIntoRow &insert,
+                           float &target, bool calcWithUnits)
 {
-	glm::vec3 bond_axis = bond_dir(); // relative to left
-	glm::vec3 bond_axis_units = bond_dir()/10.f; // relative to left // is given in A
-	glm::vec3 known_forces = (_left->all_known_forces() -
-	                          _right->all_known_forces()) / 2.f;
+	glm::vec3 bond_axis_arb = bond_dir();          // relative to left (A)
+	glm::vec3 bond_axis_units = bond_dir() / 10.f; // relative to left (nm)
+	glm::vec3 bond_axis = calcWithUnits ? bond_axis_units : bond_axis_arb;
+	glm::vec3 known_forces =
+	    (_left->all_known_forces() - _right->all_known_forces()) / 2.f;
 
 	int first = (coord + 1) % 3;
 	int second = (coord + 2) % 3;
-	
-	float target_contribution = 0; 
+
+	float target_contribution = 0;
 	// cross product of bond axis and known force.
 	target_contribution += bond_axis[first] * known_forces[second];
 	target_contribution -= bond_axis[second] * known_forces[first];
-	
+
 	target -= target_contribution;
-	
+
 	for (Particle *p : {_left, _right})
 	{
 		// add components corresponding to unknown force
@@ -183,8 +182,7 @@ void Rod::insertCoupleInto(const std::map<ForceCoordinate, int>
 }
 
 void Rod::forcesEquation(const std::map<ForceCoordinate, int> &indexing_map,
-                         int coord, const InsertIntoRow &insert, 
-                         float &target)
+                         int coord, const InsertIntoRow &insert, float &target)
 {
 	//	std::cout << "Forces equation for " << desc() << ", coord " << coord << std::endl;
 	glm::vec3 all_known = all_known_forces();
@@ -192,19 +190,18 @@ void Rod::forcesEquation(const std::map<ForceCoordinate, int> &indexing_map,
 
 	_left->insertForcesInto(indexing_map, coord, insert);
 	_right->insertForcesInto(indexing_map, coord, insert);
-//	std::cout << std::endl;
+	//	std::cout << std::endl;
 }
 
-
 void Rod::torquesEquation(const std::map<ForceCoordinate, int> &indexing_map,
-                          int coord, const InsertIntoRow &insert, float &target)
+                          int coord, const InsertIntoRow &insert, float &target,
+                          bool calcWithUnits)
 {
-//	std::cout << "Torques equation for " << desc() << ", coord " << coord << std::endl;
+	//	std::cout << "Torques equation for " << desc() << ", coord " << coord << std::endl;
 	glm::vec3 all_known = all_known_torques();
 	target = all_known[coord] * -1.f;
-	
-	insertTorquesInto(indexing_map, coord, insert);
-	insertCoupleInto(indexing_map, coord, insert, target);
-//	std::cout << std::endl;
 
+	insertTorquesInto(indexing_map, coord, insert);
+	insertCoupleInto(indexing_map, coord, insert, target, calcWithUnits);
+	//	std::cout << std::endl;
 }

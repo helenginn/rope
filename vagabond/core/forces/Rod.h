@@ -69,11 +69,12 @@ public:
 	                       const InsertIntoRow &insert);
 
 	void torquesEquation(const std::map<ForceCoordinate, int> &indexing_map,
-	                     int coord, const InsertIntoRow &insert, float &target);
+	                     int coord, const InsertIntoRow &insert, float &target,
+	                     bool calcWithUnits = false);
 
 	void insertCoupleInto(const std::map<ForceCoordinate, int> 
 	                      &indexing_map, int coord, const InsertIntoRow &insert,
-	                      float &target);
+	                      float &target, bool calcWithUnits = false);
 
 	void forcesEquation(const std::map<ForceCoordinate, int> &indexing_map,
 	                    int coord, const InsertIntoRow &insert, float &target);

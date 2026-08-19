@@ -66,7 +66,7 @@ void Dictator::makeCommands()
   _commands["--help"] = ("Displays available commands.");
   _commands["-h"] = ("Displays available commands.");
   _commands["help"] = ("Displays available commands.");
-  _commands["calc_stress_strain"] = ("calculates the stress strain in a given ptb_file");
+  _commands["calc_stress_strain"] = ("calculates stress/strain in a given pdb file; optional unit mode: calc_stress_strain=/path/to/file.pdb,true");
   _commands["cpp_version"] = ("Shows the cpp version with which RoPE has been built");
   _commands["test_result"] = ("This is a test for the result class");
 }

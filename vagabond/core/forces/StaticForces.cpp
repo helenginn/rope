@@ -34,7 +34,7 @@ StaticForces::StaticForces()
 }
 
 void StaticForces::calculateUnknowns(const std::map<ForceCoordinate, int> 
-                                     &index_map)
+                                     &index_map, bool calcWithUnits)
 {
 	int rows = _rods.size() * 2 * 3; // relationships per rod
 	int cols = index_map.size();
@@ -74,7 +74,8 @@ void StaticForces::calculateUnknowns(const std::map<ForceCoordinate, int>
 		for (int i = 0; i < 3; i++)
 		{
 			auto insert = make_insertion_event(weights, n);
-			rod->torquesEquation(index_map, i, insert, targets(n));
+			rod->torquesEquation(index_map, i, insert, targets(n),
+			                     calcWithUnits);
 			n++;
 		}
 	}
@@ -207,4 +208,3 @@ void StaticForces::calculateUnknowns(const std::map<ForceCoordinate, int>
 	std::cout << std::endl;
 	std::cout << "Time taken: " << seconds << " s " <<  std::endl;
 }
-

@@ -43,7 +43,8 @@ public:
 		_rods.push_back(r);
 	}
 	
-	void calculateUnknowns(const std::map<ForceCoordinate, int> &index_map);
+	void calculateUnknowns(const std::map<ForceCoordinate, int> &index_map,
+	                       bool calcWithUnits = false);
 private:
 	std::vector<Particle *> _particles;
 	std::vector<Rod *> _rods;
