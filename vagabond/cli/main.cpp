@@ -1,11 +1,7 @@
-#include <iostream>
-
-#include "Console.h"
+#include "RopeCli.h"
 
 int main (int argc, char **argv)
 {
-    Console console(1, true);
-    console.print("Console width: {}", console.width());
-    console.print("This is the start of something new!");
-    return 0;
+    RopeCli cli;
+    return cli.run(argc, argv);
 }

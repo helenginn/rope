@@ -1,7 +1,9 @@
 clifiles = [
 'Console.cpp',
+'RopeCli.cpp',
 
 'Console.h',
+'RopeCli.h',
 ]
 
 cli2 = static_library(
