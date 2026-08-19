@@ -36,6 +36,12 @@ void RotamerView::setup()
         addObject(t);
     }
     {
+        TextButton *t = new TextButton("analysis test" , this);
+        t->setRight(0.9, 0.7);
+        t->setReturnTag("analysis");
+        addObject(t);
+    }
+    {
         _line = new Line();
         _line2 = new Line();
         _line3 = new Line();
@@ -53,34 +59,42 @@ void RotamerView::setup()
         addObject(_line6);
         addObject(_line7);
         addObject(_para);
-        _line2->setColour(0.2, 0.9, 0.3);
+        drawAxis();
     }
 }
-
+void RotamerView::drawAxis()
+{
+    std::vector<glm::vec3> axis {_modifier->drawAxis()};
+    _line4->addPoint(glm::vec3(0,0,0));
+    _line4->addPoint(axis[0]);
+    _line4->forceRender();
+    _line5->addPoint(glm::vec3(0,0,0));
+    _line5->addPoint(axis[1]);
+    _line5->setColour(0.8,0.1,0.1);
+    _line5->forceRender();
+    _line6->addPoint(glm::vec3(0,0,0));
+    _line6->addPoint(axis[2]);
+    _line6->setColour(0.1,0.1,0.8);
+    _line6->forceRender();
+}
 void RotamerView::buttonPressed(std::string tag, Button *button)
 {
-    if (tag == "zero")
+    if (tag == "analysis")
     {
-        _modifier->submitJobAndRetrieve(2.f, RotamerModifier::Reset);
+        std::vector<glm::vec3> tests {glm::vec3(0.f,15.f,0.f), glm::vec3(0.f,0.f,15.f), glm::vec3(15.f,0.f,0.f), glm::vec3(0.f,-15.f,0.f), glm::vec3(0.f,0.f,-15.f), glm::vec3(-15.f,0.f,0.f)};
+        _modifier->analysisTest(200, tests);
     }
     if (tag == "collision") // saving current structure
     {
         if (_collision)
         {
+            _para->clearVertices();
             _collision = false;
         }
         else
         {
             _collision = true;
         }
-    }
-    if (tag == "axis")
-    {
-        std::vector<glm::vec3> const points = _modifier->drawAxis();
-        _line3->clearVertices();
-        for (const glm::vec3 point : points)
-            _line3->addPoint(point);
-        _line3->forceRender();
     }
     Scene::buttonPressed(tag, button);
 }
@@ -128,13 +142,16 @@ void RotamerView::finishedDragging(std::string tag, double x, double y)
         _para->setAlpha(1.0f);
         _para-> forceRender();
     }
-    _line2->clearVertices();
-    std::vector<glm::vec3> axePoints = _modifier->drawAxis();
-    _line2->addPoint(axePoints[0]);
-    _line2->addPoint(axePoints[1]);
-    _line2->addPoint(axePoints[2], false);
-    _line2->addPoint(axePoints[3]);
-    _line2->forceRender();
+    {
+        _line2->clearVertices();
+        std::vector<glm::vec3> axePoints = _modifier->drawChainAxis();
+        _line2->addPoint(axePoints[0]);
+        _line2->addPoint(axePoints[1]);
+        _line2->addPoint(axePoints[2], false);
+        _line2->addPoint(axePoints[3]);
+        _line2->setColour(0.2, 0.2, 0.9);
+        _line2->forceRender();
+    }
 }
 
 void RotamerView::setupSlider()

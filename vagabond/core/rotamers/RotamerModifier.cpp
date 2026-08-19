@@ -1,10 +1,10 @@
 //
 // Created by romain on 11/05/2026.
 //
+#include <vagabond/utils/Eigen/Core>
 
 #include <gemmi/cifdoc.hpp>
 #include <vagabond/core/rotamers/RotamerModifier.h>
-
 #include "vagabond/utils/AcquireCoord.h"
 
 #include <vagabond/core/engine/Task.h>
@@ -90,6 +90,89 @@ void RotamerModifier::move(float weight, parameter xy)
         r->aps = _bouquet->move(transformation, "B");
         r->transplantPositions(false);
         r->destroy();
+    }
+}
+void RotamerModifier::analysis(int timePoints, std::vector<glm::vec3> startPos)
+{
+    std::map<std::pair<ResidueId, std::string>, std::map<int, int> > collisionTracking;
+    int iteration{0};
+    for (auto translation: startPos)
+    {
+        std::cout << "Number of startPos: " <<startPos.size() << std::endl;
+        for (int x = timePoints; x > 0; x--)
+        {
+            glm::mat4x4 transformation = glm::mat4x4(1.0f);
+            transformation = glm::translate(transformation, translation / glm::vec3(timePoints));
+            _bouquet->move(transformation, "B");
+            std::vector<std::pair<ResidueId, std::string> > list{_bouquet->collisionList()};
+            for (auto &member: list)
+            {
+                collisionTracking[member][iteration] ? collisionTracking[member][iteration] += 1 : collisionTracking[member][iteration] = 1;
+            }
+        }
+        _bouquet->move(glm::translate(glm::mat4x4(1.0f), -translation), "B");
+        iteration +=  1;
+    }
+    for (auto element: collisionTracking)
+    {
+        std::cout << std::endl << "Number of results: "<< element.second.size() << std::endl;
+        std::cout << std::endl << "Residue  " << element.first.first << " collided";
+        for (int x = 0; x < startPos.size(); x++)
+            std::cout << '\t' << (element.second[x] ? element.second[x] : 0);
+    }
+}
+void RotamerModifier::analysisTest(int timePoints, std::vector<glm::vec3> startPos)
+{
+    std::vector<Bouquet *> resChainA {_bouquet->bouquetsForChain("A")};
+    std::vector<Bouquet *> resChainB {_bouquet->bouquetsForChain("B")};
+    std::vector<std::string> resChainAstr {};
+    for (auto const &bouquet : resChainA)
+    {
+        for (int rotamers = 0; rotamers < bouquet->storeSize(); rotamers++)
+            resChainAstr.push_back(bouquet->name().first.as_string()+std::to_string(rotamers));
+    }
+    int sizeA {0};
+    int sizeB {0};
+    for (auto bouquet : resChainA)
+    {
+        sizeA += bouquet->storeSize();
+    }
+    for (auto bouquet : resChainB)
+    {
+        sizeB += bouquet->storeSize();
+    }
+    std::vector<Eigen::MatrixXi> allAnalysis {};
+    for (auto translation: startPos)
+    {
+        Eigen::MatrixXi topQuality(sizeA,sizeB);
+        topQuality.fill(0);
+        std::cout << "Number of startPos: " <<startPos.size() << std::endl;
+        for (int x = timePoints; x > 0; x--)
+        {
+            glm::mat4x4 transformation = glm::mat4x4(1.0f);
+            transformation = glm::translate(transformation, translation / glm::vec3(timePoints));
+            _bouquet->move(transformation, "B");
+            topQuality += _bouquet->fullCollisionChecks(resChainA,resChainB, sizeA, sizeB);
+        }
+        _bouquet->move(glm::translate(glm::mat4x4(1.0f), -translation), "B");
+        allAnalysis.push_back(topQuality);
+    }
+    for (int iter = 0; iter < startPos.size(); iter++)
+    {
+        std::cout << std::endl << "ITERATION " << iter << std::endl <<'\t';
+        for (auto const &bouquet : resChainB)
+        {
+            for (int rotamers = 0; rotamers < bouquet->storeSize(); rotamers++)
+                std::cout << bouquet->name().first.as_string()<< rotamers << '\t';
+        }
+        for (int rotamerA = 0; rotamerA < sizeA; rotamerA++)
+        {
+            std::cout << std::endl << resChainAstr[rotamerA];
+            for (int rotamerB = 0; rotamerB < sizeB; rotamerB++)
+            {
+                std::cout << '\t' << allAnalysis[iter](rotamerA,rotamerB);
+            }
+        }
     }
 }
 
@@ -236,21 +319,21 @@ void RotamerModifier::makePlan()
 {
     std::vector<glm::vec3> axisTemp = axisForChain("A");
     _axisMain = (axisTemp[1] - axisTemp[0]);
-    axisTemp = axisForChain("B");
-    _axisSecondary = (axisTemp[1] - axisTemp[0]);
+     std::vector<glm::vec3> axisTemp2 = axisForChain("B");
+    _axisSecondary = (axisTemp2[1] - axisTemp2[0]);
     _normal = glm::normalize(_axisMain); //_normal == axis of the A chain
-    _x = glm::normalize(cross(_normal, vec3(1.0,0.0,0)));
+    _x = glm::normalize(cross(_normal, (axisTemp2[0]+axisTemp2[1])/glm::vec3(2.f)-(axisTemp[0]+axisTemp[1])/glm::vec3(2.f)));
     _y = glm:: normalize(cross(_normal, _x));
     if (_referential == false) // Rotating the helices to be aligned with the main referential
     {
         glm::mat3x3 R {_normal,_x,_y};
         R = glm::inverse(R);
         _normal = R * _normal;
+        _bouquet->move(R);
         _x = R * _x;
-        _y = R * _y;
+        _y = -(R * _y);
         _axisMain = R * _axisMain;
         _axisSecondary = R * _axisSecondary;
-        _bouquet->move(R);
         std::cout << "position tt" << std::endl;
         _referential = true;
         Result *r = new Result;
@@ -260,11 +343,15 @@ void RotamerModifier::makePlan()
         _map = true;
     }
 }
-std::vector<glm::vec3> RotamerModifier::drawAxis()
+std::vector<glm::vec3> RotamerModifier::drawChainAxis()
 {
     std::vector<glm::vec3> points = _bouquet->axis("A",true);
     std::vector<glm::vec3> points2 = _bouquet->axis("B",true);
     points.push_back(points2[0]);
     points.push_back(points2[1]);
     return points;
+}
+std::vector<glm::vec3> RotamerModifier::drawAxis()
+{
+    return {_normal,_x,_y};
 }

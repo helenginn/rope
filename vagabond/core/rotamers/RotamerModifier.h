@@ -30,8 +30,12 @@ public:
     std::vector<glm::vec3> axisForChain(std::string const &chainName);
 
     void makePlan();
+    std::vector<glm::vec3> drawChainAxis();
     std::vector<glm::vec3> drawAxis();
+
     void move(float weight, parameter xy);
+    void analysis(int timePoints, std::vector<glm::vec3> startPos);
+    void analysisTest(int timePoints, std::vector<glm::vec3> startPos);
     std::vector<std::pair<glm::vec3,glm::vec3> > getVertices() const
     {
         return _bouquet->getVertices();

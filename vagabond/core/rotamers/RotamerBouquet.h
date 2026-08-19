@@ -4,6 +4,7 @@
 
 #ifndef __vagabond__RotamerBouquet__
 #define __vagabond__RotamerBouquet__
+#include <vagabond/utils/Eigen/Core>
 
 #include "RotamerStore.h"
 #include "RotamerCollisionBox.h"
@@ -45,7 +46,7 @@ public:
                 bouquets->store.move(transformationMat, chain);
                 bouquets->collision.updateVert(bouquets->store.getPos());
             }
-            collisionList();
+            collisionUpdate();
         }
         return extractForGUI();
     }
@@ -54,12 +55,16 @@ public:
     {
         return store.name();
     }
+
+    int storeSize()
+    {
+        return store.size();
+    }
     std::vector<Bouquet *> bouquetsForChain(const std::string& Name)
     {
         std::vector<Bouquet *> bouquetsChain {};
         for (auto bouquets : residueBouquets)
         {
-            // std::cout << bouquets->name().first.insert << std::endl;
             if (bouquets->name().first.insert == Name)
                 bouquetsChain.push_back(bouquets);
         }
@@ -80,12 +85,12 @@ public:
         return vert;
     }
 
-    std::vector<std::pair<ResidueId,ResidueId>> collisionList()
+    std::vector<std::pair<ResidueId,ResidueId>> collisionUpdate()
     {
         for (auto &residues : residueBouquets)
             residues->collision.clearCollision();
         std::vector<std::pair<ResidueId, ResidueId>> collisions {};
-        for (int x = 0; x <= (residueBouquets.size()-1)/2; x++)
+        for (int x = 0; x < residueBouquets.size(); x++)
         {
             for (int y = 0; y < residueBouquets.size(); y++)
             if (x != y  && residueBouquets[x]->name().second != residueBouquets[y]->name().second)
@@ -94,6 +99,58 @@ public:
             }
         }
         return collisions;
+    }
+    std::vector<std::pair<ResidueId, std::string>> collisionList()
+    {
+        std::vector<std::pair<ResidueId, std::string>> list {};
+        for (auto bouquet : residueBouquets)
+        {
+            if (bouquet->collision.colliding())
+            {
+                list.push_back(bouquet->name());
+            }
+        }
+        return list;
+    }
+
+    Eigen::Matrix<int, Eigen::Dynamic, Eigen::Dynamic> fullCollisionChecks(std::vector<Bouquet *> const &resChainA, std::vector<Bouquet *> const &resChainB, int const sizeA, int const sizeB)
+    {
+        Eigen::MatrixXi collisionMatrix(sizeA,sizeB);
+        collisionMatrix.fill(0);
+        int AchainNum {0};
+        for (auto const &resA : resChainA)
+        {
+            if (!resA->collision.colliding())
+            {
+                for (int x = 0; x < resA->store.size();x++)
+                {
+                    AchainNum++;
+                }
+                continue;
+            }
+            for (int x = 0; x < resA->store.size();x++)
+            {
+                int BchainNum {0};
+                for (auto const &resB : resChainB)
+                {
+                    if (!resB->collision.colliding())
+                    {
+                        BchainNum+= resB->store.size()-1;
+                        continue;
+                    }
+                    for (int y = 0; y < resB->store.size(); y++)
+                    {
+                        if (resA->store.collisionCheck(x, resB->store, y))
+                        {
+                            collisionMatrix(AchainNum,BchainNum) = 1;
+                        }
+                        BchainNum++;
+                    }
+                }
+                AchainNum++;
+            }
+        }
+        return collisionMatrix;
     }
 
     glm::vec3 positionReporter(Bouquet* bouquet)
@@ -111,11 +168,11 @@ public:
 
         if (trueAxis)
         {
-            int y {0};
-            int z {0};
+            float y {0};
+            float z {0};
             int counter {0};
             glm::vec3 currentPos {};
-        //     std::vector<glm::vec3> positionsArray {};
+        //     std::vector<glm::vec3> positionsArray {}; //WIP working on more precise axis
         //     glm::vec3 centroid {0};
         //     for (auto const &bouquets : bouquetsList)
         //     {

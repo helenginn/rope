@@ -25,6 +25,7 @@ public:
     void loadModelChain( Instance *inst, DisplayUnit *unit);
     void rotaList();
     void setupSlider();
+    void drawAxis();
     virtual void buttonPressed(std::string tag, Button *button);
     virtual void finishedDragging(std::string tag, double x, double y);
 private:

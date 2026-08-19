@@ -147,3 +147,26 @@ std::pair<ResidueId,std::string> RotamerStore::name()
 {
     return {storage.begin()->first.first, atoms[0]->chain()};
 }
+
+bool RotamerStore::collisionCheck(int const &rotNum, RotamerStore &other, int const &otherRotNum)
+{
+    ResRot self  {};
+    self.first = this->name().first;
+    self.second = rotNum;
+    std::vector<glm::vec3> ownPos = positionFor(self);
+    ResRot second  {};
+    second.first = other.name().first;
+    second.second = otherRotNum;
+    std::vector<glm::vec3> otherPos = other.positionFor(second);
+    for (auto posSelf : ownPos)
+    {
+        for (auto posOther : otherPos)
+        {
+            if (glm::length(posSelf-posOther) <= 2.f)
+            {
+                return true;
+            }
+        }
+    }
+    return false;
+}
