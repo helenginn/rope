@@ -21,4 +21,3 @@
 #include <string>
 
 void handleCalcForces(std::string, std::string);
-void handleTestResult(std::string, std::string);

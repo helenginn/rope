@@ -68,7 +68,6 @@ void Dictator::makeCommands()
   _commands["help"] = ("Displays available commands.");
   _commands["calc_stress_strain"] = ("calculates stress/strain in a given pdb file; optional unit mode: calc_stress_strain=/path/to/file.pdb,true");
   _commands["cpp_version"] = ("Shows the cpp version with which RoPE has been built");
-  _commands["test_result"] = ("This is a test for the result class");
 }
 
 void splitCommand(std::string command, std::string *first, std::string *last)
@@ -205,10 +204,6 @@ void Dictator::processRequest(std::string &first, std::string &last)
 
 		PathManager::manager()->makePathsWithinGroup(args, num);
 	}
-
-  if (first == "test_result"){
-    handleTestResult(first, last);
-  }
 
   if (first == "calc_stress_strain"){
     handleCalcForces(first,last);
