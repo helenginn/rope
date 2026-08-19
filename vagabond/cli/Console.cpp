@@ -16,20 +16,8 @@
 
 Console::Console(int verbosity, bool debug)
 {
-    debug_ = debug;
-    if (debug_) {
-        // Set verbosity to debug level
-        verbosity_ = static_cast<int>(Level::Debug);
-        print(Level::Debug, "Debug mode is enabled.");
-    } else {
-        // Otherwise set verbosity up to trace
-        verbosity_ = std::min(verbosity, static_cast<int>(Level::Trace));
-    }
-}
-
-int Console::verbosity() const
-{
-    return verbosity_;
+    setDebug(debug);
+    setVerbosity(debug_ ? static_cast<int>(Level::Debug) : verbosity);
 }
 
 void Console::print_impl(int level, std::string_view fmt, std::format_args args) const {

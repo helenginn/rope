@@ -18,7 +18,13 @@ class Console
 {
 public:
     explicit Console(int verbosity = 0, bool debug = false);
-    int verbosity() const;
+
+    int getVerbosity() const { return verbosity_; }
+    void setVerbosity(const int verbosity) { verbosity_ = std::min(verbosity, static_cast<int>(Level::Trace)); }
+    void setVerbosity(const Level level) { verbosity_ = static_cast<int>(level); }
+    int getDebug() const { return debug_; }
+    void setDebug(const bool debug) { debug_ = debug; }
+
     int width() const;
 
     template<typename... Args>
@@ -40,8 +46,8 @@ public:
     }
 
 private:
-    int verbosity_;
-    bool debug_;
+    int verbosity_ = static_cast<int>(Level::Info);
+    bool debug_ = false;
 
     mutable int width_ = 80; // Default width for formatting
 
