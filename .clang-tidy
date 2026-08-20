@@ -1,0 +1,20 @@
+---
+InheritParentConfig: false
+
+Checks:
+  - '-*'
+  - 'clang-diagnostic-*'
+  - 'clang-analyzer-*'
+  - 'bugprone-*'
+  - '-bugprone-easily-swappable-parameters'
+  - 'performance-*'
+  - 'portability-*'
+  - 'concurrency-*'
+
+WarningsAsErrors: ''
+
+HeaderFilterRegex: '(^|.*/)(vagabond|tests)/.*'
+ExcludeHeaderFilterRegex: '(^|.*/)vagabond/(utils/Eigen|core/lbfgs)/.*'
+
+SystemHeaders: false
+FormatStyle: file

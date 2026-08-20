@@ -43,6 +43,7 @@
           pkg-config
           python3
           cmake
+          clang-tools
         ];
 
         meta = with lib; {
