@@ -73,6 +73,12 @@ jobs:
         shell: pwsh
         run: setup-scripts\setup.ps1 -Yesman -Build build\ci_build -Prefix "$((Get-Location).Path)\install"
 
+      - name: Run tests
+        shell: pwsh
+        run: |
+          . build/ci_build/conanbuild.ps1
+          meson test -C build/ci_build --print-errorlogs
+
       - name: Install RoPE
         shell: pwsh
         run: |
