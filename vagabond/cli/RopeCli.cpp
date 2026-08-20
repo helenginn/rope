@@ -129,14 +129,14 @@ std::string RopeCli::version()
 }
 
 /**
- * Returns a reference to the Environment object, loading it from the specified file if necessary.
+ * Returns a reference to the Environment singleton, loading it from the specified file if necessary.
  * If an environment file is not specified, it prints an error message and exits the program.
  *
  * @return Reference to the Environment object.
  */
 Environment& RopeCli::getEnv()
 {
-    if (env_) return *env_;
+    if (env_loaded_) return Environment::env();
 
     if (env_file_.empty())
     {
@@ -147,9 +147,10 @@ Environment& RopeCli::getEnv()
 
     console.print("Loading environment: {}",
                   std::filesystem::absolute(env_file_).string());
-    env_ = std::make_unique<Environment>();
-    env_->load(env_file_.string());
-    return *env_;
+    Environment& env = Environment::env();
+    env.load(env_file_.string());
+    env_loaded_ = true;
+    return env;
 }
 
 /**

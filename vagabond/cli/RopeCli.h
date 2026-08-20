@@ -28,8 +28,8 @@ private:
     // Environment management
     /** The path to the environment file (rope.json) (if specified) **/
     std::filesystem::path env_file_;
-    /** Unique pointer to the Environment object **/
-    std::unique_ptr<Environment> env_;
+    /** Track whether the Environment has been loaded **/
+    bool env_loaded_ = false;
     Environment& getEnv();
 
     // Command registration methods
