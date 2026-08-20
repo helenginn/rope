@@ -18,10 +18,13 @@
 
 #include <vagabond/gui/elements/TickBoxes.h>
 #include <vagabond/gui/elements/TextButton.h>
+#include <vagabond/gui/elements/Menu.h>
 #include <vagabond/gui/elements/Image.h>
+#include <vagabond/utils/FileReader.h>
 #include "ChooseHeader.h"
 #include "ListInstancesView.h"
 #include "PathInterfaceSetupView.h"
+#include <algorithm>
 
 ListInstancesView::ListInstancesView(Scene *prev) : ListView(prev)
 {
@@ -31,13 +34,114 @@ ListInstancesView::ListInstancesView(Scene *prev) : ListView(prev)
 void ListInstancesView::setup()
 {
 	addTitle("Include instances");
+	applyDefaultCheatSheet();
 	ListView::setup();
+}
+
+void ListInstancesView::applyDefaultCheatSheet()
+{
+	if (_defaultCheatSheetApplied)
+	{
+		return;
+	}
+
+	_defaultCheatSheetApplied = true;
+	if (file_exists("cheat_sheet.txt"))
+	{
+		applyCheatSheet("cheat_sheet.txt", false);
+	}
+}
+
+void ListInstancesView::applyCheatSheet(const std::string &filename,
+                                        bool refresh_after)
+{
+	if (!file_exists(filename))
+	{
+		return;
+	}
+
+	for (const std::string &from : _fromList)
+	{
+		_fromTo[from] = {false, ""};
+	}
+
+	std::string contents = get_file_contents(filename);
+	std::vector<std::string> lines = split(contents, '\n');
+
+	for (const std::string &line : lines)
+	{
+		std::vector<std::string> bits = split(line, ' ');
+		if (bits.size() < 2) continue;
+
+		if (std::find(_fromList.begin(), _fromList.end(), bits[0]) ==
+		    _fromList.end()) continue;
+		if (std::find(_toList.begin(), _toList.end(), bits[1]) ==
+		    _toList.end()) continue;
+
+		std::cout << bits[0] << " = " << bits[1] << std::endl;
+		_fromTo[bits[0]] = {true, bits[1]};
+	}
+
+	if (refresh_after)
+	{
+		refresh();
+	}
+}
+
+std::vector<std::string> ListInstancesView::cheatSheetFiles()
+{
+	std::vector<std::string> files;
+	if (file_exists("cheat_sheet.txt"))
+	{
+		files.push_back("cheat_sheet.txt");
+	}
+
+	std::vector<std::string> matches = glob_pattern("cheat_sheet_*.txt");
+	std::sort(matches.begin(), matches.end());
+	for (const std::string &match : matches)
+	{
+		if (std::find(files.begin(), files.end(), match) == files.end())
+		{
+			files.push_back(match);
+		}
+	}
+
+	return files;
+}
+
+void ListInstancesView::chooseCheatSheet(TextButton *button)
+{
+	std::vector<std::string> files = cheatSheetFiles();
+	if (files.empty())
+	{
+		setInformation("No cheat_sheet.txt or cheat_sheet_*.txt files found.");
+		return;
+	}
+
+	Menu *m = new Menu(this);
+	for (const std::string &file : files)
+	{
+		m->addOption(getFilename(file), [this, file]()
+		{
+			applyCheatSheet(file);
+		});
+	}
+	m->setup(button);
+	setModal(m);
 }
 
 void ListInstancesView::refresh()
 {
 	deleteTemps();
 	ListView::refresh();
+
+	if (!cheatSheetFiles().empty())
+	{
+		TextButton *t = new TextButton("Cheat sheet(s)", this);
+		t->setRight(0.88, 0.18);
+		t->setReturnJob([this, t]() { chooseCheatSheet(t); });
+		addTempObject(t);
+	}
 
 	size_t chosen = 0;
 	for (auto it = _fromTo.begin(); it != _fromTo.end(); it++)
@@ -49,10 +153,16 @@ void ListInstancesView::refresh()
 		}
 	}
 
+	std::string str = std::to_string(chosen) + " pair";
+	str += chosen == 1 ? "" : "s";
+	Text *info = new Text(str);
+	info->setRight(0.8, 0.82);
+	addTempObject(info);
+
 	if (chosen > 1)
 	{
 		TextButton *t = new TextButton("Find path(s)", this);
-		t->setRight(0.8, 0.85);
+		t->setRight(0.8, 0.88);
 		t->setReturnJob
 		([this]()
 		 {
