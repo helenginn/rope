@@ -275,11 +275,13 @@ if ($ForceRebuildDependencies) {
     Warn "Force-rebuilding all conan dependencies"
 }
 
+$Lockfile = Join-Path $SRCDIR "conan.lock"
+
 Invoke-Conan profile detect 2>&1 | Out-Null
 if ($LASTEXITCODE -ne 0) {Warn "conan profile already exists. Please verify manually."}
-Invoke-Conan create .\recipes\gemmi "-b=$ConanBuildFlag"
+Invoke-Conan create .\recipes\gemmi "--lockfile=$Lockfile" "-b=$ConanBuildFlag"
 if ($LASTEXITCODE -ne 0) {Die "conan create gemmi failed"}
-Invoke-Conan install . "-of=${BUILDDIR}" "-b=$ConanBuildFlag" -s compiler.cppstd=20 "--conf=tools.env.virtualenv:powershell=pwsh"
+Invoke-Conan install . "--lockfile=$Lockfile" "-of=${BUILDDIR}" "-b=$ConanBuildFlag" -s compiler.cppstd=20 "--conf=tools.env.virtualenv:powershell=pwsh"
 if ($LASTEXITCODE -ne 0) {Die "conan install failed"}
 
 . "$BUILDDIR\conanbuild.ps1"

@@ -322,8 +322,8 @@ if $USE_CONAN; then
   if ! "${CONAN_COMMAND[@]}" profile detect 2>/dev/null; then
     warn "conan profile already exists. Please verify manually."
   fi
-  "${CONAN_COMMAND[@]}" create recipes/gemmi -b="$CONAN_BUILD_FLAG"
-  "${CONAN_COMMAND[@]}" install . -of="${BUILDDIR}" -b="$CONAN_BUILD_FLAG" -s compiler.cppstd=gnu20
+  "${CONAN_COMMAND[@]}" create recipes/gemmi --lockfile=conan.lock -b="$CONAN_BUILD_FLAG"
+  "${CONAN_COMMAND[@]}" install . --lockfile=conan.lock -of="${BUILDDIR}" -b="$CONAN_BUILD_FLAG" -s compiler.cppstd=gnu20
   source "./${BUILDDIR}/conanbuild.sh"
 
   if command -v ccache &>/dev/null; then

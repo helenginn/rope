@@ -14,7 +14,7 @@ class Rope(ConanFile):
     def requirements(self):
         self.requires("libcurl/[*]")
         self.requires("fftw/[*]")
-        self.requires("gemmi/[*]")
+        self.requires("gemmi/[0.6.7]")
         self.requires("glm/[*]")
         self.requires("nlohmann_json/[*]")
         self.requires("zlib/[*]")

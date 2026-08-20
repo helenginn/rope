@@ -1,6 +1,6 @@
 from conan import ConanFile
 from conan.tools.cmake import CMake, CMakeToolchain, cmake_layout
-
+from conan.tools.files import get
 
 class GemmiConan(ConanFile):
     name = "gemmi"
@@ -13,8 +13,9 @@ class GemmiConan(ConanFile):
     default_options = {"shared": False, "fPIC": True}
 
     def source(self):
-        self.run(
-            "git clone --depth 1 --branch v0.6.7 https://github.com/project-gemmi/gemmi.git ."
+        get(
+            self,
+            **self.conan_data["sources"][str(self.version)],
         )
 
     def build_requirements(self):
