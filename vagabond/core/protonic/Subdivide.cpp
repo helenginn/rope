@@ -696,23 +696,9 @@ void Subdivide::subdivide(int samples)
 	std::vector<Sample> samples_found;
 	std::map<OpSet<Probe *>, size_t> keyIndex;
 
-	// walk origin probes in randomised round-robin order rather than
-	// exhausting all `samples` draws from one origin before moving to the
-	// next: searching one origin exhaustively means shoot()'s least-
-	// sampled-endpoint bias only ever has that single origin's own prior
-	// draws to react to, so it can't spread coverage across the clique the
-	// way it's meant to until every other origin gets its turn. Taking one
-	// sample per origin per round, in a freshly shuffled order each round,
-	// keeps _nodeCounts reflecting draws from many origins throughout, not
-	// just the one currently being exhausted.
-	std::vector<Probe *> origins(to_chunk.begin(), to_chunk.end());
-	static thread_local std::mt19937 origin_rng{std::random_device{}()};
-
-	for (int round = 0; round < samples; round++)
+	for (Probe *probe : to_chunk)
 	{
-		std::shuffle(origins.begin(), origins.end(), origin_rng);
-
-		for (Probe *probe : origins)
+		for (int i = 0; i < samples; i++)
 		{
 			OpSet<Probe *> chunk = grow_clique(probe);
 			if (chunk.size() == 0 || !has_non_water(chunk))
