@@ -184,14 +184,34 @@ PathInterfaceSetupView::sanitiseInteractions(Group &group)
 
 void PathInterfaceSetupView::preparePath()
 {
+	preparePath(this, _from, _to, _map);
+}
+
+void PathInterfaceSetupView::preparePath(Scene *prev, Model *from, Model *to,
+                                         const std::map<std::string,
+                                                        std::string> &map)
+{
 	NewPath new_path;
 
-	for (const std::string &key : _list)
+	if (!from || !to)
 	{
-		if (_map.count(key) && _map[key].length() > 0)
+		return;
+	}
+
+	if (from)
+	{
+		from->load();
+	}
+
+	for (auto it = map.begin(); it != map.end(); it++)
+	{
+		const std::string &key = it->first;
+		const std::string &target = it->second;
+
+		if (target.length() > 0)
 		{
-			Instance *left = _from->instanceWithId(key);
-			Instance *right = _to->instanceWithId(_map[key]);
+			Instance *left = from->instanceWithId(key);
+			Instance *right = to->instanceWithId(target);
 			if (left && right)
 			{
 				new_path.addLinkedInstances(left, right);
@@ -205,7 +225,6 @@ void PathInterfaceSetupView::preparePath()
 	route->setNonCovalents(noncovs);
 	route->setMaximumFlipTrial(0);
 
-	RouteExplorer *re = new RouteExplorer(this, route);
+	RouteExplorer *re = new RouteExplorer(prev, route);
 	re->show();
 }
-

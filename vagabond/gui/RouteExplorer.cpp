@@ -850,7 +850,7 @@ void RouteExplorer::exportSuperposed()
 		removeObject(te);
 	});
 	
-	te->setRight(0.9, 0.5);
+	te->setRight(0.9, 0.4);
 	addObject(te);
 	addMainThreadJob([te]() { te->click(); });
 }

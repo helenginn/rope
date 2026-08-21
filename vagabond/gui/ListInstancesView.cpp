@@ -176,10 +176,8 @@ void ListInstancesView::refresh()
 				}
 			}
 
-			PathInterfaceSetupView *view;
-			view = new PathInterfaceSetupView(this, _fromModel, _toModel);
-			view->setMap(simple_map);
-			view->show();
+			PathInterfaceSetupView::preparePath(this, _fromModel, _toModel,
+			                                    simple_map);
 		 });
 
 		addTempObject(t);

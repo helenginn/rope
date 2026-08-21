@@ -32,6 +32,9 @@ class PathInterfaceSetupView : public ListView, public Responder<TickList>
 public:
 	PathInterfaceSetupView(Scene *scene, Model *from, Model *to);
 	~PathInterfaceSetupView();
+
+	static void preparePath(Scene *prev, Model *from, Model *to,
+	                        const std::map<std::string, std::string> &map);
 	
 	void setMap(const std::map<std::string, std::string> &map)
 	{

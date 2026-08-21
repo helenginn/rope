@@ -150,10 +150,7 @@ void WholeModelPathSetupView::refresh()
 				Model *from = ModelManager::manager()->model(_fromId);
 				Model *to = ModelManager::manager()->model(_toId);
 
-				PathInterfaceSetupView *view;
-				view = new PathInterfaceSetupView(this, from, to);
-				view->setMap(simple_map);
-				view->show();
+				PathInterfaceSetupView::preparePath(this, from, to, simple_map);
 			 });
 
 			addTempObject(t);
