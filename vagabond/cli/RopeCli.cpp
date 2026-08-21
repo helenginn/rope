@@ -3,6 +3,8 @@
 #include "RopeCli.h"
 #include "../../config/config.h"
 #include "../core/Environment.h"
+#include "../core/FileManager.h"
+#include "../core/Metadata.h"
 #include "../core/Reporter.h"
 
 // INSTRUCTIONS
@@ -11,6 +13,9 @@
 // 2. Register the command in `registerCommands()` by calling the new method
 // 3. If the command needs access to the shared Environment, call `getEnv()` inside
 //    the command's callback
+// 4. If the command has any options, declare the variables to hold their values
+//    as shared pointers (i.e. `auto myOption = std::make_shared<std::string>();`)
+//    in order to survive the scope of the callback
 /**
  * A command-line interface with shared state and chained subcommands for RoPE
  */
@@ -80,6 +85,10 @@ void RopeCli::registerCommands()
 {
     // General panel
     CmdVersion();
+
+    // Files panel
+    CmdLoadFiles();
+    CmdLoadMetadata();
 
     // Report panel
     CmdReport();
@@ -168,6 +177,97 @@ void RopeCli::CmdVersion()
             { console.print("RoPE {}", version()); }
         );
 }
+
+/**
+ * Load data files into the RoPE environment.
+ */
+void RopeCli::CmdLoadFiles()
+{
+    auto files = std::make_shared<std::vector<std::filesystem::path>>();
+
+    auto* cmd = app_.add_subcommand(
+        "load_files",
+        "Load files into the RoPE environment"
+    );
+    cmd->group("Files");
+    cmd->add_option("files", *files, "Files to load")
+        ->required()
+        ->expected(1, -1)
+        ->check(CLI::ExistingFile);
+    cmd->callback(
+        [this, files]() -> void
+            {
+                Environment& env = getEnv();
+
+                console.print("Loading data file(s) into the RoPE environment...");
+                FileManager* fm = env.fileManager();
+
+                for (const auto& file : *files)
+                {
+                    console.print("Loading file: {}", file.string());
+                    if (!fm->acceptFile(file.string()))
+                    {
+                        console.print(Level::Error, "Failed to load file: {}", file.string());
+                    }
+                }
+                console.print("{} file(s) currently loaded in the environment.", fm->filteredCount());
+            }
+        );
+}
+
+/**
+ * Load metadata files into the RoPE environment.
+ */
+void RopeCli::CmdLoadMetadata()
+{
+    auto files = std::make_shared<std::vector<std::filesystem::path>>();
+
+    auto* cmd = app_.add_subcommand(
+        "load_meta",
+        "Load metadata into the RoPE environment"
+    );
+    cmd->group("Files");
+    cmd->add_option("files", *files, "Files to load")
+        ->required()
+        ->expected(1, -1)
+        ->check(CLI::ExistingFile);
+    cmd->callback(
+        [this, files]() -> void
+            {
+                Environment& env = getEnv();
+
+                console.print("Loading metadata file(s) into the RoPE environment...");
+                for (const auto& file : *files)
+                {
+                    File *f = File::loadUnknown(file.string());
+                    File::Type type = File::Nothing;
+
+                    if (f)
+                    {
+                        type = f->cursoryLook();
+                    }
+
+                    if (type & File::Meta)
+                    {
+                        *env.metadata() += *f->metadata();
+                        console.print("Loaded metadata from file: {}", file.string());
+                    }
+                    else
+                    {
+                        if (type == File::Nothing)
+                        {
+                            console.print(Level::Error, "File {} is not readable.", file.string());
+                        }
+                        else
+                        {
+                            console.print(Level::Error, "File {} is not a metadata file. Detected type: {}",
+                                file.string(), static_cast<int>(type));
+                        }
+                    }
+                }
+            }
+        );
+};
 
 /**
  * Report various statistics on a RoPE environment.

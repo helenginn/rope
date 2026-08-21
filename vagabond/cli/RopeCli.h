@@ -36,6 +36,10 @@ private:
     // General panel
     void CmdVersion();
 
+    // Files panel
+    void CmdLoadFiles();
+    void CmdLoadMetadata();
+
     // Report panel
     void CmdReport();
 };
