@@ -21,6 +21,7 @@
 #include <vagabond/gui/elements/Menu.h>
 #include <vagabond/gui/elements/Image.h>
 #include <vagabond/utils/FileReader.h>
+#include <vagabond/core/Model.h>
 #include "ChooseHeader.h"
 #include "ListInstancesView.h"
 #include "PathInterfaceSetupView.h"
@@ -46,18 +47,95 @@ void ListInstancesView::applyDefaultCheatSheet()
 	}
 
 	_defaultCheatSheetApplied = true;
-	if (file_exists("cheat_sheet.txt"))
+	std::string chosen = automaticCheatSheet();
+	if (chosen.length())
 	{
-		applyCheatSheet("cheat_sheet.txt", false);
+		applyCheatSheet(chosen, false);
 	}
 }
 
-void ListInstancesView::applyCheatSheet(const std::string &filename,
+static bool string_contains(const std::string &haystack,
+                            const std::string &needle)
+{
+	return needle.length() && haystack.find(needle) != std::string::npos;
+}
+
+bool ListInstancesView::cheatSheetMatchesModels(const std::string &filename)
+{
+	if (!_fromModel || !_toModel || !file_exists(filename))
+	{
+		return false;
+	}
+
+	std::string contents = get_file_contents(filename);
+	std::vector<std::string> lines = split(contents, '\n');
+
+	for (const std::string &line : lines)
+	{
+		std::vector<std::string> bits = split(line, ' ');
+		if (bits.size() < 2) continue;
+
+		bool from_match = string_contains(bits[0], _fromModel->name());
+		bool to_match = string_contains(bits[1], _toModel->name());
+
+		if (from_match && to_match)
+		{
+			return true;
+		}
+	}
+
+	return false;
+}
+
+std::string ListInstancesView::automaticCheatSheet()
+{
+	std::vector<std::string> matches = glob_pattern("cheat_sheet*.txt");
+	std::sort(matches.begin(), matches.end());
+
+	for (const std::string &match : matches)
+	{
+		if (cheatSheetMatchesModels(match))
+		{
+			std::cout << "Automatically applying " << match << std::endl;
+			return match;
+		}
+	}
+
+	return "";
+}
+
+std::string ListInstancesView::chosenCheatSheetLabel()
+{
+	const std::string prefix = "cheat_sheet_";
+	const std::string suffix = ".txt";
+	const std::string &name = _chosenCheatSheet;
+
+	if (name == "cheat_sheet.txt")
+	{
+		return "\"Jinx!\"";
+	}
+
+	if (name.rfind(prefix, 0) != 0 || name.length() <= prefix.length())
+	{
+		return "";
+	}
+
+	if (name.length() >= suffix.length() &&
+	    name.substr(name.length() - suffix.length()) == suffix)
+	{
+		return name.substr(prefix.length(),
+		                   name.length() - prefix.length() - suffix.length());
+	}
+
+	return name.substr(prefix.length());
+}
+
+bool ListInstancesView::applyCheatSheet(const std::string &filename,
                                         bool refresh_after)
 {
 	if (!file_exists(filename))
 	{
-		return;
+		return false;
 	}
 
 	for (const std::string &from : _fromList)
@@ -67,6 +145,7 @@ void ListInstancesView::applyCheatSheet(const std::string &filename,
 
 	std::string contents = get_file_contents(filename);
 	std::vector<std::string> lines = split(contents, '\n');
+	bool applied = false;
 
 	for (const std::string &line : lines)
 	{
@@ -80,12 +159,24 @@ void ListInstancesView::applyCheatSheet(const std::string &filename,
 
 		std::cout << bits[0] << " = " << bits[1] << std::endl;
 		_fromTo[bits[0]] = {true, bits[1]};
+		applied = true;
+	}
+
+	if (applied)
+	{
+		_chosenCheatSheet = getFilename(filename);
+	}
+	else
+	{
+		_chosenCheatSheet = "";
 	}
 
 	if (refresh_after)
 	{
 		refresh();
 	}
+
+	return applied;
 }
 
 std::vector<std::string> ListInstancesView::cheatSheetFiles()
@@ -141,6 +232,14 @@ void ListInstancesView::refresh()
 		t->setRight(0.88, 0.18);
 		t->setReturnJob([this, t]() { chooseCheatSheet(t); });
 		addTempObject(t);
+
+		std::string label = chosenCheatSheetLabel();
+		if (label.length())
+		{
+			Text *chosen_text = new Text(label);
+			chosen_text->setRight(0.88, 0.24);
+			addTempObject(chosen_text);
+		}
 	}
 
 	size_t chosen = 0;

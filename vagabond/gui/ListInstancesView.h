@@ -75,7 +75,10 @@ public:
 	virtual void buttonPressed(std::string tag, Button *button);
 private:
 	void applyDefaultCheatSheet();
-	void applyCheatSheet(const std::string &filename, bool refresh = true);
+	bool applyCheatSheet(const std::string &filename, bool refresh = true);
+	std::string automaticCheatSheet();
+	bool cheatSheetMatchesModels(const std::string &filename);
+	std::string chosenCheatSheetLabel();
 	std::vector<std::string> cheatSheetFiles();
 	void chooseCheatSheet(TextButton *button);
 
@@ -88,6 +91,7 @@ private:
 	class Model *_toModel = nullptr;
 
 	std::string _selected;
+	std::string _chosenCheatSheet;
 	bool _defaultCheatSheetApplied = false;
 };
 
