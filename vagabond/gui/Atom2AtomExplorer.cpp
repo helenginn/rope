@@ -189,7 +189,6 @@ void Atom2AtomExplorer::update()
 	PCA::do_op(_matrix, func);
 	_plot->update();
 	_plot->setCentre(0.5, 0.5);
-
 	_legend->setCentre(0.0, 0.0);
 	_legend->setLimits(-5 / _colourScale, 5 / _colourScale);
 	_legend->setCentre(0.75, 0.5);
@@ -270,7 +269,7 @@ void Atom2AtomExplorer::finishedDragging(std::string tag, double x, double y)
 		updateMarkerSizes();
 		return;
 	}
-	_colourScale = (100 - x)/0.2;
+	_colourScale = (100 - x)/0.02;
 	update();
 
 }
