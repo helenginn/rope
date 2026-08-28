@@ -79,6 +79,9 @@ public:
     // === FLEXIBILITY CALCULATION ===
     void submitJob(float weight);
     void calculateFlexWeights();
+    void checkModeRBvsTorsionBudget(int colIdx);
+    void checkModeMaxTorsion(int colIdx);
+    void describeTorsionLeverage(int row, int colIdx);
     std::vector<int> getGlobalTorsionVector() const 
     {
         return std::vector<int>(_globalTorsionSet.begin(), _globalTorsionSet.end());
@@ -118,6 +121,10 @@ public:
         _colIdx = chosenColIdx;
     }
     void writeJacobianStatsToCSV(const std::string &filename);
+    void writeJacobianToCSV(const std::string &filename);
+    void writeVMatrixToCSV(const std::string &filename);
+    void writeSingularValuesToCSV(const std::string &filename);
+    void printRigidBodyWeights(const std::vector<float> &v_i);
 
 
     // === UTILITY ===
@@ -200,6 +207,7 @@ private:
     std::vector<VdWBondEntity> _VdWBonds;
     std::set<int> _globalTorsionSet;
     std::vector<std::vector<float>> _allTorsions;
+    std::vector<float> _modesScales;
     std::string _flexTag;
     AtomGroup *_chainAtoms = nullptr;
 

@@ -46,11 +46,8 @@ float Flexibility::submitJobAndRetrieve(float weight)
 {
 
     submitJob(weight);
-
     Result *r = _resources.calculator->acquireObject();
     r->transplantPositions(_displayTargets);
-
-
     r->destroy(); 
     return weight; 
 }
@@ -90,6 +87,11 @@ void Flexibility::buildDoFMap()
     {
         Atom *anchor = subsets[s]->chosenAnchor();
         if (!anchor) continue;
+
+        // temp solution: skip small groups (single atoms with no connectivity info)
+        if (subsets[s]->size() < 3) continue;
+        // this line will need to be replaced, once a more permanent solution is found
+
 
         std::string chain = anchor->chain();
         bool isReference = (chain == _referenceChain);
@@ -163,13 +165,13 @@ void Flexibility::buildDoFMap()
 void Flexibility::selectDoFMap()
 {
     _activeDoFMap.clear();
-    // std::set<int> usedTorsions;
-    // for (auto &hbe : _hbonds)
-    //     for (auto &[torsionIdx, isHSide] : hbe.TorsionVec)
-    //         usedTorsions.insert(torsionIdx);
-    // for (auto &vdw : _VdWBonds)
-    //     for (auto &[torsionIdx, isHSide] : vdw.TorsionVec)
-    //         usedTorsions.insert(torsionIdx);
+    std::set<int> usedTorsions;
+    for (auto &hbe : _hbonds)
+        for (auto &[torsionIdx, isHSide] : hbe.TorsionVec)
+            usedTorsions.insert(torsionIdx);
+    for (auto &vdw : _VdWBonds)
+        for (auto &[torsionIdx, isHSide] : vdw.TorsionVec)
+            usedTorsions.insert(torsionIdx);
 
     std::set<AtomGroup*> usedGroups;
     for (auto &[col, c] : _constraintMap)
@@ -182,18 +184,14 @@ void Flexibility::selectDoFMap()
     for (auto &[unusesoOldRow, dof] : _dofMap) // key not needed — only dof matters here
     {
         bool keep = (dof.type == Torsion)
-                  ? _globalTorsionSet.count(dof.idx) > 0 
+                  ? usedTorsions.count(dof.idx) > 0  // changed from _globalTorsionSet
                   : usedGroups.count(dof.atoms) > 0; 
         if (keep)
         {
             _activeDoFMap[row_counter] = dof; // row_counter is the new index
-            std::cout << "[DEBUG] dof.atom is: ";
-            std::cout << dof.atom->desc() << std::endl;
             row_counter++; 
         }
     }
-    std::cout << "[DEBUG selectDoFMap] " << _dofMap.size() << " -> "
-              << _activeDoFMap.size() << " rows" << std::endl;
 
 }
 
@@ -220,12 +218,6 @@ void Flexibility::addConstraintsForBonds(std::vector<BondType> &entities,
             if (donorGroup && acceptorGroup) break; 
         }
 
-        if (!donorGroup || !acceptorGroup)
-        {
-            std::cerr << "[buildConstraintMap] Could not find groups for Hbonds" << i << std::endl;
-            continue; 
-        }
-
         for (ConstraintType ctype : ctypes)
         {
             BondConstraint bc;
@@ -248,7 +240,7 @@ void Flexibility::buildConstraintMap()
     AtomGroup *group = _model->currentAtoms();
     std::vector<AtomGroup*> subsets = group->connectedGroups();
 
-  //  addConstraintsForBonds(_hbonds, {Distance, AngleAlpha, AngleBeta, Dihedral_1, Dihedral_2}, subsets, col_counter);
+    addConstraintsForBonds(_hbonds, {Distance, AngleAlpha, AngleBeta, Dihedral_1, Dihedral_2}, subsets, col_counter);
     // addConstraintsForBonds(_hbonds, {Distance, AngleAlpha, AngleBeta}, subsets, col_counter);
     addConstraintsForBonds(_VdWBonds, {Distance}, subsets, col_counter);
 
@@ -258,45 +250,6 @@ void Flexibility::buildConstraintMap()
     writeConstraintMapToCSV("constraint_map.csv");
 }
 
-void Flexibility::writeConstraintMapToCSV(const std::string &filename)
-{
-    std::ofstream file(filename);
-    if (!file.is_open())
-    {
-        std::cerr << "[ERROR] Could not open file: " << filename << std::endl;
-        return;
-    }
-
-    file << "col_idx,type,donorGroup_chain,donorGroup_size,"
-         << "acceptorGroup_chain,acceptorGroup_size,"
-         << "Donor,Hydrogen,Acceptor,TorsionVec_size\n";
-
-    for (auto& [col, hbc] : _constraintMap)
-    {
-        std::string typeName;
-        switch(hbc.type)
-        {
-            case Distance:   typeName = "Distance";   break;
-            case AngleAlpha: typeName = "AngleAlpha"; break;
-            case AngleBeta:  typeName = "AngleBeta";  break;
-            case Dihedral_1: typeName = "Dihedral_1"; break;
-            case Dihedral_2: typeName = "Dihedral_2"; break;
-            default:         typeName = "Unknown";    break;
-        }
-
-        file << hbc.col_idx << ","
-             << typeName << ","
-             << hbc.donorGroup->atomVector()[0]->chain() << ","
-             << hbc.donorGroup->size() << ","
-             << hbc.acceptorGroup->atomVector()[0]->chain() << ","
-             << hbc.acceptorGroup->size() << ","
-             << hbc.hbond->Donor->desc() << ","
-             << hbc.hbond->Acceptor->desc() << ","
-             << hbc.hbond->TorsionVec.size() << "\n";
-    }
-
-    file.close();
-}
 
 
 void Flexibility::setReferenceMolecule(const std::vector<AtomGroup *> subsets)
@@ -334,9 +287,8 @@ void Flexibility::calculateTorsionFlexibility()
                       << _allTorsions.size() << std::endl;
             return 0.0f;
         }
-        // Start editing from here
-        float rawTorsion = _allTorsions[_colIdx][idx];
-        float val = _allTorsions[_colIdx][idx] * jobWeight;     
+        float scale = _modesScales[_colIdx];
+        float val = _allTorsions[_colIdx][idx] * jobWeight * scale;
         return val;
     };
 
@@ -344,6 +296,7 @@ void Flexibility::calculateTorsionFlexibility()
 
     std::cout << "Finished calculating torsion Flexibility, _colIdx = " << _colIdx << std::endl;
 }
+
 
 
 // Submits a flexibility calculation job
@@ -446,20 +399,9 @@ bool Flexibility::checkAndGetAtom(AtomGroup* atomGroup, const std::string& atomD
 
 void Flexibility::addHBond(const HBondManager::HBondPair &hbondPair) 
 {
-    // Validate the HBondPair atoms
+   // Validate the HBondPair atoms
     if (!validateHBondPair(hbondPair)) return;
-
-    // bool hydrogenIsInTarget = (hbondPair.hydrogenChain == _targetChain);
-    // bool acceptorIsInTarget = (hbondPair.acceptorChain == _targetChain);
-
-    // if (!hydrogenIsInTarget && !acceptorIsInTarget)
-    // {
-    //     return;
-    // }
-    // else if (hydrogenIsInTarget && acceptorIsInTarget)
-    // {
     addInternalHBond(hbondPair);
-    // }
 }
 
 void Flexibility::addInternalHBond(const HBondManager::HBondPair &hbondPair) 
@@ -484,6 +426,26 @@ void Flexibility::addInternalHBond(const HBondManager::HBondPair &hbondPair)
     int hydrogenBlock_idx = accessAtomBlock(hydrogenAtom);
 
     const std::vector<AtomBlock>& blocks = _resources.sequences->sequence()->blocks();
+    // NEW: need to check that it's of these have a valid parent, 
+    // otherwise the lines below will crush, cause the parent will be null
+    auto hasValidParent = [&blocks](int block_idx) -> bool
+    {
+        if (block_idx < 0) return false;
+        int parent_idx = blocks[block_idx].parent_idx;
+        if (parent_idx == 0) return false;
+        int parent_block = block_idx + parent_idx;
+        if (parent_block < 0 || parent_block >= (int)blocks.size()) return false; 
+        if (blocks[parent_block].atom == nullptr) return false;
+        return true;
+    };
+
+    if (!hasValidParent(donorBlock_idx) || !hasValidParent(acceptorBlock_idx))
+    {
+        std::cerr << "[skip HBond] " << hbondPair.hydrogen << " -> " << hbondPair.acceptor
+              << " — endpoint has no valid parent in the kinematic tree" << std::endl;
+        return;      
+    }
+    // finished
 
     glm::vec3 donorPos = blocks[donorBlock_idx].my_position();
     glm::vec3 acceptorPos = blocks[acceptorBlock_idx].my_position();
@@ -554,16 +516,11 @@ void Flexibility::addInternalHBond(const HBondManager::HBondPair &hbondPair)
     // Insert torsion vector to _hbe 
     hbe.TorsionVec = lca_idx;
     _hbonds.push_back(hbe);
-    // _globalTorsionSet.insert(hbe.TorsionVec.begin(), hbe.TorsionVec.end());
     for (auto &[torsionIdx, isHSide] : hbe.TorsionVec)
     {
-        TorsionBasis *basis = _resources.sequences->sequence()->torsionBasis();
-        std::cout << hbe.Donor->desc() << ", " << hbe.Acceptor->desc() << std::endl;
-
-        std::cout << "[DEBUG] basis->parameter(torsionIdx)->desc() = " << basis->parameter(torsionIdx)->anAtom()->desc() << std::endl;
-        std::cout << "torsionIdx = " <<  torsionIdx << std::endl;
         _globalTorsionSet.insert(torsionIdx);
     }
+
 }
 
 
@@ -575,15 +532,12 @@ double getVdWRadius(const Atom* atom)
 
     if (elem == 'C') return 1.70;
     if (elem == 'S') return 1.80;
-
-    // not hydrophobic → return 0.0 to skip
     return 0.0;
 }
 
 void Flexibility::addVnWBond()
 {
-    double cutoffD = 0.05;
-    // AtomGroup* atomGroup = currentChainAtoms();
+    double cutoffD = 0.25;
     AtomGroup *atomGroup = _model->currentAtoms();
     const AtomVector &atoms = atomGroup->atomVector();
     const std::vector<AtomBlock>& blocks = _resources.sequences->sequence()->blocks();
@@ -632,11 +586,6 @@ void Flexibility::addVnWBond()
             _VdWBonds.push_back(vdw);
         }
     }
-
-    std::cout << "[DEBUG] Skipped (hasCommonBondstraint): " 
-              << skipped_commonBondstraint << std::endl;
-    std::cout << "[DEBUG] VdW bonds after filtering: " 
-              << _VdWBonds.size() << std::endl;
 }
 
 
@@ -831,16 +780,14 @@ void Flexibility::buildJacobianMatrix()
                 glm::vec3 DPos = blocks[hbe.donorIdx].my_position(); 
                 glm::vec3 HPos = blocks[hbe.hydrogenIdx].my_position();
 
-
                 int parentDonor_idx = blocks[hbe.donorIdx].parent_idx;
                 int parentAcceptor_idx = blocks[hbe.acceptorIdx].parent_idx;
-
                 glm::vec3 parentDonor = blocks[hbe.donorIdx + parentDonor_idx].my_position();
                 glm::vec3 parentAcceptor = blocks[hbe.acceptorIdx + parentAcceptor_idx].my_position();
 
                 bool isHSide = true;
                 for (auto& [tIdx, side] : hbe.TorsionVec)
-                    if (tIdx == torsionID) { isHSide = side; break; }
+                    if (tIdx == torsionID) { isHSide = side; break; } // <---- HERE eror: always true
 
                 bool isDHBond = (blocks[hbe.hydrogenIdx].torsion_idx == torsionID);
                 bool isAABond = (blocks[hbe.acceptorIdx].torsion_idx == torsionID);
@@ -925,6 +872,18 @@ SVDResult Flexibility::calculateSVD() const
     std::cout << "[debug] _V size = " << svd.matrixV().size() << std::endl;
 
     int numCols = static_cast<int>(svd.matrixV().cols());
+    for (int colIdx = 0; colIdx < numCols; ++colIdx)
+    {
+        Eigen::VectorXf violation = jacobMtrT * svd.matrixV().col(colIdx);
+        std::cout << "[DEBUG] ||J*v_" << colIdx << "|| = " 
+                  << violation.norm() 
+                  << "  (sigma_" << colIdx << " = ";
+        if (colIdx < svd.singularValues().size())
+            std::cout << svd.singularValues()(colIdx);
+        else
+            std::cout << "0";
+        std::cout << ")" << std::endl;
+    }
     return {
         // svd.matrixU(),
         Eigen::MatrixXf(),  // instead of U, return empty placeholder
@@ -932,6 +891,7 @@ SVDResult Flexibility::calculateSVD() const
         svd.matrixV()
     };
 }
+
 
 void Flexibility::calculateFlexWeights()
 {
@@ -956,17 +916,76 @@ void Flexibility::calculateFlexWeights()
 
     _allTorsions.clear();
     _allTorsions.reserve(_vSize);
+    _modesScales.clear();
+    _modesScales.reserve(_vSize);
+
+
     for (int colIdx = 0; colIdx < _vSize; ++colIdx)
     {      
         std::vector<float> v_i = extractVColumn(svd.V, colIdx);
         std::vector<float> allTorsions = assignWeightsToTorsions(v_i);
+
+        float scale = 1000.0f;
+
         _allTorsions.push_back(allTorsions);
+        _modesScales.push_back(scale);
 
     }
     // [debug]: default to the last mode
     _colIdx = _vSize - 1;
     std::cout << "Stored " << _allTorsions.size() << " torsion-weight vectors." << std::endl;
     std::cout << "Finished calculating calculateFlexWeights, _colIdx = " << _colIdx << std::endl;
+    writeVMatrixToCSV("V_new.csv");
+    writeSingularValuesToCSV("S_new.csv");
+}
+
+
+void Flexibility::checkModeRBvsTorsionBudget(int colIdx)
+{
+    if (colIdx < 0 || colIdx >= _V.cols())
+    {
+        std::cerr << "[ERROR] invalid colIdx for RB/torsion budget check: " << colIdx << std::endl;
+        return;
+    }
+
+    double torsionSumSq = 0.0;
+    double rbSumSq = 0.0;
+
+    for (auto &[row, dof] : _activeDoFMap)
+    {
+        float val = _V(row, colIdx);
+        if (dof.type == Torsion)
+            torsionSumSq += (double)val * val;
+        else
+            rbSumSq += (double)val * val;
+    }
+
+    double total = torsionSumSq + rbSumSq;
+    double torsionPct = (total > 0) ? (torsionSumSq / total) * 100.0 : 0.0;
+    double rbPct = (total > 0) ? (rbSumSq / total) * 100.0 : 0.0;
+
+    std::cout << "[DEBUG budget] mode " << colIdx
+              << " | torsion budget: " << torsionPct << "%"
+              << " | rigid-body budget: " << rbPct << "%"
+              << std::endl;
+}
+
+void Flexibility::checkModeMaxTorsion(int colIdx)
+{
+    if (colIdx < 0 || colIdx >= _V.cols()) return;
+
+    float maxAbs = 0.0f;
+    int maxRow = -1;
+    for (auto &[row, dof] : _activeDoFMap)
+    {
+        if (dof.type != Torsion) continue;
+        float av = std::abs(_V(row, colIdx));
+        if (av > maxAbs) { maxAbs = av; maxRow = row; }
+    }
+
+    std::cout << "[DEBUG maxTorsion] mode " << colIdx
+              << " maxAbs=" << maxAbs
+              << " at row=" << maxRow << std::endl;
 }
 
 std::vector<float> Flexibility::extractVColumn(const Eigen::MatrixXf &V, int colIdx) const
@@ -977,6 +996,46 @@ std::vector<float> Flexibility::extractVColumn(const Eigen::MatrixXf &V, int col
         column[rowIdx] = V(rowIdx, colIdx);
     }
     return column;
+}
+
+void Flexibility::describeTorsionLeverage(int row, int colIdx)
+{
+    auto it = _activeDoFMap.find(row);
+    if (it == _activeDoFMap.end())
+    {
+        std::cerr << "[ERROR] row " << row << " not found in _activeDoFMap" << std::endl;
+        return;
+    }
+    DoF &dof = it->second;
+    if (dof.type != Torsion)
+    {
+        std::cout << "[DEBUG leverage] row " << row << " is not a torsion" << std::endl;
+        return;
+    }
+
+    std::cout << "[DEBUG leverage] mode " << colIdx << " row " << row
+              << " torsion idx=" << dof.idx
+              << " atom=" << (dof.atom ? dof.atom->desc() : "null")
+              << " chain=" << dof.chain
+              << std::endl;
+
+    // count how many blocks are downstream (deeper) from this torsion's pivot
+    OpSet<int> pivotSet = _resources.sequences->sequence()->blocksForTorsionIdx(dof.idx);
+    const std::vector<AtomBlock>& blocks = _resources.sequences->sequence()->blocks();
+    for (int pivotBlockIdx : pivotSet.toVector())
+    {
+        int pivotDepth = blocks[pivotBlockIdx].depth;
+        int downstreamCount = 0;
+        for (int i = 0; i < (int)blocks.size(); i++)
+        {
+            if (blocks[i].atom && blocks[i].depth > pivotDepth)
+                downstreamCount++;
+        }
+        std::cout << "  pivot block " << pivotBlockIdx 
+                  << " depth=" << pivotDepth
+                  << " downstream atoms (rough count)=" << downstreamCount
+                  << std::endl;
+    }
 }
 
 
@@ -1020,25 +1079,16 @@ std::vector<float> Flexibility::assignWeightsToTorsions(const std::vector<float>
     std::vector<float> allTorsions(totalTorsionNum, 0.0f);
     for (auto &[row, dof] : _activeDoFMap)
     {
-        if (dof.type != Torsion) continue; // RB skipped for now
+        // if (dof.type != Torsion) continue; // RB skipped for now
         if (dof.idx < 0 || dof.idx >= totalTorsionNum)
         {
             std::cerr << "Error: Index out of bounds in globalTorsionVector: "
                       << dof.idx << std::endl;
             continue;
         }
-        std::cout << "[DEBUG] dof.atom = " << dof.atom->desc() << std::endl;
-        std::cout << "dof.idx = " << dof.idx << std::endl;
-        std::cout << " v_i[row] = " << v_i[row] << std::endl;
         allTorsions[dof.idx] = v_i[row];
 
     }
-    std::cout << "[DEBUG] f = "  << std::endl;
-    for (float &f : allTorsions)
-    {
-        std::cout << f << " " ;
-    }
-     std::cout << std::endl;
     return allTorsions;
 }
 
@@ -1066,9 +1116,6 @@ void Flexibility::printHBonds() const
         std::cout << "  Donor: " << hbe.Donor->desc() << std::endl;
         std::cout << "  Acceptor: " << hbe.Acceptor->desc() << std::endl;
         std::cout << "  Start Distance: " << hbe.startDist << std::endl;
-        // std::cout << "  Parent Donor: " << hbe.ParentDonor->desc() << std::endl;
-        // std::cout << "  Parent Acceptor: " << hbe.ParentAcceptor->desc() << std::endl;
-        // std::cout << "--------------------" << std::endl;
     }
 }
 
@@ -1079,7 +1126,6 @@ std::vector<glm::vec3> Flexibility::makePosVec(const AtomVector &atoms)
     positions.reserve(atoms.size());
     for (Atom *atom : atoms) 
     {
-        // std::cout << positions.size() << " is atom " << atom->desc() << std::endl;
         glm::vec3 pos = atom->derivedPosition();
         positions.push_back(pos);
     }
@@ -1117,9 +1163,6 @@ std::set<std::pair<int,int>> Flexibility::makeExcList(OpSet<Atom*> &atom_set)
             int right_idx = indexing[right_atom];
             auto key = std::minmax(left_idx, right_idx);
             exclude.insert(key);
-            // Debug print
-            // std::cout << "[makeExcList] Excluding pair: " 
-            //           << key.first << " - " << key.second << "\n";
         }
     };
 
@@ -1151,9 +1194,6 @@ std::set<std::pair<int,int>> Flexibility::makeExcList(OpSet<Atom*> &atom_set)
 std::set<std::pair<int,int>> Flexibility::makeExcHBonds(std::vector<Atom*> orderedAtoms, std::map<Atom*, int> indexing)
 {
     std::set<std::pair<int,int>> excludeHAtom;
-    // std::map<Atom*, int> indexing = atom_set.indexing();
-
-    // std::vector<Atom*> orderedAtoms = atom_set.toVector();
     std::vector<glm::vec3> positions = makePosVec(orderedAtoms);
     int n = positions.size();
 
@@ -1398,12 +1438,14 @@ float HBondEntity::getDerivative(ConstraintType type,
     if (dof.type == Torsion)
     {
         bool foundTorsion = false; 
-        bool isHSide = true;
+        bool isHSide = true; 
         for (auto &[tIdx, side] : TorsionVec)
         {
             if (tIdx == dof.idx) { foundTorsion = true; isHSide = side; break; }
         }
-        if (!foundTorsion) return 0.0f; 
+        if (!foundTorsion) return 0.0f;  // <-- HERE: in this version it returns 0 if the torsion is not found
+                                         // if i remove this i get the same resutls as in the old Jacobian 
+
 
         AxisAndPositions p = computeAxisAndPositions(pivotBlockIdx, blocks);
 
@@ -1578,7 +1620,7 @@ void Flexibility::newJacobian()
     _jacobMtx = jacobianMatrix;
     std::cout << "[DEBUG] NEW Jacobian rows (DoF): " << _jacobMtx.rows() << std::endl;
     std::cout << "[DEBUG] NEW Jacobian cols (constraints): " << _jacobMtx.cols() << std::endl;
-    std::cout << "[DEBUG] NEW Jacobian non-zero entries: " 
+    std::cout << "[DEBUG]x NEW Jacobian non-zero entries: " 
               << (_jacobMtx.array() != 0.0f).count() << std::endl;
 
     std::set<AtomGroup*> rbGroupsSeen;
@@ -1591,106 +1633,6 @@ void Flexibility::newJacobian()
                    << " size: " << g->size() << std::endl;
 
     writeJacobianStatsToCSV("jacobian_stats.csv");
+    writeJacobianToCSV("jacobian_new.csv");
 }
-
-
-void Flexibility::writeJacobianStatsToCSV(const std::string &filename)
-{
-    std::ofstream file(filename);
-    if (!file.is_open())
-    {
-        std::cerr << "[ERROR] Could not open file: " << filename << std::endl;
-        return;
-    }
-
-    // --- per-chain DoF counts ---
-    std::map<std::string, int> torsionCount, rbCount;
-    for (auto &[row, dof] : _dofMap)
-    {
-        if (dof.type == Torsion) torsionCount[dof.chain]++;
-        else rbCount[dof.chain]++;
-    }
-
-    // --- per-constraint-type totals, and H-bond/VdW intra/inter counts ---
-    // (reusing _constraintMap's cached donorGroup/acceptorGroup, no re-searching subsets)
-    std::map<ConstraintType, int> constraintTypeCount;
-    int hbondIntra = 0, hbondInter = 0;
-    int vdwIntra = 0, vdwInter = 0;
-    std::set<BondEntity*> seen;
-
-    for (auto &[col, c] : _constraintMap)
-    {
-        constraintTypeCount[c.type]++;   // every column counts here
-
-        if (seen.count(c.hbond)) continue;   // dedupe only for the bond-level intra/inter counts
-        seen.insert(c.hbond);
-
-        bool intra = (c.donorGroup == c.acceptorGroup);
-        bool isVdW = (dynamic_cast<VdWBondEntity*>(c.hbond) != nullptr);
-
-        if (isVdW)
-        {
-            if (intra) vdwIntra++; else vdwInter++;
-        }
-        else
-        {
-            if (intra) hbondIntra++; else hbondInter++;
-        }
-    }
-
-    // --- matrix-level stats (only meaningful once _jacobMtx is built) ---
-    int totalRows = (int)_jacobMtx.rows();
-    int totalCols = (int)_jacobMtx.cols();
-    long nnz = (_jacobMtx.array() != 0.0f).count();
-    double density = (totalRows > 0 && totalCols > 0)
-                    ? (double)nnz / ((double)totalRows * totalCols) : 0.0;
-
-    int zeroRows = 0;
-    for (int r = 0; r < totalRows; r++)
-        if (_jacobMtx.row(r).isZero()) zeroRows++;
-
-    int zeroCols = 0;
-    for (int c = 0; c < totalCols; c++)
-        if (_jacobMtx.col(c).isZero()) zeroCols++;
-
-    float minVal = (totalRows && totalCols) ? _jacobMtx.minCoeff() : 0.f;
-    float maxVal = (totalRows && totalCols) ? _jacobMtx.maxCoeff() : 0.f;
-    float meanNonZero = nnz > 0 ? (float)(_jacobMtx.array().abs().sum() / nnz) : 0.f;
-
-    // --- write ---
-    file << "stat,value\n";
-
-    for (auto &[chain, count] : torsionCount)
-        file << "torsion_DoF_" << chain << "," << count << "\n";
-    for (auto &[chain, count] : rbCount)
-        file << "rigidbody_DoF_" << chain << "," << count << "\n";
-
-    file << "total_torsion_DoF," << [&]{ int s=0; for(auto&p:torsionCount) s+=p.second; return s; }() << "\n";
-    file << "total_rigidbody_DoF," << [&]{ int s=0; for(auto&p:rbCount) s+=p.second; return s; }() << "\n";
-
-    file << "constraints_Distance," << constraintTypeCount[Distance] << "\n";
-    file << "constraints_AngleAlpha," << constraintTypeCount[AngleAlpha] << "\n";
-    file << "constraints_AngleBeta," << constraintTypeCount[AngleBeta] << "\n";
-    file << "constraints_Dihedral_1," << constraintTypeCount[Dihedral_1] << "\n";
-    file << "constraints_Dihedral_2," << constraintTypeCount[Dihedral_2] << "\n";
-
-    file << "hbonds_intra_chain," << hbondIntra << "\n";
-    file << "hbonds_inter_chain," << hbondInter << "\n";
-    file << "vdw_intra_chain," << vdwIntra << "\n";
-    file << "vdw_inter_chain," << vdwInter << "\n";
-
-    file << "matrix_rows," << totalRows << "\n";
-    file << "matrix_cols," << totalCols << "\n";
-    file << "matrix_nnz," << nnz << "\n";
-    file << "matrix_density," << density << "\n";
-    file << "matrix_zero_rows," << zeroRows << "\n";
-    file << "matrix_zero_cols," << zeroCols << "\n";
-    file << "matrix_min_value," << minVal << "\n";
-    file << "matrix_max_value," << maxVal << "\n";
-    file << "matrix_mean_abs_nonzero," << meanNonZero << "\n";
-
-    file.close();
-    std::cout << "[DEBUG] Wrote Jacobian stats to " << filename << std::endl;
-}
-
 
