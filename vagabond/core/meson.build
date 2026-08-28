@@ -47,7 +47,7 @@ cfile,
 'FlexAnalysis.h',
 'FlexSample.cpp',
 'FlexSample.h',
-
+'flex_stats.cpp',
 
 'files/File.cpp',
 'files/FastaFile.cpp',
