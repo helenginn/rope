@@ -35,6 +35,7 @@
           zlib
           openssl
           curl
+          cli11
         ];
 
         nativeBuildInputs = with pkgs; [
@@ -102,6 +103,10 @@
             type= "app";
             program = "${rope}/bin/rope";
           };
+          rope-cli2 = {
+            type = "app";
+            program = "${rope}/bin/rope.cli2";
+          };
           rope-debug = {
             type= "app";
             program = lib.getExe rope-debug;
@@ -109,6 +114,10 @@
           rope-cli-debug = {
             type= "app";
             program = "${rope-debug}/bin/rope";
+          };
+          rope-cli2-debug = {
+            type = "app";
+            program = "${rope-debug}/bin/rope.cli2";
           };
         };
 

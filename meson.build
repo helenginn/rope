@@ -20,6 +20,7 @@ gemmi = dependency('gemmi', modules: ['gemmi::gemmi_cpp'], required: is_native)
 gl = dependency('gl', method: 'system', required: false)
 glew = dependency('glew', required: false)
 glm = dependency('glm')
+cli11 = dependency('CLI11', required: is_native)
 json = dependency('nlohmann_json')
 sdl2 = dependency('SDL2', required: false)
 sdl2image = dependency('SDL2_image', required: false)
@@ -30,7 +31,7 @@ zlib = dependency('zlib')
 header_deps = [glm, json]
 core_deps = [curl, fftw, gemmi, thread_dep, zlib]
 graphics_deps = []
-cli_deps = [header_deps, core_deps]
+cli_deps = [header_deps, core_deps, cli11]
 
 if is_native
   graphics_deps = [gl, glew, sdl2, sdl2image]
@@ -72,6 +73,8 @@ subdir('vagabond/gui')
 # Create executables
 if is_native  # Native builds
 
+  subdir('vagabond/cli2')
+
   if get_option('enable_tests')
     subdir('tests')
   endif
@@ -91,6 +94,13 @@ if is_native  # Native builds
     cpp_args: [compile_args],
     link_args: [links],
     dependencies: cli_deps,
+    install: true)
+
+  executable('rope.cli2', 'vagabond/cli2/main.cpp',
+    link_with: [cli2],
+    cpp_args: [compile_args],
+    dependencies: cli_deps,
+    include_directories: include_directories('.'),
     install: true)
 
   executable('rope.gui.test',
