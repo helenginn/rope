@@ -17,5 +17,5 @@
 // Please email: blot @ hginn.co.uk for more details.
 
 #define DATA_DIRECTORY "@datadir@"
-
+#define ROPE_VERSION "@version@"
 
