@@ -104,6 +104,28 @@ int run_cli_with_input(std::vector<std::string> arguments,
 }
 
 template <typename Root, typename... States>
+int run_cli_with_console(std::vector<std::string> arguments,
+                         std::string input_text,
+                         rope::cli::detail::console& output,
+                         States&... states)
+{
+    std::vector<char*> argv;
+    argv.reserve(arguments.size());
+    for (std::string& argument : arguments)
+    {
+        argv.push_back(argument.data());
+    }
+
+    std::istringstream input{std::move(input_text)};
+    return rope::cli::detail::run_with_console<Root>(
+        static_cast<int>(argv.size()),
+        argv.data(),
+        input,
+        output,
+        states...);
+}
+
+template <typename Root, typename... States>
 int run_session(std::string input_text,
                 std::ostringstream& output,
                 std::ostringstream& error_output,
@@ -173,6 +195,54 @@ TEST_CASE("entry modes must be used alone")
 
     CHECK(mutation_calls == 0);
     CHECK(store.value == 0);
+}
+
+TEST_CASE("runtime selects the console presentation mode")
+{
+    Store store{0};
+    std::ostringstream output;
+    std::ostringstream error_output;
+    rope::cli::detail::console console{output, error_output};
+
+    SUBCASE("one-shot command")
+    {
+        const int exit_code = run_cli_with_console<StateRoot>(
+            {"rope.cli2", "read"}, "", console, store);
+
+        CHECK(exit_code == 0);
+        CHECK(console.context().mode ==
+              rope::cli::detail::console_mode::one_shot);
+    }
+
+    SUBCASE("chained commands")
+    {
+        const int exit_code = run_cli_with_console<StateRoot>(
+            {"rope.cli2", "set", "4", "read"}, "", console, store);
+
+        CHECK(exit_code == 0);
+        CHECK(console.context().mode ==
+              rope::cli::detail::console_mode::chained);
+    }
+
+    SUBCASE("interactive shell")
+    {
+        const int exit_code = run_cli_with_console<StateRoot>(
+            {"rope.cli2", "shell"}, "exit\n", console, store);
+
+        CHECK(exit_code == 0);
+        CHECK(console.context().mode ==
+              rope::cli::detail::console_mode::shell);
+    }
+
+    SUBCASE("standard-input batch")
+    {
+        const int exit_code = run_cli_with_console<StateRoot>(
+            {"rope.cli2", "-"}, "read\n", console, store);
+
+        CHECK(exit_code == 0);
+        CHECK(console.context().mode ==
+              rope::cli::detail::console_mode::batch);
+    }
 }
 
 TEST_CASE("a later shell token rejects the whole command chain")

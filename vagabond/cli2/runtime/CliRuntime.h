@@ -35,7 +35,8 @@ public:
     };
 
     command_runner(mode runner_mode, States&... states)
-        : app_{std::string(Root::summary.view()),
+        : runner_mode_{runner_mode},
+          app_{std::string(Root::summary.view()),
                std::string(Root::name.view())},
           states_{states...}
     {
@@ -61,8 +62,7 @@ public:
     [[nodiscard]] execution_result execute(
         int argc,
         char** argv,
-        std::ostream& output,
-        std::ostream& error_output)
+        console& output)
     {
         try
         {
@@ -70,17 +70,14 @@ public:
         }
         catch (const CLI::ParseError& error)
         {
-            return {
-                .exit_code = app_.exit(error, output, error_output),
-                .exit_requested = false};
+            return present_parse_error(app_, error, output);
         }
-        return dispatch(output, error_output);
+        return dispatch(output);
     }
 
     [[nodiscard]] execution_result execute(
         const std::string& line,
-        std::ostream& output,
-        std::ostream& error_output)
+        console& output)
     {
         try
         {
@@ -88,63 +85,63 @@ public:
         }
         catch (const CLI::ParseError& error)
         {
-            return {
-                .exit_code = app_.exit(error, output, error_output),
-                .exit_requested = false};
+            return present_parse_error(app_, error, output);
         }
-        return dispatch(output, error_output);
+        return dispatch(output);
     }
 
 private:
-    [[nodiscard]] execution_result dispatch(std::ostream& output,
-                                            std::ostream& error_output)
+    [[nodiscard]] execution_result dispatch(console& output)
     {
+        if (runner_mode_ == mode::command_line)
+        {
+            output.set_mode(plan_.size() > 1
+                                ? console_mode::chained
+                                : console_mode::one_shot);
+        }
         if (plan_.empty())
         {
-            print_help(output, app_);
+            output.help(help_text(app_));
             return {};
         }
-        command_output command_streams{output, error_output};
-        return plan_.dispatch(command_streams);
+        return plan_.dispatch(output);
     }
 
+    mode runner_mode_;
     CLI::App app_;
     state_pack<States...> states_;
     execution_plan plan_;
     runtime_node<Root, state_pack<States...>> runtime_;
 };
-} // namespace detail
 
 template <typename Root, typename... States>
-    requires detail::is_group_spec_v<Root>
-int run_session_with_streams(std::istream& input,
-                             std::ostream& output,
-                             std::ostream& error_output,
-                             bool interactive,
-                             States&... states)
+    requires is_group_spec_v<Root>
+int run_session(std::istream& input,
+                console& output,
+                bool interactive,
+                States&... states)
 {
     std::string line;
     while (true)
     {
         if (interactive)
         {
-            output << Root::name.view() << "> " << std::flush;
+            output.prompt(Root::name.view());
         }
 
         if (!std::getline(input, line))
         {
             return 0;
         }
-        if (detail::ignored_session_line(line))
+        if (ignored_session_line(line))
         {
             continue;
         }
 
-        detail::command_runner<Root, States...> runner{
-            detail::command_runner<Root, States...>::mode::session,
+        command_runner<Root, States...> runner{
+            command_runner<Root, States...>::mode::session,
             states...};
-        detail::execution_result result =
-            runner.execute(line, output, error_output);
+        execution_result result = runner.execute(line, output);
 
         if (result.exit_requested)
         {
@@ -158,12 +155,11 @@ int run_session_with_streams(std::istream& input,
 }
 
 template <typename Root, typename... States>
-    requires detail::is_group_spec_v<Root>
-int run_with_streams(int argc,
+    requires is_group_spec_v<Root>
+int run_with_console(int argc,
                      char** argv,
                      std::istream& input,
-                     std::ostream& output,
-                     std::ostream& error_output,
+                     console& output,
                      States&... states)
 {
     if (argc > 1)
@@ -173,35 +169,66 @@ int run_with_streams(int argc,
         {
             if (argc != 2)
             {
-                error_output << "'" << entry_mode
-                             << "' must be used alone\n";
+                output.error("'" + std::string(entry_mode) +
+                             "' must be used alone");
                 return 1;
             }
-            return run_session_with_streams<Root>(
-                input,
-                output,
-                error_output,
-                entry_mode == "shell",
-                states...);
+
+            const bool interactive = entry_mode == "shell";
+            output.set_mode(interactive
+                                ? console_mode::shell
+                                : console_mode::batch);
+            return run_session<Root>(input, output, interactive, states...);
         }
     }
 
-    detail::command_runner<Root, States...> runner{
-        detail::command_runner<Root, States...>::mode::command_line,
+    command_runner<Root, States...> runner{
+        command_runner<Root, States...>::mode::command_line,
         states...};
-    return runner.execute(argc, argv, output, error_output).exit_code;
+    return runner.execute(argc, argv, output).exit_code;
+}
+} // namespace detail
+
+template <typename Root, typename... States>
+    requires detail::is_group_spec_v<Root>
+int run_session_with_streams(std::istream& input,
+                             std::ostream& standard_output,
+                             std::ostream& error_output,
+                             bool interactive,
+                             States&... states)
+{
+    detail::console output{
+        standard_output,
+        error_output,
+        {.mode = interactive
+                     ? detail::console_mode::shell
+                     : detail::console_mode::batch}};
+    return detail::run_session<Root>(input, output, interactive, states...);
+}
+
+template <typename Root, typename... States>
+    requires detail::is_group_spec_v<Root>
+int run_with_streams(int argc,
+                     char** argv,
+                     std::istream& input,
+                     std::ostream& standard_output,
+                     std::ostream& error_output,
+                     States&... states)
+{
+    detail::console output{standard_output, error_output};
+    return detail::run_with_console<Root>(
+        argc, argv, input, output, states...);
 }
 
 template <typename Root, typename... States>
     requires detail::is_group_spec_v<Root>
 int run(int argc, char** argv, States&... states)
 {
-    return run_with_streams<Root>(
-        argc,
-        argv,
-        std::cin,
+    detail::console output{
         std::cout,
         std::cerr,
-        states...);
+        detail::standard_console_context()};
+    return detail::run_with_console<Root>(
+        argc, argv, std::cin, output, states...);
 }
 } // namespace rope::cli

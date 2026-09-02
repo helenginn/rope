@@ -7,12 +7,14 @@
 #include <functional>
 #include <memory>
 #include <ostream>
+#include <sstream>
 #include <string>
 #include <type_traits>
 #include <utility>
 #include <vector>
 
 #include "CommandResult.h"
+#include "Console.h"
 
 namespace rope::cli::detail
 {
@@ -22,14 +24,9 @@ concept printable = requires(std::ostream& output, const T& value)
     output << value;
 };
 
-inline void print_help(std::ostream& output, const CLI::App& app)
+[[nodiscard]] inline std::string help_text(const CLI::App& app)
 {
-    std::string help = app.help();
-    output << help;
-    if (help.empty() || help.back() != '\n')
-    {
-        output << '\n';
-    }
+    return app.help();
 }
 
 [[nodiscard]] inline std::string command_path(const CLI::App& app)
@@ -42,15 +39,10 @@ inline void print_help(std::ostream& output, const CLI::App& app)
     return command_path(*parent) + " " + app.get_name();
 }
 
-inline void print_local_help(std::ostream& output, const CLI::App& app)
+[[nodiscard]] inline std::string local_help_text(const CLI::App& app)
 {
-    std::string help = app.get_formatter()->make_help(
+    return app.get_formatter()->make_help(
         &app, command_path(app), CLI::AppFormatMode::Normal);
-    output << help;
-    if (help.empty() || help.back() != '\n')
-    {
-        output << '\n';
-    }
 }
 
 struct execution_result
@@ -59,11 +51,17 @@ struct execution_result
     bool exit_requested = false;
 };
 
-struct command_output
+[[nodiscard]] inline execution_result present_parse_error(
+    CLI::App& app,
+    const CLI::ParseError& error,
+    console& output)
 {
-    std::ostream& standard;
-    std::ostream& error;
-};
+    std::ostringstream standard;
+    std::ostringstream error_output;
+    const int exit_code = app.exit(error, standard, error_output);
+    output.parser_output(standard.str(), error_output.str());
+    return {.exit_code = exit_code, .exit_requested = false};
+}
 
 template <typename Handler, typename... Arguments>
 [[nodiscard]] auto invoke_command(Handler handler, Arguments&&... arguments)
@@ -99,12 +97,12 @@ template <typename Handler, typename... Arguments>
 template <typename Value>
 [[nodiscard]] execution_result present_command_result(
     command_result<Value>&& result,
-    command_output& output)
+    console& output)
 {
     if (result.is_err())
     {
         command_error error = std::move(result).unwrap_err();
-        output.error << error.message << '\n';
+        output.error(error.message);
         return {.exit_code = EXIT_FAILURE, .exit_requested = false};
     }
 
@@ -112,7 +110,9 @@ template <typename Value>
     {
         static_assert(printable<Value>,
                       "a command success value must be printable");
-        output.standard << std::move(result).unwrap() << '\n';
+        std::ostringstream rendered;
+        rendered << std::move(result).unwrap();
+        output.result(rendered.str());
     }
     return {};
 }
@@ -121,7 +121,7 @@ class planned_invocation
 {
 public:
     virtual ~planned_invocation() = default;
-    [[nodiscard]] virtual execution_result dispatch(command_output& output) = 0;
+    [[nodiscard]] virtual execution_result dispatch(console& output) = 0;
 };
 
 class help_invocation final : public planned_invocation
@@ -131,9 +131,9 @@ public:
         : app_{&app}
     {}
 
-    [[nodiscard]] execution_result dispatch(command_output& output) override
+    [[nodiscard]] execution_result dispatch(console& output) override
     {
-        print_local_help(output.standard, *app_);
+        output.help(local_help_text(*app_));
         return {};
     }
 
@@ -144,7 +144,7 @@ private:
 class exit_invocation final : public planned_invocation
 {
 public:
-    [[nodiscard]] execution_result dispatch(command_output&) override
+    [[nodiscard]] execution_result dispatch(console&) override
     {
         return {.exit_code = 0, .exit_requested = true};
     }
@@ -165,7 +165,12 @@ public:
         return invocations_.empty();
     }
 
-    [[nodiscard]] execution_result dispatch(command_output& output)
+    [[nodiscard]] std::size_t size() const
+    {
+        return invocations_.size();
+    }
+
+    [[nodiscard]] execution_result dispatch(console& output)
     {
         for (const std::unique_ptr<planned_invocation>& invocation : invocations_)
         {

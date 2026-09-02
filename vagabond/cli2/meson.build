@@ -1,4 +1,5 @@
 rope_cli2_runtime_sources = files(
+  'runtime/Console.cpp',
   'runtime/CommandExecution.cpp',
   'runtime/CommandSpec.cpp',
   'runtime/CliRuntime.cpp',

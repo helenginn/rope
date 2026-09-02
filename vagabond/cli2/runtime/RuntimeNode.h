@@ -73,7 +73,7 @@ private:
             : states_{&states}, storage_{std::move(storage)}
         {}
 
-        [[nodiscard]] execution_result dispatch(command_output& output) override
+        [[nodiscard]] execution_result dispatch(console& output) override
         {
             return runtime_node::invoke(
                 storage_, *states_, output,
@@ -173,7 +173,7 @@ private:
     template <std::size_t... Indices>
     static execution_result invoke(storage_type& storage,
                                    StatePack& states,
-                                   command_output& output,
+                                   console& output,
                                    std::index_sequence<Indices...>)
     {
         auto result = invoke_command(
