@@ -6,6 +6,7 @@
 
 #include "../commands/general/General.h"
 
+#include <optional>
 #include <sstream>
 #include <string>
 #include <vector>
@@ -65,7 +66,7 @@ using ObserveArguments = rope::cli::command<
         .description = "Enable verbose output",
         .short_name = 'v',
     }>,
-    rope::cli::option<bool, rope::cli::argument_meta{
+    rope::cli::required_option<bool, rope::cli::argument_meta{
         .name = "enabled",
         .description = "Set enabled explicitly",
         .short_name = 'e',
@@ -89,7 +90,7 @@ static_assert(rope::cli::detail::handler_matches<
                   .name = "verbose",
                   .description = "",
               }>,
-              rope::cli::option<bool, rope::cli::argument_meta{
+              rope::cli::required_option<bool, rope::cli::argument_meta{
                   .name = "enabled",
                   .description = "",
               }>>());
@@ -99,6 +100,30 @@ static_assert(!rope::cli::detail::handler_matches<
                   .name = "verbose",
                   .description = "",
               }>>());
+
+std::vector<std::optional<int>> observed_limits;
+
+void observe_optional(std::optional<int> limit)
+{
+    observed_limits.push_back(limit);
+}
+
+using ObserveOptional = rope::cli::command<
+    rope::cli::command_meta{
+        .name = "optional",
+        .description = "Observe an optional value",
+        .handler = &observe_optional,
+    },
+    rope::cli::option<int, rope::cli::argument_meta{
+        .name = "limit",
+        .description = "Optional limit",
+        .short_name = 'l',
+    }>>;
+
+using OptionalRoot = rope::cli::group<
+    "rope.cli2",
+    "Optional argument test",
+    ObserveOptional>;
 
 struct Store
 {
@@ -405,6 +430,75 @@ TEST_CASE("a scalar option is required and consumes a value")
     }
 
     CHECK(argument_calls == 0);
+}
+
+TEST_CASE("an option reports whether its value was supplied")
+{
+    observed_limits.clear();
+    std::ostringstream output;
+    std::ostringstream error_output;
+
+    const int exit_code = run_cli<OptionalRoot>(
+        {"rope.cli2", "optional"}, output, error_output);
+
+    REQUIRE(exit_code == 0);
+    REQUIRE(observed_limits.size() == 1);
+    CHECK_FALSE(observed_limits.front().has_value());
+    CHECK(output.str().empty());
+    CHECK(error_output.str().empty());
+}
+
+TEST_CASE("an option passes its supplied value")
+{
+    observed_limits.clear();
+    std::ostringstream output;
+    std::ostringstream error_output;
+
+    const int exit_code = run_cli<OptionalRoot>(
+        {"rope.cli2", "optional", "--limit", "7"},
+        output,
+        error_output);
+
+    REQUIRE(exit_code == 0);
+    REQUIRE(observed_limits.size() == 1);
+    CHECK(observed_limits.front() == 7);
+    CHECK(output.str().empty());
+    CHECK(error_output.str().empty());
+}
+
+TEST_CASE("an invalid option value does not invoke its handler")
+{
+    observed_limits.clear();
+    std::ostringstream output;
+    std::ostringstream error_output;
+
+    const int exit_code = run_cli<OptionalRoot>(
+        {"rope.cli2", "optional", "--limit", "not-an-integer"},
+        output,
+        error_output);
+
+    CHECK(exit_code != 0);
+    CHECK(observed_limits.empty());
+    CHECK_FALSE(error_output.str().empty());
+}
+
+TEST_CASE("an option resets between repeated commands")
+{
+    observed_limits.clear();
+    std::ostringstream output;
+    std::ostringstream error_output;
+
+    const int exit_code = run_cli<OptionalRoot>(
+        {"rope.cli2", "optional", "-l", "4", "++", "optional"},
+        output,
+        error_output);
+
+    REQUIRE(exit_code == 0);
+    REQUIRE(observed_limits.size() == 2);
+    CHECK(observed_limits[0] == 4);
+    CHECK_FALSE(observed_limits[1].has_value());
+    CHECK(output.str().empty());
+    CHECK(error_output.str().empty());
 }
 
 TEST_CASE("argument help shows long and short option names")

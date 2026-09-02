@@ -3,6 +3,7 @@
 #include <array>
 #include <concepts>
 #include <cstddef>
+#include <optional>
 #include <string_view>
 #include <tuple>
 #include <type_traits>
@@ -88,6 +89,19 @@ struct positional
 template <typename T, argument_meta Meta>
 struct option
 {
+    using parsed_type = T;
+    using value_type = std::optional<T>;
+
+    static constexpr auto meta = Meta;
+    static constexpr auto name = Meta.name;
+    static constexpr auto description = Meta.description;
+    static constexpr char short_name = Meta.short_name;
+};
+
+template <typename T, argument_meta Meta>
+struct required_option
+{
+    using parsed_type = T;
     using value_type = T;
 
     static constexpr auto meta = Meta;
@@ -159,6 +173,17 @@ template <typename T>
 inline constexpr bool is_option_v = is_option<T>::value;
 
 template <typename T>
+struct is_required_option : std::false_type
+{};
+
+template <typename T, argument_meta Meta>
+struct is_required_option<required_option<T, Meta>> : std::true_type
+{};
+
+template <typename T>
+inline constexpr bool is_required_option_v = is_required_option<T>::value;
+
+template <typename T>
 struct is_flag : std::false_type
 {};
 
@@ -171,7 +196,8 @@ inline constexpr bool is_flag_v = is_flag<T>::value;
 
 template <typename T>
 inline constexpr bool is_value_binding_v =
-    is_positional_v<T> || is_option_v<T> || is_flag_v<T>;
+    is_positional_v<T> || is_option_v<T> ||
+    is_required_option_v<T> || is_flag_v<T>;
 
 template <typename T>
 struct is_read_state : std::false_type

@@ -329,6 +329,17 @@ private:
         }
         else if constexpr (is_option_v<Binding>)
         {
+            using parsed_type = typename Binding::parsed_type;
+            app_->template add_option_function<parsed_type>(
+                option_names<Binding>(),
+                [&storage](const parsed_type& value)
+                {
+                    storage = value;
+                },
+                std::string(Binding::description.view()));
+        }
+        else if constexpr (is_required_option_v<Binding>)
+        {
             app_->add_option(
                     option_names<Binding>(),
                     storage,
