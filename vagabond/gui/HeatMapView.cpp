@@ -17,6 +17,10 @@ HeatMapView::HeatMapView(Scene *prev, const std::vector<PathGroup> &paths, struc
     _flagPar = flagPar;
 
     _entropyData = new Entropy::EntropyForHeatMap;
+
+    int rows, cols;
+    std::map<Instance*, std::size_t> rowMap, colMap;
+    PathGroup::PathMatrixDims dims = PathGroup::matricise(paths);
 }
 
 HeatMapView::~HeatMapView()
@@ -27,12 +31,10 @@ void HeatMapView::setup()
 {
     addTitle("Heat Map");    
 
-    std::cout << "Setting up heat map..." << std::endl;
 	auto gui_setup = [this]()
 	{
 		if (_flagPar.timeDivisions > 1)
 		{   
-			std::cout << "adding slider..." << std::endl;
 			setupSlider(_flagPar.timeDivisions);
 		}
 
@@ -158,18 +160,35 @@ void HeatMapView::scaleMatrix(Eigen::MatrixXf &matrix, std::vector<float> entrop
 void HeatMapView::showMatBox(Eigen::MatrixXf matrix)
 {
     _displayMatrix = PCA::Matrix(matrix);
-	printMatrix(&_displayMatrix);
+	//printMatrix(&_displayMatrix);
 
     _plot = new MatrixPlot(_displayMatrix);
-
-    std::vector<std::string> rowNames = _entropy->startNames();
-    std::vector<std::string> colNames = _entropy->endNames();
-
-    std::reverse(rowNames.begin(), rowNames.end());
+    _plot->legend()->setScheme(ZScore);
+    std::vector<std::string> colNames = _entropy->startNames();
+    std::vector<std::string> rowNames = _entropy->endNames();
 
     MatrixBox *matBox = new MatrixBox(_plot, colNames, rowNames, true);
     matBox->setCentre(0.5, 0.5);
     addTempObject(matBox);
+
+    double min = matrix.redux([](double a, double b){
+        if(std::isnan(a)) return b;
+        if(std::isnan(b)) return a;
+        return std::min(a, b);
+    });
+
+    double max = matrix.redux([](double a, double b){
+        if(std::isnan(a)) return b;
+        if(std::isnan(b)) return a;
+        return std::max(a, b);
+    });
+
+    ColourLegend *legend = new ColourLegend(_plot->legend()->scheme(), true, this);
+    legend->disableButtons();
+    legend->setTitle("Z-score (Entropy,\n units of R)");
+    legend->setLimits(min, max);
+    legend->setCentre(0.75, 0.5);
+    addTempObject(legend);
 }
 
 void HeatMapView::setupSlider(int timeDivisions)
@@ -198,6 +217,11 @@ void HeatMapView::buttonPressed(std::string tag, Button *button)
     }
 
     Scene::buttonPressed(tag, button);
+}
+
+void HeatMapView::printMatrixToTerminal()
+{
+//    std::cout << _displayMatrix << std::endl;
 }
 
 void HeatMapView::mousePressEvent(double x, double y, SDL_MouseButtonEvent button)
