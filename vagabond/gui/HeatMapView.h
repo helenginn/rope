@@ -7,7 +7,9 @@
 #include <vagabond/utils/Eigen/Dense>
 #include <vagabond/gui/elements/DragResponder.h>
 
+class MatrixBox;
 class MatrixPlot;
+class ColourLegend;
 class Slider;
 
 class HeatMapView : public Scene, public DragResponder
@@ -25,6 +27,7 @@ public:
 
     void scaleMatrix(Eigen::MatrixXf &matrix, std::vector<float> entropyVals);
     void sumHeatMap();
+    void printMatrixToTerminal();
 
     virtual void finishedDragging(std::string tag, double x, double y);
     virtual void buttonPressed(std::string tag, Button *button = nullptr);
@@ -32,6 +35,19 @@ public:
 private:
     struct FlagParameters _flagPar{};
     struct Entropy::EntropyForHeatMap *_entropyData{};   
+
+    std::vector<std::string> _squareNames;
+	std::vector<std::string> _rowNames;
+	std::vector<std::string> _colNames;
+
+	Eigen::MatrixXf _squareData;
+	Eigen::MatrixXf _rectData;
+
+	MatrixPlot *_squarePlot{};
+	MatrixPlot *_rectPlot{};
+
+	MatrixBox *_squareBox{};
+	MatrixBox *_rectBox{};
 
     Entropy *_entropy{};
     std::thread *_worker = nullptr;
@@ -41,6 +57,9 @@ private:
     Slider *_rangeSlider;
 
     std::mutex _mutex;
+
+    Slider *_rangeSlider;
+    ColourLegend *_legend = nullptr;
 };
 
 #endif
