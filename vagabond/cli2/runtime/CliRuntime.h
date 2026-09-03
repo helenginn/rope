@@ -8,11 +8,11 @@
 #include <string>
 #include <string_view>
 #include <utility>
-#include <vector>
 
 #include "CommandExecution.h"
 #include "CommandSpec.h"
 #include "HelpFormatter.h"
+#include "RootOptions.h"
 #include "RuntimeNode.h"
 #include "StatePack.h"
 
@@ -26,43 +26,8 @@ namespace detail
     return first == std::string::npos || line[first] == '#';
 }
 
-struct runtime_arguments
-{
-    std::vector<char*> values;
-    bool plain = false;
-};
-
-[[nodiscard]] inline runtime_arguments extract_runtime_arguments(
-    int argc,
-    char** argv)
-{
-    runtime_arguments arguments;
-    if (argc > 0)
-    {
-        arguments.values.reserve(static_cast<std::size_t>(argc));
-        arguments.values.push_back(argv[0]);
-    }
-
-    bool options_enabled = true;
-    for (int index = 1; index < argc; ++index)
-    {
-        const std::string_view argument{argv[index]};
-        if (options_enabled && argument == "--plain")
-        {
-            arguments.plain = true;
-            continue;
-        }
-
-        arguments.values.push_back(argv[index]);
-        if (argument == "--")
-        {
-            options_enabled = false;
-        }
-    }
-    return arguments;
-}
-
-template <typename Root, typename... States>
+template <typename Root, typename RootOptions, typename... States>
+    requires is_root_options_v<RootOptions>
 class command_runner
 {
 public:
@@ -79,6 +44,10 @@ public:
           states_{states...}
     {
         app_.formatter(make_help_formatter());
+        if (runner_mode == mode::command_line)
+        {
+            RootOptions::configure(app_);
+        }
         runtime_.lower_root(app_, states_, plan_);
         if (runner_mode == mode::session)
         {
@@ -91,8 +60,6 @@ public:
         }
         else
         {
-            app_.add_flag(
-                "--plain", "Print command results without terminal formatting");
             const std::string name{Root::name.view()};
             app_.footer(
                 "Modes:\n" + name +
@@ -196,8 +163,8 @@ int run_session(std::istream& input,
             continue;
         }
 
-        command_runner<Root, States...> runner{
-            command_runner<Root, States...>::mode::session,
+        command_runner<Root, root_options<>, States...> runner{
+            command_runner<Root, root_options<>, States...>::mode::session,
             states...};
         execution_result result = runner.execute(line, output);
 
@@ -212,19 +179,16 @@ int run_session(std::istream& input,
     }
 }
 
-template <typename Root, typename... States>
-    requires is_group_spec_v<Root>
+template <typename Root, typename RootOptions, typename... States>
+    requires is_group_spec_v<Root> && is_root_options_v<RootOptions>
 int run_with_console(int argc,
                      char** argv,
                      std::istream& input,
                      console& output,
                      States&... states)
 {
-    runtime_arguments arguments = extract_runtime_arguments(argc, argv);
-    if (arguments.plain)
-    {
-        output.set_style(console_style::plain);
-    }
+    root_arguments arguments =
+        extract_root_arguments<RootOptions>(argc, argv, output);
 
     const int runtime_argc = static_cast<int>(arguments.values.size());
     char** runtime_argv = arguments.values.data();
@@ -248,8 +212,8 @@ int run_with_console(int argc,
         }
     }
 
-    command_runner<Root, States...> runner{
-        command_runner<Root, States...>::mode::command_line,
+    command_runner<Root, RootOptions, States...> runner{
+        command_runner<Root, RootOptions, States...>::mode::command_line,
         states...};
     return runner.execute(runtime_argc, runtime_argv, output).exit_code;
 }
@@ -272,8 +236,9 @@ int run_session_with_streams(std::istream& input,
     return detail::run_session<Root>(input, output, interactive, states...);
 }
 
-template <typename Root, typename... States>
-    requires detail::is_group_spec_v<Root>
+template <typename Root, typename RootOptions, typename... States>
+    requires detail::is_group_spec_v<Root> &&
+             detail::is_root_options_v<RootOptions>
 int run_with_streams(int argc,
                      char** argv,
                      std::istream& input,
@@ -282,19 +247,20 @@ int run_with_streams(int argc,
                      States&... states)
 {
     detail::console output{standard_output, error_output};
-    return detail::run_with_console<Root>(
+    return detail::run_with_console<Root, RootOptions>(
         argc, argv, input, output, states...);
 }
 
-template <typename Root, typename... States>
-    requires detail::is_group_spec_v<Root>
+template <typename Root, typename RootOptions, typename... States>
+    requires detail::is_group_spec_v<Root> &&
+             detail::is_root_options_v<RootOptions>
 int run(int argc, char** argv, States&... states)
 {
     detail::console output{
         std::cout,
         std::cerr,
         detail::standard_console_context()};
-    return detail::run_with_console<Root>(
+    return detail::run_with_console<Root, RootOptions>(
         argc, argv, std::cin, output, states...);
 }
 } // namespace rope::cli

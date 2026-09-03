@@ -4,6 +4,7 @@ rope_cli2_runtime_sources = files(
   'runtime/CommandSpec.cpp',
   'runtime/CliRuntime.cpp',
   'runtime/HelpFormatter.cpp',
+  'runtime/RootOptions.cpp',
   'runtime/RuntimeNode.cpp',
   'runtime/StatePack.cpp',
   'commands/general/Version.cpp',

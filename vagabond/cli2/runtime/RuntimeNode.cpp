@@ -112,7 +112,7 @@ int run_cli(std::vector<std::string> arguments,
     }
 
     std::istringstream input;
-    return rope::cli::run_with_streams<Root>(
+    return rope::cli::run_with_streams<Root, rope::cli::root_options<>>(
         static_cast<int>(argv.size()),
         argv.data(),
         input,

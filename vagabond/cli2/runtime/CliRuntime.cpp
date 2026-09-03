@@ -18,6 +18,13 @@ struct Store
 const Store* read_store = nullptr;
 int mutation_calls = 0;
 int result_failure_calls = 0;
+int version_calls = 0;
+
+std::string test_version()
+{
+    ++version_calls;
+    return "RoPE test-version";
+}
 
 int read_value(const Store& store)
 {
@@ -79,6 +86,28 @@ using ResultRoot = rope::cli::group<
     SetValue,
     ResultFailure>;
 
+inline constexpr auto TestHelpOption = rope::cli::root_help_option{
+    .names = "-h,--help",
+    .description = "Print this help message and exit",
+};
+
+inline constexpr auto TestVersionOption = rope::cli::root_action_option{
+    .names = "-V,--version",
+    .description = "Print version info",
+    .handler = &test_version,
+};
+
+inline constexpr auto TestPlainOption = rope::cli::root_flag_option{
+    .names = "--plain",
+    .description = "Print command results without terminal formatting",
+    .effect = rope::cli::root_effect::plain_output,
+};
+
+using TestRootOptions = rope::cli::root_options<
+    TestHelpOption,
+    TestVersionOption,
+    TestPlainOption>;
+
 template <typename Root, typename... States>
 int run_cli_with_input(std::vector<std::string> arguments,
                        std::string input_text,
@@ -94,7 +123,7 @@ int run_cli_with_input(std::vector<std::string> arguments,
     }
 
     std::istringstream input{std::move(input_text)};
-    return rope::cli::run_with_streams<Root>(
+    return rope::cli::run_with_streams<Root, TestRootOptions>(
         static_cast<int>(argv.size()),
         argv.data(),
         input,
@@ -117,7 +146,7 @@ int run_cli_with_console(std::vector<std::string> arguments,
     }
 
     std::istringstream input{std::move(input_text)};
-    return rope::cli::detail::run_with_console<Root>(
+    return rope::cli::detail::run_with_console<Root, TestRootOptions>(
         static_cast<int>(argv.size()),
         argv.data(),
         input,
@@ -154,6 +183,31 @@ TEST_CASE("no command prints help without reading standard input")
     CHECK(output.str().find("State capability test") != std::string::npos);
     CHECK(output.str().find("rope.cli2 shell") != std::string::npos);
     CHECK(error_output.str().empty());
+}
+
+TEST_CASE("root version options use the configured version handler")
+{
+    Store store{0};
+    version_calls = 0;
+
+    for (std::string option : {"-V", "--version"})
+    {
+        std::ostringstream output;
+        std::ostringstream error_output;
+
+        const int exit_code = run_cli_with_input<StateRoot>(
+            {"rope.cli2", std::move(option)},
+            "",
+            output,
+            error_output,
+            store);
+
+        CHECK(exit_code == 0);
+        CHECK(output.str() == "RoPE test-version\n");
+        CHECK(error_output.str().empty());
+    }
+
+    CHECK(version_calls == 2);
 }
 
 TEST_CASE("entry modes must be used alone")
