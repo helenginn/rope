@@ -135,12 +135,12 @@ public:
                 {
                     if (!resB->collision.colliding())
                     {
-                        BchainNum+= resB->store.size()-1;
+                        BchainNum+= resB->store.size();
                         continue;
                     }
                     for (int y = 0; y < resB->store.size(); y++)
                     {
-                        if (resA->store.collisionCheck(x, resB->store, y))
+                        if (store.collisionCheck(resA->store, x, resB->store, y))
                         {
                             collisionMatrix(AchainNum,BchainNum) = 1;
                         }
@@ -230,6 +230,10 @@ public:
             }
         }
         return {firstPoint, endPoint};
+    }
+    int numAtom()
+    {
+        return store.numAtom();
     }
 protected:
     RotamerStore store {};

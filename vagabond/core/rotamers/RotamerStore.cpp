@@ -72,7 +72,7 @@ std::vector<glm::vec3> RotamerStore::positionFor(ResRot const &rotamer)
     LookUpInfo lookup = storage[rotamer];
     for (int x = lookup.start(); x < (lookup.start() + lookup.length()); x++)
     {
-        positions.emplace_back(positionArray[x]);
+        positions.push_back(positionArray[x]);
     }
     return positions;
 }
@@ -148,16 +148,16 @@ std::pair<ResidueId,std::string> RotamerStore::name()
     return {storage.begin()->first.first, atoms[0]->chain()};
 }
 
-bool RotamerStore::collisionCheck(int const &rotNum, RotamerStore &other, int const &otherRotNum)
+bool RotamerStore::collisionCheck(RotamerStore &self, int const &rotNum, RotamerStore &other, int const &otherRotNum)
 {
-    ResRot self  {};
-    self.first = this->name().first;
-    self.second = rotNum;
-    std::vector<glm::vec3> ownPos = positionFor(self);
+    ResRot first  {};
+    first.first = self.name().first;
+    first.second = rotNum;
+    std::vector<glm::vec3> ownPos = positionFor(first);
     ResRot second  {};
     second.first = other.name().first;
     second.second = otherRotNum;
-    std::vector<glm::vec3> otherPos = other.positionFor(second);
+    std::vector<glm::vec3> otherPos = positionFor(second);
     for (auto posSelf : ownPos)
     {
         for (auto posOther : otherPos)

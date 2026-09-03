@@ -172,7 +172,7 @@ void ChainAssignment::buttonPressed(std::string tag, Button *button)
 			Polymer *polymer = _model.polymerForChain(tag.substr(6, std::string::npos));
 			if (_firstChain != " ")
 				polymer->addChain(_firstChain);
-			RotamerView *rv = new RotamerView(this, _model.name(), polymer);
+			RotamerView *rv = new RotamerView(this, polymer);
 			rv->show();
 			rv->viewModel();
 			std::cout << "Rotamer View\n";

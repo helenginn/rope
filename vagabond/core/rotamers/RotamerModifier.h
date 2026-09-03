@@ -27,11 +27,17 @@ public:
     void saveStructure(std::string name);
     void unifiedTorsionFetcher();
     void generateRotamerMapPosition();
+
+    static void updatingAtomGroupPositions(glm::mat4x4 const &transformationMat,Atom* atom = nullptr);
+
     std::vector<glm::vec3> axisForChain(std::string const &chainName);
 
     void makePlan();
     std::vector<glm::vec3> drawChainAxis();
     std::vector<glm::vec3> drawAxis();
+    std::vector<glm::vec3> RandStartPos(int NumberPos);
+
+    static float RandGen();
 
     void move(float weight, parameter xy);
     void analysis(int timePoints, std::vector<glm::vec3> startPos);

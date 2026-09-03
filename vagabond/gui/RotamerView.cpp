@@ -9,12 +9,13 @@
 #include <vagabond/core/rotamers/RotamerModifier.h>
 #include <vagabond/core/ModelManager.h>
 #include <vagabond/gui/elements/TextButton.h>
+#include <vagabond/core/files/CsvFile.h>
+#include <fstream>
 
 
 
-
-RotamerView::RotamerView(Scene *prev, std::string modelName, Instance *inst)
-:  Scene(prev), Display(prev), _inst(inst), _modelName(modelName)
+RotamerView::RotamerView(Scene *prev, Instance *inst)
+:  Scene(prev), Display(prev), _inst(inst)
 {
     _inst->load();
     _modifier = new RotamerModifier(_inst);
@@ -22,9 +23,9 @@ RotamerView::RotamerView(Scene *prev, std::string modelName, Instance *inst)
 
 RotamerView::~RotamerView()
 {
+    delete _modifier;
     _inst->unload();
     std::cout << "model unloaded\n";
-    delete _modifier;
 }
 void RotamerView::setup()
 {
@@ -64,6 +65,9 @@ void RotamerView::setup()
 }
 void RotamerView::drawAxis()
 {
+    _line4->clearVertices();
+    _line5->clearVertices();
+    _line6->clearVertices();
     std::vector<glm::vec3> axis {_modifier->drawAxis()};
     _line4->addPoint(glm::vec3(0,0,0));
     _line4->addPoint(axis[0]);
@@ -77,12 +81,43 @@ void RotamerView::drawAxis()
     _line6->setColour(0.1,0.1,0.8);
     _line6->forceRender();
 }
+void RotamerView::drawChainAxis()
+{
+    _line2->clearVertices();
+    std::vector<glm::vec3> axePoints = _modifier->drawChainAxis();
+    _line2->addPoint(axePoints[0]);
+    _line2->addPoint(axePoints[1]);
+    _line2->addPoint(axePoints[2], false);
+    _line2->addPoint(axePoints[3]);
+    _line2->setColour(0.2, 0.2, 0.9);
+    _line2->forceRender();
+}
 void RotamerView::buttonPressed(std::string tag, Button *button)
 {
-    if (tag == "analysis")
+    if (tag == "analysis") // coordinates : X = along static structure axis, Y: left-right Z: - = moving away the other structure
     {
-        std::vector<glm::vec3> tests {glm::vec3(0.f,15.f,0.f), glm::vec3(0.f,0.f,15.f), glm::vec3(15.f,0.f,0.f), glm::vec3(0.f,-15.f,0.f), glm::vec3(0.f,0.f,-15.f), glm::vec3(-15.f,0.f,0.f)};
-        _modifier->analysisTest(200, tests);
+        std::vector<glm::vec3> tests  {_modifier->RandStartPos(50)};
+        std::string fileName = "vectors_list.csv";
+        std::string csvContent {};
+        for (auto pos : tests)
+        {
+            csvContent += "(" + std::to_string(pos.x) + ", " + std::to_string(pos.y) + ", " + std::to_string(pos.z) + ")\n";
+        }
+        std::ofstream file;
+        file.open(fileName);
+        if (file.is_open())
+        {
+            file << csvContent;
+            file.close();
+        }
+        _modifier->analysisTest(20, tests);
+        _line3->clearVertices();
+        for (auto pos : tests)
+        {
+            _line3->addPoint(glm::vec3(0.f,0.f,0.f), false);
+            _line3->addPoint(pos);
+        }
+        _line3->forceRender();
     }
     if (tag == "collision") // saving current structure
     {
@@ -94,7 +129,10 @@ void RotamerView::buttonPressed(std::string tag, Button *button)
         else
         {
             _collision = true;
+            setupCollision();
         }
+        drawChainAxis();
+        drawAxis();
     }
     Scene::buttonPressed(tag, button);
 }
@@ -111,7 +149,7 @@ void RotamerView::viewModel()
     DisplayUnit *unit = new DisplayUnit(this);
     loadModelChain( _inst,unit);
     unit->setMultiBondMode(true);
-    setupSlider();
+    setupCollision();
     addDisplayUnit(unit);
 }
 
@@ -142,16 +180,7 @@ void RotamerView::finishedDragging(std::string tag, double x, double y)
         _para->setAlpha(1.0f);
         _para-> forceRender();
     }
-    {
-        _line2->clearVertices();
-        std::vector<glm::vec3> axePoints = _modifier->drawChainAxis();
-        _line2->addPoint(axePoints[0]);
-        _line2->addPoint(axePoints[1]);
-        _line2->addPoint(axePoints[2], false);
-        _line2->addPoint(axePoints[3]);
-        _line2->setColour(0.2, 0.2, 0.9);
-        _line2->forceRender();
-    }
+    drawChainAxis();
 }
 
 void RotamerView::setupSlider()
@@ -183,4 +212,20 @@ void RotamerView::setupSlider()
     _rangeSlider2 = s2;
     addObject(s2);
 
+}
+
+void RotamerView::setupCollision()
+{
+    if (_collision)
+    {
+        std::vector<std::pair<glm::vec3,glm::vec3>> drawing {};
+        drawing = _modifier->getVertices();
+        _para->clearVertices();
+        for (auto pair : drawing)
+        {
+            _para->addParallelepiped(pair.first,pair.second);
+        }
+        _para->setAlpha(1.0f);
+        _para-> forceRender();
+    }
 }

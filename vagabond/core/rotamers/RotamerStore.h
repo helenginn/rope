@@ -41,7 +41,7 @@ public:
     std::vector<RotamerStore> residueStore();
     std::vector<glm::vec3> getPos();
     std::vector<glm::vec3> positionFor(ResRot const &rotamer);
-    bool collisionCheck(int const &rotNum, RotamerStore &other, int const &otherRotNum);
+    bool collisionCheck(RotamerStore &self, int const &rotNum, RotamerStore &other, int const &otherRotNum);
     glm::vec3 positionForReporter();
     void move(glm::mat4x4 parameters,std::string const &chain = "");
     AtomPosMap extractForGUI();
@@ -49,6 +49,29 @@ public:
     int size()
     {
         return storage.size();
+    }
+    int numAtom()
+    {
+        std::vector<Atom*> atomUnique {};
+        int atomCount {};
+        for (auto atom : atoms)
+        {
+            bool unique = true;
+            for (auto atomUni : atomUnique)
+            {
+                if (atom == atomUni)
+                {
+                    unique = false;
+                    break;
+                }
+            }
+            if (unique)
+            {
+                atomUnique.push_back(atom);
+                atomCount++;
+            }
+        }
+        return atomCount;
     }
 
 private:

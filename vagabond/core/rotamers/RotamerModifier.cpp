@@ -20,7 +20,9 @@
 #include <vagabond/core/Parameter.h>
 #include <vagabond/core/AtomPosMap.h>
 
+#include <random>
 #include "RotamerBouquet.h"
+#include <vagabond/core/files/CsvFile.h>
 
 
 RotamerModifier::RotamerModifier(Instance *inst)
@@ -126,7 +128,7 @@ void RotamerModifier::analysisTest(int timePoints, std::vector<glm::vec3> startP
     std::vector<Bouquet *> resChainA {_bouquet->bouquetsForChain("A")};
     std::vector<Bouquet *> resChainB {_bouquet->bouquetsForChain("B")};
     std::vector<std::string> resChainAstr {};
-    for (auto const &bouquet : resChainA)
+    for (Bouquet* const &bouquet : resChainA)
     {
         for (int rotamers = 0; rotamers < bouquet->storeSize(); rotamers++)
             resChainAstr.push_back(bouquet->name().first.as_string()+std::to_string(rotamers));
@@ -142,36 +144,137 @@ void RotamerModifier::analysisTest(int timePoints, std::vector<glm::vec3> startP
         sizeB += bouquet->storeSize();
     }
     std::vector<Eigen::MatrixXi> allAnalysis {};
+    std::map<int, std::vector<std::vector<float>>> CollidingRotamersA {};
+    std::map<int, std::vector<std::vector<float>>> CollidingRotamersB {};
+    int iteration {0};
     for (auto translation: startPos)
     {
         Eigen::MatrixXi topQuality(sizeA,sizeB);
         topQuality.fill(0);
-        std::cout << "Number of startPos: " <<startPos.size() << std::endl;
-        for (int x = timePoints; x > 0; x--)
+        std::cout << "startPos number: " << iteration+1 << '/' << startPos.size() << std::endl;
+        glm::mat4x4 transformation = glm::mat4x4(1.0f);
+        transformation = glm::translate(transformation, translation / glm::vec3(timePoints+1));
+        for (int x = 0; x <= timePoints; x++)
         {
-            glm::mat4x4 transformation = glm::mat4x4(1.0f);
-            transformation = glm::translate(transformation, translation / glm::vec3(timePoints));
+
+            // _bouquet->move(transformation, "B");
+            Eigen::MatrixXi currentCollisions {_bouquet->fullCollisionChecks(resChainA,resChainB, sizeA, sizeB)};
+            topQuality += currentCollisions;
+            std::vector<float> RotamersA {};
+            std::vector<float> RotamersB {};
+            int line {0};
+            int row {0};
+            for (auto const &bouquet : resChainA)
+            {
+                float collisions {0};
+                for (int rotamers = 0; rotamers < bouquet->storeSize(); rotamers++)
+                {
+                    if (currentCollisions.row(line).sum() != 0)
+                        collisions++;
+                    line++;
+                }
+                RotamersA.push_back(collisions/static_cast<float>(bouquet->storeSize()));
+            }
+            CollidingRotamersA[iteration].push_back(RotamersA);
+            for (auto const &bouquet : resChainB)
+            {
+                float collisions {0};
+                for (int rotamers = 0; rotamers < bouquet->storeSize(); rotamers++)
+                {
+                    if (currentCollisions.col(row).sum() != 0)
+                        collisions++;
+                    row++;
+                }
+                RotamersB.push_back(collisions/static_cast<float>(bouquet->storeSize()));
+            }
+            CollidingRotamersB[iteration].push_back(RotamersB);
             _bouquet->move(transformation, "B");
-            topQuality += _bouquet->fullCollisionChecks(resChainA,resChainB, sizeA, sizeB);
         }
         _bouquet->move(glm::translate(glm::mat4x4(1.0f), -translation), "B");
         allAnalysis.push_back(topQuality);
+        iteration++;
     }
     for (int iter = 0; iter < startPos.size(); iter++)
     {
+        std::string fileName = _instance->entity_id() + "_paths_number_" + std::to_string(iter) + '-' + std::to_string(timePoints) + ".csv";
+        std::string csvContent {""};
         std::cout << std::endl << "ITERATION " << iter << std::endl <<'\t';
         for (auto const &bouquet : resChainB)
         {
             for (int rotamers = 0; rotamers < bouquet->storeSize(); rotamers++)
-                std::cout << bouquet->name().first.as_string()<< rotamers << '\t';
+            {
+                csvContent += bouquet->name().first.as_string() + std::to_string(rotamers) + ',';
+            }
         }
+        csvContent += '\n';
+                    for (auto element : resChainAstr)
+            {
+                csvContent += element + ',';
+            }
         for (int rotamerA = 0; rotamerA < sizeA; rotamerA++)
         {
-            std::cout << std::endl << resChainAstr[rotamerA];
+            csvContent += '\n';
             for (int rotamerB = 0; rotamerB < sizeB; rotamerB++)
             {
-                std::cout << '\t' << allAnalysis[iter](rotamerA,rotamerB);
+                csvContent += std::to_string(allAnalysis[iter](rotamerA,rotamerB)) + ',';
             }
+        }
+        std::ofstream file;
+        file.open(fileName);
+        if (file.is_open())
+        {
+            file << csvContent;
+            file.close();
+        }
+    }
+    for (auto const &pairs : CollidingRotamersA)
+    {
+        std::string fileName = _instance->entity_id() + "_paths_number_" + std::to_string(pairs.first) + '-' + std::to_string(timePoints) + "availRotA" + ".csv";
+        std::string csvContent {""};
+        for (auto const &bouquet : resChainA)
+        {
+                csvContent += bouquet->name().first.as_string() + ',';
+        }
+        csvContent += '\n';
+        for (auto vector : pairs.second)
+        {
+            for (auto value : vector)
+            {
+                csvContent += std::to_string(value) + ',';
+            }
+            csvContent += '\n';
+        }
+        std::ofstream file;
+        file.open(fileName);
+        if (file.is_open())
+        {
+            file << csvContent;
+            file.close();
+        }
+    }
+    for (auto const &pairs : CollidingRotamersB)
+    {
+        std::string fileName =  _instance->entity_id() + "_paths_number_" + std::to_string(pairs.first) + '-' + std::to_string(timePoints) + "availRotB" + ".csv";
+        std::string csvContent {""};
+        for (auto const &bouquet : resChainB)
+        {
+            csvContent += bouquet->name().first.as_string() + ',';
+        }
+        csvContent += '\n';
+        for (auto vector : pairs.second)
+        {
+            for (auto value : vector)
+            {
+                csvContent += std::to_string(value) + ',';
+            }
+            csvContent += '\n';
+        }
+        std::ofstream file;
+        file.open(fileName);
+        if (file.is_open())
+        {
+            file << csvContent;
+            file.close();
         }
     }
 }
@@ -277,7 +380,7 @@ void RotamerModifier::unifiedTorsionFetcher()
                         if (_mode == Map)
                         {
                             rotamerNumber = get(0);
-                            if (rotamerNumber > _lib->_allRotamers[resName].size()-1)
+                            if (rotamerNumber > _lib->_allRotamers[resName].size()-1 || rotamerNumber < 0)
                             {
                                 return 0.f;
                             }
@@ -296,7 +399,7 @@ void RotamerModifier::generateRotamerMapPosition()
 {
     if (_map == false)
     {
-        for (int x = 0; x <= 34; x++)
+        for (int x = -1; x <= 34; x++)
         {
             submitJobAndRetrieve(x, Map);
         }
@@ -317,6 +420,7 @@ void RotamerModifier::makePlan()
  * - create two vectors that will enable movement of the moving helix
  */
 {
+    std::cout << "Number of atom in AtomGroup: " << _group->size() << " and number of atoms in Bouquet: " << _bouquet->numAtom() << std::endl;
     std::vector<glm::vec3> axisTemp = axisForChain("A");
     _axisMain = (axisTemp[1] - axisTemp[0]);
      std::vector<glm::vec3> axisTemp2 = axisForChain("B");
@@ -329,12 +433,15 @@ void RotamerModifier::makePlan()
         glm::mat3x3 R {_normal,_x,_y};
         R = glm::inverse(R);
         _normal = R * _normal;
+        _instance->currentAtoms()->do_op([R](Atom *atom)
+        {
+            updatingAtomGroupPositions(R, atom);
+        });
         _bouquet->move(R);
         _x = R * _x;
         _y = -(R * _y);
         _axisMain = R * _axisMain;
         _axisSecondary = R * _axisSecondary;
-        std::cout << "position tt" << std::endl;
         _referential = true;
         Result *r = new Result;
         r->aps = _bouquet->extractForGUI();
@@ -342,6 +449,12 @@ void RotamerModifier::makePlan()
         r->destroy();
         _map = true;
     }
+}
+
+void RotamerModifier::updatingAtomGroupPositions(glm::mat4x4 const &transformationMat, Atom* atom)
+{
+    if (atom != nullptr)
+        atom->setDerivedPosition(glm::vec3(transformationMat*glm::vec4(atom->derivedPosition(),1.0f)));
 }
 std::vector<glm::vec3> RotamerModifier::drawChainAxis()
 {
@@ -354,4 +467,29 @@ std::vector<glm::vec3> RotamerModifier::drawChainAxis()
 std::vector<glm::vec3> RotamerModifier::drawAxis()
 {
     return {_normal,_x,_y};
+}
+
+std::vector<glm::vec3> RotamerModifier::RandStartPos(int NumberPos)
+{
+    std::vector<glm::vec3> pos {};
+    for (int x = 0; x < NumberPos; x++)
+    {
+        glm::vec3 newVec {};
+        newVec.x = RandGen();
+        newVec.y = RandGen();
+        newVec.z = -std::abs(RandGen());
+        pos.push_back(glm::normalize(newVec)*glm::vec3(10));
+        std::cout << newVec << std::endl;
+    }
+    return pos;
+}
+
+float RotamerModifier::RandGen()
+{
+    std::random_device rd;
+    std::mt19937 gen(rd());
+    std::uniform_int_distribution<int> dis(-1000, 1000);
+    const float random_number = dis(gen);
+    std::cout << random_number << std::endl;
+    return random_number;
 }
