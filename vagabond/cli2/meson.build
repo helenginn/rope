@@ -3,9 +3,11 @@ rope_cli2_runtime_sources = files(
   'runtime/CommandExecution.cpp',
   'runtime/CommandSpec.cpp',
   'runtime/CliRuntime.cpp',
+  'runtime/HelpFormatter.cpp',
   'runtime/RuntimeNode.cpp',
   'runtime/StatePack.cpp',
   'commands/general/Version.cpp',
+  'commands/test_commands/add.cpp',
 )
 
 cli2 = static_library(

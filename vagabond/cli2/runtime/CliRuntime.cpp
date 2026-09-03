@@ -245,6 +245,144 @@ TEST_CASE("runtime selects the console presentation mode")
     }
 }
 
+TEST_CASE("runtime labels only chained terminal command results")
+{
+    Store store{3};
+    std::ostringstream output;
+    std::ostringstream error_output;
+    rope::cli::detail::console console{
+        output,
+        error_output,
+        {.standard_is_terminal = true}};
+
+    SUBCASE("one-shot command")
+    {
+        const int exit_code = run_cli_with_console<StateRoot>(
+            {"rope.cli2", "read"}, "", console, store);
+
+        CHECK(exit_code == 0);
+        CHECK(output.str() == "3\n");
+    }
+
+    SUBCASE("chained commands")
+    {
+        const int exit_code = run_cli_with_console<StateRoot>(
+            {"rope.cli2", "read", "read"}, "", console, store);
+
+        CHECK(exit_code == 0);
+        CHECK(output.str() ==
+              "        Read: 3\n"
+              "        Read: 3\n");
+    }
+
+    SUBCASE("interactive shell")
+    {
+        const int exit_code = run_cli_with_console<StateRoot>(
+            {"rope.cli2", "shell"}, "read\nexit\n", console, store);
+
+        CHECK(exit_code == 0);
+        CHECK(output.str() ==
+              "rope.cli2> 3\n"
+              "rope.cli2> ");
+    }
+
+    SUBCASE("chained commands in the interactive shell")
+    {
+        const int exit_code = run_cli_with_console<StateRoot>(
+            {"rope.cli2", "shell"},
+            "read read\nexit\n",
+            console,
+            store);
+
+        CHECK(exit_code == 0);
+        CHECK(output.str() ==
+              "rope.cli2>         Read: 3\n"
+              "        Read: 3\n"
+              "rope.cli2> ");
+    }
+
+    SUBCASE("standard-input batch")
+    {
+        const int exit_code = run_cli_with_console<StateRoot>(
+            {"rope.cli2", "-"}, "read\n", console, store);
+
+        CHECK(exit_code == 0);
+        CHECK(output.str() == "3\n");
+    }
+}
+
+TEST_CASE("plain is a global command-line presentation option")
+{
+    Store store{3};
+    std::ostringstream output;
+    std::ostringstream error_output;
+    rope::cli::detail::console console{
+        output,
+        error_output,
+        {.standard_is_terminal = true}};
+
+    SUBCASE("before a command")
+    {
+        const int exit_code = run_cli_with_console<StateRoot>(
+            {"rope.cli2", "--plain", "read"}, "", console, store);
+
+        CHECK(exit_code == 0);
+        CHECK(output.str() == "3\n");
+    }
+
+    SUBCASE("after a command")
+    {
+        const int exit_code = run_cli_with_console<StateRoot>(
+            {"rope.cli2", "read", "--plain"}, "", console, store);
+
+        CHECK(exit_code == 0);
+        CHECK(output.str() == "3\n");
+    }
+
+    SUBCASE("before shell mode")
+    {
+        const int exit_code = run_cli_with_console<StateRoot>(
+            {"rope.cli2", "--plain", "shell"},
+            "read\nexit\n",
+            console,
+            store);
+
+        CHECK(exit_code == 0);
+        CHECK(output.str() ==
+              "rope.cli2> 3\n"
+              "rope.cli2> ");
+    }
+
+    SUBCASE("after shell mode")
+    {
+        const int exit_code = run_cli_with_console<StateRoot>(
+            {"rope.cli2", "shell", "--plain"},
+            "read\nexit\n",
+            console,
+            store);
+
+        CHECK(exit_code == 0);
+        CHECK(output.str() ==
+              "rope.cli2> 3\n"
+              "rope.cli2> ");
+    }
+}
+
+TEST_CASE("root help describes plain output")
+{
+    Store store{0};
+    std::ostringstream output;
+    std::ostringstream error_output;
+
+    const int exit_code = run_cli_with_input<StateRoot>(
+        {"rope.cli2"}, "", output, error_output, store);
+
+    CHECK(exit_code == 0);
+    CHECK(output.str().find("--plain") != std::string::npos);
+    CHECK(output.str().find("without terminal formatting") !=
+          std::string::npos);
+}
+
 TEST_CASE("a later shell token rejects the whole command chain")
 {
     Store store{0};

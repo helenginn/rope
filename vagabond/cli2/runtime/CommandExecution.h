@@ -9,6 +9,7 @@
 #include <ostream>
 #include <sstream>
 #include <string>
+#include <string_view>
 #include <type_traits>
 #include <utility>
 #include <vector>
@@ -97,6 +98,7 @@ template <typename Handler, typename... Arguments>
 template <typename Value>
 [[nodiscard]] execution_result present_command_result(
     command_result<Value>&& result,
+    std::string_view command,
     console& output)
 {
     if (result.is_err())
@@ -112,7 +114,7 @@ template <typename Value>
                       "a command success value must be printable");
         std::ostringstream rendered;
         rendered << std::move(result).unwrap();
-        output.result(rendered.str());
+        output.command_result(command, rendered.str());
     }
     return {};
 }

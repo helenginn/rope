@@ -4,6 +4,7 @@
 
 #include <concepts>
 #include <string>
+#include <string_view>
 #include <tuple>
 #include <type_traits>
 #include <utility>
@@ -50,6 +51,7 @@ public:
         app_ = parent.add_subcommand(
             std::string(Meta.name.view()),
             std::string(Meta.description.view()));
+        app_->group("Commands");
         states_ = &states;
         plan_ = &plan;
         lower_bindings(std::index_sequence_for<Bindings...>{});
@@ -69,18 +71,23 @@ private:
     class invocation final : public planned_invocation
     {
     public:
-        invocation(StatePack& states, storage_type storage)
-            : states_{&states}, storage_{std::move(storage)}
+        invocation(std::string command,
+                   StatePack& states,
+                   storage_type storage)
+            : command_{std::move(command)},
+              states_{&states},
+              storage_{std::move(storage)}
         {}
 
         [[nodiscard]] execution_result dispatch(console& output) override
         {
             return runtime_node::invoke(
-                storage_, *states_, output,
+                command_, storage_, *states_, output,
                 std::index_sequence_for<Bindings...>{});
         }
 
     private:
+        std::string command_;
         StatePack* states_;
         storage_type storage_;
     };
@@ -147,7 +154,8 @@ private:
 
     void snapshot_invocation()
     {
-        plan_->template add<invocation>(*states_, std::move(storage_));
+        plan_->template add<invocation>(
+            command_path(*app_), *states_, std::move(storage_));
         storage_ = storage_type{};
     }
 
@@ -171,7 +179,8 @@ private:
     }
 
     template <std::size_t... Indices>
-    static execution_result invoke(storage_type& storage,
+    static execution_result invoke(std::string_view command,
+                                   storage_type& storage,
                                    StatePack& states,
                                    console& output,
                                    std::index_sequence<Indices...>)
@@ -179,7 +188,8 @@ private:
         auto result = invoke_command(
             Meta.handler,
             project_binding<Bindings, Indices>(storage, states)...);
-        return present_command_result(std::move(result), output);
+        return present_command_result(
+            std::move(result), command, output);
     }
 
     CLI::App* app_ = nullptr;
@@ -203,6 +213,7 @@ public:
         app_ = parent.add_subcommand(
             std::string(Meta.name.view()),
             std::string(Meta.description.view()));
+        app_->group("Commands");
         app_->parse_complete_callback(
             [this]()
             {
@@ -259,6 +270,7 @@ public:
     {
         app_ = parent.add_subcommand(
             std::string(Name.view()), std::string(Summary.view()));
+        app_->group("Commands");
         states_ = &states;
         plan_ = &plan;
         configure_group();

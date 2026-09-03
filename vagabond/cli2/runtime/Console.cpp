@@ -1,6 +1,8 @@
 #include "Console.h"
 
+#include <algorithm>
 #include <cstdio>
+#include <string>
 
 #include <vagabond/utils/os.h>
 
@@ -18,6 +20,8 @@ namespace rope::cli::detail
 {
 namespace
 {
+constexpr std::size_t command_label_width = 12;
+
 void write_line(std::ostream& output, std::string_view text)
 {
     output << text;
@@ -25,6 +29,88 @@ void write_line(std::ostream& output, std::string_view text)
     {
         output << '\n';
     }
+}
+
+[[nodiscard]] std::string command_label(std::string_view command)
+{
+    const std::size_t leaf = command.find_last_of(' ');
+    std::string label{command.substr(
+        leaf == std::string_view::npos ? 0 : leaf + 1)};
+    if (!label.empty() && label.front() >= 'a' && label.front() <= 'z')
+    {
+        label.front() = static_cast<char>(label.front() - 'a' + 'A');
+    }
+    return label;
+}
+
+[[nodiscard]] std::string_view without_trailing_line_breaks(
+    std::string_view text)
+{
+    while (!text.empty() && (text.back() == '\n' || text.back() == '\r'))
+    {
+        text.remove_suffix(1);
+    }
+    return text;
+}
+
+[[nodiscard]] std::string plain_result(std::string_view text)
+{
+    text = without_trailing_line_breaks(text);
+    std::string rendered{text};
+    rendered += '\n';
+    return rendered;
+}
+
+[[nodiscard]] std::string labelled_result(std::string_view command,
+                                          std::string_view text)
+{
+    const std::string label = command_label(command);
+    const std::size_t width = std::max(command_label_width, label.size());
+    const std::string first_prefix =
+        std::string(width - label.size(), ' ') + label + ':';
+    const std::string continuation_prefix(width + 2, ' ');
+
+    text = without_trailing_line_breaks(text);
+    if (text.empty())
+    {
+        return first_prefix + '\n';
+    }
+
+    std::string rendered;
+    std::size_t start = 0;
+    bool first_line = true;
+    while (start <= text.size())
+    {
+        const std::size_t end = text.find('\n', start);
+        const std::string_view line = text.substr(
+            start,
+            end == std::string_view::npos
+                ? std::string_view::npos
+                : end - start);
+
+        if (first_line)
+        {
+            rendered += first_prefix;
+            if (!line.empty())
+            {
+                rendered += ' ';
+            }
+            first_line = false;
+        }
+        else if (!line.empty())
+        {
+            rendered += continuation_prefix;
+        }
+        rendered += line;
+        rendered += '\n';
+
+        if (end == std::string_view::npos)
+        {
+            break;
+        }
+        start = end + 1;
+    }
+    return rendered;
 }
 } // namespace
 
@@ -44,9 +130,24 @@ void console::set_mode(console_mode mode)
     context_.mode = mode;
 }
 
-void console::result(std::string_view text)
+void console::set_style(console_style style)
 {
-    standard_ << text << '\n';
+    context_.style = style;
+}
+
+bool console::formats_command_results() const
+{
+    return context_.style == console_style::automatic &&
+           context_.standard_is_terminal &&
+           context_.mode == console_mode::chained;
+}
+
+void console::command_result(std::string_view command,
+                             std::string_view text)
+{
+    standard_ << (formats_command_results()
+                      ? labelled_result(command, text)
+                      : plain_result(text));
 }
 
 void console::error(std::string_view text)
@@ -117,7 +218,7 @@ TEST_CASE("console routes complete messages to their intended streams")
     std::ostringstream error_output;
     rope::cli::detail::console console{output, error_output};
 
-    console.result("value");
+    console.command_result("rope.cli2 value", "value");
     console.help("help without newline");
     console.help("help with newline\n");
     console.error("failure");
@@ -148,12 +249,107 @@ TEST_CASE("console carries explicit presentation context")
         }};
 
     CHECK(console.context().mode == rope::cli::detail::console_mode::shell);
+    CHECK(console.context().style ==
+          rope::cli::detail::console_style::automatic);
     CHECK(console.context().standard_is_terminal);
     CHECK_FALSE(console.context().error_is_terminal);
     CHECK(console.context().width == 113);
 
     console.set_mode(rope::cli::detail::console_mode::chained);
     CHECK(console.context().mode == rope::cli::detail::console_mode::chained);
+
+    console.set_style(rope::cli::detail::console_style::plain);
+    CHECK(console.context().style == rope::cli::detail::console_style::plain);
+}
+
+TEST_CASE("console labels terminal command results like Cargo status lines")
+{
+    std::ostringstream output;
+    std::ostringstream error_output;
+    rope::cli::detail::console console{
+        output,
+        error_output,
+        {
+            .mode = rope::cli::detail::console_mode::chained,
+            .standard_is_terminal = true,
+        }};
+
+    console.command_result("rope.cli2 add", "4");
+    console.command_result("rope.cli2 version", "RoPE 1.8.0");
+
+    CHECK(output.str() ==
+          "         Add: 4\n"
+          "     Version: RoPE 1.8.0\n");
+}
+
+TEST_CASE("console aligns multiline command results")
+{
+    std::ostringstream output;
+    std::ostringstream error_output;
+    rope::cli::detail::console console{
+        output,
+        error_output,
+        {
+            .mode = rope::cli::detail::console_mode::chained,
+            .standard_is_terminal = true,
+        }};
+
+    console.command_result(
+        "rope.cli2 report", "Model A\nResidues: 143\n\nChains: 2\n");
+
+    CHECK(output.str() ==
+          "      Report: Model A\n"
+          "              Residues: 143\n"
+          "\n"
+          "              Chains: 2\n");
+}
+
+TEST_CASE("console leaves command results plain when presentation is disabled")
+{
+    SUBCASE("standard output is not a terminal")
+    {
+        std::ostringstream output;
+        std::ostringstream error_output;
+        rope::cli::detail::console console{output, error_output};
+
+        console.command_result("rope.cli2 version", "RoPE 1.8.0\n");
+
+        CHECK(output.str() == "RoPE 1.8.0\n");
+    }
+
+    SUBCASE("plain style is requested")
+    {
+        std::ostringstream output;
+        std::ostringstream error_output;
+        rope::cli::detail::console console{
+            output,
+            error_output,
+            {
+                .style = rope::cli::detail::console_style::plain,
+                .standard_is_terminal = true,
+            }};
+
+        console.command_result("rope.cli2 version", "RoPE 1.8.0");
+
+        CHECK(output.str() == "RoPE 1.8.0\n");
+    }
+
+    SUBCASE("batch mode is always plain")
+    {
+        std::ostringstream output;
+        std::ostringstream error_output;
+        rope::cli::detail::console console{
+            output,
+            error_output,
+            {
+                .mode = rope::cli::detail::console_mode::batch,
+                .standard_is_terminal = true,
+            }};
+
+        console.command_result("rope.cli2 version", "RoPE 1.8.0");
+
+        CHECK(output.str() == "RoPE 1.8.0\n");
+    }
 }
 
 #endif // ROPE_INLINE_TESTS
