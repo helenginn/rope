@@ -1,6 +1,7 @@
 #include "HeatMapVDW.h"
 #include "MatrixPlot.h"
 #include "MatrixBox.h"
+#include "ColourLegend.h"
 #include "PathGroup.h"
 #include <vagabond/utils/maths.h>
 #include <vagabond/gui/elements/TextButton.h>
@@ -97,8 +98,9 @@ void HeatMapVDW::setup()
 	addObject(_squareBox);
 
 	_rectPlot = new MatrixPlot(_rectData);
+    _rectPlot->legend()->setScheme(ZScore);
 	_rectBox = new MatrixBox(_rectPlot, _rowNames, _colNames, false);
-	_rectBox->setCentre(0.75, 0.5);
+	_rectBox->setCentre(0.65, 0.5);
 	addObject(_rectBox);
 
 	TextButton *setValue = new TextButton("restore original view", this);

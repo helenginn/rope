@@ -23,6 +23,7 @@
 #include <mutex>
 
 #include "MatrixPlot.h"
+#include "ColourLegend.h"
 #include "BlameView.h"
 #include "Sequence.h"
 #include "Entity.h"
@@ -43,6 +44,7 @@ BlameView::BlameView(Scene *prev, Entity *entity,
 void BlameView::setup()
 {
 	_plot = new MatrixPlot(_data, _mutex);
+    _plot->legend()->setScheme(ZScore);
 	addObject(_plot);
 
 	addTitle("Blame (" + std::to_string(_blame->pathCount()) + " paths)");
