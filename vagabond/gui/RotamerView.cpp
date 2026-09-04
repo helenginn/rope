@@ -141,16 +141,26 @@ void RotamerView::loadModelChain( Instance *inst, DisplayUnit *unit)
 {
     unit->loadAtoms(inst->currentAtoms());
     unit->displayAtoms(false, false);
-    unit->startWatch();
+    // unit->startWatch();
 }
 
 void RotamerView::viewModel()
 {
-    DisplayUnit *unit = new DisplayUnit(this);
-    loadModelChain( _inst,unit);
-    unit->setMultiBondMode(true);
-    setupCollision();
-    addDisplayUnit(unit);
+    {
+        DisplayUnit *unit = new DisplayUnit(this);
+        loadModelChain( _inst,unit);
+        unit->setMultiBondMode(true);
+        setupCollision();
+        unit->startWatch();
+        addDisplayUnit(unit);
+    }
+    {
+        DisplayUnit *unit = new DisplayUnit(this);
+        unit->loadAtoms(_inst->currentAtoms());
+        unit->displayAtoms();
+        unit->startWatch();
+        addDisplayUnit(unit);
+    }
 }
 
 void RotamerView::rotaList()
