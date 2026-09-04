@@ -27,7 +27,7 @@ class Rod;
 class Torque;
 class Particle;
 
-#define GUI_TORQUE_MAGNITUDE (0.01f) // arb value for GUI scale
+#define GUI_TORQUE_MAGNITUDE (1.0f) // arb value for GUI scale
 
 class ShowTorque : public Image, public ShowAbstractForce
 {
