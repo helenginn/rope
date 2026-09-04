@@ -121,6 +121,7 @@ AtomPosMap RotamerStore::extractForGUI()
             for (int i = pairs.second.start(); i < (pairs.second.start() + pairs.second.length()); i++)
             {
                 positionMap[atoms[i]].samples.emplace_back(positionArray[i]);
+                // positionMap[atoms[i]].ave+= positionArray[i];
             }
         }
         else
@@ -162,7 +163,7 @@ bool RotamerStore::collisionCheck(RotamerStore &self, int const &rotNum, Rotamer
     {
         for (auto posOther : otherPos)
         {
-            if (glm::length(posSelf-posOther) <= 2.f)
+            if (glm::length(posSelf-posOther) < 1.5f)
             {
                 return true;
             }
