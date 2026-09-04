@@ -15,7 +15,7 @@ message('  NATIVE:', is_native)
 
 # Dependencies
 cc = meson.get_compiler('c')
-libpng = cc.find_library('libpng', dirs : '~/.conan2/p/')
+libpng = dependency('libpng', required: is_native)
 curl = dependency('libcurl', required: is_native)
 fftw = dependency('fftw3f', required: is_native)
 gemmi = dependency('gemmi', modules: ['gemmi::gemmi_cpp'], required: is_native)
