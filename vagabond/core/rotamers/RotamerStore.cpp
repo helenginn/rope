@@ -121,7 +121,7 @@ AtomPosMap RotamerStore::extractForGUI()
             for (int i = pairs.second.start(); i < (pairs.second.start() + pairs.second.length()); i++)
             {
                 positionMap[atoms[i]].samples.emplace_back(positionArray[i]);
-                // positionMap[atoms[i]].ave+= positionArray[i];
+                positionMap[atoms[i]].ave+= positionArray[i];
             }
         }
         else

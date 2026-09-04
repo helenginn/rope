@@ -35,8 +35,8 @@ struct WithPos
 
 struct AtomWithPos
 {
-	Atom *atom;
-	WithPos wp;
+	Atom *atom{};
+	WithPos wp{};
 };
 
 typedef std::unordered_map<Atom *, WithPos> AtomPosMap;

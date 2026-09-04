@@ -50,6 +50,19 @@ public:
         }
         return extractForGUI();
     }
+    void moveNoMap(glm::mat4x4 const &transformationMat, std::string const &chain = "")
+    {
+        if (transformationMat != glm::mat4x4(1.0))
+        {
+            store.move(transformationMat, chain);
+            for (auto &bouquets : residueBouquets)
+            {
+                bouquets->store.move(transformationMat, chain);
+                bouquets->collision.updateVert(bouquets->store.getPos());
+            }
+            collisionUpdate();
+        }
+    }
 
     std::pair<ResidueId,std::string> name()
     {
