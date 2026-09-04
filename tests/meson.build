@@ -3,6 +3,7 @@ tests_exe = executable(
   [
     'doctest_main.cpp',
     'smoke_test.cpp',
+    'force_analysis_tests.cpp',
   ],
   link_whole: [core, vagutils, cluster4x, cli2],
   dependencies: [cli_deps],
