@@ -19,7 +19,7 @@
 #ifndef __vagabond__ShowForce__
 #define __vagabond__ShowForce__
 
-#define GUI_FORCE_MAGNITUDE (0.001f) // arb value for GUI scale
+#define GUI_FORCE_MAGNITUDE (1.0f) // arb value for GUI scale
 
 #include <vagabond/gui/elements/Image.h>
 #include <vagabond/gui/elements/IndexResponder.h>
