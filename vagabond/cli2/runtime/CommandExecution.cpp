@@ -61,6 +61,30 @@ using StateRoot = rope::cli::group<
     ReadValue,
     SetValue>;
 
+int read_nested_value(const Store& store)
+{
+    return store.value + 100;
+}
+
+using NestedReadValue = rope::cli::command<
+    rope::cli::command_meta{
+        .name = "read",
+        .description = "Read a nested value",
+        .handler = &read_nested_value,
+    },
+    rope::cli::read_state<Store>>;
+
+using NestedStateGroup = rope::cli::group<
+    "nested",
+    "Nested state commands",
+    NestedReadValue>;
+
+using NestedStateRoot = rope::cli::group<
+    "rope.cli2",
+    "Root-reset test",
+    NestedStateGroup,
+    ReadValue>;
+
 int result_value_calls = 0;
 int result_quiet_calls = 0;
 int result_failure_calls = 0;
@@ -330,7 +354,41 @@ TEST_CASE("sibling commands chain implicitly in parsing order")
     CHECK(error_output.str().empty());
 }
 
-TEST_CASE("the explicit terminator chains repeated commands")
+TEST_CASE("each chained command resolves again from root")
+{
+    Store store{3};
+    std::ostringstream output;
+    std::ostringstream error_output;
+
+    const int exit_code = run_cli<NestedStateRoot>(
+        {"rope.cli2", "nested", "read", "read"},
+        output,
+        error_output,
+        store);
+
+    CHECK(exit_code == 0);
+    CHECK(output.str() == "103\n3\n");
+    CHECK(error_output.str().empty());
+}
+
+TEST_CASE("the optional chain separator also restarts from root")
+{
+    Store store{3};
+    std::ostringstream output;
+    std::ostringstream error_output;
+
+    const int exit_code = run_cli<NestedStateRoot>(
+        {"rope.cli2", "nested", "read", "++", "read"},
+        output,
+        error_output,
+        store);
+
+    CHECK(exit_code == 0);
+    CHECK(output.str() == "103\n3\n");
+    CHECK(error_output.str().empty());
+}
+
+TEST_CASE("the optional separator chains repeated commands")
 {
     Store store{0};
     mutation_calls = 0;

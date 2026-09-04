@@ -2,12 +2,15 @@
 
 #include <CLI/CLI.hpp>
 
+#include <algorithm>
 #include <iostream>
 #include <istream>
+#include <optional>
 #include <ostream>
 #include <string>
 #include <string_view>
 #include <utility>
+#include <vector>
 
 #include "CommandExecution.h"
 #include "CommandSpec.h"
@@ -44,6 +47,7 @@ public:
           states_{states...}
     {
         app_.formatter(make_help_formatter());
+        app_.prefix_command(true);
         if (runner_mode == mode::command_line)
         {
             RootOptions::configure(app_);
@@ -54,6 +58,7 @@ public:
             CLI::App* exit = app_.add_subcommand(
                 "exit", "Exit the current command session");
             exit->group("Commands");
+            exit->subcommand_fallthrough(false);
             exit->parse_complete_callback(
                 [this]() { plan_.template add<exit_invocation>(); });
             exit->immediate_callback();
@@ -73,15 +78,15 @@ public:
         char** argv,
         console& output)
     {
-        try
+        std::vector<std::string> arguments;
+        arguments.reserve(argc > 1
+                              ? static_cast<std::size_t>(argc - 1)
+                              : 0);
+        for (int index = 1; index < argc; ++index)
         {
-            app_.parse(argc, argv);
+            arguments.emplace_back(argv[index]);
         }
-        catch (const CLI::ParseError& error)
-        {
-            return present_parse_error(app_, error, output);
-        }
-        return dispatch(output);
+        return execute_tokens(std::move(arguments), output);
     }
 
     [[nodiscard]] execution_result execute(
@@ -90,16 +95,102 @@ public:
     {
         try
         {
-            app_.parse(line);
+            std::vector<std::string> arguments = CLI::detail::split_up(line);
+            arguments.erase(
+                std::remove(arguments.begin(), arguments.end(), ""),
+                arguments.end());
+            CLI::detail::remove_quotes(arguments);
+            return execute_tokens(std::move(arguments), output);
         }
-        catch (const CLI::ParseError& error)
+        catch (const std::invalid_argument& error)
         {
-            return present_parse_error(app_, error, output);
+            return present_parse_error(
+                app_,
+                CLI::ParseError{
+                    error.what(), CLI::ExitCodes::InvalidError},
+                output);
+        }
+    }
+
+private:
+    [[nodiscard]] execution_result execute_tokens(
+        std::vector<std::string> tokens,
+        console& output)
+    {
+        std::vector<std::string> command_tokens;
+        bool saw_separator = false;
+        for (std::string& token : tokens)
+        {
+            if (token != "++")
+            {
+                command_tokens.push_back(std::move(token));
+                continue;
+            }
+
+            if (command_tokens.empty())
+            {
+                return separator_error(output);
+            }
+            if (auto error = parse_commands(
+                    std::move(command_tokens), output))
+            {
+                return *error;
+            }
+            command_tokens.clear();
+            saw_separator = true;
+        }
+
+        if (command_tokens.empty())
+        {
+            return saw_separator ? separator_error(output) : dispatch(output);
+        }
+        if (auto error = parse_commands(std::move(command_tokens), output))
+        {
+            return *error;
         }
         return dispatch(output);
     }
 
-private:
+    [[nodiscard]] std::optional<execution_result> parse_commands(
+        std::vector<std::string> arguments,
+        console& output)
+    {
+        std::reverse(arguments.begin(), arguments.end());
+        while (!arguments.empty())
+        {
+            // Prefix parsing leaves the next root-qualified command untouched.
+            const std::size_t planned_before = plan_.size();
+            try
+            {
+                app_.parse(arguments);
+            }
+            catch (const CLI::ParseError& error)
+            {
+                return present_parse_error(app_, error, output);
+            }
+
+            arguments = app_.remaining_for_passthrough(true);
+            if (plan_.size() == planned_before)
+            {
+                std::vector<std::string> unexpected{arguments.rbegin(),
+                                                    arguments.rend()};
+                return present_parse_error(
+                    app_, CLI::ExtrasError{unexpected}, output);
+            }
+        }
+        return std::nullopt;
+    }
+
+    [[nodiscard]] execution_result separator_error(console& output)
+    {
+        return present_parse_error(
+            app_,
+            CLI::ParseError{
+                "'++' must separate complete commands",
+                CLI::ExitCodes::InvalidError},
+            output);
+    }
+
     [[nodiscard]] execution_result dispatch(console& output)
     {
         const console_mode initial_mode = output.context().mode;

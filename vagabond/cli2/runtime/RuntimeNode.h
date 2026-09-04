@@ -52,6 +52,7 @@ public:
             std::string(Meta.name.view()),
             std::string(Meta.description.view()));
         app_->group("Commands");
+        app_->subcommand_fallthrough(false);
         states_ = &states;
         plan_ = &plan;
         lower_bindings(std::index_sequence_for<Bindings...>{});
@@ -214,6 +215,7 @@ public:
             std::string(Meta.name.view()),
             std::string(Meta.description.view()));
         app_->group("Commands");
+        app_->subcommand_fallthrough(false);
         app_->parse_complete_callback(
             [this]()
             {
@@ -302,7 +304,7 @@ private:
     void configure_group()
     {
         app_->require_subcommand(0, 0);
-        app_->subcommand_fallthrough(true);
+        app_->subcommand_fallthrough(false);
     }
 
     void lower_children()

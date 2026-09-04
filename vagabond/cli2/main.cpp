@@ -1,6 +1,8 @@
 #include "commands/general/General.h"
+#include "commands/project/Project.h"
 #include "commands/test_commands/add.h"
 #include "runtime/CliRuntime.h"
+#include "state/ProjectState.h"
 
 #ifdef ROPE_INLINE_TESTS
 #define DOCTEST_CONFIG_IMPLEMENT
@@ -35,10 +37,12 @@ using Root = rope::cli::group<
     "rope.cli2",
     "Representation of Protein Entities (RoPE)",
     rope::cli::commands::General,
+    rope::cli::commands::Project,
     rope::cli::commands::Add>;
 } // namespace
 
 int main(int argc, char** argv)
 {
-    return rope::cli::run<Root, RootOptions>(argc, argv);
+    rope::cli::ProjectState project;
+    return rope::cli::run<Root, RootOptions>(argc, argv, project);
 }

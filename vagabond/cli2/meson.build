@@ -8,6 +8,7 @@ rope_cli2_runtime_sources = files(
   'runtime/RuntimeNode.cpp',
   'runtime/StatePack.cpp',
   'commands/general/Version.cpp',
+  'commands/project/Project.cpp',
   'commands/test_commands/add.cpp',
 )
 
@@ -17,4 +18,5 @@ cli2 = static_library(
   cpp_args: [compile_args],
   dependencies: cli_deps,
   include_directories: include_directories('../..'),
+  link_with: [core],
 )

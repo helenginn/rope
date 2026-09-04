@@ -361,14 +361,14 @@ TEST_CASE("an invalid option value does not invoke its handler")
     CHECK_FALSE(error_output.str().empty());
 }
 
-TEST_CASE("an option resets between repeated commands")
+TEST_CASE("an option resets between repeated root commands")
 {
     observed_limits.clear();
     std::ostringstream output;
     std::ostringstream error_output;
 
     const int exit_code = run_cli<OptionalRoot>(
-        {"rope.cli2", "optional", "-l", "4", "++", "optional"},
+        {"rope.cli2", "optional", "-l", "4", "optional"},
         output,
         error_output);
 
