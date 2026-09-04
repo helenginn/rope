@@ -217,15 +217,48 @@ if $CONAN_AVAILABLE; then
   fi
 fi
 
-# Build type
+# Build mode
 
-if ask_yn "Compile in release mode? (debug otherwise)" "Y"; then
-  BUILD_TYPE="release"
+BUILD_TYPE="release" # Build Type is the meson option;
+BUILD_MODE="release" # Build Mode is the script internal mode, asked below; we need both for sanatize
+
+print "Build mode:"
+print "  [R] Release          optimized, no debug symbols"
+print "  [O] Debug-optimized  optimized with debug symbols"
+print "  [D] Debug            no optimization, full debugging"
+print "  [S] Sanitize         debug-optimized with AddressSanitizer"
+
+if $YESMAN; then
+  echo -e "  ${BOLD}Select build mode${RESET} ${DIM}[R] release (--yesman)${RESET}"
 else
-  BUILD_TYPE="debugoptimized"
-  if ask_yn "Enable extra debug symbols? (full debug, slower build)" "N"; then
-    BUILD_TYPE="debug"
-  fi
+  while true; do
+    echo -ne "  ${BOLD}Select build mode${RESET} ${DIM}[R; Enter/y = release]${RESET} "
+    read -r answer
+    case "$(echo "$answer" | tr '[:upper:]' '[:lower:]')" in
+    "" | y | yes | r | release)
+      BUILD_TYPE="release"
+      BUILD_MODE="release"
+      break
+      ;;
+    o | optimized | debugoptimized | debug-optimized)
+      BUILD_TYPE="debugoptimized"
+      BUILD_MODE="debugoptimized"
+      break
+      ;;
+    d | debug)
+      BUILD_TYPE="debug"
+      BUILD_MODE="debug"
+      break
+      ;;
+    s | sanitize | sanitizer)
+      BUILD_TYPE="debugoptimized"
+      BUILD_MODE="sanitize"
+      EXTRA_MESON_ARGS+=("-Db_sanitize=address")
+      break
+      ;;
+    *) echo -e "  ${YELLOW}Please choose release (r), debug-optimized (o), debug (d), or sanitize (s).${RESET}" ;;
+    esac
+  done
 fi
 
 if ask_yn "Compile with tests enabled?" "Y"; then
@@ -248,9 +281,10 @@ if [ -n "$BUILD_OVERRIDE" ]; then
   warn "Custom build directory"
   BUILDDIR="$BUILD_OVERRIDE"
 else
-  BUILDDIR="build/${ARCH}_${OS}_${PKG_MODE}_${BUILD_TYPE}"
+  BUILDDIR="build/${ARCH}_${OS}_${PKG_MODE}_${BUILD_MODE}"
 fi
 info "Planning to build in ${BUILDDIR}"
+info "Build mode: ${BUILD_MODE}"
 
 if $USE_CONAN; then
   info "Using conan for dependency package management"

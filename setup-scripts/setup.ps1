@@ -175,13 +175,58 @@ Section "Configure Build"
 Info "Using conan for dependency management (required on Windows)"
 $PKG_MODE="conan"
 
-if (Ask-YN "Compile in release mode? (debug otherwise)" "Y") {
-  $BUILD_TYPE="release"
+$BUILD_TYPE = "release" # Build Type is the meson option;
+$BUILD_MODE = "release" # Build Mode is the script internal mode, asked below; we need both for sanatize
+
+Print "Build mode:"
+Print "  [R] Release          optimized, no debug symbols"
+Print "  [O] Debug-optimized  optimized with debug symbols"
+Print "  [D] Debug            no optimization, full debugging"
+Print "  [S] Sanitize         debug-optimized with AddressSanitizer"
+
+if ($Yesman) {
+  Write-Host "  " -NoNewline
+  Write-Host "Select build mode" -ForegroundColor White -NoNewline
+  Write-Host " [R] release (--yesman)" -ForegroundColor DarkGray
 } else {
-  $BUILD_TYPE="debugoptimized"
-    if (Ask-YN "Enable extra debug symbols? (full debug, slower build)" "N") {
-      $BUILD_TYPE="debug"
+  $validBuildMode = $false
+  while (-not $validBuildMode) {
+    Write-Host "  " -NoNewline
+    Write-Host "Select build mode" -ForegroundColor White -NoNewline
+    Write-Host " [R; Enter/y = release] " -ForegroundColor DarkGray -NoNewline
+    $answer = Read-Host
+
+    switch ($answer.ToLower()) {
+      { $_ -in @("", "y", "yes", "r", "release") } {
+        $BUILD_TYPE = "release"
+        $BUILD_MODE = "release"
+        $validBuildMode = $true
+        break
+      }
+      { $_ -in @("o", "optimized", "debugoptimized", "debug-optimized") } {
+        $BUILD_TYPE = "debugoptimized"
+        $BUILD_MODE = "debugoptimized"
+        $validBuildMode = $true
+        break
+      }
+      { $_ -in @("d", "debug") } {
+        $BUILD_TYPE = "debug"
+        $BUILD_MODE = "debug"
+        $validBuildMode = $true
+        break
+      }
+      { $_ -in @("s", "sanitize", "sanitizer") } {
+        $BUILD_TYPE = "debugoptimized"
+        $BUILD_MODE = "sanitize"
+        $EXTRA_MESON_ARGS += "-Db_sanitize=address"
+        $validBuildMode = $true
+        break
+      }
+      default {
+        Write-Host "  Please choose release (r), debug-optimized (o), debug (d), or sanitize (s)." -ForegroundColor Yellow
+      }
     }
+  }
 }
 
 if (Ask-YN "Compile with tests enabled?" "Y") {
@@ -204,9 +249,10 @@ if ($Build -ne "") {
   Warn "Custom build directory"
     $BUILDDIR = $Build
 } else {
-  $BUILDDIR="build\${ARCH}_${OS}_${PKG_MODE}_${BUILD_TYPE}"
+  $BUILDDIR="build\${ARCH}_${OS}_${PKG_MODE}_${BUILD_MODE}"
 }
 Info "Planning to build in ${BUILDDIR}"
+Info "Build mode: ${BUILD_MODE}"
 Info "Using conan for dependency package management"
 if ($ENABLE_TESTS) {
   Info "Compile mode: tests enabled"
