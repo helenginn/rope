@@ -38,6 +38,7 @@
 #include <vagabond/utils/DoJob.h>
 #include <set>
 #include <map>
+#include <tuple>
 
 OccupanciesView::OccupanciesView(Scene *prev, Clique *clique, Network &network)
 : Scene(prev), IndexResponseView(prev), _clique(clique), _network(network)
@@ -45,10 +46,12 @@ OccupanciesView::OccupanciesView(Scene *prev, Clique *clique, Network &network)
 
 }
 
-// one representative probe per residue (chain + residue id), preferring
-// whichever member is a reporter atom (Atom::isReporterAtom() - CA/P) and
-// falling back to whichever member of the residue est happened to
-// iterate to first. Probes with no Atom (not residue-grouped) always
+// one representative probe per residue *per alt-conf* (chain + residue
+// id + Probe::atomConf()'s own conf letter, so e.g. "A" and "B" alternate
+// conformers of the same residue each keep their own representative),
+// preferring whichever member is a reporter atom (Atom::isReporterAtom()
+// - CA/P) and falling back to whichever member of the group est happened
+// to iterate to first. Probes with no Atom (not residue-grouped) always
 // pass through untouched. Without this, every atom of a residue - mostly
 // correlated with each other - counts as its own independent point in
 // the scatter plot and correlation coefficient below, skewing both
@@ -57,7 +60,7 @@ static std::set<Probe *> reporterRepresentatives(
 const OccupancyPredictor::EstimateMap &est)
 {
 	std::set<Probe *> reps;
-	std::map<std::pair<std::string, ResidueId>, Probe *> best;
+	std::map<std::tuple<std::string, ResidueId, char>, Probe *> best;
 
 	for (auto &pair : est)
 	{
@@ -70,7 +73,8 @@ const OccupancyPredictor::EstimateMap &est)
 			continue;
 		}
 
-		auto key = std::make_pair(atom->chain(), atom->residueId());
+		auto key = std::make_tuple(atom->chain(), atom->residueId(),
+		                            p->atomConf().conf);
 		auto it = best.find(key);
 
 		if (it == best.end())
