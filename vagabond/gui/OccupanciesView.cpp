@@ -36,11 +36,59 @@
 #include <vagabond/gui/Toolkit.h>
 #include <vagabond/core/Progressor.h>
 #include <vagabond/utils/DoJob.h>
+#include <set>
+#include <map>
 
 OccupanciesView::OccupanciesView(Scene *prev, Clique *clique, Network &network)
 : Scene(prev), IndexResponseView(prev), _clique(clique), _network(network)
 {
 
+}
+
+// one representative probe per residue (chain + residue id), preferring
+// whichever member is a reporter atom (Atom::isReporterAtom() - CA/P) and
+// falling back to whichever member of the residue est happened to
+// iterate to first. Probes with no Atom (not residue-grouped) always
+// pass through untouched. Without this, every atom of a residue - mostly
+// correlated with each other - counts as its own independent point in
+// the scatter plot and correlation coefficient below, skewing both
+// towards whatever residues simply have the most atoms.
+static std::set<Probe *> reporterRepresentatives(
+const OccupancyPredictor::EstimateMap &est)
+{
+	std::set<Probe *> reps;
+	std::map<std::pair<std::string, ResidueId>, Probe *> best;
+
+	for (auto &pair : est)
+	{
+		Probe *p = pair.first.first;
+		Atom *atom = p ? p->atom() : nullptr;
+
+		if (!atom)
+		{
+			reps.insert(p);
+			continue;
+		}
+
+		auto key = std::make_pair(atom->chain(), atom->residueId());
+		auto it = best.find(key);
+
+		if (it == best.end())
+		{
+			best[key] = p;
+		}
+		else if (atom->isReporterAtom() && !it->second->atom()->isReporterAtom())
+		{
+			it->second = p;
+		}
+	}
+
+	for (auto &pair : best)
+	{
+		reps.insert(pair.second);
+	}
+
+	return reps;
 }
 
 OccupanciesView::~OccupanciesView()
@@ -311,11 +359,19 @@ void OccupanciesView::scanPH()
 			// just against this sweep's own local estimate rather than
 			// _lastEstimates - the on-screen scatter plot is untouched by
 			// a scan (see this method's own header comment).
+			std::set<Probe *> reps = reporterRepresentatives(est);
 			CorrelData cd = empty_CD();
 			for (auto &pair : est)
 			{
 				const ProbeTypePair &ptp = pair.first;
 				Atom *atom = ptp.first->atom();
+
+				// one point per residue (see reporterRepresentatives()'s
+				// own comment), not one per atom.
+				if (reps.count(ptp.first) == 0)
+				{
+					continue;
+				}
 
 				if (!showWaters && atom && atom->code() == "HOH")
 				{
@@ -431,6 +487,8 @@ void OccupanciesView::rebuildGraph()
 		}
 	}
 
+	std::set<Probe *> reps = reporterRepresentatives(_lastEstimates);
+
 	std::cout << "observed, calculated, samples, atom\n";
 	for (auto &pair : _lastEstimates)
 	{
@@ -440,6 +498,13 @@ void OccupanciesView::rebuildGraph()
 		size_t &samples = pair.second.samples;
 
 		Atom *atom = ptp.first->atom();
+
+		// one point per residue (see reporterRepresentatives()'s own
+		// comment), not one per atom.
+		if (reps.count(ptp.first) == 0)
+		{
+			continue;
+		}
 
 		// "waters" here means the same thing Subdivide::has_non_water()
 		// checks - the residue code, not is_bulk() (a separate, narrower
