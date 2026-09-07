@@ -21,8 +21,33 @@
 #include <vagabond/core/protonic/Network.h>
 #include <vagabond/core/protonic/Probe.h>
 #include <vagabond/gui/elements/Menu.h>
+#include <vagabond/gui/elements/Library.h>
 
 using namespace hnet;
+
+/* AtomProbe/HydrogenProbe::display() only ever return one of this small,
+ * fixed set of single-character strings (barring AtomProbe's optional
+ * free-form _text override). Loading them into Library's texture cache
+ * once up front, and never dropping that hold, means every later
+ * FloatingText::changeText() during hnet solving is a cache hit instead
+ * of a delete-then-recreate GL round trip. */
+static void preloadProbeTextTextures()
+{
+	static bool done = false;
+	if (done)
+	{
+		return;
+	}
+	done = true;
+
+	static const std::vector<std::string> texts = {" ", "O", "N", "S", "H",
+	                                                 "!", "?"};
+	for (const std::string &text : texts)
+	{
+		int w, h;
+		Library::getLibrary()->loadText(text, &w, &h, Font::Thin);
+	}
+}
 
 void ProbeAtom::fullUpdate()
 {
@@ -65,6 +90,8 @@ void ProbeAtom::updateProbe()
 ProbeAtom::ProbeAtom(ProtonNetworkView *view, AtomProbe *probe)
 : FloatingText(probe->display(), probe->mult(), 0.0)
 {
+	preloadProbeTextTextures();
+
 	FloatingText::setPosition(probe->position());
 	_probe = probe;
 	_view = view;
@@ -85,6 +112,8 @@ ProbeAtom::ProbeAtom(ProtonNetworkView *view, AtomProbe *probe)
 ProbeAtom::ProbeAtom(ProtonNetworkView *view, HydrogenProbe *probe)
 : FloatingText(probe->display(), 25, 0.0)
 {
+	preloadProbeTextTextures();
+
 	_view = view;
 	_probe = probe;
 

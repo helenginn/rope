@@ -43,18 +43,27 @@ void FloatingText::correctBox(float mult, float y_offset)
 
 void FloatingText::changeText(const std::string &text)
 {
-	float old_w = _w;
-	float old_h = _h;
-
-	if (_texid > 0)
+	if (text == _text)
 	{
-		Library::getLibrary()->dropTexture(_texid);
-		_texid = 0;
+		return;
 	}
 
+	float old_w = _w;
+	float old_h = _h;
+	GLuint old_texid = _texid;
+
+	/* load the replacement texture before dropping the old one, so that
+	 * a texture shared between the two (e.g. via Library's preloaded
+	 * hold) is never destroyed and immediately recreated */
 	GLuint tex = Library::getLibrary()->loadText(text, &_w, &_h, _type);
 	_texid = tex;
-	
+	_text = text;
+
+	if (old_texid > 0)
+	{
+		Library::getLibrary()->dropTexture(old_texid);
+	}
+
 	glm::mat3x3 mat = glm::mat3(1.);
 	mat[0][0] = (float)_w / old_w;
 	mat[1][1] = (float)_h / old_h;
