@@ -195,8 +195,23 @@ GLuint Library::buildTextAtlas(const std::string &cacheKey,
 		png_byte *bytes = nullptr;
 		TextManager::text_malloc(&bytes, text, &w, &h, type);
 
-		if (bytes == nullptr || w == 0 || h == 0)
+		if (w == 0 || h == 0)
 		{
+			// a genuinely blank glyph (e.g. " ", whose font table entry
+			// is {0,0} - see font.h/thick_font.h) - nothing to
+			// composite, but it still needs a resolvable rect, or a
+			// caller looking it up falls through to "no entry found"
+			// and ends up sampling the whole atlas instead.
+			AtlasRect blank;
+			blank.u0 = 0.f; blank.u1 = 0.f;
+			blank.v0 = 0.f; blank.v1 = 0.f;
+			blank.width = 0; blank.height = 0;
+			rects[text] = blank;
+
+			if (bytes != nullptr)
+			{
+				TextManager::text_free(&bytes);
+			}
 			continue;
 		}
 
