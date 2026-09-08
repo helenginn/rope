@@ -20,6 +20,7 @@
 #include "ChainAssignment.h"
 #include "ModelMetadataView.h"
 #include "ConfSpaceView.h"
+#include "ProtonNetworkView.h"
 #include "FileView.h"
 
 #include <vagabond/gui/elements/BadChoice.h>
@@ -155,8 +156,21 @@ void AddModel::setup()
 			t->setCentre(0.8, top);
 			addObject(t);
 		}
+
+		top += inc;
+		{
+			Text *t = new Text("Proton network");
+			t->setLeft(0.2, top);
+			addObject(t);
+		}
+		{
+			ImageButton *t = ImageButton::arrow(-90., this);
+			t->setReturnTag("proton_network");
+			t->setCentre(0.8, top);
+			addObject(t);
+		}
 	}
-	
+
 	AddObject::setup();
 }
 
@@ -225,6 +239,11 @@ void AddModel::buttonPressed(std::string tag, Button *button)
 	{
 		ModelMetadataView *mmv = new ModelMetadataView(this, _obj);
 		mmv->show();
+	}
+	else if (tag == "proton_network")
+	{
+		ProtonNetworkView *pnv = new ProtonNetworkView(this, &_obj);
+		pnv->show();
 	}
 	else if (tag == "create")
 	{
