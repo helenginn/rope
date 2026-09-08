@@ -673,5 +673,5 @@ void ForceAnalysis::calculate(bool calcWithUnits)
 		
 	}
 
-	_forces.calculateUnknowns(index_map, calcWithUnits);
+	_forces.solve(index_map, calcWithUnits);
 }

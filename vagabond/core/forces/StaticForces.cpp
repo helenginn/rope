@@ -33,7 +33,7 @@ StaticForces::StaticForces()
 
 }
 
-void StaticForces::calculateUnknowns(const std::map<ForceCoordinate, int> 
+void StaticForces::solve(const std::map<ForceCoordinate, int> 
                                      &index_map, bool calcWithUnits)
 {
 	int rows = _rods.size() * 2 * 3; // relationships per rod
