@@ -308,11 +308,15 @@ void ProtonNetworkView::findAtomProbes()
 	}
 
 	// one shared Renderable for every bond in the network (see
-	// ProbeBondBatch's header comment) - added/registered once here,
-	// rather than per-bond as ProbeAtom/ProbeCharge still are below.
+	// ProbeBondBatch's header comment) - added once here, rather than
+	// per-bond as ProbeAtom/ProbeCharge still are below. Not yet
+	// registered via addIndexResponder() - that calls reindex()
+	// immediately, which needs to see the batch's final slot count, so
+	// it happens after the loop below has appended every bond, not
+	// before (an empty batch would otherwise permanently stamp every
+	// vertex's GPU-pick id as 0, since nothing reindexes it again later).
 	_bondBatch = new ProbeBondBatch();
 	addObject(_bondBatch);
-	addIndexResponder(_bondBatch);
 
 	for (BondProbe *const &probe : _network->bondProbes())
 	{
@@ -335,6 +339,10 @@ void ProtonNetworkView::findAtomProbes()
 		bond->setEndpoints(_textProbes[&probe->left()],
 		                   _textProbes[&probe->right()]);
 	}
+
+	// now that every bond has a slot, reindex() (triggered by this) can
+	// stamp each one's real GPU-pick id - see the comment above.
+	addIndexResponder(_bondBatch);
 
 	for (CountProbe *const &probe : _network->chargeProbes())
 	{
