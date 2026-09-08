@@ -24,10 +24,14 @@
 #include <vagabond/core/IndexedSequence.h>
 #include <vagabond/core/Residue.h>
 
+#include <algorithm>
+
 const double SequenceSliderSpacing = 0.02;
 // non-zero so tick Text's top half doesn't clip against the ScrollBox edge
 const double SequenceSliderTickY = 0.02;
 const double SequenceSliderRowY = SequenceSliderTickY + 0.05;
+// keeps first/last residue buttons from poking past the viewport edge
+const double SequenceSliderMarginX = SequenceSliderSpacing / 2;
 
 SequenceSlider::SequenceSlider(IndexedSequence *sequence) : _sequence(sequence)
 {
@@ -54,33 +58,34 @@ void SequenceSlider::setup()
 	addObject(_scroll);
 
 	double viewportWidth = _right - _left;
-	double contentWidth = SequenceSliderSpacing * _sequence->entryCount();
-	double maxScroll = contentWidth - viewportWidth;
+	double contentWidth = SequenceSliderSpacing * _sequence->entryCount()
+	                     + SequenceSliderMarginX * 2;
+	// always present, even with nothing to scroll, so a short sequence
+	// still shows a slider rather than silently omitting it
+	double maxScroll = std::max(contentWidth - viewportWidth,
+	                             SequenceSliderSpacing);
 
-	if (maxScroll > 0)
+	Slider *slider = new Slider();
+
+	auto onDrag = [this](double x, double)
 	{
-		Slider *slider = new Slider();
+		repositionContent(x);
+	};
 
-		auto onDrag = [this](double x, double)
-		{
-			repositionContent(x);
-		};
-
-		slider->setDragFunction(onDrag);
-		slider->resize(viewportWidth);
-		slider->setup("", 0.0, maxScroll, maxScroll / 100., false);
-		slider->setStart(0., 0.);
-		slider->setLeft(_left, _sliderY);
-		addObject(slider);
-		_slider = slider;
-	}
+	slider->setDragFunction(onDrag);
+	slider->resize(viewportWidth);
+	slider->setup("", 0.0, maxScroll, maxScroll / 100., false);
+	slider->setStart(0., 0.);
+	slider->setLeft(_left, _sliderY);
+	addObject(slider);
+	_slider = slider;
 }
 
 void SequenceSlider::buildContent()
 {
 	_content = new Box();
 
-	double x = 0;
+	double x = SequenceSliderMarginX;
 	size_t count = _sequence->entryCount();
 
 	for (size_t i = 0; i < count; i++)
