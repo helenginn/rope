@@ -66,17 +66,11 @@ void SequenceSlider::setup()
 	                             SequenceSliderSpacing);
 
 	Slider *slider = new Slider();
-
-	auto onDrag = [this](double x, double)
-	{
-		repositionContent(x);
-	};
-
-	slider->setDragFunction(onDrag);
+	slider->setDragResponder(this);
 	slider->resize(viewportWidth);
-	slider->setup("", 0.0, maxScroll, maxScroll / 100., false);
+	slider->setup("", 0.0, maxScroll, maxScroll / 100.);
 	slider->setStart(0., 0.);
-	slider->setLeft(_left, _sliderY);
+	slider->setCentre((_left + _right) / 2., _sliderY);
 	addObject(slider);
 	_slider = slider;
 }
@@ -128,6 +122,11 @@ void SequenceSlider::repositionContent(double target)
 	double delta = target - _scrollX;
 	_content->addAlign(-delta, 0);
 	_scrollX = target;
+}
+
+void SequenceSlider::finishedDragging(std::string tag, double x, double y)
+{
+	repositionContent(x);
 }
 
 void SequenceSlider::buttonPressed(std::string tag, Button *button)

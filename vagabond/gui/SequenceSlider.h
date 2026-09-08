@@ -21,6 +21,7 @@
 
 #include <vagabond/gui/elements/Box.h>
 #include <vagabond/gui/elements/ButtonResponder.h>
+#include <vagabond/gui/elements/DragResponder.h>
 
 #include <functional>
 
@@ -38,7 +39,8 @@ class TextButton;
  * choosing which IndexedSequence to hand it, and finds out which residue
  * was clicked via the job set with setReturnJob(). */
 
-class SequenceSlider : public Box, public ButtonResponder
+class SequenceSlider : public Box, public ButtonResponder,
+public DragResponder
 {
 public:
 	SequenceSlider(IndexedSequence *sequence);
@@ -54,6 +56,7 @@ public:
 	void setup();
 
 	virtual void buttonPressed(std::string tag, Button *button = nullptr);
+	virtual void finishedDragging(std::string tag, double x, double y);
 
 	void setReturnJob(const std::function<void(Residue *)> &job)
 	{
