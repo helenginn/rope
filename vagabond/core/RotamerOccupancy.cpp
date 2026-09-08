@@ -42,8 +42,6 @@ void RotamerOccupancy::calculate(const std::vector<ResidueTorsion> &headers,
                                   Progressor *progress,
                                   std::atomic<bool> *cancelled)
 {
-	ensureModelsLoaded();
-
 	std::vector<Instance *> instances = _entity->instances();
 
 	for (Instance *instance : instances)
@@ -53,7 +51,13 @@ void RotamerOccupancy::calculate(const std::vector<ResidueTorsion> &headers,
 			break;
 		}
 
+		/* one instance's model on disk/memory at a time */
+		instance->load();
+
 		measureInstance(instance, headers);
+		scanAltConfs(instance);
+
+		instance->unload();
 
 		if (progress)
 		{
@@ -61,27 +65,9 @@ void RotamerOccupancy::calculate(const std::vector<ResidueTorsion> &headers,
 		}
 	}
 
-	unloadModels();
-
 	if (progress)
 	{
 		progress->finishTicker();
-	}
-}
-
-void RotamerOccupancy::ensureModelsLoaded()
-{
-	for (Instance *instance : _entity->instances())
-	{
-		instance->load();
-	}
-}
-
-void RotamerOccupancy::unloadModels()
-{
-	for (Instance *instance : _entity->instances())
-	{
-		instance->unload();
 	}
 }
 
@@ -153,60 +139,65 @@ void RotamerOccupancy::measureInstance(Instance *instance,
 	}
 }
 
-float RotamerOccupancy::altConfOccupancy(Instance *instance, 
-                                         Residue *masterResidue,
-                                         std::string conf) const
+/** scans every atom of the (already-loaded) instance once, caching alt-conf
+ * presence and per-label occupancy against each atom's master residue, so
+ * hasAltConformers() and altConfOccupancy() never need to touch disk */
+void RotamerOccupancy::scanAltConfs(Instance *instance)
 {
-	Residue *local = instance->equivalentLocal(masterResidue);
-	instance->load();
 	AtomGroup *atoms = instance->currentAtoms();
-
-	if (local == nullptr || atoms == nullptr)
+	if (atoms == nullptr)
 	{
-		instance->unload();
-		return 0.f;
+		return;
 	}
 
 	for (Atom *a : atoms->atomVector())
 	{
-		if (a->residueId() == local->id() &&
-		    a->conformerPositions().count(conf) > 0)
-		{
-			float val = a->conformerPositions().at(conf).occ;
-			instance->unload();
-			return val;
-		}
-	}
-
-	instance->unload();
-	return 0.f;
-}
-
-bool RotamerOccupancy::hasAltConformers(Residue *masterResidue) const
-{
-	std::vector<Instance *> instances = _entity->instances();
-
-	for (Instance *instance : instances)
-	{
-		Residue *local = instance->equivalentLocal(masterResidue);
-		AtomGroup *atoms = instance->currentAtoms();
-
-		if (local == nullptr || atoms == nullptr)
+		Residue *master = instance->equivalentMaster(a->residueId());
+		if (master == nullptr)
 		{
 			continue;
 		}
 
-		for (Atom *a : atoms->atomVector())
+		if (a->conformerPositions().size() > 1)
 		{
-			if (a->residueId() == local->id() &&
-			    a->conformerPositions().size() > 1)
-			{
-				return true;
-			}
+			_hasAltConfs[master] = true;
+		}
+		else
+		{
+			_hasAltConfs.emplace(master, false);
+		}
+
+		std::map<std::string, float> &occs = _occupancies[{instance, master}];
+		for (const auto &pair : a->conformerPositions())
+		{
+			occs[pair.first] = pair.second.occ;
 		}
 	}
+}
 
-	return false;
+float RotamerOccupancy::altConfOccupancy(Instance *instance,
+                                         Residue *masterResidue,
+                                         std::string conf) const
+{
+	auto it = _occupancies.find({instance, masterResidue});
+	if (it == _occupancies.end())
+	{
+		return 0.f;
+	}
+
+	auto labelIt = it->second.find(conf);
+	if (labelIt == it->second.end())
+	{
+		return 0.f;
+	}
+
+	return labelIt->second;
+}
+
+bool RotamerOccupancy::hasAltConformers(Residue *masterResidue) const
+{
+	auto it = _hasAltConfs.find(masterResidue);
+	return it != _hasAltConfs.end() && it->second;
 }
 
 /** smallest absolute angular separation between two angles in degrees,

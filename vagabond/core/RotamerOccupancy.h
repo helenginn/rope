@@ -47,17 +47,14 @@ public:
 	typedef std::pair<Instance *, Residue *> InstRes;
 
 	/** measures every instance of the entity, optionally reporting progress
-	 * and checking for cancellation between instances */
+	 * and checking for cancellation between instances. Loads each instance's
+	 * model in turn (never more than one at a time) to populate torsion
+	 * angles, alt-conf presence and per-label occupancies, caching all of it
+	 * so later calls (hasAltConformers(), altConfOccupancy()) never need to
+	 * touch disk again. */
 	void calculate(const std::vector<ResidueTorsion> &headers,
 	                Progressor *progress = nullptr,
 	                std::atomic<bool> *cancelled = nullptr);
-
-	/** Atom::conformerPositions() is only populated once a model has been
-	 * loaded from disk - call this once before a batch of calls that need
-	 * real atom data (e.g. hasAltConformers() over every residue), and
-	 * unloadModels() once afterwards. calculate() does this internally. */
-	void ensureModelsLoaded();
-	void unloadModels();
 
 	std::map<Instance *, InstanceAngles> resultsForResidue(Residue *r) const;
 
@@ -98,18 +95,30 @@ public:
 	                                          double thresholdDegrees = 45.0) const;
 
 	/** true if any instance has more than one alt-conf label on any atom
-	 * of the given master residue - i.e. there's something to compare */
+	 * of the given master residue - i.e. there's something to compare.
+	 * Answered from the cache populated by calculate(); false if calculate()
+	 * has not been run yet. */
 	bool hasAltConformers(Residue *masterResidue) const;
 
+	/** occupancy of the given alt-conf label for this instance/residue,
+	 * answered from the cache populated by calculate(); 0 if calculate()
+	 * has not been run yet, or the instance/residue/label isn't found. */
 	float altConfOccupancy(Instance *inst, Residue *masterResidue,
 	                       std::string conf) const;
 private:
 	void measureInstance(Instance *instance,
 	                      const std::vector<ResidueTorsion> &headers);
+	void scanAltConfs(Instance *instance);
 
 	Entity *_entity = nullptr;
 
 	std::map<InstRes, InstanceAngles> _results;
+
+	/** master residue -> true if any instance has >1 alt-conf label there */
+	std::map<Residue *, bool> _hasAltConfs;
+
+	/** (instance, master residue) -> alt-conf label -> occupancy */
+	std::map<InstRes, std::map<std::string, float>> _occupancies;
 };
 
 #endif
