@@ -28,12 +28,10 @@
 
 class Entity;
 class Metadata;
-class Residue;
 class RotamerOccupancy;
 class ChooseHeader;
 class TextButton;
 class ImageButton;
-class SequenceSlider;
 
 class OccupancyComparisonView : public Scene, public Responder<ChooseHeader>
 {
@@ -49,7 +47,6 @@ private:
 	void addStubButtons();
 	void refreshHeaderButton();
 	void startMeasurement();
-	void showPerResidue();
 
 	Entity *_entity = nullptr;
 	Metadata *_md = nullptr;
@@ -62,9 +59,6 @@ private:
 	ImageButton *_perResidueArrow = nullptr;
 	TextButton *_pairwiseButton = nullptr;
 	ImageButton *_pairwiseArrow = nullptr;
-
-	SequenceSlider *_slider = nullptr;
-	Residue *_selectedResidue = nullptr;
 
 	std::shared_ptr<std::atomic<bool>> _cancelled;
 };

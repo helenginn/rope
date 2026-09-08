@@ -18,7 +18,7 @@
 
 #include "OccupancyComparisonView.h"
 #include "ChooseHeader.h"
-#include "SequenceSlider.h"
+#include "PerResidueView.h"
 #include "VagWindow.h"
 
 #include <vagabond/gui/elements/TextButton.h>
@@ -27,7 +27,6 @@
 
 #include <vagabond/core/Environment.h>
 #include <vagabond/core/Entity.h>
-#include <vagabond/core/Residue.h>
 #include <vagabond/core/ResidueTorsion.h>
 #include <vagabond/core/Progressor.h>
 #include <vagabond/core/RotamerOccupancy.h>
@@ -171,7 +170,8 @@ void OccupancyComparisonView::buttonPressed(std::string tag, Button *button)
 	}
 	else if (tag == "per_residue")
 	{
-		showPerResidue();
+		PerResidueView *view = new PerResidueView(this, _entity);
+		view->show();
 	}
 
 	Scene::buttonPressed(tag, button);
@@ -181,26 +181,4 @@ void OccupancyComparisonView::sendObject(std::string header, void *object)
 {
 	_header = header;
 	refreshHeaderButton();
-}
-
-void OccupancyComparisonView::showPerResidue()
-{
-	if (_slider != nullptr)
-	{
-		return;
-	}
-
-	SequenceSlider *slider = new SequenceSlider(_entity->sequence());
-	slider->setBounds(0.1, 0.75, 0.9, 0.88, 0.92);
-
-	auto onResidue = [this](Residue *r)
-	{
-		_selectedResidue = r;
-	};
-
-	slider->setReturnJob(onResidue);
-	slider->setup();
-
-	addObject(slider);
-	_slider = slider;
 }

@@ -120,6 +120,8 @@ guifiles = [
 'PathParamEditor.cpp',
 'PathParamEditor.h',
 'PathsMenu.cpp',
+'PerResidueView.cpp',
+'PerResidueView.h',
 'PickAtomFromSequence.h',
 'PickAtomFromSequence.cpp',
 'PointyView.cpp',
