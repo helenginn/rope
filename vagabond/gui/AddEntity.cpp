@@ -251,7 +251,8 @@ void AddEntity::showSecondPage()
 		button->setCentre(0.2, 0.3);
 		addTempObject(button);
 
-		Text *text = new Text("Occupancy\nComparison");
+		TextButton *text = new TextButton("Occupancy\nComparison", this);
+		text->setReturnJob(open_occ_compare);
 		text->setCentre(0.2, 0.42);
 		text->resize(0.8);
 		addTempObject(text);
