@@ -25,7 +25,9 @@
 #include <vagabond/core/Residue.h>
 
 const double SequenceSliderSpacing = 0.02;
-const double SequenceSliderRowY = 0.05;
+// non-zero so tick Text's top half doesn't clip against the ScrollBox edge
+const double SequenceSliderTickY = 0.02;
+const double SequenceSliderRowY = SequenceSliderTickY + 0.05;
 
 SequenceSlider::SequenceSlider(IndexedSequence *sequence) : _sequence(sequence)
 {
@@ -67,6 +69,7 @@ void SequenceSlider::setup()
 		slider->setDragFunction(onDrag);
 		slider->resize(viewportWidth);
 		slider->setup("", 0.0, maxScroll, maxScroll / 100., false);
+		slider->setStart(0., 0.);
 		slider->setLeft(_left, _sliderY);
 		addObject(slider);
 		_slider = slider;
@@ -111,7 +114,7 @@ void SequenceSlider::addTickLabel(int number, double x)
 {
 	Text *t = new Text(std::to_string(number));
 	t->resize(0.6);
-	t->setCentre(x, 0);
+	t->setCentre(x, SequenceSliderTickY);
 	_content->addObject(t);
 }
 
