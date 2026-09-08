@@ -68,7 +68,7 @@ void SequenceSlider::setup()
 	Slider *slider = new Slider();
 	slider->setDragResponder(this);
 	slider->resize(viewportWidth);
-	slider->setup("", 0.0, maxScroll, maxScroll / 100.);
+	slider->setup("", 0.0, maxScroll, maxScroll / 2000., false);
 	slider->setStart(0., 0.);
 	slider->setCentre((_left + _right) / 2., _sliderY);
 	addObject(slider);
