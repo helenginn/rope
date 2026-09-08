@@ -17,13 +17,141 @@
 // Please email: vagabond @ hginn.co.uk for more details.
 
 #include "OccupancyComparisonView.h"
+#include "ChooseHeader.h"
+#include "VagWindow.h"
 
-OccupancyComparisonView::OccupancyComparisonView(Scene *prev) : Scene(prev)
+#include <vagabond/gui/elements/TextButton.h>
+#include <vagabond/gui/elements/Text.h>
+
+#include <vagabond/core/Environment.h>
+#include <vagabond/core/Entity.h>
+#include <vagabond/core/ResidueTorsion.h>
+#include <vagabond/core/Progressor.h>
+#include <vagabond/core/RotamerOccupancy.h>
+#include <vagabond/utils/DoJob.h>
+
+OccupancyComparisonView::OccupancyComparisonView(Scene *prev, Entity *entity)
+: Scene(prev), _entity(entity)
 {
+	_rota = std::make_shared<RotamerOccupancy>(entity);
+}
 
+OccupancyComparisonView::~OccupancyComparisonView()
+{
+	if (_cancelled)
+	{
+		_cancelled->store(true);
+	}
 }
 
 void OccupancyComparisonView::setup()
 {
 	addTitle("Occupancy Comparison");
+
+	addHeaderButton();
+	addStubButtons();
+
+	startMeasurement();
+}
+
+void OccupancyComparisonView::addHeaderButton()
+{
+	Text *t = new Text("Correlated metadata:");
+	t->setLeft(0.15, 0.3);
+	addObject(t);
+
+	TextButton *b = new TextButton("Choose...", this);
+	b->setReturnTag("header");
+	b->setRight(0.85, 0.3);
+	_headerButton = b;
+	addObject(b);
+}
+
+void OccupancyComparisonView::refreshHeaderButton()
+{
+	std::string str = _header.length() ? _header : "Choose...";
+	_headerButton->setText(str);
+}
+
+void OccupancyComparisonView::addStubButtons()
+{
+	TextButton *perResidue = new TextButton("Per-residue", this);
+	perResidue->setReturnTag("per_residue");
+	perResidue->setLeft(0.3, 0.6);
+	perResidue->setInert(true, true);
+	_perResidueButton = perResidue;
+	addObject(perResidue);
+
+	TextButton *pairwise = new TextButton("Pairwise correlation", this);
+	pairwise->setReturnTag("pairwise");
+	pairwise->setRight(0.7, 0.6);
+	pairwise->setInert(true, true);
+	_pairwiseButton = pairwise;
+	addObject(pairwise);
+}
+
+void OccupancyComparisonView::startMeasurement()
+{
+	_group = _entity->makeTorsionDataGroup();
+	_md = Environment::metadata();
+	refreshHeaderButton();
+
+	auto cancelled = std::make_shared<std::atomic<bool>>(false);
+	_cancelled = cancelled;
+
+	struct MeasureProgress : public Progressor {};
+	MeasureProgress *progress = new MeasureProgress();
+
+	auto cancelJob = [cancelled]()
+	{
+		cancelled->store(true);
+	};
+
+	int steps = (int)_entity->instances().size();
+
+	VagWindow::window()->requestProgressBar(steps, "Measuring torsion angles",
+	                                        progress, cancelJob);
+
+	std::shared_ptr<RotamerOccupancy> rota = _rota;
+	std::vector<ResidueTorsion> headers = _group.headers();
+
+	auto measure = [this, rota, progress, cancelled, headers]()
+	{
+		rota->calculate(headers, progress, cancelled.get());
+
+		VagWindow::window()->addMainThreadJob(
+		[this, progress, cancelled]()
+		{
+			delete progress;
+
+			if (cancelled->load())
+			{
+				return;
+			}
+
+			_perResidueButton->setInert(false, true);
+			_pairwiseButton->setInert(false, true);
+		});
+	};
+
+	new DoJob(measure);
+}
+
+void OccupancyComparisonView::buttonPressed(std::string tag, Button *button)
+{
+	if (tag == "header")
+	{
+		ChooseHeader *ch = new ChooseHeader(this);
+		ch->setResponder(this);
+		ch->setData(_md, &_group);
+		ch->show();
+	}
+
+	Scene::buttonPressed(tag, button);
+}
+
+void OccupancyComparisonView::sendObject(std::string header, void *object)
+{
+	_header = header;
+	refreshHeaderButton();
 }

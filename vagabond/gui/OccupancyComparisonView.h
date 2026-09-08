@@ -20,13 +20,44 @@
 #define __vagabond__OccupancyComparisonView__
 
 #include <vagabond/gui/elements/Scene.h>
+#include <vagabond/core/Responder.h>
+#include <vagabond/core/TorsionData.h>
 
-class OccupancyComparisonView : public Scene
+#include <memory>
+#include <atomic>
+
+class Entity;
+class Metadata;
+class RotamerOccupancy;
+class ChooseHeader;
+class TextButton;
+
+class OccupancyComparisonView : public Scene, public Responder<ChooseHeader>
 {
 public:
-	OccupancyComparisonView(Scene *prev);
+	OccupancyComparisonView(Scene *prev, Entity *entity);
+	~OccupancyComparisonView();
 
 	virtual void setup();
+	virtual void buttonPressed(std::string tag, Button *button = nullptr);
+	virtual void sendObject(std::string header, void *object);
+private:
+	void addHeaderButton();
+	void addStubButtons();
+	void refreshHeaderButton();
+	void startMeasurement();
+
+	Entity *_entity = nullptr;
+	Metadata *_md = nullptr;
+	TorsionData _group = TorsionData(0);
+	std::shared_ptr<RotamerOccupancy> _rota;
+
+	std::string _header;
+	TextButton *_headerButton = nullptr;
+	TextButton *_perResidueButton = nullptr;
+	TextButton *_pairwiseButton = nullptr;
+
+	std::shared_ptr<std::atomic<bool>> _cancelled;
 };
 
 #endif

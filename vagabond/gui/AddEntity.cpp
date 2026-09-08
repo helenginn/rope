@@ -240,7 +240,7 @@ void AddEntity::showSecondPage()
 	{
 		auto open_occ_compare = [this]()
 		{
-			OccupancyComparisonView *view = new OccupancyComparisonView(this);
+			OccupancyComparisonView *view = new OccupancyComparisonView(this, &_obj);
 			view->show();
 		};
 
@@ -251,7 +251,7 @@ void AddEntity::showSecondPage()
 		button->setCentre(0.2, 0.3);
 		addTempObject(button);
 
-		Text *text = new Text("Occupancy comparison");
+		Text *text = new Text("Occupancy\nComparison");
 		text->setCentre(0.2, 0.4);
 		text->resize(0.8);
 		addTempObject(text);
