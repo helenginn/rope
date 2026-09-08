@@ -121,6 +121,7 @@ void SequenceSlider::repositionContent(double target)
 {
 	double delta = target - _scrollX;
 	_content->addAlign(-delta, 0);
+	_content->forceRender(true, false);
 	_scrollX = target;
 }
 
