@@ -49,6 +49,12 @@ public:
 	
 	Style style = StyleLine;
 
+	// when style == StyleScatter, also draw each series' points joined by
+	// a line, in the order they were added by addPoint() - lets a caller
+	// show both the individual points and the track/series they belong to
+	// at once, without a second, axis-duplicating Graph overlaid on top.
+	bool connectPoints = false;
+
 	// pointType indexes assets/images/points.png (0-7: filled circle,
 	// filled star, filled triangle, X, circle-with-dot [the default, see
 	// DataPoint], outline star, outline triangle, asterisk) - lets a

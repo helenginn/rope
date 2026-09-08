@@ -302,6 +302,11 @@ void Graph::plotData(float width, float height)
 	else if (style == StyleScatter)
 	{
 		addScatters(width, height);
+
+		if (connectPoints)
+		{
+			addLines(width, height);
+		}
 	}
 }
 

@@ -26,6 +26,7 @@
 
 class Entity;
 class Instance;
+class Metadata;
 class Progressor;
 class Residue;
 class ResidueTorsion;
@@ -43,6 +44,7 @@ public:
 
 	/** desc of torsion -> alt-conf label ("" if unsplit) -> angle (degrees) */
 	typedef std::map<std::string, std::map<std::string, double>> InstanceAngles;
+	typedef std::pair<Instance *, Residue *> InstRes;
 
 	/** measures every instance of the entity, optionally reporting progress
 	 * and checking for cancellation between instances */
@@ -57,21 +59,57 @@ public:
 	void ensureModelsLoaded();
 	void unloadModels();
 
-	const std::map<Instance *, InstanceAngles> &results() const
+	std::map<Instance *, InstanceAngles> resultsForResidue(Residue *r) const;
+
+	const std::map<InstRes, InstanceAngles> &results() const
 	{
 		return _results;
 	}
 
+	/** one alt-conf label of one instance, as a point in chi-torsion space */
+	struct AltConfPoint
+	{
+		Instance *instance = nullptr;
+		std::string label;
+		/** torsion desc -> angle (degrees) */
+		std::map<std::string, double> chiAngles;
+	};
+
+	struct RotamerBucket
+	{
+		std::vector<AltConfPoint> points;
+		/** chi torsions of the most recently assigned point (i.e. the
+		 * previous instance, in metadata order, tracked into this bucket) */
+		std::map<std::string, double> average;
+	};
+
+	/** Walks every instance for the given residue in ascending order of
+	 * its value for the given metadata header (instances lacking a value,
+	 * or md/header left empty, sort as if their value were 0), and matches
+	 * each instance's alt-conf labels 1-to-1 against the buckets' most
+	 * recently tracked angles - so a bucket represents one rotamer
+	 * followed along the ordering, not an overall average. Unmatched
+	 * points (nothing within thresholdDegrees on every shared torsion, or
+	 * the closest bucket already claimed by a cheaper match this round)
+	 * start a new bucket. Buckets are returned in descending order of
+	 * size. */
+	std::vector<RotamerBucket> bucketAltConfs(Residue *r, Metadata *md,
+	                                          const std::string &header,
+	                                          double thresholdDegrees = 45.0) const;
+
 	/** true if any instance has more than one alt-conf label on any atom
 	 * of the given master residue - i.e. there's something to compare */
 	bool hasAltConformers(Residue *masterResidue) const;
+
+	float altConfOccupancy(Instance *inst, Residue *masterResidue,
+	                       std::string conf) const;
 private:
 	void measureInstance(Instance *instance,
 	                      const std::vector<ResidueTorsion> &headers);
 
 	Entity *_entity = nullptr;
 
-	std::map<Instance *, InstanceAngles> _results;
+	std::map<InstRes, InstanceAngles> _results;
 };
 
 #endif

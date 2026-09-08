@@ -20,27 +20,45 @@
 #define __vagabond__PerResidueView__
 
 #include <vagabond/gui/elements/Scene.h>
+#include <vagabond/core/RotamerOccupancy.h>
 
 #include <memory>
+#include <vector>
 
 class Entity;
+class Graph;
+class Metadata;
 class Residue;
-class RotamerOccupancy;
 class SequenceSlider;
 
 class PerResidueView : public Scene
 {
 public:
+	/** @param md metadata source used to fill the x axis of the graph
+	 * @param header metadata field chosen for the x axis; may be empty,
+	 * in which case instances are just plotted in an arbitrary order */
 	PerResidueView(Scene *prev, Entity *entity,
-	               std::shared_ptr<RotamerOccupancy> rota);
+	               std::shared_ptr<RotamerOccupancy> rota,
+	               Metadata *md, std::string header);
 
 	virtual void setup();
 private:
 	Entity *_entity = nullptr;
 	std::shared_ptr<RotamerOccupancy> _rota;
+	Metadata *_md = nullptr;
+	std::string _header;
 
 	SequenceSlider *_slider = nullptr;
+	Graph *_graph = nullptr;
 	Residue *_selectedResidue = nullptr;
+
+	std::vector<RotamerOccupancy::RotamerBucket> _buckets;
+
+	void onResidueSelected(Residue *r);
+	void graphForAll();
+	void addBucketPoints(Graph *graph, int series,
+	                     const RotamerOccupancy::RotamerBucket &bucket);
+	Graph *newGraph();
 };
 
 #endif
