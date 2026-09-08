@@ -128,6 +128,8 @@ guifiles = [
 'ProgressView.cpp',
 'ProbeAtom.cpp',
 'ProbeAtom.h',
+'ProbeAtomBatch.cpp',
+'ProbeAtomBatch.h',
 'ProbeBond.cpp',
 'ProbeBond.h',
 'ProbeBondBatch.cpp',

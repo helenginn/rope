@@ -17,6 +17,7 @@
 // Please email: vagabond @ hginn.co.uk for more details.
 
 #include "ProbeAtom.h"
+#include "ProbeAtomBatch.h"
 #include "ProbeBond.h"
 #include "ProbeBondBatch.h"
 #include "ProbeCharge.h"
@@ -34,6 +35,8 @@
 #include <vagabond/core/Model.h>
 #include <vagabond/core/files/PdbFile.h>
 #include <vagabond/utils/DoJob.h>
+#include <set>
+#include <cctype>
 #include <vagabond/gui/CliqueView.h>
 #include <vagabond/gui/ProblemReviewView.h>
 #include <vagabond/gui/HBondAnalysisControl.h>
@@ -105,10 +108,16 @@ void ProtonNetworkView::clearNetworkObjects()
 	// is ambiguous.
 	for (auto &pr : _textProbes)
 	{
-		removeObject((FloatingText *)pr.second);
 		delete pr.second;
 	}
 	_textProbes.clear();
+
+	if (_atomBatch)
+	{
+		removeObject(_atomBatch);
+		delete _atomBatch;
+		_atomBatch = nullptr;
+	}
 
 	for (auto &pr : _bondProbes)
 	{
@@ -250,6 +259,37 @@ void ProtonNetworkView::buildNetwork()
 
 void ProtonNetworkView::findAtomProbes()
 {
+	// every label any atom/hydrogen probe in this network could ever
+	// display over its lifetime (AtomProbe::display()/HydrogenProbe::
+	// display()'s full vocabulary) - built once, up front, so
+	// ProbeAtomBatch's text atlas never needs to grow later. Sound only
+	// because an atom that ever resolves to a real element symbol (the
+	// hnet::Atom::Ion case) never reverts to O/N/S/etc (per hnet's
+	// AtomConnector) - otherwise a slot could need a label outside
+	// whatever was enumerated here.
+	std::set<std::string> vocabulary = {" ", "O", "N", "S", "H", "!", "?"};
+
+	for (AtomProbe *const &probe : _network->atomProbes())
+	{
+		if (probe->_text.length())
+		{
+			vocabulary.insert(probe->_text);
+		}
+		else if (probe->atom())
+		{
+			std::string symbol = probe->atom()->elementSymbol();
+			if (symbol.length() > 1)
+			{
+				symbol[1] = std::tolower(symbol[1]);
+			}
+			vocabulary.insert(symbol);
+		}
+	}
+
+	_atomBatch = new ProbeAtomBatch(std::vector<std::string>(
+	vocabulary.begin(), vocabulary.end()));
+	addObject(_atomBatch);
+
 	for (AtomProbe *const &probe : _network->atomProbes())
 	{
 		if (probe->is_bulk())
@@ -268,8 +308,7 @@ void ProtonNetworkView::findAtomProbes()
 			continue;
 		}
 
-		ProbeAtom *text = new ProbeAtom(this, probe);
-		addObject((FloatingText *)text);
+		ProbeAtom *text = new ProbeAtom(this, _atomBatch, probe);
 		// used to also link a symmetry mate's probe directly to its
 		// mother's here (linkSymmetricAtomProbes(), now removed) - made
 		// sense while a mate's bond pattern was forced equal to its
@@ -281,7 +320,6 @@ void ProtonNetworkView::findAtomProbes()
 		_textProbes[probe] = text;
 		_allProbes.insert(probe);
 		probe->setResponder(this);
-		addIndexResponder(text);
 	}
 
 	for (HydrogenProbe *const &probe : _network->hydrogenProbes())
@@ -298,14 +336,17 @@ void ProtonNetworkView::findAtomProbes()
 			continue;
 		}
 
-		ProbeAtom *text = new ProbeAtom(this, probe);
-		addObject((FloatingText *)text);
+		ProbeAtom *text = new ProbeAtom(this, _atomBatch, probe);
 		_textProbes[probe] = text;
 		_allProbes.insert(probe);
 		_hProbes.insert(probe);
 		probe->setResponder(this);
-		addIndexResponder(text);
 	}
+
+	// now that every atom/hydrogen has a slot, reindex() (triggered by
+	// this) can stamp each one real GPU-pick id - same ordering
+	// requirement as _bondBatch below.
+	addIndexResponder(_atomBatch);
 
 	// one shared Renderable for every bond in the network (see
 	// ProbeBondBatch's header comment) - added once here, rather than
@@ -496,7 +537,7 @@ void ProtonNetworkView::arrangeFigure()
 	{
 		return [probe]() -> glm::vec3
 		{
-			return probe->FloatingText::centroid();
+			return probe->currentPosition();
 		};
 	};
 
@@ -515,7 +556,7 @@ void ProtonNetworkView::arrangeFigure()
 	{
 		return [probe](const glm::vec3 &vec)
 		{
-			probe->FloatingText::setPosition(vec);
+			probe->setRenderPosition(vec);
 		};
 	};
 
@@ -531,7 +572,7 @@ void ProtonNetworkView::arrangeFigure()
 	{
 		return [probe]()
 		{
-			probe->FloatingText::forceRender(true, false);
+			probe->forceRedraw();
 		};
 	};
 
@@ -748,7 +789,7 @@ void ProtonNetworkView::sendObject(std::string tag, void *object)
 		Probe *p = static_cast<Probe *>(object);
 		if (_textProbes.count(p))
 		{
-			_textProbes[p]->FloatingText::setAlpha(p->alpha());
+			_textProbes[p]->setRenderAlpha(p->alpha());
 		}
 
 		if (_bondProbes.count(p))
@@ -1340,7 +1381,7 @@ void ProtonNetworkView::mouseMoveEvent(double x, double y)
 		glm::vec3 curr = _shifter->getPosition(_manual);
 		curr += move * 12.f;
 		_shifter->setPosition(_manual, curr);
-		_manual->FloatingText::forceRender(true, false);
+		_manual->forceRedraw();
 		_lastX = x;
 		_lastY = y;
 	}

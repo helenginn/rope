@@ -26,6 +26,7 @@
 #include "config/config.h"
 
 #include <iostream>
+#include <cstring>
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>
 //#include <SDL2/SDL_ttf.h>
@@ -142,6 +143,8 @@ GLuint Library::buildAtlas(const std::string &cacheKey,
 		r.u1 = (float)(x + s->w) / (float)totalW;
 		r.v0 = 0.f;
 		r.v1 = (float)s->h / (float)maxH;
+		r.width = s->w;
+		r.height = s->h;
 		rects[pr.first] = r;
 
 		x += s->w;
@@ -152,6 +155,88 @@ GLuint Library::buildAtlas(const std::string &cacheKey,
 	_atlasRects[cacheKey] = rects;
 
 	SDL_FreeSurface(atlas);
+
+	return texid;
+}
+
+GLuint Library::buildTextAtlas(const std::string &cacheKey,
+                               const std::vector<std::string> &texts,
+                               Font::Type type,
+                               std::map<std::string, AtlasRect> &rects)
+{
+	if (!Window::hasContext())
+	{
+		return 0;
+	}
+
+	GLuint existing;
+	if (hasTexture(cacheKey, existing, nullptr, nullptr)
+	    && _atlasRects.count(cacheKey))
+	{
+		rects = _atlasRects[cacheKey];
+		return existing;
+	}
+
+	struct Glyph
+	{
+		std::string text;
+		png_byte *bytes;
+		int w;
+		int h;
+	};
+
+	std::vector<Glyph> glyphs;
+	int totalW = 0;
+	int maxH = 0;
+
+	for (const std::string &text : texts)
+	{
+		int w = 0, h = 0;
+		png_byte *bytes = nullptr;
+		TextManager::text_malloc(&bytes, text, &w, &h, type);
+
+		if (bytes == nullptr || w == 0 || h == 0)
+		{
+			continue;
+		}
+
+		glyphs.push_back({text, bytes, w, h});
+		totalW += w;
+		maxH = std::max(maxH, h);
+	}
+
+	if (glyphs.size() == 0)
+	{
+		return 0;
+	}
+
+	std::vector<unsigned char> atlasPixels(totalW * maxH * 4, 0);
+
+	int x = 0;
+	for (Glyph &g : glyphs)
+	{
+		for (int row = 0; row < g.h; row++)
+		{
+			memcpy(&atlasPixels[((size_t)(row * totalW) + x) * 4],
+			      &g.bytes[(size_t)row * g.w * 4], g.w * 4);
+		}
+
+		AtlasRect r;
+		r.u0 = (float)x / (float)totalW;
+		r.u1 = (float)(x + g.w) / (float)totalW;
+		r.v0 = 0.f;
+		r.v1 = (float)g.h / (float)maxH;
+		r.width = g.w;
+		r.height = g.h;
+		rects[g.text] = r;
+
+		x += g.w;
+		TextManager::text_free(&g.bytes);
+	}
+
+	GLuint texid = bindBytes(atlasPixels.data(), totalW, maxH);
+	registerTexture(cacheKey, texid, totalW, maxH);
+	_atlasRects[cacheKey] = rects;
 
 	return texid;
 }

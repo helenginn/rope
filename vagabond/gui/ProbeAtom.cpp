@@ -1,57 +1,33 @@
 // vagabond
 // Copyright (C) 2022 Helen Ginn
-// 
+//
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-// 
+//
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-// 
+//
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
-// 
+//
 // Please email: vagabond @ hginn.co.uk for more details.
 
 #include "ProbeAtom.h"
+#include "ProbeAtomBatch.h"
 #include "ProtonNetworkView.h"
 #include <vagabond/core/protonic/Network.h>
 #include <vagabond/core/protonic/Probe.h>
 #include <vagabond/gui/elements/Menu.h>
-#include <vagabond/gui/elements/Library.h>
 
 using namespace hnet;
 
-/* AtomProbe/HydrogenProbe::display() only ever return one of this small,
- * fixed set of single-character strings (barring AtomProbe's optional
- * free-form _text override). Loading them into Library's texture cache
- * once up front, and never dropping that hold, means every later
- * FloatingText::changeText() during hnet solving is a cache hit instead
- * of a delete-then-recreate GL round trip. */
-static void preloadProbeTextTextures()
-{
-	static bool done = false;
-	if (done)
-	{
-		return;
-	}
-	done = true;
-
-	static const std::vector<std::string> texts = {" ", "O", "N", "S", "H",
-	                                                 "!", "?"};
-	for (const std::string &text : texts)
-	{
-		int w, h;
-		Library::getLibrary()->loadText(text, &w, &h, Font::Thin);
-	}
-}
-
 void ProbeAtom::fullUpdate()
 {
-	FloatingText::addMainThreadJob
+	_batch->addMainThreadJob
 	([this]()
 	 {
 		fullUpdateProbe();
@@ -61,72 +37,70 @@ void ProbeAtom::fullUpdate()
 void ProbeAtom::fullUpdateProbe()
 {
 	glm::vec3 c = _probe->colour();
-	FloatingText::setText(_probe->display());
-	FloatingText::correctBox(_probe->mult(), 0.0);
-	FloatingText::setPosition(_probe->position());
-	FloatingText::setColour(c.x, c.y, c.z);
-	FloatingText::setAlpha(_probe->alpha());
-	reindex();
-	updateProbe();
-	FloatingText::forceRender(true, true);
+	_batch->setSlotFull(_slot, _probe->display(), _probe->mult(),
+	                    _probe->position());
+	_batch->setSlotColour(_slot, c.x, c.y, c.z);
+	_batch->setSlotAlpha(_slot, _probe->alpha());
 }
 
 void ProbeAtom::updatePosition()
 {
-	FloatingText::setPosition(_probe->position());
-	FloatingText::forceRender(true, false);
+	_batch->setSlotPosition(_slot, _probe->position());
 }
 
 void ProbeAtom::updateProbe()
 {
-	FloatingText::addMainThreadJob
+	_batch->addMainThreadJob
 	([this]()
 	{
-		FloatingText::changeText(_probe->display());
-		FloatingText::setAlpha(_probe->alpha());
+		_batch->changeSlotText(_slot, _probe->display());
+		_batch->setSlotAlpha(_slot, _probe->alpha());
 	});
 }
 
-ProbeAtom::ProbeAtom(ProtonNetworkView *view, AtomProbe *probe)
-: FloatingText(probe->display(), probe->mult(), 0.0)
+glm::vec3 ProbeAtom::currentPosition() const
 {
-	preloadProbeTextTextures();
+	return _batch->slotPosition(_slot);
+}
 
-	FloatingText::setPosition(probe->position());
-	_probe = probe;
+void ProbeAtom::setRenderPosition(const glm::vec3 &pos)
+{
+	_batch->setSlotPosition(_slot, pos);
+}
+
+void ProbeAtom::setRenderAlpha(double alpha)
+{
+	_batch->setSlotAlpha(_slot, alpha);
+}
+
+void ProbeAtom::forceRedraw()
+{
+	_batch->forceRender(true, false);
+}
+
+ProbeAtom::ProbeAtom(ProtonNetworkView *view, ProbeAtomBatch *batch,
+                    AtomProbe *probe)
+{
+	_batch = batch;
 	_view = view;
-	
-#ifndef __EMSCRIPTEN__
-	std::string shader = "assets/shaders/indexed_box.fsh";
-#else
-	std::string shader = "assets/shaders/box.fsh";
-#endif
+	_probe = probe;
+	_slot = _batch->appendAtom(this);
 
-	FloatingText::setFragmentShaderFile(shader);
 	probe->_obj.set_update([this](bool thorough)
 	                       { thorough ? fullUpdate() : updateProbe(); });
 	probe->existence().add_update([this](bool thorough) { updateProbe(); });
+
 	fullUpdateProbe();
 }
 
-ProbeAtom::ProbeAtom(ProtonNetworkView *view, HydrogenProbe *probe)
-: FloatingText(probe->display(), 25, 0.0)
+ProbeAtom::ProbeAtom(ProtonNetworkView *view, ProbeAtomBatch *batch,
+                    HydrogenProbe *probe)
 {
-	preloadProbeTextTextures();
-
+	_batch = batch;
 	_view = view;
 	_probe = probe;
+	_slot = _batch->appendAtom(this);
 
-	FloatingText::setPosition(probe->position());
-	FloatingText::setAlpha(probe->alpha());
-	FloatingText::setColour(0, 0, 0);
-
-#ifndef __EMSCRIPTEN__
-	std::string shader = "assets/shaders/indexed_box.fsh";
-#else
-	std::string shader = "assets/shaders/box.fsh";
-#endif
-	FloatingText::setFragmentShaderFile(shader);
 	probe->_obj.set_update([this](bool thorough)
 	                       { thorough ? fullUpdate() : updateProbe(); });
 	probe->existence().set_update([this](bool thorough) { updateProbe(); });
@@ -152,7 +126,7 @@ void ProbeAtom::offerHeavyAtomMenu()
 	std::vector<Existence::Values> options = aProbe->existence().values();
 
 	Menu *m = new Menu(_view, this);
-	
+
 	if (!aProbe->existence().is_certain())
 	{
 		for (const Existence::Values &option : options)
@@ -163,7 +137,7 @@ void ProbeAtom::offerHeavyAtomMenu()
 			             () { declareAtomExistence(option); });
 		}
 	}
-	
+
 	auto realign_atom = [aProbe]()
 	{
 		aProbe->realign();
@@ -181,7 +155,7 @@ void ProbeAtom::offerHydrogenMenu()
 	std::vector<Existence::Values> options = hProbe->_obj.values();
 
 	Menu *m = new Menu(_view, this);
-	
+
 	for (const Existence::Values &option : options)
 	{
 		std::ostringstream ss;
@@ -196,9 +170,7 @@ void ProbeAtom::interacted(int idx, bool hover, bool left)
 {
 	if (hover)
 	{
-		FloatingText::setHighlighted(true);
 		_view->setManualAdjust(this);
-		_view->setActive((FloatingText *)this);
 		hoverOverAtom();
 	}
 
@@ -213,16 +185,6 @@ void ProbeAtom::interacted(int idx, bool hover, bool left)
 
 }
 
-void ProbeAtom::reindex()
-{
-	size_t offset = indexOffset();
-	for (size_t i = 0; i < FloatingText::vertexCount(); i++)
-	{
-		/* in the case of multiple responders */
-		FloatingText::_vertices[i].extra[3] = offset + 1.5;
-	}
-}
-
 void ProbeAtom::selected(int idx, bool inverse)
 {
 	_selected = !inverse;
@@ -230,15 +192,15 @@ void ProbeAtom::selected(int idx, bool inverse)
 	if (!_selected)
 	{
 		glm::vec3 c = _probe->colour();
-		FloatingText::setColour(c.x, c.y, c.z);
+		_batch->setSlotColour(_slot, c.x, c.y, c.z);
 	}
 	else
 	{
 		glm::vec3 c = _probe->colour();
-		FloatingText::setColour(c.x + 0.5, c.y + 0.5, c.z + 0.5);
+		_batch->setSlotColour(_slot, c.x + 0.5, c.y + 0.5, c.z + 0.5);
 	}
 
-	FloatingText::forceRender(true, false);
+	forceRedraw();
 }
 
 void ProbeAtom::declareAtomExistence(Existence::Values value)
@@ -267,7 +229,7 @@ void ProbeAtom::declareAtomExistence(Existence::Values value)
 		aProbe->existence().forget_all(gv);
 		aProbe->existence().check_all(gv);
 	};
-	
+
 	_view->network().undoStack().addJobAndExecute(make_declaration,
 	                                              rescind_declaration,
 	                                              message);
@@ -299,7 +261,7 @@ void ProbeAtom::declareHydrogen(Existence::Values value)
 		hProbe->_obj.forget_all(gv);
 		hProbe->_obj.check_all(gv);
 	};
-	
+
 	_view->network().undoStack().addJobAndExecute(make_declaration,
 	                                              rescind_declaration,
 	                                              message);
@@ -315,16 +277,5 @@ void ProbeAtom::buttonPressed(std::string tag, Button *button)
 	{
 		declareHydrogen(Existence::Absent);
 	}
-
-}
-
-void ProbeAtom::extraUniforms()
-{
-	glm::vec4 glow = _probe->glow();
-	GLint uGlow = 
-	glGetUniformLocation(FloatingText::_program, "aGlow");
-	glUniform4f(uGlow, glow[0], glow[1], glow[2], glow[3]);
-	FloatingText::_gl->checkErrors("glowing");
-	FloatingText::extraUniforms();
 
 }

@@ -23,6 +23,12 @@ struct AtlasRect
 	float v0 = 0.f;
 	float u1 = 1.f;
 	float v1 = 1.f;
+
+	// the sub-image own raw pixel size, before it was packed into the
+	// atlas - needed by callers (e.g. ProbeAtomBatch) that must reproduce
+	// per-glyph aspect ratio, not just where to sample it from.
+	int width = 0;
+	int height = 0;
 };
 
 class Library
@@ -58,6 +64,17 @@ public:
 	GLuint buildAtlas(const std::string &cacheKey,
 	                  const std::vector<std::string> &filenames,
 	                  std::map<std::string, AtlasRect> &rects);
+
+	/** Same idea as buildAtlas(), but each sub-image is rendered text
+	 *  (TextManager::text_malloc()) rather than a loaded file - rects is
+	 *  keyed by the text string itself. Only sound when the full set of
+	 *  strings that will ever be needed is known up front (no entries can
+	 *  be added later) - see ProbeAtomBatch, which enumerates every
+	 *  atom's possible label from the network before building. */
+	GLuint buildTextAtlas(const std::string &cacheKey,
+	                      const std::vector<std::string> &texts,
+	                      Font::Type type,
+	                      std::map<std::string, AtlasRect> &rects);
 
 	GLuint getProgram(std::string vString, std::string vFile,
 	                  std::string fString, std::string fFile, bool &old);

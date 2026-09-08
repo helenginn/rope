@@ -106,8 +106,8 @@ void ProbeBond::updatePosition()
 
 	// follow wherever the endpoints are currently rendered, not the
 	// physics probe position directly - see setEndpoints().
-	glm::vec3 start = _leftGui->FloatingText::centroid();
-	glm::vec3 end = _rightGui->FloatingText::centroid();
+	glm::vec3 start = _leftGui->currentPosition();
+	glm::vec3 end = _rightGui->currentPosition();
 	glm::vec3 truncate = (end - start) / 4.f;
 
 	float left = 0;
