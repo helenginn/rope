@@ -127,6 +127,11 @@ void ProbeBondBatch::setSlotImage(size_t slot, const std::string &imageName)
 		_vertices[j].extra[1] = r.u1 - r.u0;
 		_vertices[j].extra[2] = r.v1 - r.v0;
 	}
+
+	// unlike Image::changeImage() (a texture id swap, re-read fresh every
+	// draw call), this writes into the buffered vertex array, so the GPU
+	// side needs telling to re-upload it.
+	forceRender(true, false);
 }
 
 void ProbeBondBatch::setSlotColour(size_t slot, double r, double g, double b)
@@ -139,6 +144,8 @@ void ProbeBondBatch::setSlotColour(size_t slot, double r, double g, double b)
 		_vertices[j].color[1] = g;
 		_vertices[j].color[2] = b;
 	}
+
+	forceRender(true, false);
 }
 
 void ProbeBondBatch::setSlotAlpha(size_t slot, double alpha)
@@ -149,6 +156,8 @@ void ProbeBondBatch::setSlotAlpha(size_t slot, double alpha)
 	{
 		_vertices[j].color[3] = alpha;
 	}
+
+	forceRender(true, false);
 }
 
 void ProbeBondBatch::extraUniforms()
