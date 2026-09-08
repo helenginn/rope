@@ -50,6 +50,13 @@ public:
 	                Progressor *progress = nullptr,
 	                std::atomic<bool> *cancelled = nullptr);
 
+	/** Atom::conformerPositions() is only populated once a model has been
+	 * loaded from disk - call this once before a batch of calls that need
+	 * real atom data (e.g. hasAltConformers() over every residue), and
+	 * unloadModels() once afterwards. calculate() does this internally. */
+	void ensureModelsLoaded();
+	void unloadModels();
+
 	const std::map<Instance *, InstanceAngles> &results() const
 	{
 		return _results;

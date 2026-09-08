@@ -50,6 +50,8 @@ void PerResidueView::setup()
 	slider->setReturnJob(onResidue);
 	slider->setup();
 
+	_rota->ensureModelsLoaded();
+
 	std::set<Residue *> enabled;
 	for (size_t i = 0; i < sequence->entryCount(); i++)
 	{
@@ -64,6 +66,8 @@ void PerResidueView::setup()
 			enabled.insert(r);
 		}
 	}
+
+	_rota->unloadModels();
 
 	slider->setEnabledResidues(enabled);
 

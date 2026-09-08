@@ -39,6 +39,8 @@ void RotamerOccupancy::calculate(const std::vector<ResidueTorsion> &headers,
                                   Progressor *progress,
                                   std::atomic<bool> *cancelled)
 {
+	ensureModelsLoaded();
+
 	std::vector<Instance *> instances = _entity->instances();
 
 	for (Instance *instance : instances)
@@ -56,9 +58,27 @@ void RotamerOccupancy::calculate(const std::vector<ResidueTorsion> &headers,
 		}
 	}
 
+	unloadModels();
+
 	if (progress)
 	{
 		progress->finishTicker();
+	}
+}
+
+void RotamerOccupancy::ensureModelsLoaded()
+{
+	for (Instance *instance : _entity->instances())
+	{
+		instance->load();
+	}
+}
+
+void RotamerOccupancy::unloadModels()
+{
+	for (Instance *instance : _entity->instances())
+	{
+		instance->unload();
 	}
 }
 
