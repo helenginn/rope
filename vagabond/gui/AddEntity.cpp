@@ -42,9 +42,8 @@
 #include <vagabond/gui/ConfSpaceView.h>
 #include <vagabond/gui/SearchPDB.h>
 #include <vagabond/gui/SerialRefiner.h>
-#include <vagabond/gui/PathFinding.h>
 #include <vagabond/gui/PathsMenu.h>
-#include <vagabond/gui/BFactors.h>
+#include <vagabond/gui/OccupancyComparisonView.h>
 
 #include <vagabond/gui/elements/ImageButton.h>
 #include <vagabond/gui/elements/AskYesNo.h>
@@ -222,14 +221,15 @@ void AddEntity::showFirstPage()
 		addTempObject(text);
 	}
 
-#ifdef VERSION_EXTEND_ENTITY_MENU
 		ImageButton *button = ImageButton::arrow(-90, this,
 		                                         "assets/images/big_button.png");
 		button->setCentre(0.92, 0.5);
 		button->resize(3.f);
-		button->setReturnTag("second_page");
+		button->setReturnJob([this]()
+		                     {
+			                     showSecondPage();
+			                 });
 		addTempObject(button);
-#endif
 	}
 }
 
@@ -238,29 +238,21 @@ void AddEntity::showSecondPage()
 	deleteTemps();
 
 	{
-		ImageButton *button = new ImageButton("assets/images/bee.png", 
+		auto open_occ_compare = [this]()
+		{
+			OccupancyComparisonView *view = new OccupancyComparisonView(this);
+			view->show();
+		};
+
+		ImageButton *button = new ImageButton("assets/images/occupancy_check.png",
 		                                      this);
-		button->resize(0.19);
-		button->setReturnTag("b_factors");
+		button->resize(0.15);
+		button->setReturnJob(open_occ_compare);
 		button->setCentre(0.2, 0.3);
 		addTempObject(button);
 
-		Text *text = new Text("B factors");
+		Text *text = new Text("Occupancy comparison");
 		text->setCentre(0.2, 0.4);
-		text->resize(0.8);
-		addTempObject(text);
-	}
-
-	if (_obj.hasSequence())
-	{
-		ImageButton *b = new ImageButton("assets/images/tube_1.5ml.png", this);
-		b->resize(0.15);
-		b->setReturnTag("refinement");
-		b->setCentre(0.4, 0.3);
-		addTempObject(b);
-
-		Text *text = new Text("Refinement prep");
-		text->setCentre(0.4, 0.4);
 		text->resize(0.8);
 		addTempObject(text);
 	}
@@ -269,7 +261,10 @@ void AddEntity::showSecondPage()
 	                                         "assets/images/big_button.png");
 	button->resize(3.f);
 	button->setCentre(0.08, 0.5);
-	button->setReturnTag("first_page");
+	button->setReturnJob([this]()
+	                     {
+		                     showFirstPage();
+		                 });
 	addTempObject(button);
 
 }
@@ -406,14 +401,6 @@ void AddEntity::buttonPressed(std::string tag, Button *button)
 		_obj.setName(_name->scratch());
 		refreshInfo();
 	}
-	else if (tag == "second_page" && _existing)
-	{
-		showSecondPage();
-	}
-	else if (tag == "first_page" && _existing)
-	{
-		showFirstPage();
-	}
 	else if (tag == "sequence" && _existing)
 	{
 		EntitySequenceView *view = new EntitySequenceView(this, _obj.sequence());
@@ -442,11 +429,6 @@ void AddEntity::buttonPressed(std::string tag, Button *button)
 		m->addOption("B factors", "b_factor_space");
 		m->setup(button);
 		setModal(m);
-	}
-	else if (tag == "b_factors")
-	{
-		BFactors *bf = new BFactors(this, &_obj);
-		bf->show();
 	}
 	else if (tag == "search_pdb")
 	{
@@ -482,12 +464,6 @@ void AddEntity::buttonPressed(std::string tag, Button *button)
 	{
 		PathsMenu *pm = new PathsMenu(this, &_obj);
 		pm->show();
-		return;
-	}
-	else if (tag == "refinement")
-	{
-		PathFinding *pf = new PathFinding(this, &_obj); // for warp
-		pf->show();
 		return;
 	}
 	else if (tag == "create")
