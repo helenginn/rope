@@ -635,7 +635,7 @@ void ForceAnalysis::resetUnknowns()
 
 }
 
-void ForceAnalysis::calculateUnknown(bool calcWithUnits)
+void ForceAnalysis::calculate(bool calcWithUnits)
 {
 	_calcWithUnits = calcWithUnits;
 	resetUnknowns();

@@ -141,5 +141,5 @@ void handleCalcForces(std::string first, std::string last) {
   analysis.toggleReason(AbstractForce::ReasonElectrostaticContact, false);
 
   analysis.toggleReason(AbstractForce::ReasonBondAngle, true);
-  analysis.calculateUnknown(args.calcWithUnits);
+  analysis.calculate(args.calcWithUnits);
 }

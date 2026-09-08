@@ -59,7 +59,7 @@ public:
 
 	void convert(bool calcWithUnits = false);
 	
-	void calculateUnknown(bool = false);
+	void calculate(bool = false);
 	void resetUnknowns();
 
 private:

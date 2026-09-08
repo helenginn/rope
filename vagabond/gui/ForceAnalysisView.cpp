@@ -106,7 +106,7 @@ void ForceAnalysisView::setup()
 	calculate->setLeft(0.8, 0.52);
 	calculate->setReturnJob([this]()
 					  {
-						 _analysis.calculateUnknown();
+						 _analysis.calculate();
 			             updateForces();
 					  });
 	addObject(calculate);
