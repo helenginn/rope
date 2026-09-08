@@ -143,6 +143,8 @@ guifiles = [
 'ProtonNetworkView.h',
 'OccupanciesView.cpp',
 'OccupanciesView.h',
+'OccupancyComparisonView.cpp',
+'OccupancyComparisonView.h',
 'RegionMenu.h',
 'RegionMenu.cpp',
 'RegionRuleView.h',
