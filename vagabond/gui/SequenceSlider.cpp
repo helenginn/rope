@@ -140,7 +140,7 @@ void SequenceSlider::buttonPressed(std::string tag, Button *button)
 
 		if (_selectedButton != nullptr)
 		{
-			_selectedButton->setColour(1., 1., 1.);
+			_selectedButton->setColour(0., 0., 0.);
 		}
 
 		t->setColour(1., 1., 0.);
