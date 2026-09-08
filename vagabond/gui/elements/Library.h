@@ -15,6 +15,16 @@
 struct SDL_Surface;
 class Renderable;
 
+/** one image's rectangle within an atlas texture built by
+ *  Library::buildAtlas() - u/v fractions of the atlas as a whole. */
+struct AtlasRect
+{
+	float u0 = 0.f;
+	float v0 = 0.f;
+	float u1 = 1.f;
+	float v1 = 1.f;
+};
+
 class Library
 {
 public:
@@ -29,11 +39,25 @@ public:
 
 		return _library;
 	}
-	
-	GLuint loadText(std::string text, int *w, int *h, 
+
+	GLuint loadText(std::string text, int *w, int *h,
 	                Font::Type type = Font::Thin);
 	GLuint getTexture(std::string filename, int *w = NULL, int *h = NULL,
 	                  bool wrap = false);
+
+	/** Packs filenames into one texture (a single horizontal strip) and
+	 *  returns each one's sub-rect in rects, keyed by its own filename.
+	 *  cacheKey identifies this particular set for reuse - a second call
+	 *  with the same cacheKey is a cache hit (matching filenames/rects
+	 *  are assumed, not re-checked) instead of reloading/recompositing,
+	 *  the same way getTexture() caches by filename. Used to give many
+	 *  differently-imaged instances (e.g. ProbeBondBatch's bonds) one
+	 *  shared texture, so they render in a single draw call - see
+	 *  assets/shaders_450/axes_atlas.fsh for the corresponding per-vertex
+	 *  sub-rect lookup. */
+	GLuint buildAtlas(const std::string &cacheKey,
+	                  const std::vector<std::string> &filenames,
+	                  std::map<std::string, AtlasRect> &rects);
 
 	GLuint getProgram(std::string vString, std::string vFile,
 	                  std::string fString, std::string fFile, bool &old);
@@ -84,6 +108,7 @@ private:
 	std::vector<GLuint> _texids;
 	std::map<GLuint, int> _counts;
 	std::map<std::string, GLuint> _textures;
+	std::map<std::string, std::map<std::string, AtlasRect>> _atlasRects;
 	std::map<GLuint, int> _widths;
 	std::map<GLuint, int> _heights;
 	std::map<ShaderDuo, GLuint> _duos;

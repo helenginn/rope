@@ -77,6 +77,85 @@ GLuint Library::getTexture(std::string filename, int *w, int *h,
 	return tex;
 }
 
+GLuint Library::buildAtlas(const std::string &cacheKey,
+                           const std::vector<std::string> &filenames,
+                           std::map<std::string, AtlasRect> &rects)
+{
+	if (!Window::hasContext())
+	{
+		return 0;
+	}
+
+	GLuint existing;
+	if (hasTexture(cacheKey, existing, nullptr, nullptr)
+	    && _atlasRects.count(cacheKey))
+	{
+		rects = _atlasRects[cacheKey];
+		return existing;
+	}
+
+	std::vector<std::pair<std::string, SDL_Surface *>> surfaces;
+	int totalW = 0;
+	int maxH = 0;
+
+	for (const std::string &filename : filenames)
+	{
+		SDL_Surface *raw = loadImage(filename);
+		if (raw == nullptr)
+		{
+			continue;
+		}
+
+		SDL_Surface *rgba = SDL_ConvertSurfaceFormat(raw,
+		                                             SDL_PIXELFORMAT_RGBA32, 0);
+		SDL_FreeSurface(raw);
+
+		if (rgba == nullptr)
+		{
+			continue;
+		}
+
+		SDL_SetSurfaceBlendMode(rgba, SDL_BLENDMODE_NONE);
+		surfaces.push_back({filename, rgba});
+		totalW += rgba->w;
+		maxH = std::max(maxH, rgba->h);
+	}
+
+	if (surfaces.size() == 0)
+	{
+		return 0;
+	}
+
+	SDL_Surface *atlas = SDL_CreateRGBSurfaceWithFormat(0, totalW, maxH, 32,
+	                                                    SDL_PIXELFORMAT_RGBA32);
+	SDL_FillRect(atlas, nullptr, SDL_MapRGBA(atlas->format, 0, 0, 0, 0));
+
+	int x = 0;
+	for (auto &pr : surfaces)
+	{
+		SDL_Surface *s = pr.second;
+		SDL_Rect dst = {x, 0, s->w, s->h};
+		SDL_BlitSurface(s, nullptr, atlas, &dst);
+
+		AtlasRect r;
+		r.u0 = (float)x / (float)totalW;
+		r.u1 = (float)(x + s->w) / (float)totalW;
+		r.v0 = 0.f;
+		r.v1 = (float)s->h / (float)maxH;
+		rects[pr.first] = r;
+
+		x += s->w;
+		SDL_FreeSurface(s);
+	}
+
+	GLuint texid = loadSurface(atlas, cacheKey, false);
+	_atlasRects[cacheKey] = rects;
+
+	SDL_FreeSurface(atlas);
+
+	return texid;
+}
+
 void Library::correctFilename(std::string &filename)
 {
 	std::string path = Window::dataDirectory() + filename;

@@ -18,6 +18,7 @@
 
 #include "ProbeAtom.h"
 #include "ProbeBond.h"
+#include "ProbeBondBatch.h"
 #include "ProbeCharge.h"
 #include "FocusResidue.h"
 #include "ProtonNetworkView.h"
@@ -111,10 +112,16 @@ void ProtonNetworkView::clearNetworkObjects()
 
 	for (auto &pr : _bondProbes)
 	{
-		removeObject((Image *)pr.second);
 		delete pr.second;
 	}
 	_bondProbes.clear();
+
+	if (_bondBatch)
+	{
+		removeObject(_bondBatch);
+		delete _bondBatch;
+		_bondBatch = nullptr;
+	}
 
 	for (auto &pr : _countProbes)
 	{
@@ -300,6 +307,13 @@ void ProtonNetworkView::findAtomProbes()
 		addIndexResponder(text);
 	}
 
+	// one shared Renderable for every bond in the network (see
+	// ProbeBondBatch's header comment) - added/registered once here,
+	// rather than per-bond as ProbeAtom/ProbeCharge still are below.
+	_bondBatch = new ProbeBondBatch();
+	addObject(_bondBatch);
+	addIndexResponder(_bondBatch);
+
 	for (BondProbe *const &probe : _network->bondProbes())
 	{
 		// same placeholder skip as the HydrogenProbe loop above - keeps
@@ -310,12 +324,10 @@ void ProtonNetworkView::findAtomProbes()
 			continue;
 		}
 
-		ProbeBond *bond = new ProbeBond(this, probe);
-		addObject((Image *)bond);
+		ProbeBond *bond = new ProbeBond(this, _bondBatch, probe);
 		_bondProbes[probe] = bond;
 		_allProbes.insert(probe);
 		probe->setResponder(this);
-		addIndexResponder(bond);
 
 		// _textProbes is fully populated for both AtomProbe and
 		// HydrogenProbe by the two loops above, before any BondProbe is

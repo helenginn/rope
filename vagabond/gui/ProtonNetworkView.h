@@ -33,6 +33,7 @@ class HydrogenProbe;
 class ProbeCharge;
 class CliqueView;
 class ProbeBond;
+class ProbeBondBatch;
 class ProbeAtom;
 class BondProbe;
 class AtomProbe;
@@ -127,6 +128,9 @@ private:
 
 	std::map<Probe *, ProbeAtom *> _textProbes;
 	std::map<Probe *, ProbeBond *> _bondProbes;
+	// the single shared Renderable every ProbeBond above draws through
+	// (one draw call for every bond in the network) - see ProbeBondBatch.
+	ProbeBondBatch *_bondBatch = nullptr;
 	std::map<Probe *, ProbeCharge *> _countProbes;
 	
 	OpSet<Probe *> _allProbes;

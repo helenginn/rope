@@ -22,6 +22,18 @@
 #include "IndexResponder.h"
 #include <vector>
 
+/** What a batch slot forwards picking to - deliberately not IndexResponder
+ *  itself (which drags in the whole SimplePolygon/Renderable chain, GL
+ *  state included) since a batched slot's handle owns no GL state of its
+ *  own anymore; only the IndexedBatch itself is a Renderable. */
+class BatchHandle
+{
+public:
+	virtual ~BatchHandle() {}
+	virtual void interacted(int idx, bool hover, bool left) {}
+	virtual void selected(int idx, bool inverse) {}
+};
+
 /** Generic many-slots-one-draw-call batch. Copies a template Renderable's
  *  vertices/indices into a shared buffer once per appendSlot() call (index-
  *  offset adjusted, same trick Renderable::appendObject() uses for actual
@@ -31,9 +43,9 @@
  *  Picking is preserved: each slot gets exactly one pick index (matching
  *  requestedIndices() == slotCount()), stamped into every vertex belonging
  *  to that slot by reindex(), and interacted()/selected() are forwarded to
- *  whatever IndexResponder was registered for that slot - so a slot can
- *  still behave like an independent interactive object without being its
- *  own Renderable.
+ *  whatever BatchHandle was registered for that slot - so a slot can still
+ *  behave like an independent interactive object without being its own
+ *  Renderable.
  *
  *  This does not replace GuiBalls/GuiBond, which predate this class and
  *  solve the same problem bespoke for the main protein ball-and-stick
@@ -43,23 +55,27 @@
 class IndexedBatch : public IndexResponder
 {
 public:
-	/** @param unitTemplate vertices/indices copied per slot; ownership
-	 *  stays with the caller, only read from during construction and
-	 *  appendSlot().
+	/** @param unitVertices/unitIndices the vertices/indices copied per
+	 *  slot (indices relative to unitVertices, e.g. a 4-vertex quad's
+	 *  {0,1,2, 1,2,3}). Shader files, texture, usesProjection and
+	 *  renderType are the subclass's own responsibility, same as any
+	 *  other Renderable.
 	 *  @param pickComponent which component of Snow::Vertex::extra the
 	 *  fragment shader reads back as the GPU pick id (matches the
 	 *  existing per-class convention - e.g. 3 for anything using
 	 *  indexed_box.fsh/axes.vsh, as ProbeAtom/ProbeBond/ProbeCharge
 	 *  currently stamp by hand in their own reindex() overrides). */
-	IndexedBatch(Renderable *unitTemplate, int pickComponent = 3);
+	IndexedBatch(const std::vector<Snow::Vertex> &unitVertices,
+	            const std::vector<GLuint> &unitIndices,
+	            int pickComponent = 3);
 
 	/** Appends one slot's worth of vertices/indices (copied from the
 	 *  unit template) and returns its slot id. Optionally registers the
 	 *  interactive handle for that slot up front; setHandle() can also
 	 *  be called later. */
-	size_t appendSlot(IndexResponder *handle = nullptr);
+	size_t appendSlot(BatchHandle *handle = nullptr);
 
-	void setHandle(size_t slot, IndexResponder *handle);
+	void setHandle(size_t slot, BatchHandle *handle);
 
 	size_t slotCount() const
 	{
@@ -104,7 +120,7 @@ private:
 	std::vector<Snow::Vertex> _unitVertices;
 	std::vector<GLuint> _unitIndices;
 
-	std::vector<IndexResponder *> _handles;
+	std::vector<BatchHandle *> _handles;
 };
 
 #endif

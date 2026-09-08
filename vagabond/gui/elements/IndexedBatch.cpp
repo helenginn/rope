@@ -18,28 +18,19 @@
 
 #include "IndexedBatch.h"
 
-IndexedBatch::IndexedBatch(Renderable *unitTemplate, int pickComponent)
-: _pickComponent(pickComponent)
+IndexedBatch::IndexedBatch(const std::vector<Snow::Vertex> &unitVertices,
+                          const std::vector<GLuint> &unitIndices,
+                          int pickComponent)
+: _pickComponent(pickComponent), _unitVertices(unitVertices),
+_unitIndices(unitIndices)
 {
-	_vertsPerSlot = unitTemplate->vertexCount();
-	_idxPerSlot = unitTemplate->indexCount();
-
-	_unitVertices.reserve(_vertsPerSlot);
-	for (size_t i = 0; i < _vertsPerSlot; i++)
-	{
-		_unitVertices.push_back(unitTemplate->vertex(i));
-	}
-
-	_unitIndices = unitTemplate->indices();
-
-	setShadersLike(unitTemplate);
-	setUsesProjection(unitTemplate->usesProjection());
-	_renderType = unitTemplate->renderType();
+	_vertsPerSlot = _unitVertices.size();
+	_idxPerSlot = _unitIndices.size();
 
 	setName("Indexed batch");
 }
 
-size_t IndexedBatch::appendSlot(IndexResponder *handle)
+size_t IndexedBatch::appendSlot(BatchHandle *handle)
 {
 	size_t slot = _handles.size();
 	size_t vOffset = _vertices.size();
@@ -59,7 +50,7 @@ size_t IndexedBatch::appendSlot(IndexResponder *handle)
 	return slot;
 }
 
-void IndexedBatch::setHandle(size_t slot, IndexResponder *handle)
+void IndexedBatch::setHandle(size_t slot, BatchHandle *handle)
 {
 	_handles[slot] = handle;
 }
