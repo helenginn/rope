@@ -20,10 +20,15 @@
 #include "SequenceSlider.h"
 
 #include <vagabond/core/Entity.h>
+#include <vagabond/core/IndexedSequence.h>
 #include <vagabond/core/Residue.h>
+#include <vagabond/core/RotamerOccupancy.h>
 
-PerResidueView::PerResidueView(Scene *prev, Entity *entity)
-: Scene(prev), _entity(entity)
+#include <set>
+
+PerResidueView::PerResidueView(Scene *prev, Entity *entity,
+                                std::shared_ptr<RotamerOccupancy> rota)
+: Scene(prev), _entity(entity), _rota(rota)
 {
 
 }
@@ -32,8 +37,10 @@ void PerResidueView::setup()
 {
 	addTitle("Per-residue Occupancy");
 
-	SequenceSlider *slider = new SequenceSlider(_entity->sequence());
-	slider->setBounds(0.1, 0.35, 0.9, 0.55, 0.62);
+	IndexedSequence *sequence = _entity->sequence();
+
+	SequenceSlider *slider = new SequenceSlider(sequence);
+	slider->setBounds(0.1, 0.65, 0.9, 0.85, 0.9);
 
 	auto onResidue = [this](Residue *r)
 	{
@@ -42,6 +49,23 @@ void PerResidueView::setup()
 
 	slider->setReturnJob(onResidue);
 	slider->setup();
+
+	std::set<Residue *> enabled;
+	for (size_t i = 0; i < sequence->entryCount(); i++)
+	{
+		if (!sequence->hasResidue(0, i))
+		{
+			continue;
+		}
+
+		Residue *r = sequence->residue(0, i);
+		if (_rota->hasAltConformers(r))
+		{
+			enabled.insert(r);
+		}
+	}
+
+	slider->setEnabledResidues(enabled);
 
 	addObject(slider);
 	_slider = slider;

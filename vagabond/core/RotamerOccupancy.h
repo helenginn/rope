@@ -27,6 +27,7 @@
 class Entity;
 class Instance;
 class Progressor;
+class Residue;
 class ResidueTorsion;
 
 /** \class RotamerOccupancy measures fresh, per-alt-conformer-label torsion
@@ -53,6 +54,10 @@ public:
 	{
 		return _results;
 	}
+
+	/** true if any instance has more than one alt-conf label on any atom
+	 * of the given master residue - i.e. there's something to compare */
+	bool hasAltConformers(Residue *masterResidue) const;
 private:
 	void measureInstance(Instance *instance,
 	                      const std::vector<ResidueTorsion> &headers);

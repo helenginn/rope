@@ -19,6 +19,7 @@
 #include "RotamerOccupancy.h"
 #include "Entity.h"
 #include "Instance.h"
+#include "Residue.h"
 #include "ResidueTorsion.h"
 #include "TorsionRef.h"
 #include "BondTorsion.h"
@@ -122,4 +123,31 @@ void RotamerOccupancy::measureInstance(Instance *instance,
 			torsionAngles[label] = measure_bond_torsion(poz);
 		}
 	}
+}
+
+bool RotamerOccupancy::hasAltConformers(Residue *masterResidue) const
+{
+	std::vector<Instance *> instances = _entity->instances();
+
+	for (Instance *instance : instances)
+	{
+		Residue *local = instance->equivalentLocal(masterResidue);
+		AtomGroup *atoms = instance->currentAtoms();
+
+		if (local == nullptr || atoms == nullptr)
+		{
+			continue;
+		}
+
+		for (Atom *a : atoms->atomVector())
+		{
+			if (a->residueId() == local->id() &&
+			    a->conformerPositions().size() > 1)
+			{
+				return true;
+			}
+		}
+	}
+
+	return false;
 }

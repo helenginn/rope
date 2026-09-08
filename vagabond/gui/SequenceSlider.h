@@ -24,6 +24,8 @@
 #include <vagabond/gui/elements/DragResponder.h>
 
 #include <functional>
+#include <map>
+#include <set>
 
 class IndexedSequence;
 class Residue;
@@ -67,6 +69,10 @@ public:
 	{
 		return _selected;
 	}
+
+	/** residues not in this set are made inert (unclickable) - the caller
+	 * decides what "enabled" means, this class just applies it visually */
+	void setEnabledResidues(const std::set<Residue *> &enabled);
 private:
 	void buildContent();
 	void addTickLabel(int number, double x);
@@ -81,6 +87,7 @@ private:
 	Residue *_selected = nullptr;
 	TextButton *_selectedButton = nullptr;
 	std::function<void(Residue *)> _job;
+	std::map<Residue *, TextButton *> _buttons;
 
 	double _left = 0.1;
 	double _top = 0.1;

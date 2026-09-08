@@ -21,18 +21,24 @@
 
 #include <vagabond/gui/elements/Scene.h>
 
+#include <memory>
+
 class Entity;
 class Residue;
+class RotamerOccupancy;
 class SequenceSlider;
 
 class PerResidueView : public Scene
 {
 public:
-	PerResidueView(Scene *prev, Entity *entity);
+	PerResidueView(Scene *prev, Entity *entity,
+	               std::shared_ptr<RotamerOccupancy> rota);
 
 	virtual void setup();
 private:
 	Entity *_entity = nullptr;
+	std::shared_ptr<RotamerOccupancy> _rota;
+
 	SequenceSlider *_slider = nullptr;
 	Residue *_selectedResidue = nullptr;
 };

@@ -94,6 +94,7 @@ void SequenceSlider::buildContent()
 		{
 			Residue *r = _sequence->residue(0, i);
 			t->setReturnObject(r);
+			_buttons[r] = t;
 
 			int num = r->as_num();
 			if (num % 10 == 0)
@@ -150,5 +151,14 @@ void SequenceSlider::buttonPressed(std::string tag, Button *button)
 		{
 			_job(r);
 		}
+	}
+}
+
+void SequenceSlider::setEnabledResidues(const std::set<Residue *> &enabled)
+{
+	for (auto &pair : _buttons)
+	{
+		bool on = enabled.count(pair.first) > 0;
+		pair.second->setInert(!on, true);
 	}
 }

@@ -170,7 +170,7 @@ void OccupancyComparisonView::buttonPressed(std::string tag, Button *button)
 	}
 	else if (tag == "per_residue")
 	{
-		PerResidueView *view = new PerResidueView(this, _entity);
+		PerResidueView *view = new PerResidueView(this, _entity, _rota);
 		view->show();
 	}
 
