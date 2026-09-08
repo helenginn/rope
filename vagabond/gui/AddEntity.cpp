@@ -252,7 +252,7 @@ void AddEntity::showSecondPage()
 		addTempObject(button);
 
 		Text *text = new Text("Occupancy\nComparison");
-		text->setCentre(0.2, 0.4);
+		text->setCentre(0.2, 0.42);
 		text->resize(0.8);
 		addTempObject(text);
 	}

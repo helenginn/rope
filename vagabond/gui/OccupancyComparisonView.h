@@ -31,6 +31,7 @@ class Metadata;
 class RotamerOccupancy;
 class ChooseHeader;
 class TextButton;
+class ImageButton;
 
 class OccupancyComparisonView : public Scene, public Responder<ChooseHeader>
 {
@@ -55,7 +56,9 @@ private:
 	std::string _header;
 	TextButton *_headerButton = nullptr;
 	TextButton *_perResidueButton = nullptr;
+	ImageButton *_perResidueArrow = nullptr;
 	TextButton *_pairwiseButton = nullptr;
+	ImageButton *_pairwiseArrow = nullptr;
 
 	std::shared_ptr<std::atomic<bool>> _cancelled;
 };

@@ -21,6 +21,7 @@
 #include "VagWindow.h"
 
 #include <vagabond/gui/elements/TextButton.h>
+#include <vagabond/gui/elements/ImageButton.h>
 #include <vagabond/gui/elements/Text.h>
 
 #include <vagabond/core/Environment.h>
@@ -75,19 +76,37 @@ void OccupancyComparisonView::refreshHeaderButton()
 
 void OccupancyComparisonView::addStubButtons()
 {
-	TextButton *perResidue = new TextButton("Per-residue", this);
-	perResidue->setReturnTag("per_residue");
-	perResidue->setLeft(0.3, 0.6);
-	perResidue->setInert(true, true);
-	_perResidueButton = perResidue;
-	addObject(perResidue);
+	{
+		TextButton *t = new TextButton("Per-residue", this);
+		t->setReturnTag("per_residue");
+		t->setLeft(0.3, 0.6);
+		t->setInert(true, true);
+		_perResidueButton = t;
+		addObject(t);
 
-	TextButton *pairwise = new TextButton("Pairwise correlation", this);
-	pairwise->setReturnTag("pairwise");
-	pairwise->setRight(0.7, 0.6);
-	pairwise->setInert(true, true);
-	_pairwiseButton = pairwise;
-	addObject(pairwise);
+		ImageButton *arrow = ImageButton::arrow(-90, this);
+		arrow->setReturnTag("per_residue");
+		arrow->setCentre(0.7, 0.6);
+		arrow->setInert(true, true);
+		_perResidueArrow = arrow;
+		addObject(arrow);
+	}
+
+	{
+		TextButton *t = new TextButton("Pairwise correlation", this);
+		t->setReturnTag("pairwise");
+		t->setLeft(0.3, 0.68);
+		t->setInert(true, true);
+		_pairwiseButton = t;
+		addObject(t);
+
+		ImageButton *arrow = ImageButton::arrow(-90, this);
+		arrow->setReturnTag("pairwise");
+		arrow->setCentre(0.7, 0.68);
+		arrow->setInert(true, true);
+		_pairwiseArrow = arrow;
+		addObject(arrow);
+	}
 }
 
 void OccupancyComparisonView::startMeasurement()
@@ -130,7 +149,9 @@ void OccupancyComparisonView::startMeasurement()
 			}
 
 			_perResidueButton->setInert(false, true);
+			_perResidueArrow->setInert(false, true);
 			_pairwiseButton->setInert(false, true);
+			_pairwiseArrow->setInert(false, true);
 		});
 	};
 
