@@ -25,57 +25,157 @@
 
 using namespace hnet;
 
+ProbeAtomStandaloneText::ProbeAtomStandaloneText(ProbeAtom *owner,
+                                                const std::string &text,
+                                                float mult, float yOff)
+: FloatingText(text, mult, yOff), _owner(owner)
+{
+#ifndef __EMSCRIPTEN__
+	std::string shader = "assets/shaders/indexed_box.fsh";
+#else
+	std::string shader = "assets/shaders/box.fsh";
+#endif
+	FloatingText::setFragmentShaderFile(shader);
+}
+
+void ProbeAtomStandaloneText::reindex()
+{
+	size_t offset = indexOffset();
+	for (size_t i = 0; i < FloatingText::vertexCount(); i++)
+	{
+		FloatingText::_vertices[i].extra[3] = offset + 1.5;
+	}
+}
+
+void ProbeAtomStandaloneText::interacted(int idx, bool hover, bool left)
+{
+	_owner->interacted(idx, hover, left);
+}
+
+void ProbeAtomStandaloneText::selected(int idx, bool inverse)
+{
+	_owner->selected(idx, inverse);
+}
+
 void ProbeAtom::fullUpdate()
 {
-	_batch->addMainThreadJob
-	([this]()
-	 {
-		fullUpdateProbe();
-	});
+	auto job = [this]() { fullUpdateProbe(); };
+
+	if (isStandalone())
+	{
+		_standalone->addMainThreadJob(job);
+	}
+	else
+	{
+		_batch->addMainThreadJob(job);
+	}
 }
 
 void ProbeAtom::fullUpdateProbe()
 {
 	glm::vec3 c = _probe->colour();
-	_batch->setSlotFull(_slot, _probe->display(), _probe->mult(),
-	                    _probe->position());
-	_batch->setSlotColour(_slot, c.x, c.y, c.z);
-	_batch->setSlotAlpha(_slot, _probe->alpha());
+
+	if (isStandalone())
+	{
+		_standalone->setText(_probe->display());
+		_standalone->correctBox(_probe->mult(), 0.0);
+		_standalone->setPosition(_probe->position());
+		_standalone->setColour(c.x, c.y, c.z);
+		_standalone->setAlpha(_probe->alpha());
+		_standalone->forceRender(true, true);
+	}
+	else
+	{
+		_batch->setSlotFull(_slot, _probe->display(), _probe->mult(),
+		                    _probe->position());
+		_batch->setSlotColour(_slot, c.x, c.y, c.z);
+		_batch->setSlotAlpha(_slot, _probe->alpha());
+	}
 }
 
 void ProbeAtom::updatePosition()
 {
-	_batch->setSlotPosition(_slot, _probe->position());
+	if (isStandalone())
+	{
+		_standalone->setPosition(_probe->position());
+		_standalone->forceRender(true, false);
+	}
+	else
+	{
+		_batch->setSlotPosition(_slot, _probe->position());
+	}
 }
 
 void ProbeAtom::updateProbe()
 {
-	_batch->addMainThreadJob
-	([this]()
+	auto job = [this]()
 	{
-		_batch->changeSlotText(_slot, _probe->display());
-		_batch->setSlotAlpha(_slot, _probe->alpha());
-	});
+		if (isStandalone())
+		{
+			_standalone->changeText(_probe->display());
+			_standalone->setAlpha(_probe->alpha());
+		}
+		else
+		{
+			_batch->changeSlotText(_slot, _probe->display());
+			_batch->setSlotAlpha(_slot, _probe->alpha());
+		}
+	};
+
+	if (isStandalone())
+	{
+		_standalone->addMainThreadJob(job);
+	}
+	else
+	{
+		_batch->addMainThreadJob(job);
+	}
 }
 
 glm::vec3 ProbeAtom::currentPosition() const
 {
+	if (isStandalone())
+	{
+		return _standalone->centroid();
+	}
+
 	return _batch->slotPosition(_slot);
 }
 
 void ProbeAtom::setRenderPosition(const glm::vec3 &pos)
 {
-	_batch->setSlotPosition(_slot, pos);
+	if (isStandalone())
+	{
+		_standalone->setPosition(pos);
+	}
+	else
+	{
+		_batch->setSlotPosition(_slot, pos);
+	}
 }
 
 void ProbeAtom::setRenderAlpha(double alpha)
 {
-	_batch->setSlotAlpha(_slot, alpha);
+	if (isStandalone())
+	{
+		_standalone->setAlpha(alpha);
+	}
+	else
+	{
+		_batch->setSlotAlpha(_slot, alpha);
+	}
 }
 
 void ProbeAtom::forceRedraw()
 {
-	_batch->forceRender(true, false);
+	if (isStandalone())
+	{
+		_standalone->forceRender(true, false);
+	}
+	else
+	{
+		_batch->forceRender(true, false);
+	}
 }
 
 ProbeAtom::ProbeAtom(ProtonNetworkView *view, ProbeAtomBatch *batch,
@@ -84,7 +184,22 @@ ProbeAtom::ProbeAtom(ProtonNetworkView *view, ProbeAtomBatch *batch,
 	_batch = batch;
 	_view = view;
 	_probe = probe;
-	_slot = _batch->appendAtom(this);
+
+	if (probe->_text.length())
+	{
+		// a reporter atom (see ProbeAtomStandaloneText's header comment)
+		// - display() will return this fixed text forever, never one of
+		// ProbeAtomBatch's atlas states, so it gets its own individual
+		// Renderable instead of a batch slot.
+		_standalone = new ProbeAtomStandaloneText(this, probe->display(),
+		                                          probe->mult(), 0.0);
+		view->addObject((FloatingText *)_standalone);
+		view->addIndexResponder(_standalone);
+	}
+	else
+	{
+		_slot = _batch->appendAtom(this);
+	}
 
 	probe->_obj.set_update([this](bool thorough)
 	                       { thorough ? fullUpdate() : updateProbe(); });
@@ -106,6 +221,16 @@ ProbeAtom::ProbeAtom(ProtonNetworkView *view, ProbeAtomBatch *batch,
 	probe->existence().set_update([this](bool thorough) { updateProbe(); });
 
 	fullUpdateProbe();
+}
+
+ProbeAtom::~ProbeAtom()
+{
+	if (_standalone)
+	{
+		_view->removeObject((FloatingText *)_standalone);
+		delete _standalone;
+		_standalone = nullptr;
+	}
 }
 
 void ProbeAtom::hoverOverAtom()
@@ -189,15 +314,19 @@ void ProbeAtom::selected(int idx, bool inverse)
 {
 	_selected = !inverse;
 
-	if (!_selected)
+	glm::vec3 c = _probe->colour();
+	if (_selected)
 	{
-		glm::vec3 c = _probe->colour();
-		_batch->setSlotColour(_slot, c.x, c.y, c.z);
+		c += 0.5f;
+	}
+
+	if (isStandalone())
+	{
+		_standalone->setColour(c.x, c.y, c.z);
 	}
 	else
 	{
-		glm::vec3 c = _probe->colour();
-		_batch->setSlotColour(_slot, c.x + 0.5, c.y + 0.5, c.z + 0.5);
+		_batch->setSlotColour(_slot, c.x, c.y, c.z);
 	}
 
 	forceRedraw();

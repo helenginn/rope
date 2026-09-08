@@ -259,23 +259,29 @@ void ProtonNetworkView::buildNetwork()
 
 void ProtonNetworkView::findAtomProbes()
 {
-	// every label any atom/hydrogen probe in this network could ever
-	// display over its lifetime (AtomProbe::display()/HydrogenProbe::
-	// display()'s full vocabulary) - built once, up front, so
-	// ProbeAtomBatch's text atlas never needs to grow later. Sound only
-	// because an atom that ever resolves to a real element symbol (the
-	// hnet::Atom::Ion case) never reverts to O/N/S/etc (per hnet's
-	// AtomConnector) - otherwise a slot could need a label outside
-	// whatever was enumerated here.
+	// every label any non-reporter atom/hydrogen probe in this network
+	// could ever display over its lifetime (AtomProbe::display()/
+	// HydrogenProbe::display()'s full vocabulary) - built once, up
+	// front, so ProbeAtomBatch's text atlas never needs to grow later.
+	// Sound only because an atom that ever resolves to a real element
+	// symbol (the hnet::Atom::Ion case) never reverts to O/N/S/etc (per
+	// hnet's AtomConnector) - otherwise a slot could need a label
+	// outside whatever was enumerated here.
+	//
+	// Reporter atoms (probe->_text set - one per residue/water, see
+	// Coordinated_Core.cpp) are deliberately excluded: display() returns
+	// that fixed, per-atom-unique string unconditionally, so with them
+	// included this set can run into the hundreds of full multi-
+	// character labels for a large structure, overflowing any GPU's max
+	// texture size when packed into one atlas row. ProbeAtom gives them
+	// their own individual ProbeAtomStandaloneText instead (see its
+	// header comment) rather than a batch slot, so they need no atlas
+	// entry at all.
 	std::set<std::string> vocabulary = {" ", "O", "N", "S", "H", "!", "?"};
 
 	for (AtomProbe *const &probe : _network->atomProbes())
 	{
-		if (probe->_text.length())
-		{
-			vocabulary.insert(probe->_text);
-		}
-		else if (probe->atom())
+		if (!probe->_text.length() && probe->atom())
 		{
 			std::string symbol = probe->atom()->elementSymbol();
 			if (symbol.length() > 1)

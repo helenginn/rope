@@ -249,14 +249,9 @@ GLuint Library::buildTextAtlas(const std::string &cacheKey,
 		TextManager::text_free(&g.bytes);
 	}
 
-	std::cout << "buildTextAtlas(" << cacheKey << "): " << glyphs.size()
-	<< " glyphs, " << totalW << "x" << maxH << std::endl;
-
 	GLuint texid = bindBytes(atlasPixels.data(), totalW, maxH);
 	checkErrors("buildTextAtlas upload (" + cacheKey + ", "
 	           + std::to_string(totalW) + "x" + std::to_string(maxH) + ")");
-	std::cout << "buildTextAtlas(" << cacheKey << "): texid = " << texid
-	<< std::endl;
 
 	registerTexture(cacheKey, texid, totalW, maxH);
 	_atlasRects[cacheKey] = rects;
