@@ -288,15 +288,31 @@ SDL_Surface *Library::loadImage(std::string filename)
 {
 	std::string path = filename;
 	correctFilename(path);
+
 	SDL_Surface *surface = IMG_Load(path.c_str());
-	
+
 	if (surface == nullptr)
 	{
 		std::cout << "Failed to load " << path << std::endl;
-		return NULL;
+		return nullptr;
 	}
 
-	return surface;
+	SDL_Surface *converted = SDL_ConvertSurfaceFormat(
+		surface,
+		SDL_PIXELFORMAT_RGBA32,
+		0
+	);
+
+	SDL_FreeSurface(surface);
+
+	if (converted == nullptr)
+	{
+		std::cout << "Failed to convert " << path
+		          << " to RGBA32: " << SDL_GetError() << std::endl;
+		return nullptr;
+	}
+
+	return converted;
 }
 
 GLuint Library::bindBytes(unsigned char *bytes, int w, int h)
