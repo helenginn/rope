@@ -85,14 +85,21 @@ void ProgressBar::setSkipJob(const std::function<void()> &job)
 	// right-facing, per that helper's own convention) but sized/placed to
 	// match the cross button rather than arrow()'s fixed rescale(0.1,
 	// 0.03), so the two sit next to each other at the same scale.
+	//
+	// non-uniform on purpose: arrow.png is a tall down-pointing arrow
+	// (portrait), and a -90 rotation swaps its axes, so its *height*
+	// (the long, pointed shaft) becomes the button's on-screen width -
+	// scaling that axis down to a third keeps the arrowhead
+	// proportioned like a "next" glyph instead of a long pointer.
 	ImageButton *tb = new ImageButton("assets/images/arrow.png", nullptr);
-	tb->resize(0.06);
+	tb->rescale(0.06, 0.02);
 	glm::mat3x3 rot;
 	rot = glm::mat3x3(glm::rotate(glm::mat4(1.), (float)deg2rad(-90.),
 	                              glm::vec3(0., 0., -1.)));
 	tb->rotateRoundCentre(rot);
 	tb->setCentre(0.68, 0.88);
 	tb->setReturnJob(job);
+	tb->addAltTag("Skip current subnetwork");
 	addObject(tb);
 	_skipButton = tb;
 }
