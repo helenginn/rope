@@ -61,6 +61,19 @@ static float vdw_epsilon_for_element(const gemmi::Element &ele)
 	}
 }
 
+// Count::Values (hnet.h) packs formal-charge states the same way it packs
+// bond counts: one flag bit per possible value, negative ones from mOne
+// (1 << 16) upward. "Could be" rather than "is": at clash-check time this
+// is often still Unassigned or some coarse not-yet-narrowed range, and an
+// atom whose charge hasn't yet been ruled out negative (e.g. a carboxylate
+// oxygen not yet forced to Zero) should already be exempt from hard
+// clashes against hydrogen, not just one confirmed negative.
+static bool could_be_negatively_charged(hnet::CountConnector &charge)
+{
+	const unsigned int NEGATIVE_MASK = 0xFFFF0000u;
+	return (static_cast<unsigned int>(charge.value()) & NEGATIVE_MASK) != 0;
+}
+
 void Coordinated::clashLogic(OpSet<AtomConf> &clash_check)
 {
 	// per-atom upper bound rather than one flat distance for every atom -
@@ -169,6 +182,25 @@ void Coordinated::clashLogic(OpSet<AtomConf> &clash_check)
 
 		float l = glm::length(_atomConf.position() - hit.position());
 
+		// a real (non-placeholder) H-bond hydrogen sits at the stored
+		// midpoint between its two heavy atoms, not at either position it
+		// could actually occupy - checking clashes against that midpoint
+		// alone can flag a clash neither real position would ever have.
+		// Once the donor side is undecided, require both of its
+		// physically plausible positions (HydrogenProbe::dual_positions())
+		// to be incompatible before treating this as a clash at all - use
+		// whichever of the two is farther away (the one the search could
+		// still resolve to) as the effective distance for everything
+		// below, hard cutoff and soft repulsion alike.
+		HydrogenProbe *hitHydrogen = _network.probeForHydrogen(hit);
+		if (hitHydrogen && hitHydrogen->has_dual_positions())
+		{
+			auto [pos1, pos2] = hitHydrogen->dual_positions();
+			float l1 = glm::length(_atomConf.position() - pos1);
+			float l2 = glm::length(_atomConf.position() - pos2);
+			l = std::max(l1, l2);
+		}
+
 		bool involvesHydrogen = (_atomConf.ptr->elementSymbol() == "H" ||
 		                          hit.ptr->elementSymbol() == "H");
 
@@ -182,6 +214,17 @@ void Coordinated::clashLogic(OpSet<AtomConf> &clash_check)
 		if (is_twirling_hydrogen(hit.ptr) || is_twirling_hydrogen(_atomConf.ptr))
 		{
 			strict_cutoff = 1.0f;
+		}
+
+		// self (never a hydrogen here - clashLogic only ever runs on
+		// heavy atoms) drawing a hydrogen in close is exactly what an
+		// H-bond to a negatively charged acceptor looks like, not a
+		// steric problem - never register that pair as a hard clash,
+		// however close they sit.
+		if (hit.ptr->elementSymbol() == "H" && _charge &&
+		    could_be_negatively_charged(*_charge))
+		{
+			strict_cutoff = -1.f;
 		}
 
 		if (l > strict_cutoff)
