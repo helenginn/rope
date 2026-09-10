@@ -174,7 +174,7 @@ void Subdivide::finish_hbonds(OpSet<Probe *> &chunk)
 	// whether that's what's driving the combinatorial blow-up before
 	// deciding whether the full four-hop leg is too much. Flip back to
 	// false to restore the full atom->half->hydrogen->half->atom leg.
-	const bool STOP_AT_HYDROGEN = false;
+	const bool STOP_AT_HYDROGEN = true;
 
 	std::vector<Probe *> snapshot(chunk.begin(), chunk.end());
 
@@ -278,22 +278,25 @@ static int node_penalty(Probe *node, const std::map<Probe *, int> &included)
 	{
 		return 0;
 	}
+	
+	int options = 1;
 
 	if (node->is_bond())
 	{
-		return 4;
+		options = 4;
+		if (!static_cast<BondProbe *>(node)->is_certain_existence())
+		{
+			options += 1;
+		}
+		return options;
 	}
-
-	if (!node->is_atom())
-	{
-		return 0; // hydrogen or charge
-	}
+	
 
 	for (Probe *const &mate : node->mutualExistenceNeighbours())
 	{
 		if (included.count(mate))
 		{
-			return 0;
+//			return 0;
 		}
 	}
 
@@ -651,7 +654,7 @@ void Subdivide::subdivide(int samples)
 	{
 		OpSet<Probe *> chunk = {start};
 		shoot(chunk);
-		while (finish_ends(chunk)) {}
+//		while (finish_ends(chunk)) {}
 		finish_hbonds(chunk);
 
 		prune(chunk);

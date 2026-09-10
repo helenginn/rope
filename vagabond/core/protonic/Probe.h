@@ -725,6 +725,35 @@ public:
 		        _exist.value() == hnet::Existence::Absent);
 	}
 
+	// true for a real, bridging H-bond hydrogen (both heavy atoms known -
+	// see Coordinated::create_two_half_hydrogen_bonds()), false for a
+	// one-sided placeholder (Coordinated::makePlaceholderHydrogen()),
+	// which has no second heavy atom to compute a donor-swapped position
+	// against.
+	bool has_dual_positions() const
+	{
+		return _left != nullptr && _right != nullptr;
+	}
+
+	// clash checking currently places this hydrogen at the H-bond
+	// midpoint, which is neither of the two positions it could actually
+	// occupy - a hydrogen ~0.92 A off _left could clash with something
+	// near the midpoint without ever really being there. Until the
+	// search resolves which heavy atom is the donor, report both
+	// physically plausible positions (0.92 A off each heavy atom, along
+	// the line joining them) so a caller can require both to be
+	// incompatible before treating this as a genuine clash. Computed
+	// live from the heavy atoms' current positions rather than cached,
+	// so it can't go stale as those move.
+	std::pair<glm::vec3, glm::vec3> dual_positions() const
+	{
+		glm::vec3 leftPos = _left->position();
+		glm::vec3 rightPos = _right->position();
+		glm::vec3 dir = glm::normalize(rightPos - leftPos);
+
+		return {leftPos + dir * 0.92f, rightPos - dir * 0.92f};
+	}
+
 	hnet::ExistenceConnector &_obj;
 	hnet::ExistenceConnector &_exist;
 	AtomProbe *_left{};
@@ -866,6 +895,11 @@ public:
 		}
 		
 		return str;
+	}
+
+	virtual bool is_certain_existence()
+	{
+		return (_exist.is_certain());
 	}
 
 	virtual bool is_certain()
