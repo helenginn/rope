@@ -240,23 +240,21 @@ Energy::energy_wrapper_for_half_hbond(HydrogenProbe *probe, BondProbe &bp,
 	auto hbond_base = [evaluate, &bp]()
 	{
 		float base = 1.0;
-		if (evaluate(hnet::Bond::Acceptor, false))
+		if (evaluate(hnet::Bond::Acceptor, true))
 		{
 			float contrib = -base;
 			return contrib;
 		}
-		/*
 		else if (evaluate(hnet::Bond::Acceptor, false))
 		{
 			float contrib = -base;
 			if (bp.existence().value() & hnet::Existence::Absent)
 			{
-//				contrib /= 2.f;
+				contrib /= 2.f;
 			}
 			return contrib;
 		}
-		*/
-		return 0.f;
+		return -0.5f;
 	};
 
 	auto hbond_dist = [evaluate, probe, pos]()
@@ -273,7 +271,7 @@ Energy::energy_wrapper_for_half_hbond(HydrogenProbe *probe, BondProbe &bp,
 			return 0.f;
 		}
 
-		float base = 1.0;
+		float base = 0.5;
 		float mod = 1 / (dist * dist);
 		float contrib = -base * mod;
 		if (!evaluate(hnet::Bond::Acceptor, true))
