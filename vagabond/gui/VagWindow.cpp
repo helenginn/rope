@@ -74,7 +74,8 @@ void VagWindow::requestProgressBarRemoval()
 
 void VagWindow::requestProgressBar(int ticks, std::string text,
                                    Progressor *caller,
-                                   const std::function<void()> &cancelJob)
+                                   const std::function<void()> &cancelJob,
+                                   const std::function<void()> &skipJob)
 {
 	// register synchronously, immediately, on whatever thread called this -
 	// not deferred - so a job cannot possibly tick before it is heard. This
@@ -86,10 +87,11 @@ void VagWindow::requestProgressBar(int ticks, std::string text,
 		caller->setResponder(this);
 	}
 
-	addMainThreadJob([this, ticks, text, caller, cancelJob]()
+	addMainThreadJob([this, ticks, text, caller, cancelJob, skipJob]()
 	                 {
 		                _bar.caller = caller;
 		                _bar.cancelJob = cancelJob;
+		                _bar.skipJob = skipJob;
 		                prepareProgressBar(ticks, text);
 	});
 }
@@ -98,6 +100,7 @@ void VagWindow::prepareProgressBar(int ticks, std::string text)
 {
 	Progressor *caller = _bar.caller;
 	std::function<void()> cancelJob = _bar.cancelJob;
+	std::function<void()> skipJob = _bar.skipJob;
 
 	// removeProgressBar() resets _bar entirely (BarDetails{}), so anything
 	// still needed afterwards - including any tick/done that arrived
@@ -130,12 +133,18 @@ void VagWindow::prepareProgressBar(int ticks, std::string text)
 		pb->setCancelJob(cancelJob);
 	}
 
+	if (skipJob)
+	{
+		pb->setSkipJob(skipJob);
+	}
+
 	pb->setMaxTicks(ticks);
 	_bar.ptr = pb;
 	_bar.ticks = ticks;
 	_bar.text = text;
 	_bar.caller = caller;
 	_bar.cancelJob = cancelJob;
+	_bar.skipJob = skipJob;
 	addObject(pb);
 
 	// apply whatever arrived before this bar existed to receive it,

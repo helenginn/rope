@@ -67,7 +67,18 @@ public:
 	{
 		_cancel = flag;
 	}
-	
+
+	/** same shape as setCancelFlag(), but only meant to interrupt this one
+	 * subnetwork's enumeration - the caller (SearchAll) resets this flag
+	 * to false before starting the next subnetwork, so setting it does
+	 * not abort the overall job, just this instance's search(). cleanup()
+	 * still runs on break either way, so whatever was found before the
+	 * skip is kept as this subnetwork's (partial) result. */
+	void setSkipFlag(std::shared_ptr<std::atomic<bool>> flag)
+	{
+		_skip = flag;
+	}
+
 	virtual void tick()
 	{
 		std::cout << "Clicked" << std::endl;
@@ -96,6 +107,7 @@ private:
 	std::condition_variable _cv;
 	GuiltVersion _gv{0};
 	std::shared_ptr<std::atomic<bool>> _cancel;
+	std::shared_ptr<std::atomic<bool>> _skip;
 };
 
 #endif

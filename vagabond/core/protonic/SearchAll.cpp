@@ -56,6 +56,15 @@ void SearchAll::run()
 		// ask to redo everything, not just fill in whatever is missing.
 		ExhaustiveSearch search(clique.probes(), expanded);
 		search.setCancelFlag(_cancel);
+
+		// reset before (re)using it for this subnetwork - a skip
+		// requested against a previous subnetwork must not carry over
+		// and immediately skip this new one too.
+		if (_skip)
+		{
+			_skip->store(false);
+			search.setSkipFlag(_skip);
+		}
 		search.search();
 		clickTicker();
 		search.states()->setSampleCounts(_clique->sampleCounts());

@@ -212,9 +212,12 @@ void HBondAnalysisControl::setup()
 		_clique->searchRunning() = running;
 		_clique->searchCancelled() = cancelled;
 
+		auto skipped = std::make_shared<std::atomic<bool>>(false);
+
 		SearchAll *search = new SearchAll(_clique, _network);
 		search->setCancelFlag(cancelled);
 		search->setRunningFlag(running);
+		search->setSkipFlag(skipped);
 
 		Clique *clique = _clique;
 		Network *network = &_network;
@@ -228,6 +231,11 @@ void HBondAnalysisControl::setup()
 		auto cancelJob = [cancelled]()
 		{
 			cancelled->store(true);
+		};
+
+		auto skipJob = [skipped]()
+		{
+			skipped->store(true);
 		};
 
 		// search itself is a Progressor - passed as caller here (instead
@@ -249,7 +257,8 @@ void HBondAnalysisControl::setup()
 		{
 			VagWindow::window()->requestProgressBar(ticks,
 			                                        "Searching sub-networks",
-			                                        search, cancelJob);
+			                                        search, cancelJob,
+			                                        skipJob);
 		}
 
 		new DoJob([search, clique, network]()

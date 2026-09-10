@@ -40,6 +40,12 @@ public:
 	// aborting whatever is actually being tracked is up to the caller.
 	void setCancelJob(const std::function<void()> &job);
 
+	// puts a right-arrow ImageButton next to the cancel button; clicking
+	// it only calls job - springing over whatever's currently in progress
+	// (saving what it has so far, but not finishing it) is up to the
+	// caller, same division of responsibility as setCancelJob().
+	void setSkipJob(const std::function<void()> &job);
+
 	virtual void extraUniforms();
 	virtual void sendObject(std::string tag, void *object);
 private:
@@ -51,6 +57,7 @@ private:
 	int _ticks = 0;
 
 	ImageButton *_cancelButton = nullptr;
+	ImageButton *_skipButton = nullptr;
 };
 
 #endif

@@ -67,6 +67,36 @@ void ProgressBar::setCancelJob(const std::function<void()> &job)
 	_cancelButton = tb;
 }
 
+void ProgressBar::setSkipJob(const std::function<void()> &job)
+{
+	if (_skipButton)
+	{
+		removeObject(_skipButton);
+		Window::setDelete(_skipButton);
+		_skipButton = nullptr;
+	}
+
+	if (!job)
+	{
+		return;
+	}
+
+	// same shared arrow.png as ImageButton::arrow(), rotated -90 (i.e.
+	// right-facing, per that helper's own convention) but sized/placed to
+	// match the cross button rather than arrow()'s fixed rescale(0.1,
+	// 0.03), so the two sit next to each other at the same scale.
+	ImageButton *tb = new ImageButton("assets/images/arrow.png", nullptr);
+	tb->resize(0.06);
+	glm::mat3x3 rot;
+	rot = glm::mat3x3(glm::rotate(glm::mat4(1.), (float)deg2rad(-90.),
+	                              glm::vec3(0., 0., -1.)));
+	tb->rotateRoundCentre(rot);
+	tb->setCentre(0.68, 0.88);
+	tb->setReturnJob(job);
+	addObject(tb);
+	_skipButton = tb;
+}
+
 void ProgressBar::setMaxTicks(int count)
 {
 	_maxTicks = count;

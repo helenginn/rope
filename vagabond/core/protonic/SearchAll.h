@@ -49,11 +49,24 @@ public:
 	{
 		_running = flag;
 	}
+
+	/** shared, not owned, same rationale as setCancelFlag(): whichever
+	 * ExhaustiveSearch is currently running gets this flag wired into it,
+	 * and run() resets it to false before moving on to the next
+	 * subnetwork - so setting it from a button click on the main thread
+	 * only ever skips the one subnetwork in flight at the moment of the
+	 * click, never a later one, and never touches this object's own
+	 * lifetime. */
+	void setSkipFlag(std::shared_ptr<std::atomic<bool>> flag)
+	{
+		_skip = flag;
+	}
 private:
 	Clique *_clique{};
 	Network &_network;
 	std::shared_ptr<std::atomic<bool>> _cancel;
 	std::shared_ptr<std::atomic<bool>> _running;
+	std::shared_ptr<std::atomic<bool>> _skip;
 
 };
 

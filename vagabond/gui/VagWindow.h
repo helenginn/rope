@@ -62,17 +62,22 @@ public:
 		flags += SDL_WINDOW_RESIZABLE;
 	}
 
-	// caller and cancelJob are both optional, purely additive - existing
-	// callers that only pass ticks/text keep working identically. When
-	// caller is supplied, this registers directly on it (bypassing
+	// caller, cancelJob and skipJob are all optional, purely additive -
+	// existing callers that only pass ticks/text keep working identically.
+	// When caller is supplied, this registers directly on it (bypassing
 	// Environment's progressResponder() entirely - see sendObject()) so
 	// the bar can never miss a tick/done that arrives before it exists.
 	// When cancelJob is supplied, an "x" button appears next to the bar;
 	// clicking it only invokes cancelJob - aborting whatever the tracked
-	// job is actually doing is the caller's own responsibility.
+	// job is actually doing is the caller's own responsibility. When
+	// skipJob is supplied, a right-arrow button appears next to the "x";
+	// clicking it only invokes skipJob - springing over whatever unit of
+	// work is currently in progress (saving what it found so far, but not
+	// finishing it) is likewise the caller's own responsibility.
 	void requestProgressBar(int ticks, std::string text,
 	                        Progressor *caller = nullptr,
-	                        const std::function<void()> &cancelJob = nullptr);
+	                        const std::function<void()> &cancelJob = nullptr,
+	                        const std::function<void()> &skipJob = nullptr);
 	void requestProgressBarRemoval();
 
 	// Responder<Progressor> - see sendObject() for why this exists
@@ -101,6 +106,7 @@ private:
 		ProgressBar *ptr = nullptr;
 		Progressor *caller = nullptr;
 		std::function<void()> cancelJob;
+		std::function<void()> skipJob;
 
 		// set by handleProgressEvent() when a tick/done arrives before
 		// ptr exists yet, from whichever Progressor caller currently is

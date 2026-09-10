@@ -177,6 +177,11 @@ void ExhaustiveSearch::search()
 			break;
 		}
 
+		if (_skip && _skip->load())
+		{
+			break;
+		}
+
 		if (!next())
 		{
 			break;
