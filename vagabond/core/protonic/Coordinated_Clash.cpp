@@ -255,13 +255,15 @@ void Coordinated::clashLogic(OpSet<AtomConf> &clash_check)
 		{
 			add_constraint(new MaxOne({left, right}));
 
-			// registered into the same others()/register_probe() graph
-			// Network::establishAtom() already uses for alt-conf siblings
-			// - Subdivide::finish_ends()'s add_alt_confs block walks any
-			// direct atom<->atom edge regardless of what it represents,
-			// so a clashing pair now gets pulled into the same subdivision
-			// chunk together the same way alt-conf siblings already are.
-			// Never mistaken for a real bonded neighbour by the GUI's
+			// registered into the same others() graph Network::
+			// establishAtom() already uses for alt-conf siblings, but via
+			// register_clash() rather than register_probe() so this edge
+			// is also tagged into _clashPartners - Subdivide::finish_ends()
+			// walks any direct atom<->atom edge, but deliberately skips
+			// edges tagged this way (Probe::isClashPartner()) so a clashing
+			// pair is not pulled into the same subdivision chunk the way
+			// alt-conf/charge-sharing siblings are. Never mistaken for a
+			// real bonded neighbour by the GUI's
 			// Probe::bondedNeighbours() (see its own comment), since that
 			// only ever follows edges reached by crossing an actual bond
 			// probe, never a direct registration like this one.
@@ -284,8 +286,8 @@ void Coordinated::clashLogic(OpSet<AtomConf> &clash_check)
 
 			if (rightProbe)
 			{
-				_probe->register_probe(rightProbe);
-				rightProbe->register_probe(_probe);
+				_probe->register_clash(rightProbe);
+				rightProbe->register_clash(_probe);
 			}
 		}
 		catch (const std::runtime_error &err)

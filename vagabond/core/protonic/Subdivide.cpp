@@ -69,17 +69,22 @@ bool Subdivide::finish_ends(OpSet<Probe *> &chunk)
 {
 	// catches every direct (non-bond-mediated) atom<->atom edge on an
 	// atom already in the chunk - not just alt-conf siblings despite the
-	// name (Network::establishAtom()), but also steric clashes
-	// (Coordinated::clashLogic()) and charge-sharing/tautomer partners
-	// (Network::shareProperty()), all of which are registered the same
-	// way. All three need joint existence-constraint resolution the same
-	// way alt-conf siblings do, so all three belong in the same
-	// subdivision chunk together - deliberately NOT narrowed to
-	// alt-confs specifically. This is separate from, and much broader
-	// than, Probe::bondedNeighbours() (the GUI's 2D-layout weighting),
-	// which deliberately excludes every one of these same edges - see
-	// its own comment for why. Also pulls in an atom's own CountProbe
-	// (its charge, shared or single-atom - see add_charge_display() in
+	// name (Network::establishAtom()), but also charge-sharing/tautomer
+	// partners (Network::shareProperty()), which are registered the same
+	// way and need joint existence-constraint resolution the same way
+	// alt-conf siblings do, so both belong in the same subdivision chunk
+	// together - deliberately NOT narrowed to alt-confs specifically.
+	// Steric clashes (Coordinated::clashLogic()) are registered into the
+	// same others() list but tagged via Probe::register_clash(), and are
+	// deliberately excluded here (Probe::isClashPartner()) - a clashing
+	// pair doesn't need joint resolution the way alt-conf/charge-sharing
+	// siblings do, and pulling every clash partner into the chunk grows
+	// it well past the physically contiguous region a subdivision is
+	// meant to represent. This is separate from, and much broader than,
+	// Probe::bondedNeighbours() (the GUI's 2D-layout weighting), which
+	// deliberately excludes every one of these same edges - see its own
+	// comment for why. Also pulls in an atom's own CountProbe (its
+	// charge, shared or single-atom - see add_charge_display() in
 	// Coordinated_Core.cpp and setupHistidine()/setupCarboxylOxygen() in
 	// Network.cpp) wherever one was registered into others(): skipped
 	// only for an atom whose charge was merged into a shared CountProbe
@@ -101,7 +106,8 @@ bool Subdivide::finish_ends(OpSet<Probe *> &chunk)
 			for (Probe *const &other : probe->others())
 			{
 				if (other->is_definitely_not_present() ||
-				    is_symmetry_related(other))
+				    is_symmetry_related(other) ||
+				    probe->isClashPartner(other))
 				{
 					continue;
 				}
@@ -654,7 +660,7 @@ void Subdivide::subdivide(int samples)
 	{
 		OpSet<Probe *> chunk = {start};
 		shoot(chunk);
-//		while (finish_ends(chunk)) {}
+		while (finish_ends(chunk)) {}
 		finish_hbonds(chunk);
 
 		prune(chunk);

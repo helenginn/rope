@@ -148,6 +148,24 @@ public:
 		return _others;
 	}
 
+	/** same registration as register_probe() (still lands in others(), so
+	 * bondedNeighbours()/the GUI's own filtering there is unaffected) but
+	 * additionally tagged into _clashPartners so a caller that needs to
+	 * tell a steric clash apart from an alt-conf sibling or charge-sharing
+	 * partner - all three otherwise registered identically into others(),
+	 * see bondedNeighbours()'s own comment - can do so via
+	 * isClashPartner(). Sole caller: Coordinated::clashLogic(). */
+	void register_clash(Probe *other)
+	{
+		register_probe(other);
+		_clashPartners.insert(other);
+	}
+
+	bool isClashPartner(Probe *other) const
+	{
+		return _clashPartners.count(other) > 0;
+	}
+
 	/** side-channel only - deliberately does NOT also call register_probe()
 	 * / touch others(), unlike a plain tag would. Network::
 	 * setupInactiveAtom()'s make_certain_covalent_bond() is the one
@@ -413,6 +431,7 @@ public:
 	glm::vec4 _glow = {};
 	
 	std::vector<Probe *> _others;
+	OpSet<Probe *> _clashPartners;
 	std::vector<Probe *> _mutualExistenceNeighbours;
 	std::optional<PendingRepulsion> _pendingRepulsion;
 	glm::vec3 _colour = {};
