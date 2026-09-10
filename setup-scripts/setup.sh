@@ -303,6 +303,26 @@ else
 fi
 meson compile -C "$BUILDDIR"
 
+info "Symlinking assets into build dir..."
+
+mkdir -p "$BUILDDIR/assets"
+for asset in shaders images geometry; do
+  source_asset="$asset"
+  [ "$asset" = shaders ] && source_asset=shaders_450
+  asset_target="$SRCDIR/assets/$source_asset"
+  asset_link="$BUILDDIR/assets/$asset"
+
+  if [ -L "$asset_link" ] &&
+     [ "$(readlink "$asset_link")" = "$asset_target" ]; then
+  continue
+  fi
+
+  if [ -e "$asset_link" ] || [ -L "$asset_link" ]; then
+     die "Asset path already exists with different contents: $asset_link"
+  fi
+  ln -s "$asset_target" "$asset_link"
+done
+
 if $USE_CLANGD; then
   section "Setup .clangd"
   cat >".clangd" <<EOF

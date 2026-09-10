@@ -249,6 +249,28 @@ if (Get-Command ccache -ErrorAction SilentlyContinue) {
 
 meson setup $BUILDDIR "--native-file=${BUILDDIR}\conan_meson_native.ini" "--buildtype=${BUILD_TYPE}" @EXTRA_MESON_ARGS --reconfigure --clearcache
 if ($LASTEXITCODE -ne 0) {Die "meson setup failed"}
+
+Info "Symlinking assets into build dir..."
+
+$assetRoot = Join-Path $BUILDDIR "assets"
+New-Item -ItemType Directory -Path $assetRoot -Force -ErrorAction Stop | Out-Null
+foreach ($asset in @("shaders", "images", "geometry")) {
+  $sourceAsset = if ($asset -eq "shaders") { "shaders_450" } else { $asset }
+  $assetTarget = (Resolve-Path (Join-Path $SRCDIR "assets/$sourceAsset")).Path
+  $assetLink = Join-Path $assetRoot $asset
+  $existing = Get-Item -LiteralPath $assetLink -Force -ErrorAction SilentlyContinue
+
+  if ($existing) {
+    if ($existing.LinkType -eq "Junction" -and
+        $existing.Target -contains $assetTarget) {
+      continue
+    }
+    Die "Asset path already exists with different contents: $assetLink"
+  }
+  New-Item -ItemType Junction -Path $assetLink -Target $assetTarget `
+    -ErrorAction Stop | Out-Null
+}
+
 meson compile -C $BUILDDIR
 if ($LASTEXITCODE -ne 0) {Die "meson compile failed"}
 
