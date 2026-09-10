@@ -97,7 +97,14 @@ void ProgressBar::setSkipJob(const std::function<void()> &job)
 	rot = glm::mat3x3(glm::rotate(glm::mat4(1.), (float)deg2rad(-90.),
 	                              glm::vec3(0., 0., -1.)));
 	tb->rotateRoundCentre(rot);
-	tb->setCentre(0.68, 0.88);
+
+	// anchored by its left edge, not its centre: setCentre(0.68, ...) put
+	// the old, 3x-wider arrow's centre here, which - now that it's a
+	// third as wide - left a gap between it and the cross button instead
+	// of sitting right next to it. Left-anchoring at the old arrow's own
+	// left edge keeps this spot fixed regardless of how wide the glyph
+	// itself is.
+	tb->setLeft(0.63, 0.88);
 	tb->setReturnJob(job);
 	tb->addAltTag("Skip current subnetwork");
 	addObject(tb);
