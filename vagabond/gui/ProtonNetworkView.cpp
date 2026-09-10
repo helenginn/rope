@@ -1261,9 +1261,23 @@ void ProtonNetworkView::selectUsingPlan(std::string plan)
 	                                  "", this);
 	cr->setDefault(15, 15);
 	cr->setRange(2, 50, 48);
-	cr->setReturn([build](float, float max)
+	cr->setReturn([this, build](float, float max)
 	{
-		build(lrint(max));
+		int n = lrint(max);
+
+		// ChooseRange::buttonPressed() calls this return callback and
+		// then unconditionally hide()s - which clears every modal on
+		// the scene (Modal::hide() -> Scene::removeModals()), not just
+		// this one. Opening the naming dialog here directly would show
+		// it and then have it wiped out by that same hide() call, all
+		// within this one call stack (see the identical workaround in
+		// HBondAnalysisControl.cpp's ask_for_guide_size). Deferring to
+		// the next main-thread job runs it after that cleanup has
+		// finished.
+		addMainThreadJob([build, n]()
+		{
+			build(n);
+		});
 	});
 	setModal(cr);
 }
