@@ -22,19 +22,19 @@
 
 #include <random>
 #include "RotamerBouquet.h"
-#include <vagabond/core/files/CsvFile.h>
 #include <regex>
 
 
-RotamerModifier::RotamerModifier(Instance *inst)
+RotamerModifier::RotamerModifier(Instance *instMain, Instance *instSec, std::string &mainChain, std::string &secChain)
+    : _instMain(instMain), _instSec(instSec), _mainChain(mainChain), _secChain(secChain)
 {
-    setInstance(inst);
     setup();
 }
 
 void RotamerModifier::setup()
 {
-    _instance->load();
+    _instMain->load();
+    _instSec->load();
     prepareResources();
     prepareMemory();
     unifiedTorsionFetcher();
@@ -45,7 +45,8 @@ void RotamerModifier::setup()
 }
 RotamerModifier::~RotamerModifier()
 {
-    _instance->unload();
+    _instMain->unload();
+    _instSec->unload();
 }
 
 float RotamerModifier::submitJobAndRetrieve(float weight, parameter a)
@@ -64,7 +65,8 @@ float RotamerModifier::submitJobAndRetrieve(float weight, parameter a)
                 _resBouquet[resID][atomWithPos.atom].push_back(atomWithPos.wp.ave);
             }
         }
-        r->transplantPositions(false);
+        r->destroy();
+        return weight;
     }
     r->transplantPositions(false);
     r->destroy();
@@ -73,61 +75,34 @@ float RotamerModifier::submitJobAndRetrieve(float weight, parameter a)
 
 void RotamerModifier::move(float weight, parameter xy)
 {
-    Result *r = new Result;
-    glm::mat4x4 transformation = glm::mat4x4(1.0f);
-    glm::vec3 translation {0.f, 0.f, 0.f};
-    if (xy == MoveX && weight != _memoryX)
-    {
-        translation.y = weight-_memoryX;
-        transformation = glm::translate(transformation, translation);
-        _memoryX = weight;
-        r->aps = _bouquet->move(transformation, "B");
-        r->transplantPositions(false);
-        r->destroy();
-    }
-    if (xy == MoveY && weight != _memoryY)
-    {
-        translation.z = weight-_memoryY;
-        transformation = glm::translate(transformation, translation);
-        _memoryY = weight;
-        r->aps = _bouquet->move(transformation, "B");
-        r->transplantPositions(false);
-        r->destroy();
-    }
+    // Result *r = new Result;
+    // glm::mat4x4 transformation = glm::mat4x4(1.0f);
+    // glm::vec3 translation {0.f, 0.f, 0.f};
+    // if (xy == MoveX && weight != _memoryX)
+    // {
+    //     translation.y = weight-_memoryX;
+    //     transformation = glm::translate(transformation, translation);
+    //     _memoryX = weight;
+    //     r->aps = _bouquet->move(transformation, _secChain);
+    //     r->transplantPositions(false);
+    //     r->destroy();
+    // }
+    // if (xy == MoveY && weight != _memoryY)
+    // {
+    //     translation.z = weight-_memoryY;
+    //     transformation = glm::translate(transformation, translation);
+    //     _memoryY = weight;
+    //     r->aps = _bouquet->move(transformation, _secChain);
+    //     r->transplantPositions(false);
+    //     r->destroy();
+    // }
 }
-void RotamerModifier::analysis(int timePoints, std::vector<glm::vec3> startPos)
-{
-    std::map<std::pair<ResidueId, std::string>, std::map<int, int> > collisionTracking;
-    int iteration{0};
-    for (auto translation: startPos)
-    {
-        std::cout << "Number of startPos: " <<startPos.size() << std::endl;
-        for (int x = timePoints; x > 0; x--)
-        {
-            glm::mat4x4 transformation = glm::mat4x4(1.0f);
-            transformation = glm::translate(transformation, translation / glm::vec3(timePoints));
-            _bouquet->moveNoMap(transformation, "B");
-            std::vector<std::pair<ResidueId, std::string> > list{_bouquet->collisionList()};
-            for (auto &member: list)
-            {
-                collisionTracking[member][iteration] ? collisionTracking[member][iteration] += 1 : collisionTracking[member][iteration] = 1;
-            }
-        }
-        _bouquet->moveNoMap(glm::translate(glm::mat4x4(1.0f), -translation), "B");
-        iteration +=  1;
-    }
-    for (auto element: collisionTracking)
-    {
-        std::cout << std::endl << "Number of results: "<< element.second.size() << std::endl;
-        std::cout << std::endl << "Residue  " << element.first.first << " collided";
-        for (int x = 0; x < startPos.size(); x++)
-            std::cout << '\t' << (element.second[x] ? element.second[x] : 0);
-    }
-}
+
 void RotamerModifier::analysisTest(int timePoints, std::vector<glm::vec3> startPos)
 {
-    std::vector<Bouquet *> resChainA {_bouquet->bouquetsForChain("A")};
-    std::vector<Bouquet *> resChainB {_bouquet->bouquetsForChain("B")};
+    // STEP 1: Initialisation
+    std::vector<Bouquet *> resChainA {_bouquet->bouquetsForChain(_mainChain)};
+    std::vector<Bouquet *> resChainB {_bouquet->bouquetsForChain(_secChain)};
     std::vector<std::string> resChainAstr {};
     for (Bouquet* const &bouquet : resChainA)
     {
@@ -154,19 +129,20 @@ void RotamerModifier::analysisTest(int timePoints, std::vector<glm::vec3> startP
     std::map<int, std::vector<std::vector<float>>> CollidingRotamersA {};
     std::map<int, std::vector<std::vector<float>>> CollidingRotamersB {};
     int iteration {0};
+
+    //STEP 2: iteration for every vectors given in input
     for (auto translation: startPos)
     {
-        Eigen::MatrixXi topQuality(sizeA,sizeB);
-        topQuality.fill(0);
+        Eigen::MatrixXi totalCollisions(sizeA,sizeB);
+        totalCollisions.fill(0);
         std::cout << "startPos number: " << iteration+1 << '/' << startPos.size() << std::endl;
         glm::mat4x4 transformation = glm::mat4x4(1.0f);
         transformation = glm::translate(transformation, translation / glm::vec3(timePoints+1));
         for (int x = 0; x <= timePoints; x++)
         {
-
-            // _bouquet->move(transformation, "B");
+            // currentCollisions is a matrix of every collisions between every rotamers of chain A and chain B
             Eigen::MatrixXi currentCollisions {_bouquet->fullCollisionChecks(resChainA,resChainB, sizeA, sizeB)};
-            topQuality += currentCollisions;
+            totalCollisions += currentCollisions;
             std::vector<float> RotamersA {};
             std::vector<float> RotamersB {};
             int line {0};
@@ -176,6 +152,8 @@ void RotamerModifier::analysisTest(int timePoints, std::vector<glm::vec3> startP
                 float collisions {0};
                 for (int rotamers = 0; rotamers < bouquet->storeSize(); rotamers++)
                 {
+                    float totColl {0.f};
+                    float totNumOfRot {0.f};
                     if (currentCollisions.row(line).sum() != 0)
                     {
                         int pos {0};
@@ -193,8 +171,8 @@ void RotamerModifier::analysisTest(int timePoints, std::vector<glm::vec3> startP
                             {
                                 if (coll != 0)
                                 {
-                                    if (coll/numOfRot > highestColl && numOfRot != 0)
-                                        highestColl = coll/numOfRot;
+                                    totColl += coll;
+                                    totNumOfRot += numOfRot;
                                 }
                                 numOfRot = 1;
                                 (values == 1? coll = 1 : coll = 0);
@@ -207,11 +185,50 @@ void RotamerModifier::analysisTest(int timePoints, std::vector<glm::vec3> startP
                             }
                             pos++;
                         }
-                        collisions += highestColl;
+                        collisions += totColl/totNumOfRot;
                     }
                     line++;
                 }
                 RotamersA.push_back(collisions/static_cast<float>(bouquet->storeSize()));
+                // float collisions {0};
+                // for (int rotamers = 0; rotamers < bouquet->storeSize(); rotamers++)
+                // {
+                //     if (currentCollisions.row(line).sum() != 0)
+                //     {
+                //         int pos {0};
+                //         float coll {0.f};
+                //         float numOfRot {0.f};
+                //         float highestColl {0.f};
+                //         std::string bouquetB {};
+                //         std::regex rgx("\\d+[A-Z]");
+                //         for (auto values : currentCollisions.row(line))
+                //         {
+                //             std::string resi = resChainBstr[pos];
+                //             std::smatch match;
+                //             std::regex_search(resi, match, rgx);
+                //             if (bouquetB != match[0])
+                //             {
+                //                 if (coll != 0)
+                //                 {
+                //                     if (coll/numOfRot > highestColl && numOfRot != 0)
+                //                         highestColl = coll/numOfRot;
+                //                 }
+                //                 numOfRot = 1;
+                //                 (values == 1? coll = 1 : coll = 0);
+                //                 bouquetB = match[0];
+                //             }
+                //             else
+                //             {
+                //                 (values == 1? coll += 1 : coll += 0);
+                //                 numOfRot += 1;
+                //             }
+                //             pos++;
+                //         }
+                //         collisions += highestColl;
+                //     }
+                //     line++;
+                // }
+                // RotamersA.push_back(collisions/static_cast<float>(bouquet->storeSize()));
             }
             CollidingRotamersA[iteration].push_back(RotamersA);
             for (auto const &bouquet : resChainB)
@@ -219,6 +236,8 @@ void RotamerModifier::analysisTest(int timePoints, std::vector<glm::vec3> startP
                 float collisions {0};
                 for (int rotamers = 0; rotamers < bouquet->storeSize(); rotamers++)
                 {
+                    float totColl {0.f};
+                    float totNumOfRot {0.f};
                     if (currentCollisions.col(row).sum() != 0)
                     {
                         int pos {0};
@@ -227,7 +246,6 @@ void RotamerModifier::analysisTest(int timePoints, std::vector<glm::vec3> startP
                         float highestColl {0.f};
                         std::string bouquetA {};
                         std::regex rgx("\\d+[A-Z]");
-
                         for (auto values : currentCollisions.col(row))
                         {
                             std::string resi = resChainBstr[pos];
@@ -237,8 +255,8 @@ void RotamerModifier::analysisTest(int timePoints, std::vector<glm::vec3> startP
                             {
                                 if (coll != 0)
                                 {
-                                    if (coll/numOfRot > highestColl && numOfRot != 0)
-                                        highestColl = coll/numOfRot;
+                                    totColl += coll;
+                                    totNumOfRot += numOfRot;
                                 }
                                 numOfRot = 1;
                                 (values == 1? coll = 1 : coll = 0);
@@ -251,22 +269,63 @@ void RotamerModifier::analysisTest(int timePoints, std::vector<glm::vec3> startP
                             }
                             pos++;
                         }
-                        collisions += highestColl;
+                        collisions += totColl/totNumOfRot;
                     }
                     row++;
                 }
                 RotamersB.push_back(collisions/static_cast<float>(bouquet->storeSize()));
+                // for (auto const &bouquet : resChainB)
+                // {
+                //     float collisions {0};
+                //     for (int rotamers = 0; rotamers < bouquet->storeSize(); rotamers++)
+                //     {
+                //         if (currentCollisions.col(row).sum() != 0)
+                //         {
+                //             int pos {0};
+                //             float coll {0.f};
+                //             float numOfRot {0.f};
+                //             float highestColl {0.f};
+                //             std::string bouquetA {};
+                //             std::regex rgx("\\d+[A-Z]");
+                //             for (auto values : currentCollisions.col(row))
+                //             {
+                //                 std::string resi = resChainBstr[pos];
+                //                 std::smatch match;
+                //                 std::regex_search(resi, match, rgx);
+                //                 if (bouquetA != match[0])
+                //                 {
+                //                     if (coll != 0)
+                //                     {
+                //                         if (coll/numOfRot > highestColl && numOfRot != 0)
+                //                             highestColl = coll/numOfRot;
+                //                     }
+                //                     numOfRot = 1;
+                //                     (values == 1? coll = 1 : coll = 0);
+                //                     bouquetA = match[0];
+                //                 }
+                //                 else
+                //                 {
+                //                     (values == 1? coll += 1 : coll += 0);
+                //                     numOfRot += 1;
+                //                 }
+                //                 pos++;
+                //             }
+                //             collisions += highestColl;
+                //         }
+                //         row++;
+                //     }
+                //     RotamersB.push_back(collisions/static_cast<float>(bouquet->storeSize()));
             }
             CollidingRotamersB[iteration].push_back(RotamersB);
-            _bouquet->moveNoMap(transformation, "B");
+            _bouquet->moveNoMap(transformation, _secChain);
         }
-        _bouquet->moveNoMap(glm::translate(glm::mat4x4(1.0f), -translation), "B");
-        allAnalysis.push_back(topQuality);
+        _bouquet->moveNoMap(glm::translate(glm::mat4x4(1.0f), -translation), _secChain);
+        allAnalysis.push_back(totalCollisions);
         iteration++;
     }
     for (int iter = 0; iter < startPos.size(); iter++)
     {
-        std::string fileName = _instance->entity_id() + "_paths_number_" + std::to_string(iter) + '-' + std::to_string(timePoints) + ".csv";
+        std::string fileName = _instMain->entity_id() + "_paths_number_" + std::to_string(iter) + '-' + std::to_string(timePoints) + ".csv";
         std::string csvContent {""};
         std::cout << std::endl << "ITERATION " << iter << std::endl <<'\t';
         for (auto const &bouquet : resChainB)
@@ -299,7 +358,7 @@ void RotamerModifier::analysisTest(int timePoints, std::vector<glm::vec3> startP
     }
     for (auto const &pairs : CollidingRotamersA)
     {
-        std::string fileName = _instance->entity_id() + "_paths_number_" + std::to_string(pairs.first) + '-' + std::to_string(timePoints) + "availRotA" + ".csv";
+        std::string fileName = _instMain->entity_id() + "_paths_number_" + std::to_string(pairs.first) + '-' + std::to_string(timePoints) + "availRotA" + ".csv";
         std::string csvContent {""};
         for (auto const &bouquet : resChainA)
         {
@@ -324,7 +383,7 @@ void RotamerModifier::analysisTest(int timePoints, std::vector<glm::vec3> startP
     }
     for (auto const &pairs : CollidingRotamersB)
     {
-        std::string fileName =  _instance->entity_id() + "_paths_number_" + std::to_string(pairs.first) + '-' + std::to_string(timePoints) + "availRotB" + ".csv";
+        std::string fileName =  _instMain->entity_id() + "_paths_number_" + std::to_string(pairs.first) + '-' + std::to_string(timePoints) + "availRotB" + ".csv";
         std::string csvContent {""};
         for (auto const &bouquet : resChainB)
         {
@@ -397,7 +456,8 @@ void RotamerModifier::prepareResources()
     const int threads = 1;
     _resources.allocateMinimum(threads);
     // set up per-bond/atom calculation
-    _group = _instance->currentAtoms();
+    _group = _instMain->currentAtoms();
+    _group->add(_instSec->currentAtoms());
     _group->recalculate();
     std::vector<AtomGroup *> subsets = _group->connectedGroups();
     for (AtomGroup *subset : subsets)
@@ -412,7 +472,7 @@ void RotamerModifier::prepareResources()
     _resources.sequences->torsionBasis()->parameters();
 }
 
-void RotamerModifier::saveStructure(std::string name)
+void RotamerModifier::saveStructure(std::string const &name)
 {
     AtomGroup *group = _instance->currentAtoms();
     group->writeToFile(name);
@@ -450,11 +510,14 @@ void RotamerModifier::unifiedTorsionFetcher()
                         if (_mode == Map)
                         {
                             rotamerNumber = get(0);
-                            if (rotamerNumber > _lib->_allRotamers[resName].size()-1 || rotamerNumber < 0)
+                            if (rotamerNumber < 0 || rotamerNumber >= _lib->_allRotamers[resName].size())
                             {
                                 return 0.f;
                             }
-                            float targetTorsion = _lib->_allRotamers[resName][rotamerNumber].chi[torsion->shortDesc()[3]-1 - '0'];
+                            Rotamer const &rota = _lib->_allRotamers[resName][rotamerNumber];
+                            if (torsion->shortDesc()[3]-'0' > rota.chi.size())
+                                return 0.f;
+                            float targetTorsion = rota.chi[torsion->shortDesc()[3]-'1'];
                             return targetTorsion - initialTorsion;
                         }
                     }
@@ -474,6 +537,7 @@ void RotamerModifier::generateRotamerMapPosition()
             submitJobAndRetrieve(x, Map);
         }
         _bouquet->storeRotamers(_resBouquet);
+        _bouquet->collisionUpdate();
         _resBouquet.clear();
     }
 }
@@ -491,25 +555,34 @@ void RotamerModifier::makePlan()
  */
 {
     std::cout << "Number of atom in AtomGroup: " << _group->size() << " and number of atoms in Bouquet: " << _bouquet->numAtom() << std::endl;
-    std::vector<glm::vec3> axisTemp = axisForChain("A");
+    std::vector<glm::vec3> axisTemp = axisForChain(_mainChain);
     _axisMain = (axisTemp[1] - axisTemp[0]);
-     std::vector<glm::vec3> axisTemp2 = axisForChain("B");
+     std::vector<glm::vec3> axisTemp2 = axisForChain(_secChain);
     _axisSecondary = (axisTemp2[1] - axisTemp2[0]);
     _normal = glm::normalize(_axisMain); //_normal == axis of the A chain
-    _x = glm::normalize(cross(_normal, (axisTemp2[0]+axisTemp2[1])/glm::vec3(2.f)-(axisTemp[0]+axisTemp[1])/glm::vec3(2.f)));
-    _y = glm:: normalize(cross(_normal, _x));
+    _y = glm::normalize(cross(_normal, (axisTemp2[0]+axisTemp2[1])/glm::vec3(2.f)-(axisTemp[0]+axisTemp[1])/glm::vec3(2.f)));
+    _z = glm:: normalize(cross(_normal, _y));
     if (_referential == false) // Rotating the helices to be aligned with the main referential
     {
-        glm::mat3x3 R {_normal,_x,_y};
+        glm::mat3x3 R {_normal,_y,_z};
         R = glm::inverse(R);
+        glm::mat4x4 const R4 = glm::mat4(R);
+        glm::mat4x4 T = glm::translate(glm::mat4(1.0f), -axisTemp[0]);
+        glm::mat4x4 transform = R4 * T;
+//         _instMain->currentAtoms()->do_op([transform](Atom *atom)
+//         {
+//             updatingAtomGroupPositions(transform, atom);
+//         });
+//         _instSec->currentAtoms()->do_op([transform](Atom *atom)
+// {
+//     updatingAtomGroupPositions(transform, atom);
+// });
+        _bouquet->moveNoMap(transform);
+
+
+        _y = R * _y;
+        _z = -(R * _z);
         _normal = R * _normal;
-        _instance->currentAtoms()->do_op([R](Atom *atom)
-        {
-            updatingAtomGroupPositions(R, atom);
-        });
-        _bouquet->move(R);
-        _x = R * _x;
-        _y = -(R * _y);
         _axisMain = R * _axisMain;
         _axisSecondary = R * _axisSecondary;
         _referential = true;
@@ -528,38 +601,38 @@ void RotamerModifier::updatingAtomGroupPositions(glm::mat4x4 const &transformati
 }
 std::vector<glm::vec3> RotamerModifier::drawChainAxis()
 {
-    std::vector<glm::vec3> points = _bouquet->axis("A",true);
-    std::vector<glm::vec3> points2 = _bouquet->axis("B",true);
+    std::vector<glm::vec3> points = _bouquet->axis(_mainChain, true);
+    std::vector<glm::vec3> points2 = _bouquet->axis(_secChain, true);
     points.push_back(points2[0]);
     points.push_back(points2[1]);
     return points;
 }
 std::vector<glm::vec3> RotamerModifier::drawAxis()
 {
-    return {_normal,_x,_y};
+    return {_normal,_y,_z};
 }
 
-std::vector<glm::vec3> RotamerModifier::RandStartPos(int NumberPos)
+std::vector<glm::vec3> RotamerModifier::RandStartPos(int const &numberPos)
 {
     std::vector<glm::vec3> pos {};
-    for (int x = 0; x < NumberPos; x++)
+    for (int x = 0; x < numberPos; x++)
     {
         glm::vec3 newVec {};
         newVec.x = RandGen();
-        newVec.y = RandGen();
-        newVec.z = -std::abs(RandGen());
+        newVec.y = std::abs(RandGen());
+        newVec.z = RandGen();
         pos.push_back(glm::normalize(newVec)*glm::vec3(10));
         std::cout << newVec << std::endl;
     }
     return pos;
 }
 
-float RotamerModifier::RandGen()
+int RotamerModifier::RandGen()
 {
     std::random_device rd;
     std::mt19937 gen(rd());
     std::uniform_int_distribution<int> dis(-1000, 1000);
-    const float random_number = dis(gen);
+    const int random_number = dis(gen);
     std::cout << random_number << std::endl;
     return random_number;
 }

@@ -17,8 +17,8 @@ RotamerStore RotamerStore::store(std::map<ResidueId, std::map<Atom*,  std::vecto
             int counter = 0;
             for (auto& [atom, positions] : atomPos)
             {
-                newStore.atoms.emplace_back(atom);
-                newStore.positionArray.emplace_back(positions[rotaNumber]);
+                newStore.atoms.push_back(atom);
+                newStore.positionArray.push_back(positions[rotaNumber]);
                 counter++;
             }
             residueRot.Rotamer() = rotaNumber;
@@ -47,7 +47,6 @@ std::vector<RotamerStore> RotamerStore::residueStore()
             int globalPos = 0;
             for (int x = lookup.start(); x < (lookup.start()+lookup.length()); x++)
             {
-                std::cout << x << std::endl;
                 sto.atoms.emplace_back(atoms[x]);
                 sto.positionArray.emplace_back(positionArray[x]);
                 counter++;
@@ -121,7 +120,7 @@ AtomPosMap RotamerStore::extractForGUI()
             for (int i = pairs.second.start(); i < (pairs.second.start() + pairs.second.length()); i++)
             {
                 positionMap[atoms[i]].samples.emplace_back(positionArray[i]);
-                positionMap[atoms[i]].ave+= positionArray[i];
+                // positionMap[atoms[i]].ave+= positionArray[i];
             }
         }
         else
@@ -163,7 +162,7 @@ bool RotamerStore::collisionCheck(RotamerStore &self, int const &rotNum, Rotamer
     {
         for (auto posOther : otherPos)
         {
-            if (glm::length(posSelf-posOther) < 1.5f)
+            if (glm::length(posSelf-posOther) < 2.f)
             {
                 return true;
             }

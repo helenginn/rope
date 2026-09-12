@@ -169,12 +169,12 @@ void ChainAssignment::buttonPressed(std::string tag, Button *button)
 
 		auto rotamerView = [this, tag]() // submenu to send to a view of the selected chain
 		{
-			Polymer *polymer = _model.polymerForChain(tag.substr(6, std::string::npos));
-			if (_firstChain != " ")
-				polymer->addChain(_firstChain);
-			RotamerView *rv = new RotamerView(this, polymer);
+			Polymer *polymerMain = _model.polymerForChain(tag.substr(6, std::string::npos));
+			Polymer *polymerSec = _model.polymerForChain(_firstChain);
+
+			RotamerView *rv = new RotamerView(this, polymerMain, polymerSec, tag.substr(6, std::string::npos), _firstChain);
 			rv->show();
-			rv->viewModel();
+			//rv->viewModel();
 			std::cout << "Rotamer View\n";
 
 
@@ -184,8 +184,8 @@ void ChainAssignment::buttonPressed(std::string tag, Button *button)
 			_firstChain = tag.substr(6, std::string::npos);
 			std::cout << "Stored chain : \"" << _firstChain << "\" "<<std::endl;
 		};
-		m->addOption("Setup Rotamers", rotamerSetup);//replacing tag by function (jobs)
-		m->addOption("View Rotamers", rotamerView);
+		m->addOption("Define Static Chain", rotamerSetup);//replacing tag by function (jobs)
+		m->addOption("View " + _firstChain + " this Chain", rotamerView);
 		//m->addOption("View Rotamers", "view"+tag);
 		m->setup(button);
 		setModal(m);

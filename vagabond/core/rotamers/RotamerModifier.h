@@ -15,7 +15,7 @@ class RotamerModifier : public StructureModification
 protected:
     void prepareResources();
 public:
-    RotamerModifier(Instance *inst);
+    RotamerModifier(Instance *instMain, Instance *instSec, std::string &mainChain, std::string &secChain);
     void setup();
     ~RotamerModifier();
     enum points{Start, End};
@@ -24,7 +24,7 @@ public:
     float submitJobAndRetrieve(float weight, parameter a = Default);
     void submitJob(float weight);
     void prepareMemory();
-    void saveStructure(std::string name);
+    void saveStructure(std::string const &name);
     void unifiedTorsionFetcher();
     void generateRotamerMapPosition();
 
@@ -35,9 +35,9 @@ public:
     void makePlan();
     std::vector<glm::vec3> drawChainAxis();
     std::vector<glm::vec3> drawAxis();
-    std::vector<glm::vec3> RandStartPos(int NumberPos);
+    std::vector<glm::vec3> RandStartPos(int const &numberPos);
 
-    static float RandGen();
+    static int RandGen();
 
     void move(float weight, parameter xy);
     void analysis(int timePoints, std::vector<glm::vec3> startPos);
@@ -45,8 +45,18 @@ public:
     std::vector<std::pair<glm::vec3,glm::vec3> > getVertices() const
     {
         return _bouquet->getVertices();
+    };
+    AtomGroup* extractForGUI() const
+    {
+        AtomPosMap posMap {_bouquet->extractForGUI()};
+        AtomGroup* Group {};
+        return Group;
     }
 private:
+    Instance *_instMain {};
+    Instance *_instSec {};
+    std::string _mainChain {};
+    std::string _secChain {};
     std::map<ResidueId, std::map<Atom*,  std::vector<glm::vec3>>> _resBouquet {};
     AtomGroup *_group;
     std::vector<Parameter *> _params;
@@ -58,8 +68,8 @@ private:
     parameter _mode;
     glm::vec3 _axisMain {};
     glm::vec3 _axisSecondary {};
-    glm::vec3 _x {};
     glm::vec3 _y {};
+    glm::vec3 _z {};
     glm::vec3 _normal {};
     float _memoryY {0};
     float _memoryX {0};

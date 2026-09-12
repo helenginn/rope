@@ -18,11 +18,10 @@ class RotamerModifier;
 class RotamerView : public Display,  public DragResponder
 {
 public:
-    RotamerView(Scene *prev, Instance *inst);
+    RotamerView(Scene *prev, Instance *instMain, Instance *instSec, std::string mainChain, std::string secChain);
     virtual ~RotamerView();
     void setup();
     void viewModel();
-    void loadModelChain( Instance *inst, DisplayUnit *unit);
     void rotaList();
     void setupSlider();
     void drawAxis();
@@ -31,7 +30,8 @@ public:
     virtual void finishedDragging(std::string tag, double x, double y);
     void setupCollision();
 private:
-
+    Instance *_instMain {};
+    Instance *_instSec {};
     Slider *_rangeSlider = nullptr;
     Slider *_rangeSlider2 = nullptr;
 

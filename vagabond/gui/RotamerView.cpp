@@ -14,17 +14,19 @@
 
 
 
-RotamerView::RotamerView(Scene *prev, Instance *inst)
-:  Scene(prev), Display(prev), _inst(inst)
+RotamerView::RotamerView(Scene *prev, Instance *instMain, Instance *instSec, std::string mainChain, std::string secChain)
+:  Scene(prev), Display(prev), _instMain(instMain), _instSec(instSec)
 {
-    _inst->load();
-    _modifier = new RotamerModifier(_inst);
+    _instMain->load();
+    _instSec->load();
+    _modifier = new RotamerModifier(_instMain, _instSec,mainChain, secChain);
 }
 
 RotamerView::~RotamerView()
 {
     delete _modifier;
-    _inst->unload();
+    _instMain->unload();
+    _instSec->unload();
     std::cout << "model unloaded\n";
 }
 void RotamerView::setup()
@@ -40,6 +42,17 @@ void RotamerView::setup()
         TextButton *t = new TextButton("analysis test" , this);
         t->setRight(0.9, 0.7);
         t->setReturnTag("analysis");
+        addObject(t);
+    }
+    auto crash = [this]()
+    {
+        std::cout << "STOP";
+        std::cout << std::endl;
+    };
+    {
+        TextButton *t = new TextButton("CRASH", this);
+        t->setRight(0.2, 0.7);
+        t->setReturnJob(crash);
         addObject(t);
     }
     {
@@ -62,6 +75,7 @@ void RotamerView::setup()
         addObject(_para);
         drawAxis();
     }
+    viewModel();
 }
 void RotamerView::drawAxis()
 {
@@ -69,15 +83,15 @@ void RotamerView::drawAxis()
     _line5->clearVertices();
     _line6->clearVertices();
     std::vector<glm::vec3> axis {_modifier->drawAxis()};
-    _line4->addPoint(glm::vec3(0,0,0));
-    _line4->addPoint(axis[0]);
+    _line4->addPoint(glm::vec3(5,0,0));
+    _line4->addPoint(axis[0]+glm::vec3(5.f,0.f,0.f));
     _line4->forceRender();
-    _line5->addPoint(glm::vec3(0,0,0));
-    _line5->addPoint(axis[1]);
+    _line5->addPoint(glm::vec3(5,0,0));
+    _line5->addPoint(axis[1]+glm::vec3(5.f,0.f,0.f));
     _line5->setColour(0.8,0.1,0.1);
     _line5->forceRender();
-    _line6->addPoint(glm::vec3(0,0,0));
-    _line6->addPoint(axis[2]);
+    _line6->addPoint(glm::vec3(5,0,0));
+    _line6->addPoint(axis[2]+glm::vec3(5.f,0.f,0.f));
     _line6->setColour(0.1,0.1,0.8);
     _line6->forceRender();
 }
@@ -96,13 +110,36 @@ void RotamerView::buttonPressed(std::string tag, Button *button)
 {
     if (tag == "analysis") // coordinates : X = along static structure axis, Y: left-right Z: - = moving away the other structure
     {
-        std::vector<glm::vec3> tests  {_modifier->RandStartPos(50)};
+        std::vector<glm::vec3> tests  {_modifier->RandStartPos(200)};
         std::string fileName = "vectors_list.csv";
         std::string csvContent {};
         for (auto pos : tests)
         {
-            csvContent += "(" + std::to_string(pos.x) + ", " + std::to_string(pos.y) + ", " + std::to_string(pos.z) + ")\n";
+            csvContent += std::to_string(pos.x) + "," + std::to_string(pos.y) + "," + std::to_string(pos.z) + '\n';
         }
+        // std::ifstream file;
+        // file.open(fileName);
+        // if (!file.is_open())
+        // {
+        //     throw std::runtime_error("Could not open rotamer the vectors file");
+        // }
+        // std::string line {};
+        // std::vector<glm::vec3> tests {};
+        // while (getline(file, line))
+        // {
+        //     std::istringstream iss(line);
+        //     std::string lineStream;
+        //     std::vector<float> xyz {};
+        //     glm::vec3 readPos {};
+        //     while (getline(iss, lineStream, ','))
+        //     {
+        //         xyz.push_back(std::stof(lineStream)); // convert to double
+        //     }
+        //     readPos.x = xyz[0];
+        //     readPos.y = xyz[1];
+        //     readPos.z = xyz[2];
+        //     tests.push_back(readPos);
+        // }
         std::ofstream file;
         file.open(fileName);
         if (file.is_open())
@@ -110,7 +147,7 @@ void RotamerView::buttonPressed(std::string tag, Button *button)
             file << csvContent;
             file.close();
         }
-        _modifier->analysisTest(20, tests);
+        _modifier->analysisTest(100, tests);
         _line3->clearVertices();
         for (auto pos : tests)
         {
@@ -137,27 +174,16 @@ void RotamerView::buttonPressed(std::string tag, Button *button)
     Scene::buttonPressed(tag, button);
 }
 
-void RotamerView::loadModelChain( Instance *inst, DisplayUnit *unit)
-{
-    unit->loadAtoms(inst->currentAtoms());
-    unit->displayAtoms(false, false);
-    // unit->startWatch();
-}
-
 void RotamerView::viewModel()
 {
     {
         DisplayUnit *unit = new DisplayUnit(this);
-        loadModelChain( _inst,unit);
-        unit->setMultiBondMode(true);
+        AtomGroup *atoms {_instMain->currentAtoms()};
+        atoms->add(_instSec->currentAtoms());
+        unit->loadAtoms(atoms);
         setupCollision();
-        unit->startWatch();
-        addDisplayUnit(unit);
-    }
-    {
-        DisplayUnit *unit = new DisplayUnit(this);
-        unit->loadAtoms(_inst->currentAtoms());
-        unit->displayAtoms();
+        unit->displayAtoms(false, false);
+        unit->setMultiBondMode(true);
         unit->startWatch();
         addDisplayUnit(unit);
     }
@@ -195,33 +221,32 @@ void RotamerView::finishedDragging(std::string tag, double x, double y)
 
 void RotamerView::setupSlider()
 {
-    removeObject(_rangeSlider);
-    delete _rangeSlider;
-    Slider *s = new Slider();
-
-    s->setDragResponder(this);
-    s->resize(0.5);
-    s->setup("Rotamer selection", _min, _max, _step);
-    s->setStart(0.5, 0);
-    s->setCentre(0.5, 0.85);
-    s->setReturnTag("X");
-    _rangeSlider = s;
-    addObject(s);
-
-    removeObject(_rangeSlider2);
-    delete _rangeSlider2;
-    Slider *s2 = new Slider();
-    s2->setVertical(true);
-    s2->setDragResponder(this);
-    s2->resize(0.5);
-    s2->setup("", _min, _max, _step);
-    s2->setStart(0, 0.5);
-    s2->setCentre(0.2, 0.6);
-    s2->setReturnTag("Y");
-
-    _rangeSlider2 = s2;
-    addObject(s2);
-
+    // removeObject(_rangeSlider);
+    // delete _rangeSlider;
+    // Slider *s = new Slider();
+    //
+    // s->setDragResponder(this);
+    // s->resize(0.5);
+    // s->setup("Rotamer selection", _min, _max, _step);
+    // s->setStart(0.5, 0);
+    // s->setCentre(0.5, 0.85);
+    // s->setReturnTag("X");
+    // _rangeSlider = s;
+    // addObject(s);
+    //
+    // removeObject(_rangeSlider2);
+    // delete _rangeSlider2;
+    // Slider *s2 = new Slider();
+    // s2->setVertical(true);
+    // s2->setDragResponder(this);
+    // s2->resize(0.5);
+    // s2->setup("", _min, _max, _step);
+    // s2->setStart(0, 0.5);
+    // s2->setCentre(0.2, 0.6);
+    // s2->setReturnTag("Y");
+    //
+    // _rangeSlider2 = s2;
+    // addObject(s2);
 }
 
 void RotamerView::setupCollision()
