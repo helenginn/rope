@@ -173,7 +173,7 @@ void ModelMenu::refineModel(std::string name)
 			float capped = minVal +(maxVal- minVal)/16;
 			for (auto const &vectors : tests)
 			{
-				Parallelepiped *para1 = new Parallelepiped();
+				Parallelepiped *para1 = new Parallelepiped(true ,true);
 				d->addObject(para1);
 				para1->addTrueParallelepiped(startPos, glm::vec3(vectors), 0.6, 0.9);
 				{

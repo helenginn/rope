@@ -9,9 +9,9 @@ Parallelepiped::Parallelepiped(bool proj, bool plain) : SimplePolygon()
 {
     setName("Parallelepiped");
     if (plain)
-        _renderType = GL_LINES;
-    else
         _renderType = GL_TRIANGLES;
+    else
+        _renderType = GL_LINES;
 
     setUsesProjection(true);
     setVertexShaderFile("assets/shaders/with_matrix.vsh");
@@ -39,37 +39,18 @@ void Parallelepiped::addParallelepiped(glm::vec3 min, glm::vec3 max)
     addVertex(p8);
 
     int vertexNum = vertexCount() - 9;
-
-    if (_renderType == GL_LINES)
-    {
-        addIndices(vertexNum + 1,vertexNum + 2);
-        addIndices(vertexNum + 2,vertexNum + 3);
-        addIndices(vertexNum + 3,vertexNum + 4);
-        addIndices(vertexNum + 4,vertexNum + 1);
-        addIndices(vertexNum + 1,vertexNum + 5);
-        addIndices(vertexNum + 2,vertexNum + 6);
-        addIndices(vertexNum + 3,vertexNum + 7);
-        addIndices(vertexNum + 4,vertexNum + 8);
-        addIndices(vertexNum + 8,vertexNum + 5);
-        addIndices(vertexNum + 5,vertexNum + 6);
-        addIndices(vertexNum + 6,vertexNum + 7);
-        addIndices(vertexNum + 7,vertexNum + 8);
-    }
-    else
-    {
-        addIndices(vertexNum + 1,vertexNum + 2,vertexNum + 4);
-        addIndices(vertexNum + 3,vertexNum + 4,vertexNum + 2);
-        addIndices(vertexNum + 1,vertexNum + 2,vertexNum + 5);
-        addIndices(vertexNum + 6,vertexNum + 5,vertexNum + 2);
-        addIndices(vertexNum + 5,vertexNum + 6,vertexNum + 8);
-        addIndices(vertexNum + 7,vertexNum + 8,vertexNum + 6);
-        addIndices(vertexNum + 7,vertexNum + 8,vertexNum + 3);
-        addIndices(vertexNum + 4,vertexNum + 8,vertexNum + 3);
-        addIndices(vertexNum + 6,vertexNum + 2,vertexNum + 7);
-        addIndices(vertexNum + 3,vertexNum + 7,vertexNum + 2);
-        addIndices(vertexNum + 5,vertexNum + 8,vertexNum + 1);
-        addIndices(vertexNum + 4,vertexNum + 8,vertexNum + 1);
-    }
+    addIndices(vertexNum + 1, vertexNum + 2);
+    addIndices(vertexNum + 2, vertexNum + 3);
+    addIndices(vertexNum + 3, vertexNum + 4);
+    addIndices(vertexNum + 4, vertexNum + 1);
+    addIndices(vertexNum + 1, vertexNum + 5);
+    addIndices(vertexNum + 2, vertexNum + 6);
+    addIndices(vertexNum + 3, vertexNum + 7);
+    addIndices(vertexNum + 4, vertexNum + 8);
+    addIndices(vertexNum + 8, vertexNum + 5);
+    addIndices(vertexNum + 5, vertexNum + 6);
+    addIndices(vertexNum + 6, vertexNum + 7);
+    addIndices(vertexNum + 7, vertexNum + 8);
 }
 void Parallelepiped::addTrueParallelepiped(glm::vec3 startPos, glm::vec3 height, float diameter, float offset)
 {
