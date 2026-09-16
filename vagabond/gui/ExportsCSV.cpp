@@ -21,7 +21,7 @@
 #include <vagabond/gui/elements/BadChoice.h>
 #include <vagabond/gui/elements/Scene.h>
 #include <iostream>
-#include <SDL2/SDL_clipboard.h>
+#include <SDL3/SDL_clipboard.h>
 
 #ifdef __EMSCRIPTEN__
 #include <emscripten.h>

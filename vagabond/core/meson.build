@@ -437,4 +437,3 @@ core = static_library('vag', vagafiles,
 	link_with: [vagutils, cluster4x],
     include_directories: ['../..'],
 	dependencies : [cli_deps], install: false)
-

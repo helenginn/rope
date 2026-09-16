@@ -27,9 +27,9 @@
 
 #include <iostream>
 #include <cstring>
-#include <SDL2/SDL.h>
-#include <SDL2/SDL_image.h>
-//#include <SDL2/SDL_ttf.h>
+#include <SDL3/SDL.h>
+#include <SDL3_image/SDL_image.h>
+//#include <SDL3_ttf/SDL_ttf.h>
 #include <string>
 
 Library *Library::_library = nullptr;
@@ -74,7 +74,7 @@ GLuint Library::getTexture(std::string filename, int *w, int *h,
 		*h = image->h;
 	}
 
-	SDL_FreeSurface(image);
+	SDL_DestroySurface(image);
 	return tex;
 }
 
@@ -101,16 +101,7 @@ GLuint Library::buildAtlas(const std::string &cacheKey,
 
 	for (const std::string &filename : filenames)
 	{
-		SDL_Surface *raw = loadImage(filename);
-		if (raw == nullptr)
-		{
-			continue;
-		}
-
-		SDL_Surface *rgba = SDL_ConvertSurfaceFormat(raw,
-		                                             SDL_PIXELFORMAT_RGBA32, 0);
-		SDL_FreeSurface(raw);
-
+		SDL_Surface *rgba = loadImage(filename);
 		if (rgba == nullptr)
 		{
 			continue;
@@ -127,9 +118,9 @@ GLuint Library::buildAtlas(const std::string &cacheKey,
 		return 0;
 	}
 
-	SDL_Surface *atlas = SDL_CreateRGBSurfaceWithFormat(0, totalW, maxH, 32,
-	                                                    SDL_PIXELFORMAT_RGBA32);
-	SDL_FillRect(atlas, nullptr, SDL_MapRGBA(atlas->format, 0, 0, 0, 0));
+	SDL_Surface *atlas = SDL_CreateSurface(totalW, maxH,
+	                                       SDL_PIXELFORMAT_RGBA32);
+	SDL_FillSurfaceRect(atlas, nullptr, SDL_MapRGBA(SDL_GetPixelFormatDetails(atlas->format), nullptr, 0, 0, 0, 0));
 
 	int x = 0;
 	for (auto &pr : surfaces)
@@ -148,13 +139,13 @@ GLuint Library::buildAtlas(const std::string &cacheKey,
 		rects[pr.first] = r;
 
 		x += s->w;
-		SDL_FreeSurface(s);
+		SDL_DestroySurface(s);
 	}
 
 	GLuint texid = loadSurface(atlas, cacheKey, false);
 	_atlasRects[cacheKey] = rects;
 
-	SDL_FreeSurface(atlas);
+	SDL_DestroySurface(atlas);
 
 	return texid;
 }
@@ -288,12 +279,23 @@ SDL_Surface *Library::loadImage(std::string filename)
 {
 	std::string path = filename;
 	correctFilename(path);
-	SDL_Surface *surface = IMG_Load(path.c_str());
+	SDL_Surface *loaded = IMG_Load(path.c_str());
 	
+	if (loaded == nullptr)
+	{
+		std::cout << "Failed to load " << path << ": "
+		          << SDL_GetError() << std::endl;
+		return NULL;
+	}
+
+	SDL_Surface *surface = SDL_ConvertSurface(loaded,
+	                                          SDL_PIXELFORMAT_RGBA32);
+	SDL_DestroySurface(loaded);
+
 	if (surface == nullptr)
 	{
-		std::cout << "Failed to load " << path << std::endl;
-		return NULL;
+		std::cout << "Failed to convert " << path << " to RGBA32: "
+		          << SDL_GetError() << std::endl;
 	}
 
 	return surface;
@@ -376,14 +378,6 @@ GLuint Library::loadSurface(SDL_Surface *image, std::string filename,
 	GLint intform = GL_RGBA;
 	GLenum myform = GL_RGBA;
 
-#ifndef __EMSCRIPTEN__
-	if (!image->format->Amask)
-	{
-		intform = GL_RGB;
-		myform = GL_RGB;
-	}
-#endif
-	
 	glTexImage2D(GL_TEXTURE_2D, 0, intform, image->w, image->h,
 	             0, myform, GL_UNSIGNED_BYTE, image->pixels);
 
@@ -654,4 +648,3 @@ void Library::endProgram(std::string vFile, std::string fFile)
 		}
 	}
 }
-

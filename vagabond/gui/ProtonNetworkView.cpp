@@ -1045,7 +1045,7 @@ void ProtonNetworkView::focusOnResidue(std::string chain, int res)
 
 void ProtonNetworkView::keyPressEvent(SDL_Keycode pressed)
 {
-	if (pressed == SDLK_g && !lastModal())
+	if (pressed == SDLK_G && !lastModal())
 	{
 		FocusResidue::prepareEnter
 		(this, [this](std::string chain, int res)
@@ -1060,13 +1060,13 @@ void ProtonNetworkView::keyPressEvent(SDL_Keycode pressed)
 
 void ProtonNetworkView::keyReleaseEvent(SDL_Keycode pressed)
 {
-	if (_controlPressed && !_shiftPressed && pressed == SDLK_z)
+	if (_controlPressed && !_shiftPressed && pressed == SDLK_Z)
 	{
 		network().undoStack().undo();
 	}
 
-	if ((_controlPressed && _shiftPressed && pressed == SDLK_z) ||
-	    (_controlPressed && pressed == SDLK_y))
+	if ((_controlPressed && _shiftPressed && pressed == SDLK_Z) ||
+	    (_controlPressed && pressed == SDLK_Y))
 	{
 		network().undoStack().redo();
 	}

@@ -19,7 +19,7 @@
 #include "Window.h"
 #include "Mouse2D.h"
 #include "SelectionBox.h"
-#include <SDL2/SDL.h>
+#include <SDL3/SDL.h>
 
 Mouse2D::Mouse2D(Scene *prev) : Scene(prev)
 {
@@ -246,11 +246,11 @@ void Mouse2D::keyPressEvent(SDL_Keycode pressed)
 {
 	Scene::keyPressEvent(pressed);
 	
-	if (pressed == SDLK_d)
+	if (pressed == SDLK_D)
 	{
 		_manualFar -= 0.2;
 	}
-	else if (pressed == SDLK_f)
+	else if (pressed == SDLK_F)
 	{
 		_manualFar += 0.2;
 	}

@@ -5,7 +5,7 @@
 
 #include <functional>
 #include "GLView.h"
-#include "SDL2/SDL.h"
+#include <SDL3/SDL.h>
 #include "ButtonResponder.h"
 
 class IndexResponder;

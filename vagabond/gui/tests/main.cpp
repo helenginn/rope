@@ -16,6 +16,7 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
+#include <SDL3/SDL_main.h>
 #include "CheckList.h"
 #include "../VagWindow.h"
 #include <curl/curl.h>

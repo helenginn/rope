@@ -23,7 +23,7 @@
 #include "GuiThickBond.h"
 
 #include <vagabond/gui/elements/GLView.h>
-#include <SDL2/SDL.h>
+#include <SDL3/SDL.h>
 
 #include <vagabond/core/matrix_functions.h>
 #include <vagabond/core/Atom.h>
