@@ -17,6 +17,7 @@
 // Please email: vagabond @ hginn.co.uk for more details.
 
 #include "ModelMenu.h"
+#include <fstream>
 #include "AddModel.h"
 #include "Display.h"
 #include "DisplayUnit.h"
@@ -26,6 +27,7 @@
 #include <vagabond/gui/elements/TextButton.h>
 #include <vagabond/gui/elements/BadChoice.h>
 #include <vagabond/core/Environment.h>
+#include "elements/Parallelepiped.h"
 
 ModelMenu::ModelMenu(Scene *prev) : ListView(prev)
 {
@@ -129,7 +131,64 @@ void ModelMenu::refineModel(std::string name)
 		unit->setOwnsAtoms();
 		unit->loadModel(model);
 		d->tieButton();
-
+		std::ifstream file;
+		file.open("dhelix_hedgehog.csv");
+		if (file.is_open())
+		{
+			std::string line {};
+			std::vector<glm::vec4> tests {};
+			glm::vec4 readPos {};
+			float minVal = {10};
+			float maxVal = {-10};
+			while (getline(file, line))
+			{
+				std::istringstream iss(line);
+				std::string lineStream;
+				std::vector<float> xyz {};
+				while (getline(iss, lineStream, ','))
+				{
+					xyz.push_back(std::stof(lineStream)); // convert to double
+				}
+				readPos.x = xyz[0];
+				readPos.y = xyz[1];
+				readPos.z = xyz[2];
+				readPos.w = xyz[3];
+				if (xyz[3] < minVal)
+					minVal = xyz[3];
+				else if (xyz[3] > maxVal)
+					maxVal = xyz[3];
+				tests.push_back(readPos);
+			}
+			glm::vec3 startPos {};
+			for (auto atoms : model->currentAtoms()->atomVector())
+			{
+				if (atoms->chain() == "C")
+				{
+					startPos = atoms->derivedPosition();
+					break;
+				}
+			}
+			glm::vec3 max (1.f,0.f,0.f);
+			glm::vec3 min (0.f,0.f,1.f);
+			float capped = minVal +(maxVal- minVal)/16;
+			for (auto const &vectors : tests)
+			{
+				Parallelepiped *para1 = new Parallelepiped();
+				d->addObject(para1);
+				para1->addTrueParallelepiped(startPos, glm::vec3(vectors), 0.6, 0.9);
+				{
+					float pos = vectors.w - minVal;
+					glm::vec3 colour{};
+					if (pos <= capped - minVal)
+						colour = (pos / capped) * max + (1 - pos / capped) * min;
+					else
+						colour = max;
+					para1->setColour(colour.x, colour.y, colour.z);
+				}
+				para1->setAlpha(0.6f);
+				para1->forceRender();
+			}
+		}
 		ArbitraryMap *map = new ArbitraryMap(model->dataFile());
 		if (map->nn() > 0)
 		{

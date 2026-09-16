@@ -110,7 +110,7 @@ void RotamerView::buttonPressed(std::string tag, Button *button)
 {
     if (tag == "analysis") // coordinates : X = along static structure axis, Y: left-right Z: - = moving away the other structure
     {
-        std::vector<glm::vec3> tests  {_modifier->RandStartPos(200)};
+        std::vector<glm::vec3> tests  {_modifier->RandStartPos(1000)};
         std::string fileName = "vectors_list.csv";
         std::string csvContent {};
         for (auto pos : tests)
@@ -147,7 +147,7 @@ void RotamerView::buttonPressed(std::string tag, Button *button)
             file << csvContent;
             file.close();
         }
-        _modifier->analysisTest(100, tests);
+        _modifier->analysisTest(50, tests);
         _line3->clearVertices();
         for (auto pos : tests)
         {
