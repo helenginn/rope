@@ -71,6 +71,7 @@ private:
     glm::vec3 _y {};
     glm::vec3 _z {};
     glm::vec3 _normal {};
+    glm::mat4x4 _transform {};
     float _memoryY {0};
     float _memoryX {0};
     bool _referential {false};
