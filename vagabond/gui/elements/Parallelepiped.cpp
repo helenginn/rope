@@ -5,10 +5,13 @@
 #include "Parallelepiped.h"
 
 
-Parallelepiped::Parallelepiped(bool proj) : SimplePolygon()
+Parallelepiped::Parallelepiped(bool proj, bool plain) : SimplePolygon()
 {
     setName("Parallelepiped");
-    _renderType = GL_LINES;
+    if (plain)
+        _renderType = GL_LINES;
+    else
+        _renderType = GL_TRIANGLES;
 
     setUsesProjection(true);
     setVertexShaderFile("assets/shaders/with_matrix.vsh");
@@ -35,80 +38,101 @@ void Parallelepiped::addParallelepiped(glm::vec3 min, glm::vec3 max)
     addVertex(p7);
     addVertex(p8);
 
-    int vertexNum = vertexCount()-9;
+    int vertexNum = vertexCount() - 9;
 
+    if (_renderType == GL_LINES)
+    {
+        addIndices(vertexNum + 1,vertexNum + 2);
+        addIndices(vertexNum + 2,vertexNum + 3);
+        addIndices(vertexNum + 3,vertexNum + 4);
+        addIndices(vertexNum + 4,vertexNum + 1);
+        addIndices(vertexNum + 1,vertexNum + 5);
+        addIndices(vertexNum + 2,vertexNum + 6);
+        addIndices(vertexNum + 3,vertexNum + 7);
+        addIndices(vertexNum + 4,vertexNum + 8);
+        addIndices(vertexNum + 8,vertexNum + 5);
+        addIndices(vertexNum + 5,vertexNum + 6);
+        addIndices(vertexNum + 6,vertexNum + 7);
+        addIndices(vertexNum + 7,vertexNum + 8);
+    }
+    else
+    {
+        addIndices(vertexNum + 1,vertexNum + 2,vertexNum + 4);
+        addIndices(vertexNum + 3,vertexNum + 4,vertexNum + 2);
+        addIndices(vertexNum + 1,vertexNum + 2,vertexNum + 5);
+        addIndices(vertexNum + 6,vertexNum + 5,vertexNum + 2);
+        addIndices(vertexNum + 5,vertexNum + 6,vertexNum + 8);
+        addIndices(vertexNum + 7,vertexNum + 8,vertexNum + 6);
+        addIndices(vertexNum + 7,vertexNum + 8,vertexNum + 3);
+        addIndices(vertexNum + 4,vertexNum + 8,vertexNum + 3);
+        addIndices(vertexNum + 6,vertexNum + 2,vertexNum + 7);
+        addIndices(vertexNum + 3,vertexNum + 7,vertexNum + 2);
+        addIndices(vertexNum + 5,vertexNum + 8,vertexNum + 1);
+        addIndices(vertexNum + 4,vertexNum + 8,vertexNum + 1);
+    }
+}
+void Parallelepiped::addTrueParallelepiped(glm::vec3 startPos, glm::vec3 height, float diameter, float offset)
+{
+    glm::vec3 helper = (glm::abs(height.x) < 0.9f)
+                       ? glm::vec3(1, 0, 0)
+                       : glm::vec3(0, 1, 0);
 
-    addIndices(vertexNum + 1,vertexNum + 2);
-    addIndices(vertexNum + 2,vertexNum + 3);
-    addIndices(vertexNum + 3,vertexNum + 4);
-    addIndices(vertexNum + 4,vertexNum + 1);
-    addIndices(vertexNum + 1,vertexNum + 5);
-    addIndices(vertexNum + 2,vertexNum + 6);
-    addIndices(vertexNum + 3,vertexNum + 7);
-    addIndices(vertexNum + 4,vertexNum + 8);
-    addIndices(vertexNum + 8,vertexNum + 5);
-    addIndices(vertexNum + 5,vertexNum + 6);
-    addIndices(vertexNum + 6,vertexNum + 7);
-    addIndices(vertexNum + 7,vertexNum + 8);
+    glm::vec3 ortho1 = glm::cross(glm::vec3(height), helper);
+    ortho1 = glm::normalize(ortho1) * glm::vec3(diameter);
 
+    glm::vec3 ortho2 = glm::cross(glm::vec3(height), ortho1);
+    ortho2 = glm::normalize(ortho2) * glm::vec3(diameter);
 
+    glm::vec3 min = startPos - ortho1*glm::vec3(0.5) - ortho2 * glm::vec3(0.5);
+    glm::vec3 p1{startPos+(height-ortho1*glm::vec3(0.5) - ortho2 * glm::vec3(0.5))*glm::vec3(offset)};
+    glm::vec3 p2{startPos+(height+ortho1*glm::vec3(0.5) - ortho2 * glm::vec3(0.5))*glm::vec3(offset)};
+    glm::vec3 p3{min + ortho1 + height};
+    glm::vec3 p4{min + height};
+    glm::vec3 p5{startPos+(height-ortho1*glm::vec3(0.5) + ortho2 * glm::vec3(0.5))*glm::vec3(offset)};
+    glm::vec3 p6{startPos+(height+ortho1*glm::vec3(0.5) + ortho2 * glm::vec3(0.5))*glm::vec3(offset)};
+    glm::vec3 p7{min + ortho1 + height + ortho2};
+    glm::vec3 p8{min + height + ortho2};
 
+    // pyramids
+    // glm::vec3 p1{startPos};
+    // glm::vec3 p2{startPos};
+    // glm::vec3 p3{min + ortho1 + height};
+    // glm::vec3 p4{min + height};
+    // glm::vec3 p5{startPos};
+    // glm::vec3 p6{startPos};
+    // glm::vec3 p7{min + ortho1 + height + ortho2};
+    // glm::vec3 p8{min + height + ortho2};
 
+    // classical boxes
+    // glm::vec3 p1{min};
+    // glm::vec3 p2{min + ortho1};
+    // glm::vec3 p3{min + ortho1 + height};
+    // glm::vec3 p4{min + height};
+    // glm::vec3 p5{min + ortho2};
+    // glm::vec3 p6{min + ortho1 + ortho2};
+    // glm::vec3 p7{min + ortho1 + height + ortho2};
+    // glm::vec3 p8{min + height + ortho2};
 
-    // addIndices(vertexNum + 1,vertexNum + 2,vertexNum + 4);
-    // addIndices(vertexNum + 3,vertexNum + 4,vertexNum + 2);
-    // addIndices(vertexNum + 4,vertexNum + 3,vertexNum + 8);
-    // addIndices(vertexNum + 7,vertexNum + 8,vertexNum + 3);
-    // addIndices(vertexNum + 6,vertexNum + 7,vertexNum + 5);
-    // addIndices(vertexNum + 8,vertexNum + 5,vertexNum + 7);
-    // addIndices(vertexNum + 1,vertexNum + 2,vertexNum + 4);
-    // addIndices(vertexNum + 1,vertexNum + 2,vertexNum + 5);
-    // addIndices(vertexNum + 6,vertexNum + 5,vertexNum + 2);
+    addVertex(p1);
+    addVertex(p2);
+    addVertex(p3);
+    addVertex(p4);
+    addVertex(p5);
+    addVertex(p6);
+    addVertex(p7);
+    addVertex(p8);
 
-    // addIndices(1, 2, 4);
-    // addIndices(1, 2, 4);
-    // addIndices(1, 2, 4);
-    // addIndices(1, 2, 4);
-    // addIndices(1, 2, 4);
-    // addIndices(1, 2, 4);
-    // addIndices(1, 2, 4);
-
-
-
-    // std::vector<glm::vec3> face1{p1, p2, p3, p4};
-    // std::vector<glm::vec3> face2{p1, p2, p6, p5};
-    // std::vector<glm::vec3> face3{p5, p6, p7, p8};
-    // std::vector<glm::vec3> face4{p4, p3, p7, p8};
-    // std::vector<glm::vec3> face5{p1, p5, p8, p4};
-    // std::vector<glm::vec3> face6{p2, p6, p7, p3};
-    // std::vector<std::vector<glm::vec3> > cube{face1, face2, face3, face4, face5, face6};
-    // int faceNum {1};
-
-   //  for (auto face: cube)
-   //  {
-   //      // std::cout << "Face number: " << faceNum << std::endl;
-   //      // int pointNum {1};
-   //      for (auto point: face)
-   //      {
-   //          addVertex(point);
-   //          // std::cout << "\tpoint num: " << pointNum << '\t' << vertexCount() << std::endl;
-   //          // pointNum += 1;
-   //      }
-   //      // faceNum += 1;
-   //      int vertexNumber = vertexCount();
-   //      // std::cout << "VERTEX NUM AFTER POINTS: " << vertexNumber;
-   //      (vertexNumber-4 >=0 ? vertexNumber-=4 : vertexNumber = 0);
-   //      // std::cout << '\t' << "AND AFTER substraction: " << vertexNumber << std::endl;
-   //      // std::cout << vertexNumber << ", " << std::endl;
-   //      _vertices[vertexNumber].tex[0] = 0;
-   //      _vertices[vertexNumber].tex[1] = 1;
-   //      _vertices[vertexNumber + 1].tex[0] = 0;
-   //      _vertices[vertexNumber + 1].tex[1] = 0;
-   //      _vertices[vertexNumber + 2].tex[0] = 1;
-   //      _vertices[vertexNumber + 2].tex[1] = 1;
-   //      _vertices[vertexNumber + 3].tex[0] = 1;
-   //      _vertices[vertexNumber + 3].tex[1] = 0;
-   //      addIndices(vertexNumber + 0, vertexNumber + 1, vertexNumber + 3);
-   //      addIndices(vertexNumber + 2, vertexNumber + 3, vertexNumber + 1);
-   // }
+    int vertexNum = vertexCount() - 9;
+    addIndices(vertexNum + 1,vertexNum + 2,vertexNum + 4);
+    addIndices(vertexNum + 3,vertexNum + 4,vertexNum + 2);
+    addIndices(vertexNum + 1,vertexNum + 2,vertexNum + 5);
+    addIndices(vertexNum + 6,vertexNum + 5,vertexNum + 2);
+    addIndices(vertexNum + 5,vertexNum + 6,vertexNum + 8);
+    addIndices(vertexNum + 7,vertexNum + 8,vertexNum + 6);
+    addIndices(vertexNum + 7,vertexNum + 8,vertexNum + 3);
+    addIndices(vertexNum + 4,vertexNum + 8,vertexNum + 3);
+    addIndices(vertexNum + 6,vertexNum + 2,vertexNum + 7);
+    addIndices(vertexNum + 3,vertexNum + 7,vertexNum + 2);
+    addIndices(vertexNum + 5,vertexNum + 8,vertexNum + 1);
+    addIndices(vertexNum + 4,vertexNum + 8,vertexNum + 1);
 }
