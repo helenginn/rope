@@ -32,7 +32,7 @@
 #include <vagabond/core/grids/ArbitraryMap.h>
 #include <vagabond/core/VisualPreferences.h>
 
-#include <SDL2/SDL.h>
+#include <SDL3/SDL.h>
 #include <iostream>
 
 Display::Display(Scene *prev) : 
@@ -225,7 +225,7 @@ void Display::focusOnResidue(std::string chain, int res)
 
 void Display::keyPressEvent(SDL_Keycode pressed)
 {
-	if (pressed == SDLK_g && !lastModal())
+	if (pressed == SDLK_G && !lastModal())
 	{
 		FocusResidue::prepareEnter
 		(this, [this](std::string chain, int res)

@@ -21,7 +21,7 @@
 #include "../elements/Scene.h"
 #include <string>
 #include <vagabond/utils/FileReader.h>
-#include <SDL2/SDL.h>
+#include <SDL3/SDL.h>
 
 CheckList::CheckList(const std::string &filename)
 {
@@ -51,14 +51,14 @@ void CheckList::pushKey(const std::vector<std::string> &bits)
 	
 	bool down = (bits[1] == "down");
 	bool up = (bits[1] == "up");
-	bool move = (bits[1] == "move");
-	
-	SDL_Event event;
-	if (down) event.type = SDL_KEYDOWN;
-	if (up) event.type = SDL_KEYUP;
+	if (!down && !up) return;
+
+	SDL_Event event{};
+	event.key.type = down ? SDL_EVENT_KEY_DOWN : SDL_EVENT_KEY_UP;
+	event.key.down = down;
 	
 	int key = atoi(bits[2].c_str());
-	event.key.keysym.sym = SDL_Keycode(key);
+	event.key.key = static_cast<SDL_Keycode>(key);
 
 	SDL_PushEvent(&event);
 }
@@ -78,14 +78,31 @@ void CheckList::pushClick(const std::vector<std::string> &bits)
 	Window::currentScene()->convertToPixels(&x, &y);
 	std::cout << "Pushing event with: " << x << " " << y << std::endl;
 	
-	SDL_Event event;
-	if (down) event.type = SDL_MOUSEBUTTONDOWN;
-	if (up) event.type = SDL_MOUSEBUTTONUP;
-	if (move) event.type = SDL_MOUSEMOTION;
-	if (left) event.button.button = SDL_BUTTON_LEFT;
-	if (right) event.button.button = SDL_BUTTON_RIGHT;
-	event.motion.x = x;
-	event.motion.y = y;
+	SDL_Event event{};
+	if (move)
+	{
+		event.motion.type = SDL_EVENT_MOUSE_MOTION;
+		event.motion.state = left ? SDL_BUTTON_LMASK
+		                   : right ? SDL_BUTTON_RMASK : 0;
+		event.motion.x = x;
+		event.motion.y = y;
+	}
+	else if (down || up)
+	{
+		if (!left && !right) return;
+
+		event.button.type = down ? SDL_EVENT_MOUSE_BUTTON_DOWN
+		                         : SDL_EVENT_MOUSE_BUTTON_UP;
+		event.button.button = left ? SDL_BUTTON_LEFT : SDL_BUTTON_RIGHT;
+		event.button.down = down;
+		event.button.clicks = 1;
+		event.button.x = x;
+		event.button.y = y;
+	}
+	else
+	{
+		return;
+	}
 
 	SDL_PushEvent(&event);
 }

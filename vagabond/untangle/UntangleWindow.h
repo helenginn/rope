@@ -28,9 +28,9 @@ public:
 
 	virtual void setup(int argc, char **argv);
 
-	virtual void extraWindowFlags(unsigned int &flags)
+	void extraWindowFlags(SDL_WindowFlags &flags) override
 	{
-		flags += SDL_WINDOW_RESIZABLE;
+		flags |= SDL_WINDOW_RESIZABLE;
 	}
 private:
 

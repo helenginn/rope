@@ -13,7 +13,7 @@
 #include <algorithm>
 #include <cmath>
 #include <string>
-#include <SDL2/SDL.h>
+#include <SDL3/SDL.h>
 #include <vagabond/core/matrix_functions.h>
 
 void Renderable::addToVertexArray(glm::vec3 add, std::vector<Vertex> *vs)

@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <SDL3/SDL_main.h>
 
 #include "VagWindow.h"
 #include <vagabond/utils/gl_import.h>
