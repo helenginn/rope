@@ -85,6 +85,14 @@ void PathThermodynamics::setup()
 		t->setReturnTag("calc_mist");
 		addObject(t);
 	}
+
+    {
+		TextButton *t = new TextButton("Table View (no MIST)", this);
+		t->setLeft(0.2, 0.5);
+		t->setReturnTag("calc_indep_table");
+		addObject(t);
+	}
+
 }
 
 void PathThermodynamics::buttonPressed(std::string tag, Button *button)
@@ -173,6 +181,45 @@ void PathThermodynamics::buttonPressed(std::string tag, Button *button)
 		setModal(cr);
 	}
 
+	if (tag == "calc_indep")
+	{
+		try
+		{
+		   checkPathNum(flagPar.n);
+		}
+		catch (const std::runtime_error &err)
+		{
+			BadChoice *bc = new BadChoice(this, err.what());
+            bc->setDismissible(true);
+			this->setModal(bc);
+            return;
+		}
+
+		std::string str = "Choose number of paths (\"frames\") to utilise";
+		
+		ChooseRange *cr = new ChooseRange(this, str, "choose_paths", this);
+		cr->setDefault(flagPar.n, flagPar.n);
+		cr->setRange(flagPar.n, _paths.size(), (_paths.size()-flagPar.n));
+
+		auto respondToVal = [this, flagPar](float min, float max)
+		{
+			_numPaths = lrint(min);
+			
+			std::vector<TorsRes4NN*> torsRes = _pathEntropy->getAtomsAndResidues(_numPaths, _paths, 15);
+
+			struct EntropyForMatrix entropy4Mat = _pathEntropy->calculateEntropyIndependent(_numPaths, flagPar, torsRes,15);
+
+            std::vector<double> entropyVec = entropy4Mat.totalEntropy;
+
+	        makeGraph(entropyVec);
+		};
+
+		cr->setReturn(respondToVal);
+		setModal(cr);
+
+	}
+
+
 	if (tag == "choose_paths")
 	{
 		ChooseRange *cr = static_cast<ChooseRange *>(button->returnObject());
@@ -229,8 +276,12 @@ void PathThermodynamics::makeGraph(std::vector<double> entropyVec)
     graph->setAxisLabel('y',"Entropy (R units)");
     graph->setRange('x', 0, 1);
     graph->setRange('y', minEnt-100.0, maxEnt+100.0);
-    
+ 	graph->setup(0.6, 0.5);
+
+	graph->addToGraphPosition(0.5, 0.5);
+   
     GraphView *graphView = new GraphView(this, graph);
+    graphView->addObject(graph);
     graphView->show();
 }
 
