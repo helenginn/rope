@@ -127,6 +127,16 @@ public:
 		return _activationEnergy;
 	}
 
+	void setBoltzmannProbability(float boltzmann) 
+	{
+		_boltzmannVDW = boltzmann;
+	}
+	
+	float boltzmannProbability() 
+	{
+		return _boltzmannVDW;
+	}
+
 	void setTorsionEnergy(float energy) 
 	{
 		_torsionEnergy = energy;
@@ -439,6 +449,7 @@ protected:
 
 	float _energy = FLT_MAX;
 	float _activationEnergy = FLT_MAX;
+    float _boltzmannVDW = FLT_MAX;
 	float _momentum = FLT_MAX;
 	float _clash = FLT_MAX;
 	float _vdwEnergy = FLT_MAX;

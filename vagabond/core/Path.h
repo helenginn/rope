@@ -124,6 +124,11 @@ public:
 	{
 		return _torsionEnergy;
 	}
+
+    float boltzmannVDW()
+    {
+        return _boltzmannVDW;
+    }
 	
 	bool operator==(const Path &other) const;
 	
@@ -157,6 +162,7 @@ private:
 
 	float _activationEnergy = FLT_MAX;
 	float _torsionEnergy = FLT_MAX;
+    float _boltzmannVDW = FLT_MAX;
 	float _momentum = FLT_MAX;
 	float _clash = FLT_MAX;
 	
