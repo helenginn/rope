@@ -131,11 +131,17 @@ std::vector<PathGroup> PathGroup::alphabetise(std::vector<PathGroup> paths)
 float PathGroup::averageMetrics() const
 {
     float vdw = 0.0f;
+    float weight = 0.0f;    
+    const double gas_constant = 8.31446;
 
     for (Path *const &path : *this)
 	{
-		vdw += path->activationEnergy();
+        float newWeight = exp(-(path->activationEnergy())/gas_constant);
+        float vdWWeighted = (path->activationEnergy())*weight;
+        std::cout << "Path total VDW: " << vdw << " Total weight: " << weight << std::endl;
+        
+        weight += newWeight;
+		vdw += vdWWeighted;
 	}
-
-    return vdw / size();
+    return vdw / weight;
 }
