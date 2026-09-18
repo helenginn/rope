@@ -321,6 +321,8 @@ void PathManager::makePathsWithinGroupReduced(const std::vector<std::string> &in
 {
 	auto make_path = [this, cycles, startAng](Instance *startInstance, Instance *endInstance)
 	{
+        if (startInstance == endInstance) { return false; };
+
 		std::vector<Path *> pairPaths = pathsBetweenInstances(startInstance, endInstance);
 		int total = cycles - pairPaths.size();
 		if (total <= 0) { return false; };
