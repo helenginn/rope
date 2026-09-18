@@ -24,6 +24,7 @@
 
 class TextButton;
 class ChooseHeader;
+class Image;
 
 class WholeModelPathSetupView : public Scene, public Responder<ChooseHeader>,
 public Responder<ListInstancesView>
@@ -36,13 +37,16 @@ public:
 
 	void getStructure(bool from);
 	virtual void sendObject(std::string tag, void *object);
-	
+
 	size_t chosenPairs();
 private:
 	void cheatSheet();
 
 	TextButton *_fromButton = nullptr;
 	TextButton *_toButton = nullptr;
+
+	Image *_ldevWarning = nullptr;
+	Image *_rdevWarning = nullptr;
 
 	std::string _fromId;
 	std::string _toId;
