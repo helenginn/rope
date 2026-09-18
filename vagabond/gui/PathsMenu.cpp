@@ -608,6 +608,5 @@ void PathsMenu::prepareSpace()
 
 void PathsMenu::refresh()
 {
-	std::cout << "Refreshing" << std::endl;
 	ListView::refresh();
 }
