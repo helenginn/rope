@@ -25,7 +25,7 @@
 #ifndef __EMSCRIPTEN__
 //#define VERSION_REFINEMENT
 #define VERSION_PROTON_NETWORK
-//#define MULTI_MOLECULE_PATH
+#define MULTI_MOLECULE_PATH
 #endif
 
 #endif

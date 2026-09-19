@@ -17,6 +17,7 @@
 // Please email: vagabond @ hginn.co.uk for more details.
 
 #include <vagabond/utils/FileReader.h>
+#include <vagabond/gui/elements/Image.h>
 #include "ChooseHeader.h"
 #include "WholeModelPathSetupView.h"
 #include "PathInterfaceSetupView.h"
@@ -87,6 +88,24 @@ void WholeModelPathSetupView::setup()
 	}
 	
 	top += 0.06;
+
+	{
+		Text *t = new Text("You are in Developer Mode!");
+		t->setCentre(0.5, 0.9);
+		addObject(t);
+	}
+	{
+                _ldevWarning = new Image("assets/images/warning.png");
+                _ldevWarning->resize(0.05);
+                _ldevWarning->setLeft(0.3, 0.89);
+                addObject(_ldevWarning);
+	}
+        {
+                _rdevWarning = new Image("assets/images/warning.png");
+                _rdevWarning->resize(0.05);
+                _rdevWarning->setRight(0.7, 0.89);
+                addObject(_rdevWarning);
+        }
 }
 
 std::vector<std::string> instances_for(std::string &id)
