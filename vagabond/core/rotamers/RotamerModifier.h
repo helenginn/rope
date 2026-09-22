@@ -40,7 +40,6 @@ public:
     static int RandGen(int min, int max);
 
     void move(float weight, parameter xy);
-    void analysis(int timePoints, std::vector<glm::vec3> startPos);
     glm::vec3 analysisTest(int timePoints, std::vector<glm::vec3> startPos, int willIterate = 0);
     glm::vec3 minimumClashes(std::vector<glm::vec4> vectorsWeighted);
     void analysisPipeline(int timePoints, std::vector<glm::vec3> startPos, int iterations = 1);
@@ -50,12 +49,6 @@ public:
     {
         return _bouquet->getVertices();
     };
-    AtomGroup* extractForGUI() const
-    {
-        AtomPosMap posMap {_bouquet->extractForGUI()};
-        AtomGroup* Group {};
-        return Group;
-    }
 private:
     Instance *_instMain {};
     Instance *_instSec {};
