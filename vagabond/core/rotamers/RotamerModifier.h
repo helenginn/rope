@@ -37,11 +37,15 @@ public:
     std::vector<glm::vec3> drawAxis();
     std::vector<glm::vec3> RandStartPos(int const &numberPos);
 
-    static int RandGen();
+    static int RandGen(int min, int max);
 
     void move(float weight, parameter xy);
     void analysis(int timePoints, std::vector<glm::vec3> startPos);
-    void analysisTest(int timePoints, std::vector<glm::vec3> startPos);
+    glm::vec3 analysisTest(int timePoints, std::vector<glm::vec3> startPos, int willIterate = 0);
+    glm::vec3 minimumClashes(std::vector<glm::vec4> vectorsWeighted);
+    void analysisPipeline(int timePoints, std::vector<glm::vec3> startPos, int iterations = 1);
+    std::vector<glm::vec3> newStartPos(int numOfPos, glm::vec3 norm, int runNum);
+
     std::vector<std::pair<glm::vec3,glm::vec3> > getVertices() const
     {
         return _bouquet->getVertices();

@@ -98,7 +98,7 @@ void RotamerModifier::move(float weight, parameter xy)
     // }
 }
 
-void RotamerModifier::analysisTest(int timePoints, std::vector<glm::vec3> startPos)
+glm::vec3 RotamerModifier::analysisTest(int timePoints, std::vector<glm::vec3> startPos, int willIterate)
 {
     // STEP 1: Initialisation
     std::vector<Bouquet *> resChainA {_bouquet->bouquetsForChain(_mainChain)};
@@ -140,7 +140,7 @@ void RotamerModifier::analysisTest(int timePoints, std::vector<glm::vec3> startP
         transformation = glm::translate(transformation, translation / glm::vec3(timePoints+1));
         for (int x = 0; x <= timePoints; x++)
         {
-            // currentCollisions is a matrix of every collisions between every rotamers of chain A and chain B
+            // currentCollisions is a matrix of every collision between every rotamers of chain A and chain B
             Eigen::MatrixXi currentCollisions {_bouquet->fullCollisionChecks(resChainA,resChainB, sizeA, sizeB)};
             totalCollisions += currentCollisions;
             std::vector<float> RotamersA {};
@@ -209,7 +209,7 @@ void RotamerModifier::analysisTest(int timePoints, std::vector<glm::vec3> startP
                         std::regex rgx("\\d+[A-Z]");
                         for (auto values : currentCollisions.col(row))
                         {
-                            std::string resi = resChainBstr[pos];
+                            std::string const &resi = resChainAstr[pos];
                             std::smatch match;
                             std::regex_search(resi, match, rgx);
                             if (bouquetA != match[0])
@@ -247,7 +247,12 @@ void RotamerModifier::analysisTest(int timePoints, std::vector<glm::vec3> startP
     }
     for (int iter = 0; iter < startPos.size(); iter++)
     {
-        std::string fileName = _instMain->entity_id() + "_paths_number_" + std::to_string(iter) + '-' + std::to_string(timePoints) + ".csv";
+        std::string fileName {};
+        if (willIterate ==0)
+            fileName = "FINAL_" + _instMain->entity_id() + "_paths_number_" + std::to_string(iter) + '-' + std::to_string(timePoints) + ".csv";
+        else
+            fileName = "iter" + std::to_string(willIterate) + "_" + _instMain->entity_id() + "_paths_number_" + std::to_string(iter) + '-' + std::to_string(timePoints) + ".csv";
+
         std::string csvContent {};
         csvContent += startPos[iter].x + ',' + startPos[iter].y + ',' + startPos[iter].z + '\n';
         for (auto const &bouquet : resChainB)
@@ -283,7 +288,12 @@ void RotamerModifier::analysisTest(int timePoints, std::vector<glm::vec3> startP
     }
     for (auto const &pairs : CollidingRotamersA)
     {
-        std::string fileName = _instMain->entity_id() + "_paths_number_" + std::to_string(pairs.first) + '-' + std::to_string(timePoints) + "availRotA" + ".csv";
+        std::string fileName {};
+        if (willIterate == 0)
+            fileName = "FINAL_" + _instMain->entity_id() + "_paths_number_" + std::to_string(pairs.first) + '-' + std::to_string(timePoints) + "availRotA" + ".csv";
+        else
+            fileName = "iter" + std::to_string(willIterate) + "_" + _instMain->entity_id() + "_paths_number_" + std::to_string(pairs.first) + '-' + std::to_string(timePoints) + "availRotA" + ".csv";
+
         std::string csvContent {};
         csvContent += std::to_string(startPos[pairs.first].x) + ',' + std::to_string(startPos[pairs.first].y) + ',' + std::to_string(startPos[pairs.first].z) + '\n';
         for (auto const &bouquet : resChainA)
@@ -311,7 +321,12 @@ void RotamerModifier::analysisTest(int timePoints, std::vector<glm::vec3> startP
     }
     for (auto const &pairs : CollidingRotamersB)
     {
-        std::string fileName =  _instMain->entity_id() + "_paths_number_" + std::to_string(pairs.first) + '-' + std::to_string(timePoints) + "availRotB" + ".csv";
+        std::string fileName {};
+        if (willIterate == 0)
+            fileName =  "FINAL_" + _instMain->entity_id() + "_paths_number_" + std::to_string(pairs.first) + '-' + std::to_string(timePoints) + "availRotB" + ".csv";
+        else
+            fileName =  "iter" + std::to_string(willIterate) + "_" + _instMain->entity_id() + "_paths_number_" + std::to_string(pairs.first) + '-' + std::to_string(timePoints) + "availRotB" + ".csv";
+
         std::string csvContent {};
         csvContent += std::to_string(startPos[pairs.first].x) + ',' + std::to_string(startPos[pairs.first].y) + ',' + std::to_string(startPos[pairs.first].z) + '\n';
         for (auto const &bouquet : resChainB)
@@ -338,8 +353,15 @@ void RotamerModifier::analysisTest(int timePoints, std::vector<glm::vec3> startP
         }
     }
     // Saving the vectors (hedgehog) and assigning their average collisionValues (to be able to display them with nice colors) these vectors are corrected to be in the right orientation of the initial model
-    std::string fileNameSHH = _instMain->entity_id() + "_hedgehog.csv";
+    std::string fileNameSHH {};
+    if (willIterate == 0)
+        fileNameSHH = "FINAL_" + _instMain->entity_id() + "_hedgehog.csv";
+    else
+        fileNameSHH = "iter" + std::to_string(willIterate) + "_" + _instMain->entity_id() + "_hedgehog.csv";
+
     std::string csvContent{};
+    csvContent += _instMain->currentAtoms()[0].chosenAnchor()->chain() + '\n';
+    std::vector<glm::vec4> vectorsWeighted {};
     for (auto const &pairs : CollidingRotamersB)
     {
         std::vector<glm::vec4> vectorSHH {};
@@ -363,12 +385,14 @@ void RotamerModifier::analysisTest(int timePoints, std::vector<glm::vec3> startP
             sumValues += values;
             numberValues += 1;
         }
-        glm::mat4x4 reset = -_transform;
+        glm::mat4x4 reset = glm::inverse(_transform);
         reset[0][3]= 0.f;
         reset[1][3]= 0.f;
         reset[2][3]= 0.f;
         glm::vec3 currentVec {reset*glm::vec4(startPos[pairs.first], 0.f)};
         csvContent += std::to_string(currentVec.x) + ',' + std::to_string(currentVec.y) + ',' + std::to_string(currentVec.z) + ',' + std::to_string(sumValues/numberValues) + '\n';
+        if (willIterate != 0)
+            vectorsWeighted.push_back(glm::vec4(startPos[pairs.first], sumValues/numberValues));
     }
     std::cout << csvContent;
     std::ofstream file;
@@ -378,8 +402,64 @@ void RotamerModifier::analysisTest(int timePoints, std::vector<glm::vec3> startP
         file << csvContent;
         file.close();
     }
+    if (willIterate != 0)
+        return minimumClashes(vectorsWeighted);
+    else
+        return glm::vec3(0,0,0);
 }
 
+void RotamerModifier::analysisPipeline(int timePoints, std::vector<glm::vec3> startPos, int iterations)
+{
+    while (iterations > 1)
+    {
+        glm::vec3 startPosIter {analysisTest(timePoints, startPos, iterations)};
+        startPos = newStartPos(startPos.size(), startPosIter, iterations);
+        iterations -=1;
+    }
+    analysisTest(timePoints, startPos);
+}
+
+glm::vec3 RotamerModifier::minimumClashes(std::vector<glm::vec4> vectorsWeighted)
+{
+    float sumOfWeight {0.f};
+    glm::vec3 sumVectors {0.f};
+    for (auto vectors : vectorsWeighted)
+    {
+        glm::vec3 current {glm::vec3(vectors)};
+        float weight {1/vectors.w};
+        current = glm::normalize(current);
+        sumVectors += current*glm::vec3(weight);
+        sumOfWeight += weight;
+    }
+    return  glm::normalize(sumVectors/sumOfWeight);
+}
+
+std::vector<glm::vec3> RotamerModifier::newStartPos(int numOfPos, glm::vec3 norm,int runNum)
+{
+    std::vector<glm::vec3> newPos {};
+    glm::vec3 currentPos {};
+    glm::vec3 helper = (glm::abs(norm.x) < 0.9f)
+                           ? glm::vec3(1, 0, 0)
+                           : glm::vec3(0, 1, 0);
+    glm::vec3 ortho1 = glm::cross(norm, helper);
+    glm::vec3 ortho2 = glm::cross(ortho1, norm);
+    std::ofstream file {};
+    std::string title {"Corrections_vectors_for_"+ (runNum >= 2 ? "iter"+std::to_string(runNum) : "FINAL" )+".csv" };
+    std::string csvContent {};
+    csvContent += std::to_string(norm.x) + ',' + std::to_string(norm.y) + ',' + std::to_string(norm.z) + '\n';
+    csvContent += std::to_string(ortho1.x) + ',' + std::to_string(ortho1.y) + ',' + std::to_string(ortho1.z) + '\n';
+    csvContent += std::to_string(ortho2.x) + ',' + std::to_string(ortho2.y) + ',' + std::to_string(ortho2.z);
+    file.open(title);
+    if (file.is_open())
+        file << csvContent;
+    file.close();
+    for (int counter =0; counter < numOfPos; counter++)
+    {
+        currentPos = glm::normalize(norm*glm::vec3(RandGen(0,1000)) +ortho1*glm::vec3(RandGen(-1000,1000)) +ortho2*glm::vec3(RandGen(-1000,1000)))*glm::vec3(10);
+        newPos.push_back(currentPos);
+    }
+    return newPos;
+}
 void RotamerModifier::submitJob(float weight)
 {
     BaseTask *first_hook = nullptr; // Initialize first hook
@@ -514,7 +594,7 @@ std::vector<glm::vec3> RotamerModifier::axisForChain(std::string const &chainNam
 void RotamerModifier::makePlan()
 /* Plan:
  * - take the reference helix (the one that will stay static)
- * - generate a plan perpendicular to this helix' axis
+ * - generate a plan perpendicular to this helix axis
  * - create two vectors that will enable movement of the moving helix
  */
 {
@@ -582,21 +662,20 @@ std::vector<glm::vec3> RotamerModifier::RandStartPos(int const &numberPos)
     for (int x = 0; x < numberPos; x++)
     {
         glm::vec3 newVec {};
-        newVec.x = RandGen();
-        newVec.y = std::abs(RandGen());
-        newVec.z = RandGen();
+        newVec.x = RandGen(-1000, 1000);
+        newVec.y = RandGen(0,1000);
+        newVec.z = RandGen(-1000, 1000);
         pos.push_back(glm::normalize(newVec)*glm::vec3(10));
         std::cout << newVec << std::endl;
     }
     return pos;
 }
 
-int RotamerModifier::RandGen()
+int RotamerModifier::RandGen(int min, int max)
 {
     std::random_device rd;
-    std::mt19937 gen(rd());
-    std::uniform_int_distribution<int> dis(-1000, 1000);
+    static std::mt19937 gen(rd());
+    std::uniform_int_distribution<int> dis(min, max);
     const int random_number = dis(gen);
-    std::cout << random_number << std::endl;
     return random_number;
 }
