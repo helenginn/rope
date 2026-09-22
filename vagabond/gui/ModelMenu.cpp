@@ -18,6 +18,7 @@
 
 #include "ModelMenu.h"
 #include <fstream>
+#include <regex>
 #include "AddModel.h"
 #include "Display.h"
 #include "DisplayUnit.h"
@@ -27,6 +28,7 @@
 #include <vagabond/gui/elements/TextButton.h>
 #include <vagabond/gui/elements/BadChoice.h>
 #include <vagabond/core/Environment.h>
+#include "elements/Line.h"
 #include "elements/Parallelepiped.h"
 
 ModelMenu::ModelMenu(Scene *prev) : ListView(prev)
@@ -132,72 +134,138 @@ void ModelMenu::refineModel(std::string name)
 		unit->loadModel(model);
 		d->tieButton();
 		std::ifstream file;
-		file.open("dhelix_hedgehog.csv");
-		if (file.is_open())
+		std::vector<std::string> filenames {};
+		glm::vec3 memoryPos {0.f};
+		for (auto const &entry : std::filesystem::directory_iterator("."))
 		{
-			std::string line {};
-			std::vector<glm::vec4> tests {};
-			glm::vec4 readPos {};
-			float minVal = {10};
-			float maxVal = {-10};
-			while (getline(file, line))
+			if (std::regex_match (entry.path().filename().string(), std::regex(".*hedgehog\\.csv") ))
 			{
-				std::istringstream iss(line);
-				std::string lineStream;
-				std::vector<float> xyz {};
-				while (getline(iss, lineStream, ','))
+				file.open(entry.path().filename().string());
+				if (file.is_open())
 				{
-					xyz.push_back(std::stof(lineStream)); // convert to double
-				}
-				readPos.x = xyz[0];
-				readPos.y = xyz[1];
-				readPos.z = xyz[2];
-				readPos.w = xyz[3];
-				if (xyz[3] < minVal)
-					minVal = xyz[3];
-				else if (xyz[3] > maxVal)
-					maxVal = xyz[3];
-				tests.push_back(readPos);
-			}
-			glm::vec3 startPos {};
-			for (auto atoms : model->currentAtoms()->atomVector())
-			{
-				if (atoms->chain() == "C")
-				{
-					startPos = atoms->derivedPosition();
-					break;
-				}
-			}
-			glm::vec3 max (1.f,0.f,0.f);
-			glm::vec3 min (0.f,0.f,1.f);
-			float capped = minVal +(maxVal- minVal)/16;
-			for (auto const &vectors : tests)
-			{
-				Parallelepiped *para1 = new Parallelepiped(true ,true);
-				d->addObject(para1);
-				para1->addTrueParallelepiped(startPos, glm::vec3(vectors), 0.6, 0.9);
-				{
-					float pos = vectors.w - minVal;
-					glm::vec3 colour{};
-					if (pos <= capped - minVal)
-						colour = (pos / capped) * max + (1 - pos / capped) * min;
+					std::string line {};
+					std::vector<glm::vec4> tests {};
+					glm::vec4 readPos {};
+					glm::vec3 average {};
+					float vecNum {0};
+					float minVal = {FLT_MAX};
+					float maxVal = {-FLT_MAX};
+					std::string chain {};
+					getline(file, chain);
+					while (getline(file, line))
+					{
+						std::istringstream iss(line);
+						std::string lineStream;
+						std::vector<float> xyz {};
+						while (getline(iss, lineStream, ','))
+						{
+							xyz.push_back(std::stof(lineStream)); // convert to double
+						}
+						readPos.x = xyz[0];
+						readPos.y = xyz[1];
+						readPos.z = xyz[2];
+						readPos.w = xyz[3];
+						if (xyz[3] < minVal)
+							minVal = xyz[3];
+						else if (xyz[3] > maxVal)
+							maxVal = xyz[3];
+						tests.push_back(readPos);
+						average += glm::vec3(readPos);
+						vecNum += 1;
+					}
+					average /= glm::vec3(vecNum);
+					glm::vec3 startPos {};
+					std::cout << '\t' << chain[0] << std::endl;
+					int counter {0};
+					glm::vec3 axisStart {};
+					glm::vec3 axisEnd {};
+					Atom *endAtom {};
+					for (auto atoms : model->currentAtoms()->atomVector())
+					{
+						if (atoms->chain()[0] == chain[0])
+						{
+							if (counter == 0)
+								axisStart = atoms->derivedPosition();
+							counter++;
+							if (counter == 3)
+							{
+								std::cout << entry.path().filename().string() << std::endl;
+								startPos = atoms->derivedPosition();
+								std::cout << "start Atom chain == " << atoms->chain() << std::endl;
+
+								if (std::regex_match(entry.path().filename().string(), std::regex("iter2.*")))
+									startPos.x+=10;
+								if (std::regex_match(entry.path().filename().string(), std::regex("iter3.*")))
+									startPos.x+=20;
+								// std::cout << atoms->atomName() << std::endl;
+
+							}
+							axisEnd = atoms->derivedPosition();
+							endAtom = atoms;
+						}
+					}
+					std::cout << "End Atom chain == " << endAtom->chain() << std::endl;
+
+					if (memoryPos == glm::vec3(0.f))
+					{
+						startPos = axisStart;
+						memoryPos = startPos;
+					}
+					else if (glm::length(axisStart-memoryPos) < glm::length(axisEnd-memoryPos))
+					{
+						startPos = axisStart;
+						memoryPos = startPos;
+					}
 					else
-						colour = max;
-					para1->setColour(colour.x, colour.y, colour.z);
+					{
+						startPos = axisEnd;
+						memoryPos = startPos;
+					}
+					if (std::regex_match(entry.path().filename().string(), std::regex("iter2.*")))
+						startPos.x+=10;
+					if (std::regex_match(entry.path().filename().string(), std::regex("iter3.*")))
+						startPos.x+=20;
+					if (endAtom->chain()[0] == 'A')
+					{
+						Line *axis = new Line;
+						d->addObject(axis);
+						axis->addPoint(axisStart);
+						axis->addPoint(axisEnd);
+						axis->forceRender();
+					}
+					glm::vec3 max (1.f,0.f,0.f);
+					glm::vec3 min (0.f,0.f,1.f);
+					float capped = minVal +(maxVal- minVal)/16;
+					for (auto const &vectors : tests)
+					{
+						Parallelepiped *para1 = new Parallelepiped(true ,true);
+						d->addObject(para1);
+						para1->addTrueParallelepiped(startPos, glm::vec3(vectors/glm::vec4(2)), 1, 0.9);
+						{
+							float pos = vectors.w - minVal;
+							glm::vec3 colour{};
+							if (pos <= capped - minVal)
+								colour = (pos / capped) * max + (1 - pos / capped) * min;
+							else
+								colour = max;
+							para1->setColour(colour.x, colour.y, colour.z);
+						}
+						para1->setAlpha(0.6f);
+						para1->forceRender();
+					}
 				}
-				para1->setAlpha(0.6f);
-				para1->forceRender();
+				file.close();
 			}
 		}
-		ArbitraryMap *map = new ArbitraryMap(model->dataFile());
-		if (map->nn() > 0)
-		{
-			unit->densityFromMap(map);
+			ArbitraryMap *map = new ArbitraryMap(model->dataFile());
+			if (map->nn() > 0)
+			{
+				unit->densityFromMap(map);
+			}
+
+			d->addDisplayUnit(unit);
+			d->show();
 		}
-		
-		d->addDisplayUnit(unit);
-		d->show();
-	}
 	catch (std::runtime_error &err)
 	{
 		BadChoice *bc = new BadChoice(this, err.what());
