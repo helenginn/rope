@@ -390,8 +390,21 @@ void CommunicationAnalysis::setup()
 	
 	_cc = mat;
 	MatrixPlot *mp = new MatrixPlot(_cc);
-	MatrixBox *mBox = new MatrixBox(mp, names, names, true, this);
+	MatrixBox *mBox = new MatrixBox(mp, names, names, true, this,
+	                                 _clique->correlationOrder());
 	mBox->setCentre(0.5, 0.6);
 	mBox->resize(1.2);
 	addObject(mBox);
+
+	// persist the user's drag-reorder back onto the network so re-entering
+	// this view (or reloading rope.json) restores the same arrangement -
+	// see Clique::correlationOrder()/setCorrelationOrder(). Set only after
+	// the above construction returns, so applying the just-loaded order
+	// (or the initial guessReordering() fallback) doesn't itself trigger
+	// a write straight back out.
+	Clique *clique = _clique;
+	mBox->setOnReorder([mBox, clique]()
+	{
+		clique->setCorrelationOrder(mBox->rowNames());
+	});
 }

@@ -35,15 +35,33 @@ public:
 	// feature (shiftPressed() lives on Scene/GLView, not on MatrixBox
 	// itself). Leave it null for a plain reorderable matrix with no
 	// selection support.
+	//
+	// initialOrder, if given, seeds the starting row/column order from a
+	// previously saved rowNames()-style list (identical-axes matrices
+	// only - see applyNamedOrder()) instead of reorder's own
+	// guessReordering() heuristic; a list that doesn't name exactly the
+	// current row set is ignored and guessReordering() runs as normal.
 	MatrixBox(MatrixPlot *mp, const std::vector<std::string> &rowNames,
 	          const std::vector<std::string> &colNames,
-	          bool reorder = false, Scene *scene = nullptr);
+	          bool reorder = false, Scene *scene = nullptr,
+	          const std::vector<std::string> &initialOrder = {});
 
 	void guessReordering();
 	void draw();
 
 	std::vector<std::string> rowNames();
 	std::vector<std::string> colNames();
+
+	// fired at the end of every refreshDisplay() call that happens after
+	// construction - i.e. every time the user's drag actually changes the
+	// order - with no arguments; the callback reads the new order back
+	// via rowNames()/colNames() itself. Not fired for the baseline flip
+	// or the initial reorder/initialOrder application inside the
+	// constructor, since it can only be set after that returns.
+	void setOnReorder(std::function<void()> fn)
+	{
+		_onReorder = fn;
+	}
 
 	// _original never changes except through these - read/write a value
 	// by its stable, original row/column index regardless of how the
@@ -74,7 +92,17 @@ private:
 	Scene *_scene{};
 
 	std::function<void(bool)> _enableButtons;
+	std::function<void()> _onReorder;
 	auto create_order_function(int coord);
+
+	// seeds _rowPerm (and, if _identical, _colPerm) from a saved
+	// rowNames()-style display order instead of the identity/guessed one -
+	// called from the constructor, before draw() builds any buttons.
+	// Returns false (leaving _rowPerm untouched) if order doesn't name
+	// exactly _rowNames' current contents (wrong size, unknown name, or a
+	// name repeated), or if this matrix isn't _identical (a saved
+	// row-order isn't meaningful for independent row/column axes).
+	bool applyNamedOrder(const std::vector<std::string> &order);
 
 	// shift-drag-to-select-rows, driven directly off _plot rather than the
 	// row labels (labels stop being individually distinguishable once
