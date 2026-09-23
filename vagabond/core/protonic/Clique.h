@@ -423,6 +423,25 @@ public:
 	{
 		_searchText = text;
 	}
+
+	/** user-dragged row/column order last left in CommunicationAnalysis's
+	 * correlation plot (signal names, top-to-bottom display order) -
+	 * serialized (see to_json()/from_json() below) so it persists across
+	 * sessions the same way watchedSignal() does. Empty means "no saved
+	 * order yet" - CommunicationAnalysis then falls back to its own
+	 * guessReordering() heuristic. A saved order that no longer names
+	 * exactly the current signal set (one added/removed/renamed since it
+	 * was saved) is simply ignored by the reader rather than validated
+	 * here, same idiom as watchedSignal(). */
+	const std::vector<std::string> &correlationOrder() const
+	{
+		return _correlationOrder;
+	}
+
+	void setCorrelationOrder(const std::vector<std::string> &order)
+	{
+		_correlationOrder = order;
+	}
 private:
 	/** Item::_items/_parent are raw, non-owning pointers that Item's own
 	 * (compiler-generated) copy/assignment copies verbatim - fine for
@@ -491,6 +510,7 @@ private:
 	std::shared_ptr<std::atomic<bool>> _searchCancelled;
 	std::string _watchedDesc;
 	std::string _searchText;
+	std::vector<std::string> _correlationOrder;
 };
 
 inline void to_json(json &j, const Clique &cl)
@@ -539,6 +559,11 @@ inline void to_json(json &j, const Clique &cl)
 	{
 		j["watched_signal"] = cl._watchedDesc;
 	}
+
+	if (cl._correlationOrder.size())
+	{
+		j["correlation_order"] = cl._correlationOrder;
+	}
 }
 
 inline void from_json(const json &j, Clique &cl)
@@ -586,6 +611,11 @@ inline void from_json(const json &j, Clique &cl)
 	if (j.count("watched_signal"))
 	{
 		cl._watchedDesc = j.at("watched_signal");
+	}
+
+	if (j.count("correlation_order"))
+	{
+		cl._correlationOrder = j.at("correlation_order").get<std::vector<std::string>>();
 	}
 }
 

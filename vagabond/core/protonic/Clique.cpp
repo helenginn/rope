@@ -37,7 +37,8 @@ _communication(other._communication),
 _descToCommune(other._descToCommune), _descs(other._descs),
 _states(other._states), _subdivisionRuns(other._subdivisionRuns),
 _searchRunning(other._searchRunning), _watchedDesc(other._watchedDesc),
-_searchText(other._searchText)
+_searchText(other._searchText),
+_correlationOrder(other._correlationOrder)
 {
 	fixupItemsAfterCopy(other);
 }
@@ -62,6 +63,7 @@ Clique &Clique::operator=(const Clique &other)
 	_searchRunning = other._searchRunning;
 	_watchedDesc = other._watchedDesc;
 	_searchText = other._searchText;
+	_correlationOrder = other._correlationOrder;
 
 	fixupItemsAfterCopy(other);
 	return *this;

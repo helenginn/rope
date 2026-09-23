@@ -28,7 +28,8 @@
 
 MatrixBox::MatrixBox(MatrixPlot *mp, const std::vector<std::string> &rowNames,
                      const std::vector<std::string> &colNames,
-                     bool reorder, Scene *scene)
+                     bool reorder, Scene *scene,
+                     const std::vector<std::string> &initialOrder)
 : _plot(mp), _scene(scene), _rowNames(rowNames), _colNames(colNames)
 {
 	_identical = (&rowNames == &colNames);
@@ -60,11 +61,46 @@ MatrixBox::MatrixBox(MatrixPlot *mp, const std::vector<std::string> &rowNames,
 	_plot->setCentre(0.0, 0.0);
 	addObject(_plot);
 
-	if (reorder)
+	bool appliedSaved = !initialOrder.empty() && applyNamedOrder(initialOrder);
+
+	if (reorder && !appliedSaved)
 	{
 		guessReordering();
 	}
 	draw();
+}
+
+bool MatrixBox::applyNamedOrder(const std::vector<std::string> &order)
+{
+	if (!_identical || order.size() != _rowNames.size())
+	{
+		return false;
+	}
+
+	std::map<std::string, int> nameToOriginal;
+	for (size_t i = 0; i < _rowNames.size(); i++)
+	{
+		nameToOriginal[_rowNames[i]] = (int)i;
+	}
+
+	std::vector<int> newPerm;
+	newPerm.reserve(order.size());
+	std::set<std::string> seen;
+	for (const std::string &name : order)
+	{
+		auto it = nameToOriginal.find(name);
+		if (it == nameToOriginal.end() || seen.count(name))
+		{
+			return false;
+		}
+		seen.insert(name);
+		newPerm.push_back(it->second);
+	}
+
+	_rowPerm = newPerm;
+	syncCoupledPerm(true);
+	refreshDisplay();
+	return true;
 }
 
 void MatrixBox::refreshDisplay()
@@ -85,6 +121,14 @@ void MatrixBox::refreshDisplay()
 	// position - keep the highlight following it rather than leaving it
 	// pointing at whatever now occupies the old slot.
 	updateSelectionHighlight();
+
+	// only ever set once the constructor has returned (see setOnReorder())
+	// - so the baseline flip and any initialOrder/guessReordering() call
+	// above never fire it, only an actual user drag does.
+	if (_onReorder)
+	{
+		_onReorder();
+	}
 }
 
 void MatrixBox::syncCoupledPerm(bool rowsChanged)
