@@ -19,6 +19,7 @@
 #ifndef __vagabond__StaticForces__
 #define __vagabond__StaticForces__
 
+#include "ForceCalcReports.h"
 #include <vector>
 #include <map>
 
@@ -43,7 +44,7 @@ public:
 		_rods.push_back(r);
 	}
 	
-	void solve(const std::map<ForceCoordinate, int> &index_map,
+  rope::force_calc::ForceCalcResultReport solve(const std::map<ForceCoordinate, int> &index_map,
 	                       bool calcWithUnits = false);
 private:
 	std::vector<Particle *> _particles;

@@ -42,6 +42,7 @@ std::string Rod::desc()
 
 void Rod::calculatedAsTension(std::ostream &ss, CorrelData *data)
 {
+
 	glm::vec3 sum{};
 	glm::vec3 length{};
 
