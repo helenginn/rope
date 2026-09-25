@@ -19,6 +19,7 @@
 #include "Rod.h"
 #include "Particle.h"
 #include "StaticForces.h"
+#include "./ForceCalcReports.h"
 
 #include <vagabond/utils/Eigen/Dense>
 #include <vagabond/utils/Eigen/Sparse>
@@ -33,9 +34,16 @@ StaticForces::StaticForces()
 
 }
 
-void StaticForces::solve(const std::map<ForceCoordinate, int> 
+namespace 
+{
+using CalcReport = rope::force_calc::ForceCalcResultReport;
+}
+
+CalcReport StaticForces::solve(const std::map<ForceCoordinate, int> 
                                      &index_map, bool calcWithUnits)
 {
+  auto report = CalcReport::create();
+
 	int rows = _rods.size() * 2 * 3; // relationships per rod
 	int cols = index_map.size();
 
@@ -103,6 +111,12 @@ void StaticForces::solve(const std::map<ForceCoordinate, int>
 	*/
 
 	Eigen::MatrixXf estimates = weights * results;
+
+  for (int i = 0; i < targets.rows(); ++i)
+  {
+    report.target_estimate.add({targets(i), estimates(i, 0)});
+  }
+
 	Eigen::MatrixXf display(targets.rows(), 2);
 	display(Eigen::all, 0) = targets;
 	display(Eigen::all, 1) = estimates;
@@ -207,4 +221,6 @@ void StaticForces::solve(const std::map<ForceCoordinate, int>
 
 	std::cout << std::endl;
 	std::cout << "Time taken: " << seconds << " s " <<  std::endl;
+
+  return report;
 }

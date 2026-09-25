@@ -26,18 +26,19 @@ sdl2 = dependency('SDL2', required: false)
 sdl2image = dependency('SDL2_image', required: false)
 thread_dep = dependency('threads')  # Check: is this required for emscripten?
 zlib = dependency('zlib')
+au = dependency('au')
 
 # Dependency groups
 header_deps = [glm, json]
-core_deps = [curl, fftw, gemmi, thread_dep, zlib]
+core_deps = [curl, fftw, gemmi, thread_dep, zlib, au]
 graphics_deps = []
-cli_deps = [header_deps, core_deps, cli11]
 
 if is_native
   graphics_deps = [gl, glew, sdl2, sdl2image]
 endif
 
 gui_deps = [header_deps, core_deps, graphics_deps]
+cli_deps = [header_deps, core_deps, cli11]
 
 # Windows wiring
 if host_machine.system() == 'windows'
