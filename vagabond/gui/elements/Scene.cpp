@@ -9,7 +9,7 @@
 #include "Image.h"
 #include <vagabond/utils/gl_import.h>
 #include <iostream>
-#include <SDL2/SDL.h>
+#include <SDL3/SDL.h>
 #include <time.h>
 
 #include <cstring>
@@ -26,7 +26,11 @@ Scene::Scene(Scene *prev) : GLView()
 
 Scene::~Scene()
 {
-	
+	if (_cursor != nullptr)
+	{
+		SDL_DestroyCursor(_cursor);
+		_cursor = nullptr;
+	}
 }
 
 void Scene::preSetup()
@@ -294,12 +298,12 @@ void Scene::mouseMoveEvent(double x, double y)
 	bool arrow = true;
 	if (chosen != nullptr && chosen->mouseOver())
 	{
-		cursor = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_HAND);
+		cursor = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_POINTER);
 		arrow = false;
 	}
 	else
 	{
-		cursor = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_ARROW);
+		cursor = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_DEFAULT);
 	}
 
 	if (_mouseDown && _dragged != nullptr && _dragged->isDraggable())
@@ -317,11 +321,20 @@ void Scene::mouseMoveEvent(double x, double y)
 
 void Scene::swapCursor(SDL_Cursor *newCursor)
 {
-	SDL_SetCursor(newCursor);
+	if (newCursor == nullptr)
+	{
+		return;
+	}
+
+	if (!SDL_SetCursor(newCursor))
+	{
+		SDL_DestroyCursor(newCursor);
+		return;
+	}
 
 	if (_cursor != nullptr)
 	{
-		SDL_FreeCursor(_cursor);
+		SDL_DestroyCursor(_cursor);
 		_cursor = nullptr;
 	}
 

@@ -17,12 +17,16 @@ message('  NATIVE:', is_native)
 curl = dependency('libcurl', required: is_native)
 fftw = dependency('fftw3f', required: is_native)
 gemmi = dependency('gemmi', modules: ['gemmi::gemmi_cpp'], required: is_native)
-gl = dependency('gl', method: 'system', required: false)
-glew = dependency('glew', required: false)
+if host_machine.system() == 'darwin'
+  gl = dependency('appleframeworks', modules: ['OpenGL'], required: is_native)
+else
+  gl = dependency('gl', method: 'system', required: is_native)
+endif
+glew = dependency('glew', required: is_native)
 glm = dependency('glm')
 json = dependency('nlohmann_json')
-sdl2 = dependency('SDL2', required: false)
-sdl2image = dependency('SDL2_image', required: false)
+sdl3 = dependency('sdl3', version: '>=3.2.0', required: is_native)
+sdl3_image = dependency('sdl3-image', version: '>=3.2.0', required: is_native)
 thread_dep = dependency('threads')  # Check: is this required for emscripten?
 zlib = dependency('zlib')
 
@@ -33,7 +37,7 @@ graphics_deps = []
 cli_deps = [header_deps, core_deps]
 
 if is_native
-  graphics_deps = [gl, glew, sdl2, sdl2image]
+  graphics_deps = [gl, glew, sdl3, sdl3_image]
 endif
 
 gui_deps = [header_deps, core_deps, graphics_deps]

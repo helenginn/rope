@@ -18,7 +18,7 @@
 
 #include "IndexResponseView.h"
 #include "IndexResponder.h"
-#include <SDL2/SDL.h>
+#include <SDL3/SDL.h>
 #include <iostream>
 
 IndexResponseView::IndexResponseView(Scene *prev) : Scene(prev)
@@ -70,8 +70,7 @@ void IndexResponseView::checkIndexBuffer(double x, double y, bool hover,
 
 	if (val >= 0 && arrow)
 	{
-		SDL_Cursor *cursor; 
-		cursor = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_HAND);
+		SDL_Cursor *cursor = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_POINTER);
 		swapCursor(cursor);
 	}
 	

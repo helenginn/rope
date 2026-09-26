@@ -20,7 +20,7 @@
 #define __vagabond__Display__
 
 #include "DisplayUnit.h"
-#include <SDL2/SDL.h>
+#include <SDL3/SDL.h>
 #include "vagabond/gui/elements/Mouse3D.h"
 #include "vagabond/gui/elements/IndexResponseView.h"
 #include <vagabond/core/Responder.h>

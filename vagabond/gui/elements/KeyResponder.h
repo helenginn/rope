@@ -20,7 +20,7 @@
 #define __practical__KeyResponder__
 
 #include <string>
-#include <SDL2/SDL.h>
+#include <SDL3/SDL.h>
 
 class KeyResponder;
 

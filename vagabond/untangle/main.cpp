@@ -16,6 +16,7 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
+#include <SDL3/SDL_main.h>
 #include "UntangleWindow.h"
 #include <vagabond/utils/gl_import.h>
 

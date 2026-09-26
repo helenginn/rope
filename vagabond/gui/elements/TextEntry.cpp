@@ -20,7 +20,7 @@
 #include "ButtonResponder.h"
 #include "GLView.h"
 #include "Scene.h"
-#include <SDL2/SDL_clipboard.h>
+#include <SDL3/SDL_clipboard.h>
 #include <iostream>
 
 void TextEntry::click(bool left)
@@ -149,10 +149,12 @@ void TextEntry::keyPressed(char key)
 		}
 		else if (_gl && _gl->controlPressed() && key == 'v')
 		{
-			const char *ch = SDL_GetClipboardText();
-			std::string str(ch);
-			_scratch += str;
-			_isDefault = false;
+			char *ch = SDL_GetClipboardText();
+			if (ch != nullptr)
+			{
+				_scratch += ch;
+				SDL_free(ch);
+			}
 		}
 
 		if (_gl && !_gl->controlPressed() && validateKey(key))
