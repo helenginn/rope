@@ -19,6 +19,26 @@
 #include <vagabond/gui/elements/FloatingText.h>
 #include "AbWatch.h"
 
+// the label is a child of the AbWatch, which is drawn with depth testing on,
+// and sits inside the antibody: draw it without depth so it isn't hidden.
+class AbLabel : public FloatingText
+{
+public:
+	using FloatingText::FloatingText;
+
+	virtual void render(GLView *gl)
+	{
+		GLboolean was = glIsEnabled(GL_DEPTH_TEST);
+		glDisable(GL_DEPTH_TEST);
+		FloatingText::render(gl);
+
+		if (was)
+		{
+			glEnable(GL_DEPTH_TEST);
+		}
+	}
+};
+
 AbWatch::AbWatch(const SimplePolygon &other, const unsigned int &version_track, 
                  std::mutex *mut, const glm::vec3 &pos, const std::string &name)
 : _versionTrack(version_track), _mut(mut), _pos(pos), _name(name)
@@ -73,7 +93,13 @@ void AbWatch::highlight()
 		setHighlighted(true);
 	}
 
-	FloatingText *text = new FloatingText(_name, 150, 10.);
+	// already labelled: don't stack another label on every mouse move
+	if (_temps.size())
+	{
+		return;
+	}
+
+	FloatingText *text = new AbLabel(_name, 150, 10.);
 	text->FloatingText::setPosition(_last);
 	addTempObject(text);
 }
@@ -83,6 +109,11 @@ void AbWatch::interacted(int idx, bool hover, bool left)
 	if (hover)
 	{
 		highlight();
+
+		if (_hoverJob)
+		{
+			_hoverJob(_antibody);
+		}
 	}
 }
 

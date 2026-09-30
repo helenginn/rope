@@ -19,6 +19,7 @@
 #ifndef __vagabond__Playground__
 #define __vagabond__Playground__
 
+#include "RefinedResult.h"
 #include <vagabond/gui/Display.h>
 
 struct Mab;
@@ -29,6 +30,7 @@ class AbWatch;
 class PosToComp;
 class Positions;
 class MatrixPlot;
+class Text;
 class ResultsView;
 
 class Playground : public Display
@@ -44,9 +46,13 @@ private:
 	void showMesh(const Competition &competition);
 	void showFiducials(const Competition &comp);
 	void showMatrices();
+	void setMatricesVisible(bool visible);
 	void label(MatrixPlot *plot, float x, float y,
 	           const std::string &text);
 	void viewResults();
+	void selectResults(const std::vector<RefinedResult> &results);
+	void showHeat(const std::string &antibody);
+	void clearHeat();
 	void saveResults();
 	void showCompetitionData();
 
@@ -59,7 +65,12 @@ private:
 	PosToComp *_model{};
 	MatrixPlot *_mpModel{};
 	MatrixPlot *_mpData{};
+	std::vector<Text *> _matrixLabels;
+	bool _matricesVisible = true;
 	ResultsView *_rv{};
+	std::vector<RefinedResult> _selectedResults;
+	std::vector<size_t> _selectedOps; // symmetry alignment of each
+	std::string _heatAntibody;
 };
 
 #endif

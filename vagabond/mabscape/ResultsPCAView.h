@@ -39,8 +39,8 @@ public:
 	static std::vector<glm::vec3> pcaPoints(const Eigen::MatrixXf &matrix,
 	                                        float extent = 1.5f);
 
-	// the heat colour scheme, white for the best (lowest) score through to
-	// black for the worst. Builds a ColourScheme, so main thread only.
+	// black-yellow scheme by percentile rank of score: yellow for the best
+	// (lowest, 0th percentile), black from the median (50th) upwards. Builds a ColourScheme, so main thread only.
 	static std::vector<glm::vec4> scoreColours(const std::vector<float> &scores);
 
 	// replaces all points; must be called from the main thread.

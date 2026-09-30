@@ -29,4 +29,5 @@ void main()
 	// is already fully spent on the billboard offset + GPU-pick id).
 	vNormal = normal;
 	gl_Position = vPos;
+	gl_Position.z -= 0.1 * gl_Position.w;
 }

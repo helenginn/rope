@@ -23,6 +23,8 @@
 #include <vagabond/gui/MatrixPlot.h>
 #include <vagabond/gui/ProgressBar.h>
 #include <vagabond/gui/elements/Box.h>
+#include <vagabond/gui/elements/Image.h>
+#include <vagabond/gui/elements/ImageButton.h>
 #include <vagabond/gui/elements/Menu.h>
 #include <vagabond/gui/elements/Slider.h>
 #include <vagabond/gui/elements/TextButton.h>
@@ -145,6 +147,42 @@ void ResultsClusterView::pickBest(float fraction)
 	_chosen = chosen;
 	_pca->setStarred(chosen);
 	updateHighlight();
+	showGroupControls();
+}
+
+void ResultsClusterView::showGroupControls()
+{
+	if (_arrow)
+	{
+		return;
+	}
+
+	// right-facing arrow, as elsewhere
+	_arrow = ImageButton::arrow(-90, nullptr);
+	_arrow->setCentre(0.72, 0.9);
+	addObject(_arrow);
+
+	_groupButton = new TextButton("Make group", nullptr);
+	_groupButton->setCentre(0.84, 0.9);
+	_groupButton->setReturnJob([this]()
+	{
+		std::vector<PosToComp::Result> picked;
+		for (size_t idx : _chosen)
+		{
+			if (idx < _results.size())
+			{
+				picked.push_back(_results[idx]);
+			}
+		}
+
+		if (_group)
+		{
+			_group(picked);
+		}
+
+		back();
+	});
+	addObject(_groupButton);
 }
 
 void ResultsClusterView::updateHighlight()

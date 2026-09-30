@@ -23,6 +23,10 @@ void main()
 	vTex = tex;
 	vColor = color;
 	vExtra = extra;
+	// pull labels a little towards the camera (a fraction of the clip depth,
+	// so it holds at any distance) so they draw in front of what they label;
+	// vPos is left alone as the slab test reads it
 	gl_Position = vPos;
+	gl_Position.z -= 0.1 * gl_Position.w;
 }
 

@@ -40,6 +40,17 @@ public:
 		return _name;
 	}
 
+	// the antibody this is a copy of (name() also carries the copy number)
+	void setAntibody(const std::string &ab)
+	{
+		_antibody = ab;
+	}
+
+	void setHoverJob(const std::function<void(const std::string &)> &job)
+	{
+		_hoverJob = job;
+	}
+
 	void highlight();
 	virtual void reindex();
 	virtual void render(GLView *gl);
@@ -49,6 +60,8 @@ private:
 	std::mutex *_mut{};
 	const glm::vec3 &_pos;
 	const std::string _name;
+	std::string _antibody;
+	std::function<void(const std::string &)> _hoverJob;
 	glm::vec3 _last;
 
 	void doThings();

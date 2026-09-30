@@ -29,12 +29,14 @@ float compareResults(const PosToComp::Result &left,
 		lookup[pl.name] = &pl;
 	}
 
+	// fixed antibodies sit in the same place in every result, so they would
+	// only inflate the agreement
 	float sum = 0;
 	int count = 0;
 
 	for (const Positions::Placement &pl : left.placements)
 	{
-		if (!lookup.count(pl.name) || pl.copies.empty())
+		if (pl.fixed || pl.copies.empty() || !lookup.count(pl.name))
 		{
 			continue;
 		}

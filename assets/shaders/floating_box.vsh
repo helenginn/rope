@@ -22,5 +22,8 @@ void main()
 	vTex = tex;
 	vColor = color;
 	gl_Position = vPos;
+	// pull labels a little towards the camera (a fraction of the clip depth,
+	// so it holds at any distance) so they draw in front of what they label
+	gl_Position.z -= 0.1 * gl_Position.w;
 }
 

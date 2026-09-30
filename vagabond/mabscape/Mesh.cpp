@@ -17,6 +17,7 @@
 // Please email: vagabond @ hginn.co.uk for more details.
 
 #include "Mesh.h"
+#include <vagabond/gui/ColourScheme.h>
 #include "Mab.h"
 #include <vagabond/gui/GuiDensity.h>
 #include <vagabond/core/GroupBounds.h>
@@ -641,4 +642,46 @@ std::function<glm::vec3()> Mesh::random()
 		int i = (rand() % vertexCount());
 		return _vertices[i].pos;
 	};
+}
+
+void Mesh::clearHeat()
+{
+	for (Vertex &v : _vertices)
+	{
+		v.color = glm::vec4(0.5, 0.5, 0.8, 1.0);
+	}
+
+	rebufferVertexData();
+	forceRender();
+}
+
+void Mesh::setHeat(const std::map<int, int> &counts)
+{
+	int highest = 1;
+	for (const auto &entry : counts)
+	{
+		highest = std::max(highest, entry.second);
+	}
+
+	ColourScheme heat(Heat);
+
+	for (Vertex &v : _vertices)
+	{
+		v.color = glm::vec4(0.5, 0.5, 0.8, 1.0);
+	}
+
+	for (const auto &entry : counts)
+	{
+		if (entry.first < 0 || entry.first >= (int)_vertices.size())
+		{
+			continue;
+		}
+
+		// skip the black end of the scheme so that every visit shows up
+		float frac = (float)entry.second / (float)highest;
+		_vertices[entry.first].color = heat.colour(0.3 + 0.7 * frac);
+	}
+
+	rebufferVertexData();
+	forceRender();
 }

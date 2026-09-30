@@ -39,6 +39,10 @@ public:
 	typedef std::function<void(const std::vector<PosToComp::Result> &)>
 	ClusterJob;
 
+	// called with a group's results when it is selected (left click), or
+	// with an empty list when it is deselected again
+	typedef ClusterJob SelectJob;
+
 	ResultsView(Scene *scene, const ApplyJob &apply);
 
 	// called (after confirmation) with the number of results the list
@@ -54,6 +58,16 @@ public:
 		_cluster = job;
 	}
 
+	void setSelectJob(const SelectJob &job)
+	{
+		_selectJob = job;
+	}
+
+	// adds a named group of results (sorted by score) alongside "All", and
+	// folds "All" away
+	void addGroup(const std::string &name,
+	              const std::vector<PosToComp::Result> &results);
+
 	void setKillAndClean(const std::function<void()> &do_it)
 	{
 		_kill = do_it;
@@ -63,7 +77,13 @@ public:
 	void update(const std::vector<PosToComp::Result> &results);
 private:
 	void setupCloseButton();
-	void groupMenu();
+	struct Group;
+	// group == nullptr means "All"
+	void groupMenu(Group *group);
+	void selectGroup(Item *item, const std::vector<PosToComp::Result> &r);
+	void rename(Group *group);
+	void refreshName(Group *group);
+	void refreshAllName();
 	std::vector<PosToComp::Result> sortedResults() const;
 	std::vector<size_t> sortedOrder() const;
 
@@ -73,7 +93,20 @@ private:
 	std::function<void(size_t)> _delete;
 	std::function<void()> _kill{};
 
+	struct Group
+	{
+		std::string name;
+		Item item;
+		std::vector<PosToComp::Result> results;
+		std::vector<std::unique_ptr<Item>> items;
+	};
+
+	SelectJob _selectJob;
+	Item *_selected{};
+	std::string _allName = "All";
+	Item _root{};
 	Item _parent{};
+	std::vector<std::unique_ptr<Group>> _groups;
 	LineGroup *_lg{};
 	ScrollBox *_sb{};
 

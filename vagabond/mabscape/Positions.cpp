@@ -115,6 +115,7 @@ AbWatch *Positions::AntibodyPos::icoAbWatch(const std::vector<glm::vec3> &raw,
 	std::string title = name + "(" + std::to_string(offset) + ")";
 	AbWatch *aw = new AbWatch(ico, version, mut, 
 	                          raw[start_idx + offset], title);
+	aw->setAntibody(name);
 	
 	return aw;
 }
@@ -286,6 +287,121 @@ void Positions::apply(const std::vector<Placement> &placements)
 
 		ap.meshIdx = pl.meshIdx;
 		ap.version++;
+	}
+}
+
+std::vector<size_t> 
+Positions::alignOperators(const std::vector<const std::vector<Placement> *> &all,
+                          std::map<std::string, glm::vec3> *meanOut)
+{
+	std::vector<size_t> ops(all.size(), 0);
+	if (all.empty())
+	{
+		return ops;
+	}
+
+	// Each copy k of an antibody is its reference position put through
+	// symmetry operator k, and the score only sees each antibody's closest
+	// copy, so the same solution can turn up under any operator applied to
+	// all the antibodies at once. Start from the first result, then refine
+	// against the mean.
+	std::map<std::string, glm::vec3> reference;
+	for (const Placement &pl : *all[0])
+	{
+		if (!pl.fixed && pl.copies.size())
+		{
+			reference[pl.name] = pl.copies[0];
+		}
+	}
+
+	std::map<std::string, glm::vec3> mean = reference;
+
+	for (int round = 0; round < 3; round++)
+	{
+		std::map<std::string, std::pair<glm::vec3, int>> sums;
+
+		for (size_t r = 0; r < all.size(); r++)
+		{
+			const std::vector<Placement> *placements = all[r];
+			size_t count = SIZE_MAX;
+			for (const Placement &pl : *placements)
+			{
+				if (!pl.fixed && reference.count(pl.name))
+				{
+					count = std::min(count, pl.copies.size());
+				}
+			}
+
+			if (count == SIZE_MAX)
+			{
+				continue;
+			}
+
+			size_t best = 0; float bestSq = FLT_MAX;
+			for (size_t op = 0; op < count; op++)
+			{
+				float sq = 0;
+				for (const Placement &pl : *placements)
+				{
+					if (pl.fixed || !reference.count(pl.name))
+					{
+						continue;
+					}
+
+					glm::vec3 diff = pl.copies[op] - reference.at(pl.name);
+					sq += glm::dot(diff, diff);
+				}
+
+				if (sq < bestSq)
+				{
+					bestSq = sq;
+					best = op;
+				}
+			}
+
+			ops[r] = best;
+
+			for (const Placement &pl : *placements)
+			{
+				if (pl.fixed || !reference.count(pl.name))
+				{
+					continue;
+				}
+
+				std::pair<glm::vec3, int> &sum = sums[pl.name];
+				sum.first += pl.copies[best];
+				sum.second++;
+			}
+		}
+
+		for (const auto &entry : sums)
+		{
+			mean[entry.first] = entry.second.first / (float)entry.second.second;
+		}
+
+		reference = mean;
+	}
+
+	if (meanOut)
+	{
+		*meanOut = mean;
+	}
+
+	return ops;
+}
+
+void Positions::applyAverage(const std::vector<const std::vector<Placement> *> 
+                             &all)
+{
+	std::map<std::string, glm::vec3> mean;
+	alignOperators(all, &mean);
+
+	for (const auto &entry : mean)
+	{
+		if (_lookup.count(entry.first))
+		{
+			setPosition(entry.first, entry.second, 1.f);
+		}
 	}
 }
 

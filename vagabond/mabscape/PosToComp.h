@@ -95,6 +95,8 @@ public:
 	// moves the antibodies to a cached Result and updates the model matrix.
 	// Must not be called while refining.
 	void showResult(const Result &result);
+	// moves the antibodies to the mean of these Results, snapped to the mesh
+	void showAverage(const std::vector<Result> &results);
 	float score();
 private:
 	void refineEngine();

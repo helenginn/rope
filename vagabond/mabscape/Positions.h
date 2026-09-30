@@ -66,6 +66,16 @@ public:
 	std::vector<Placement> snapshot() const;
 	// puts every non-fixed antibody back where a snapshot() had it
 	void apply(const std::vector<Placement> &placements);
+	// for each snapshot, the symmetry operator (index into every non-fixed
+	// antibody's copies) that best matches the others once applied to all
+	// of them together; the first snapshot is the starting reference.
+	// If given, `mean` receives the aligned mean position per antibody.
+	static std::vector<size_t> 
+	alignOperators(const std::vector<const std::vector<Placement> *> &all,
+	               std::map<std::string, glm::vec3> *mean = nullptr);
+	// moves every non-fixed antibody to its mean position over these
+	// snapshots, snapped to the nearest mesh vertex
+	void applyAverage(const std::vector<const std::vector<Placement> *> &all);
 private:
 	Antigen &_antigen;
 	Mab &_mab;

@@ -429,6 +429,18 @@ void PosToComp::showResult(const Result &result)
 	fromModel();
 }
 
+void PosToComp::showAverage(const std::vector<Result> &results)
+{
+	std::vector<const std::vector<Positions::Placement> *> all;
+	for (const Result &r : results)
+	{
+		all.push_back(&r.placements);
+	}
+
+	_positions.applyAverage(all);
+	fromModel();
+}
+
 void PosToComp::stopRefining()
 {
 	_stop = true;

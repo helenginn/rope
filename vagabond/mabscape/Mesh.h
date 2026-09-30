@@ -40,6 +40,11 @@ public:
 	void refine();
 	void kdTree();
 
+	// colours vertices by heat according to how often each was visited
+	// (vertex index -> count); unvisited vertices keep the base colour
+	void setHeat(const std::map<int, int> &counts);
+	void clearHeat();
+
 	int nearestVertex(const glm::vec3 &v);
 
 	std::function<void(const glm::vec3 &, glm::vec3 &, int &)> vertexFinder();

@@ -73,17 +73,29 @@ ResultsPCAView::scoreColours(const std::vector<float> &scores)
 		return colours;
 	}
 
-	float lowest = *std::min_element(scores.begin(), scores.end());
-	float highest = *std::max_element(scores.begin(), scores.end());
-	float span = highest - lowest;
-
-	ColourScheme *heat = new ColourScheme(Heat);
-
-	for (const float &score : scores)
+	// by percentile rank of score (lowest is best): yellow at the 0th
+	// percentile, fading to black at the median and staying black beyond
+	size_t n = scores.size();
+	std::vector<size_t> order(n);
+	for (size_t i = 0; i < n; i++)
 	{
-		// the heat scheme runs black (0) to white (1); lower scores are
-		// better, so the best score is white and the worst black.
-		float goodness = (span > 1e-6 ? 1.f - (score - lowest) / span : 1.f);
+		order[i] = i;
+	}
+
+	std::stable_sort(order.begin(), order.end(), [&scores](size_t a, size_t b)
+	                 { return scores[a] < scores[b]; });
+
+	std::vector<float> percentile(n, 0.f);
+	for (size_t rank = 0; rank < n; rank++)
+	{
+		percentile[order[rank]] = (n > 1 ? (float)rank / (float)(n - 1) : 0.f);
+	}
+
+	ColourScheme *heat = new ColourScheme(BlackYellow);
+
+	for (size_t i = 0; i < n; i++)
+	{
+		float goodness = std::max(0.f, 1.f - percentile[i] / 0.5f);
 		colours.push_back(heat->colour(goodness));
 	}
 
@@ -96,8 +108,11 @@ void ResultsPCAView::setPoints(const std::vector<glm::vec3> &points,
 {
 	clearVertices();
 
-	for (size_t i = 0; i < points.size(); i++)
+	// drawn last-to-first: the results arrive best first, so the brightest
+	// (best) points end up drawn last and on top. Vertex v is result n-1-v.
+	for (size_t k = 0; k < points.size(); k++)
 	{
+		size_t i = points.size() - 1 - k;
 		// point type 1 is the filled star, 0 the filled circle
 		addPoint(points[i], _starred.count(i) ? 1 : 0);
 
@@ -115,9 +130,10 @@ void ResultsPCAView::setStarred(const std::vector<size_t> &starred)
 {
 	_starred = std::set<size_t>(starred.begin(), starred.end());
 
-	for (size_t i = 0; i < vertexCount(); i++)
+	size_t n = vertexCount();
+	for (size_t v = 0; v < n; v++)
 	{
-		setPointType(i, _starred.count(i) ? 1 : 0);
+		setPointType(v, _starred.count(n - 1 - v) ? 1 : 0);
 	}
 
 	rebufferVertexData();

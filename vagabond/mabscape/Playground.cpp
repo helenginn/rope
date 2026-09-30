@@ -65,6 +65,21 @@ void Playground::showFiducials(const Competition &comp)
 	for (AbWatch *aw : _watches)
 	{
 		addIndexResponder(aw);
+		aw->setHoverJob([this, aw](const std::string &ab)
+		{
+			// only one antibody at a time: sliding straight from one onto
+			// another never passes over empty space to clear the last
+			for (AbWatch *other : _watches)
+			{
+				if (other != aw)
+				{
+					other->setHighlighted(false);
+					other->deleteTemps();
+				}
+			}
+
+			showHeat(ab);
+		});
 	}
 }
 
@@ -76,6 +91,7 @@ void Playground::setup()
 
 	// picks up any results saved in the json
 	_model = new PosToComp(comp, *_positions);
+	showMatrices();
 	
 	TextButton *tb = new TextButton("Menu");
 	tb->setCentre(0.9, 0.1);
@@ -85,7 +101,16 @@ void Playground::setup()
 		Menu *menu = new Menu(this);
 		menu->addOption("save", [this]() { saveResults(); });
 		menu->addOption("competition data", [this]() { showCompetitionData(); });
-		menu->addOption("show matrices", [this]() { showMatrices(); });
+		if (_matricesVisible)
+		{
+			menu->addOption("hide matrices",
+			                [this]() { setMatricesVisible(false); });
+		}
+		else
+		{
+			menu->addOption("show matrices",
+			                [this]() { setMatricesVisible(true); });
+		}
 		if (_model && _model->isRefining())
 		{
 			menu->addOption("stop refining", [this]() { _model->stopRefining(); });
@@ -110,6 +135,8 @@ void Playground::setup()
 
 void Playground::interactedWithNothing(bool left, bool hover)
 {
+	clearHeat();
+
 	for (AbWatch *aw : _watches)
 	{
 		aw->setHighlighted(false);
@@ -128,6 +155,20 @@ void Playground::label(MatrixPlot *plot, float x, float y,
 	t->resize(0.5);
 	t->setCentre(x, y);
 	addObject(t);
+	_matrixLabels.push_back(t);
+}
+
+void Playground::setMatricesVisible(bool visible)
+{
+	showMatrices();
+	_matricesVisible = visible;
+	_mpModel->setDisabled(!visible);
+	_mpData->setDisabled(!visible);
+
+	for (Text *t : _matrixLabels)
+	{
+		t->setDisabled(!visible);
+	}
 }
 
 void Playground::showMatrices()
@@ -176,6 +217,74 @@ void Playground::refine()
 	_model->refine();
 }
 
+void Playground::selectResults(const std::vector<RefinedResult> &results)
+{
+	clearHeat();
+	_selectedResults = results;
+
+	std::vector<const std::vector<Positions::Placement> *> all;
+	for (const RefinedResult &r : _selectedResults)
+	{
+		all.push_back(&r.placements);
+	}
+	_selectedOps = Positions::alignOperators(all);
+
+	if (results.empty())
+	{
+		return;
+	}
+
+	if (_model->isRefining())
+	{
+		std::cout << "Stop refining before moving to a group's average."
+		<< std::endl;
+		return;
+	}
+
+	showMatrices();
+	_model->showAverage(results);
+}
+
+// how often the antibody sat on each mesh vertex across the selected group
+void Playground::showHeat(const std::string &antibody)
+{
+	if (_selectedResults.empty() || antibody == _heatAntibody || !_mesh)
+	{
+		return;
+	}
+
+	std::map<int, int> counts;
+	for (size_t i = 0; i < _selectedResults.size(); i++)
+	{
+		// the copy that lines up with the rest under the best symmetry
+		// operator, rather than always the first
+		for (const Positions::Placement &pl : _selectedResults[i].placements)
+		{
+			size_t op = _selectedOps[i];
+			if (pl.name != antibody || pl.copies.empty())
+			{
+				continue;
+			}
+
+			op = (op < pl.copies.size() ? op : 0);
+			counts[_mesh->nearestVertex(pl.copies[op])]++;
+		}
+	}
+
+	_heatAntibody = antibody;
+	_mesh->setHeat(counts);
+}
+
+void Playground::clearHeat()
+{
+	if (_heatAntibody.length() && _mesh)
+	{
+		_mesh->clearHeat();
+	}
+
+	_heatAntibody.clear();
+}
+
 void Playground::viewResults()
 {
 	if (!_rv)
@@ -197,7 +306,16 @@ void Playground::viewResults()
 		_rv->setClusterJob([this](const std::vector<PosToComp::Result> &results)
 		{
 			ResultsClusterView *cv = new ResultsClusterView(this, results);
+			cv->setGroupJob([this](const std::vector<PosToComp::Result> &picked)
+			{
+				_rv->addGroup("best", picked);
+			});
 			cv->show();
+		});
+
+		_rv->setSelectJob([this](const std::vector<RefinedResult> &results)
+		{
+			selectResults(results);
 		});
 
 		_rv->setDeleteJob([this](size_t count)

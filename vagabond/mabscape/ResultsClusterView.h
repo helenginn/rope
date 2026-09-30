@@ -30,6 +30,8 @@ class ProgressBar;
 class Box;
 class Renderable;
 class ResultsPCAView;
+class Image;
+class TextButton;
 
 /** shows the pairwise similarity (see compareResults()) of a list of
  *  Results as a matrix, with rows/columns in the order given, alongside a
@@ -42,7 +44,14 @@ public:
 	                   const std::vector<PosToComp::Result> &results);
 
 	virtual void setup();
+
+	// called with the picked results when "Make group" is clicked
+	void setGroupJob(const std::function<void(const std::vector<PosToComp::Result> &)> &job)
+	{
+		_group = job;
+	}
 private:
+	void showGroupControls();
 	void addSlider();
 	void addPickButton();
 	// offers the share of results to choose, then stars the chosen set
@@ -63,6 +72,9 @@ private:
 	ResultsPCAView *_pca{};
 	std::vector<size_t> _chosen;
 	std::vector<Box *> _highlightQuads;
+	std::function<void(const std::vector<PosToComp::Result> &)> _group;
+	Image *_arrow{};
+	TextButton *_groupButton{};
 	ProgressBar *_bar{};
 
 	std::atomic<float> _radius{11.f};

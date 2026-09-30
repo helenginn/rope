@@ -21,13 +21,13 @@
 
 #include "PosToComp.h"
 
-/** how similar two refinement Results are. For each antibody, its position
- *  in the left result is compared with each of its symmetry-related copies
- *  in the right result, keeping the closest (i.e. the symmetry operation
- *  that best superimposes them). That distance is scored as in PosToComp
- *  (1 when on top of each other, decaying with distance; radius sets how
- *  quickly) and the scores are
- *  averaged over all antibodies. */
+/** how similar two refinement Results are. For each non-fixed antibody, its
+ *  position in the left result is compared with each of its symmetry-related
+ *  copies in the right result, keeping the closest (i.e. every antibody is
+ *  free to match under its own symmetry operation). That distance is scored
+ *  as in PosToComp (1 when on top of each other, decaying with distance;
+ *  radius sets how quickly) and the scores are averaged over the antibodies.
+ *  Fixed antibodies are left out, being identical in every result. */
 float compareResults(const PosToComp::Result &left,
                      const PosToComp::Result &right,
                      float radius = 11.f);

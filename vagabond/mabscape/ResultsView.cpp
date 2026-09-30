@@ -24,6 +24,7 @@
 #include <vagabond/gui/elements/list/ItemLine.h>
 #include <vagabond/gui/elements/Menu.h>
 #include <vagabond/gui/elements/AskYesNo.h>
+#include <vagabond/gui/elements/AskForText.h>
 #include <algorithm>
 
 ResultsView::ResultsView(Scene *scene, const ApplyJob &apply)
@@ -38,17 +39,23 @@ ResultsView::ResultsView(Scene *scene, const ApplyJob &apply)
 	setupCloseButton();
 
 	// named before LineGroup is constructed - see CliqueView's constructor
+	_root.setDisplayName("Results");
 	_parent.setDisplayName("All (0 results)");
+	_root.addItem(&_parent);
 	_parent.setSelectJob([this](bool left)
 	{
-		if (!left)
+		if (left)
 		{
-			groupMenu();
+			selectGroup(&_parent, sortedResults());
+		}
+		else
+		{
+			groupMenu(nullptr);
 		}
 	});
 
 	// mirror image of CliqueView: same offsets, from the left edge
-	_lg = new LineGroup(&_parent, _scene);
+	_lg = new LineGroup(&_root, _scene);
 	_lg->setLeft(0.08, 0.28);
 
 	_sb = new ScrollBox();
@@ -89,9 +96,7 @@ void ResultsView::update(const std::vector<PosToComp::Result> &results)
 		_parent.addItem(_items[i].get());
 	}
 
-	int n = _results.size();
-	_parent.setDisplayName("All (" + std::to_string(n) +
-	                       (n == 1 ? " result)" : " results)"));
+	refreshAllName();
 
 	_lg->refreshGroups();
 	_sb->addSliderIfNeeded();
@@ -121,17 +126,142 @@ std::vector<PosToComp::Result> ResultsView::sortedResults() const
 	return sorted;
 }
 
-void ResultsView::groupMenu()
+static std::string countName(const std::string &name, size_t n)
 {
-	Menu *menu = new Menu(_scene);
-	menu->addOption("cluster", [this]()
+	return name + " (" + std::to_string(n) + (n == 1 ? " result)" : " results)");
+}
+
+void ResultsView::refreshAllName()
+{
+	_parent.setDisplayName(countName(_allName, _results.size()));
+}
+
+void ResultsView::refreshName(Group *group)
+{
+	group->item.setDisplayName(countName(group->name, group->results.size()));
+}
+
+// purple text marks the selected group; selecting it again deselects it
+void ResultsView::selectGroup(Item *item, const std::vector<PosToComp::Result> &r)
+{
+	bool deselect = (_selected == item);
+
+	_parent.setTextColour({0., 0., 0.});
+	for (auto &g : _groups)
 	{
-		if (_cluster)
+		g->item.setTextColour({0., 0., 0.});
+	}
+
+	_selected = (deselect ? nullptr : item);
+
+	if (_selected)
+	{
+		_selected->setTextColour({0.4, 0., 0.4});
+	}
+
+	_lg->refreshGroups();
+
+	if (_selectJob)
+	{
+		_selectJob(deselect ? std::vector<PosToComp::Result>() : r);
+	}
+}
+
+void ResultsView::rename(Group *group)
+{
+	AskForText *aft = new AskForText(_scene, "Rename group:", "", nullptr);
+	aft->allowCapitals(true);
+	aft->setDefaultText(group ? group->name : _allName);
+	aft->setReturnJob([this, group](std::string str)
+	{
+		if (str.length() == 0)
 		{
-			_cluster(sortedResults());
+			return;
+		}
+
+		if (group)
+		{
+			group->name = str;
+			refreshName(group);
+		}
+		else
+		{
+			_allName = str;
+			refreshAllName();
+		}
+
+		_lg->refreshGroups();
+	});
+	_scene->setModal(aft);
+}
+
+void ResultsView::addGroup(const std::string &name,
+                           const std::vector<PosToComp::Result> &results)
+{
+	Group *group = new Group();
+	group->results = results;
+	std::stable_sort(group->results.begin(), group->results.end(),
+	                 [](const PosToComp::Result &a, const PosToComp::Result &b)
+	                 { return a.score < b.score; });
+
+	group->name = name;
+	refreshName(group);
+
+	Group *g = group;
+	group->item.setSelectJob([this, g](bool left)
+	{
+		if (left)
+		{
+			selectGroup(&g->item, g->results);
+		}
+		else
+		{
+			groupMenu(g);
 		}
 	});
 
+	for (size_t i = 0; i < group->results.size(); i++)
+	{
+		Item *item = new Item();
+		char buf[64];
+		snprintf(buf, sizeof(buf), "score %.4f", group->results[i].score);
+		item->setDisplayName(buf);
+		item->setSelectJob([this, g, i](bool left)
+		{
+			if (left && _apply)
+			{
+				_apply(g->results[i]);
+			}
+		});
+		group->items.push_back(std::unique_ptr<Item>(item));
+		group->item.addItem(item);
+	}
+
+	_groups.push_back(std::unique_ptr<Group>(group));
+	_root.addItem(&group->item);
+
+	_parent.collapse();
+	_lg->refreshGroups();
+	_sb->addSliderIfNeeded();
+}
+
+void ResultsView::groupMenu(Group *group)
+{
+	bool isAll = (group == nullptr);
+	Menu *menu = new Menu(_scene);
+	std::vector<PosToComp::Result> results = (isAll ? sortedResults() : 
+	                                          group->results);
+	menu->addOption("cluster", [this, results]()
+	{
+		if (_cluster)
+		{
+			_cluster(results);
+		}
+	});
+
+	menu->addOption("rename", [this, group]() { rename(group); });
+
+	if (isAll)
 	menu->addOption("delete", [this]()
 	{
 		size_t count = _results.size();
