@@ -21,6 +21,7 @@
 
 #include <vagabond/gui/PointyView.h>
 #include <vagabond/utils/Eigen/Dense>
+#include <set>
 #include <vector>
 
 /** One point per row of a (symmetric) matrix, placed at the first three
@@ -46,6 +47,10 @@ public:
 	void setPoints(const std::vector<glm::vec3> &points,
 	               const std::vector<glm::vec4> &colours);
 
+	// draws these points as stars rather than dots, and any others as dots.
+	// Kept across setPoints() calls; must be called from the main thread.
+	void setStarred(const std::vector<size_t> &starred);
+
 	virtual void makePoints() {};
 	virtual void updatePoints() {};
 protected:
@@ -56,6 +61,7 @@ protected:
 private:
 	// offset in normalised device coordinates (-1 to 1 across the screen)
 	float _shift{0.5f};
+	std::set<size_t> _starred;
 };
 
 #endif

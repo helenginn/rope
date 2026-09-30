@@ -96,12 +96,26 @@ void ResultsPCAView::setPoints(const std::vector<glm::vec3> &points,
 
 	for (size_t i = 0; i < points.size(); i++)
 	{
-		addPoint(points[i], 0);
+		// point type 1 is the filled star, 0 the filled circle
+		addPoint(points[i], _starred.count(i) ? 1 : 0);
 
 		if (i < colours.size())
 		{
 			_vertices.back().color = colours[i];
 		}
+	}
+
+	rebufferVertexData();
+	forceRender();
+}
+
+void ResultsPCAView::setStarred(const std::vector<size_t> &starred)
+{
+	_starred = std::set<size_t>(starred.begin(), starred.end());
+
+	for (size_t i = 0; i < vertexCount(); i++)
+	{
+		setPointType(i, _starred.count(i) ? 1 : 0);
 	}
 
 	rebufferVertexData();

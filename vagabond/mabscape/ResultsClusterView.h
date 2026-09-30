@@ -27,6 +27,7 @@
 
 class MatrixPlot;
 class ProgressBar;
+class Renderable;
 class ResultsPCAView;
 
 /** shows the pairwise similarity (see compareResults()) of a list of
@@ -42,6 +43,10 @@ public:
 	virtual void setup();
 private:
 	void addSlider();
+	void addPickButton();
+	// offers the share of results to choose, then stars the chosen set
+	void showPickMenu(Renderable *button);
+	void pickBest(float fraction);
 	// (re)calculates the matrix on a worker thread; a request made while
 	// one is running just makes it go round again with the latest radius.
 	void requestCalculation();

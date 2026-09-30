@@ -19,9 +19,12 @@
 #include "ResultsClusterView.h"
 #include "ResultCompare.h"
 #include "ResultsPCAView.h"
+#include "PickBest.h"
 #include <vagabond/gui/MatrixPlot.h>
 #include <vagabond/gui/ProgressBar.h>
+#include <vagabond/gui/elements/Menu.h>
 #include <vagabond/gui/elements/Slider.h>
+#include <vagabond/gui/elements/TextButton.h>
 #include <vagabond/gui/elements/Window.h>
 #include <vagabond/utils/DoJob.h>
 
@@ -42,6 +45,7 @@ void ResultsClusterView::setup()
 	_matrix = Eigen::MatrixXf::Zero(n, n);
 
 	addSlider();
+	addPickButton();
 
 	// window-level object, as with VagWindow's own progress bars. It
 	// removes itself once it has counted every row.
@@ -81,6 +85,63 @@ void ResultsClusterView::addSlider()
 	addObject(s);
 
 	_sliderReady = true;
+}
+
+void ResultsClusterView::addPickButton()
+{
+	TextButton *b = new TextButton("Pick best", nullptr);
+	b->setCentre(0.62, 0.9);
+	b->setReturnJob([this, b]()
+	{
+		showPickMenu(b);
+	});
+	addObject(b);
+}
+
+void ResultsClusterView::showPickMenu(Renderable *button)
+{
+	Menu *menu = new Menu(this);
+
+	const std::vector<std::pair<std::string, float>> options =
+	{{"5%", 0.05f}, {"10%", 0.1f}, {"20%", 0.2f}};
+
+	for (const auto &option : options)
+	{
+		float fraction = option.second;
+		menu->addOption(option.first, [this, fraction]()
+		{
+			pickBest(fraction);
+		});
+	}
+
+	menu->setup(button, 0.6);
+	setModal(menu);
+}
+
+void ResultsClusterView::pickBest(float fraction)
+{
+	if (!_pca)
+	{
+		return;
+	}
+
+	Eigen::MatrixXf similarity;
+	{
+		std::unique_lock<std::mutex> lock(_mutex);
+		similarity = _matrix;
+	}
+
+	std::vector<float> scores;
+	for (const PosToComp::Result &r : _results)
+	{
+		scores.push_back(r.score);
+	}
+
+	std::vector<size_t> chosen = ::pickBest(similarity, scores, fraction);
+	std::cout << "Picked " << chosen.size() << " of " << scores.size()
+	<< " results" << std::endl;
+
+	_pca->setStarred(chosen);
 }
 
 void ResultsClusterView::requestCalculation()
