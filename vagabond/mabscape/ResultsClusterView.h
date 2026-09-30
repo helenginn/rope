@@ -27,6 +27,7 @@
 
 class MatrixPlot;
 class ProgressBar;
+class Box;
 class Renderable;
 class ResultsPCAView;
 
@@ -47,6 +48,8 @@ private:
 	// offers the share of results to choose, then stars the chosen set
 	void showPickMenu(Renderable *button);
 	void pickBest(float fraction);
+	// translucent bands over the matrix rows of the chosen results
+	void updateHighlight();
 	// (re)calculates the matrix on a worker thread; a request made while
 	// one is running just makes it go round again with the latest radius.
 	void requestCalculation();
@@ -58,6 +61,8 @@ private:
 	std::mutex _mutex;
 	MatrixPlot *_plot{};
 	ResultsPCAView *_pca{};
+	std::vector<size_t> _chosen;
+	std::vector<Box *> _highlightQuads;
 	ProgressBar *_bar{};
 
 	std::atomic<float> _radius{11.f};

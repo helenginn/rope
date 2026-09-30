@@ -22,6 +22,7 @@
 #include "PickBest.h"
 #include <vagabond/gui/MatrixPlot.h>
 #include <vagabond/gui/ProgressBar.h>
+#include <vagabond/gui/elements/Box.h>
 #include <vagabond/gui/elements/Menu.h>
 #include <vagabond/gui/elements/Slider.h>
 #include <vagabond/gui/elements/TextButton.h>
@@ -141,7 +142,71 @@ void ResultsClusterView::pickBest(float fraction)
 	std::cout << "Picked " << chosen.size() << " of " << scores.size()
 	<< " results" << std::endl;
 
+	_chosen = chosen;
 	_pca->setStarred(chosen);
+	updateHighlight();
+}
+
+void ResultsClusterView::updateHighlight()
+{
+	for (Box *quad : _highlightQuads)
+	{
+		removeObject(quad);
+		delete quad;
+	}
+	_highlightQuads.clear();
+
+	size_t rows = _results.size();
+	if (!_plot || _chosen.empty() || rows == 0)
+	{
+		return;
+	}
+
+	std::vector<bool> chosen(rows, false);
+	for (size_t idx : _chosen)
+	{
+		if (idx < rows)
+		{
+			chosen[idx] = true;
+		}
+	}
+
+	// the plot's rows evenly divide its extent, with row 0 at the bottom
+	glm::vec3 minC, maxC;
+	_plot->bounds(minC, maxC);
+	float halfWidth = fabs(maxC.x - minC.x) / 2.f;
+	float centreX = (maxC.x + minC.x) / 2.f;
+	float rowSpan = (maxC.y - minC.y) / (float)rows;
+
+	// consecutive chosen rows share a single quad
+	size_t i = 0;
+	while (i < rows)
+	{
+		if (!chosen[i])
+		{
+			i++;
+			continue;
+		}
+
+		size_t runStart = i;
+		while (i < rows && chosen[i])
+		{
+			i++;
+		}
+
+		float bottomY = minC.y + (float)runStart * rowSpan;
+		float topY = minC.y + (float)i * rowSpan;
+
+		Box *quad = new Box();
+		quad->makeQuad();
+		quad->rescale(halfWidth, fabs(topY - bottomY) / 2.f);
+		quad->setPosition(glm::vec3(centreX, (topY + bottomY) / 2.f,
+		                            minC.z + 0.05f));
+		quad->setColour(0.1, 1.0, 0.2);
+		quad->setAlpha(0.4);
+		addObject(quad);
+		_highlightQuads.push_back(quad);
+	}
 }
 
 void ResultsClusterView::requestCalculation()
