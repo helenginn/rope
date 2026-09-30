@@ -18,6 +18,7 @@
 
 #include "ResultsClusterView.h"
 #include "ResultCompare.h"
+#include "ResultsPCAView.h"
 #include <vagabond/gui/MatrixPlot.h>
 #include <vagabond/gui/ProgressBar.h>
 #include <vagabond/gui/elements/Slider.h>
@@ -26,9 +27,11 @@
 
 ResultsClusterView::ResultsClusterView(Scene *prev,
                          const std::vector<PosToComp::Result> &results)
-: Scene(prev), _results(results)
+: Scene(prev), Mouse3D(prev), _results(results)
 {
-
+	// as in ConfSpaceView: the point cloud sits at the origin, ten units in
+	// front of the camera, which is also what the mouse rotates around.
+	shiftToCentre(glm::vec3(0.f), 10);
 }
 
 void ResultsClusterView::setup()
@@ -128,11 +131,30 @@ void ResultsClusterView::calculate()
 		}
 	}
 
-	addMainThreadJob([this, tmp]()
+	std::vector<glm::vec3> points = ResultsPCAView::pcaPoints(tmp);
+	std::vector<float> scores;
+	for (const PosToComp::Result &r : _results)
+	{
+		scores.push_back(r.score);
+	}
+	std::vector<glm::vec4> colours = ResultsPCAView::scoreColours(scores);
+
+	addMainThreadJob([this, tmp, points, colours]()
 	{
 		{
 			std::unique_lock<std::mutex> lock(_mutex);
 			_matrix = tmp;
+		}
+
+		if (_pca)
+		{
+			_pca->setPoints(points, colours);
+		}
+		else
+		{
+			_pca = new ResultsPCAView();
+			_pca->setPoints(points, colours);
+			addObject(_pca);
 		}
 
 		if (_plot)

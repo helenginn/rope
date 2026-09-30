@@ -32,6 +32,8 @@ mabscapefiles = [
 'RefinedResult.h',
 'ResultCompare.h',
 'ResultCompare.cpp',
+'ResultsPCAView.h',
+'ResultsPCAView.cpp',
 'ResultsView.h',
 'ResultsView.cpp',
 'PrepWorkView.h',

@@ -19,7 +19,7 @@
 #ifndef __vagabond__ResultsClusterView__
 #define __vagabond__ResultsClusterView__
 
-#include <vagabond/gui/elements/Scene.h>
+#include <vagabond/gui/elements/Mouse3D.h>
 #include <vagabond/utils/Eigen/Dense>
 #include "PosToComp.h"
 #include <atomic>
@@ -27,10 +27,13 @@
 
 class MatrixPlot;
 class ProgressBar;
+class ResultsPCAView;
 
 /** shows the pairwise similarity (see compareResults()) of a list of
- *  Results as a matrix, with rows/columns in the order given. */
-class ResultsClusterView : public Scene
+ *  Results as a matrix, with rows/columns in the order given, alongside a
+ *  rotatable 3D plot of the matrix's first three principal components,
+ *  coloured by each Result's score. */
+class ResultsClusterView : public Mouse3D
 {
 public:
 	ResultsClusterView(Scene *prev,
@@ -49,6 +52,7 @@ private:
 	Eigen::MatrixXf _matrix;
 	std::mutex _mutex;
 	MatrixPlot *_plot{};
+	ResultsPCAView *_pca{};
 	ProgressBar *_bar{};
 
 	std::atomic<float> _radius{11.f};
