@@ -133,6 +133,9 @@ private:
 	// group == nullptr means the bucket's "All"
 	void groupMenu(Bucket *bucket, Group *group);
 	void removeGroup(Bucket *bucket, Group *group);
+	// the menu for a whole bucket, and deleting it: its results and groups
+	void bucketMenu(Bucket *bucket);
+	void removeBucket(Bucket *bucket);
 	void selectGroup(Item *item, const std::string &key,
 	                 const std::vector<PosToComp::Result> &r);
 	void rename(Bucket *bucket, Group *group);

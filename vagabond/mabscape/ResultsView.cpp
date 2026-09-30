@@ -132,6 +132,14 @@ ResultsView::Bucket *ResultsView::bucket(const std::string &key)
 	b->allItem.setDisplayName(countName(b->allName, 0));
 	b->item.addItem(&b->allItem);
 
+	b->item.setSelectJob([this, b](bool left)
+	{
+		if (!left)
+		{
+			bucketMenu(b);
+		}
+	});
+
 	b->allItem.setSelectJob([this, b](bool left)
 	{
 		if (left)
@@ -346,6 +354,63 @@ std::vector<ResultGroup> ResultsView::groups() const
 	}
 
 	return all;
+}
+
+void ResultsView::bucketMenu(Bucket *b)
+{
+	Menu *menu = new Menu(_scene);
+
+	menu->addOption("delete", [this, b]()
+	{
+		std::string text = "Delete all " + std::to_string(b->results.size()) +
+		" results and " + std::to_string(b->groups.size()) + " groups for " +
+		(b->key.length() ? "fixed abs " + b->key : "no fixed abs") + 
+		"? This cannot be undone.";
+
+		AskYesNo *ayn = new AskYesNo(_scene, text);
+		ayn->addJob("yes", [this, b]() { removeBucket(b); });
+		_scene->setModal(ayn);
+	});
+
+	float x = 0.5; float y = 0.5;
+	_scene->getFractionalPos(x, y);
+	menu->setup(x, y, 0.6);
+	_scene->setModal(menu);
+}
+
+void ResultsView::removeBucket(Bucket *b)
+{
+	// nothing selected in it stays selected
+	bool wasSelected = (_selected == &b->allItem);
+	for (auto &group : b->groups)
+	{
+		wasSelected |= (_selected == &group->item);
+		group->item.removeSelf(true);
+		_removed.push_back(std::move(group));
+	}
+	b->groups.clear();
+
+	if (wasSelected)
+	{
+		_selected = nullptr;
+
+		if (_selectJob)
+		{
+			_selectJob(b->key, {});
+		}
+	}
+
+	// its results go from the model, which then brings the list up to date
+	// without the bucket, there being nothing in it now
+	b->item.removeSelf(true);
+
+	if (_delete)
+	{
+		_delete(b->key, b->results.size());
+	}
+
+	_lg->refreshGroups();
+	_sb->addSliderIfNeeded();
 }
 
 void ResultsView::removeGroup(Bucket *b, Group *group)
