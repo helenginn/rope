@@ -68,4 +68,27 @@ inline void from_json(const json &j, RefinedResult &r)
 	r.score = j.at("score");
 }
 
+// a named selection of results (e.g. from "Pick best") kept with the bucket of
+// fixed antibodies they were made with (see ResultsView::bucketKey())
+struct ResultGroup
+{
+	std::string key;
+	std::string name;
+	std::vector<RefinedResult> results;
+};
+
+inline void to_json(json &j, const ResultGroup &g)
+{
+	j["key"] = g.key;
+	j["name"] = g.name;
+	j["results"] = g.results;
+}
+
+inline void from_json(const json &j, ResultGroup &g)
+{
+	g.key = j.at("key");
+	g.name = j.at("name");
+	g.results = j.at("results").get<std::vector<RefinedResult>>();
+}
+
 #endif

@@ -33,7 +33,7 @@ Positions::Positions(Antigen &antigen, const Competition &comp, Mab &mab,
 
 	for (Fiducial &fid : _mab.fiducials)
 	{
-		if (fid.antigen == antigen_name)
+		if (fid.antigen == antigen_name && fid.contact)
 		{
 			ContactPoint *cp = fid.contact;
 			Symmetry &sym = *cp;
@@ -43,6 +43,7 @@ Positions::Positions(Antigen &antigen, const Competition &comp, Mab &mab,
 			AntibodyPos ap = {&fid, fid.name, i, n, sym, 0, nullptr};
 			ap.mut = new std::mutex();
 			_raw.resize(_raw.size() + n);
+			ap.fixed = true;
 			ap.setPosition(_raw, sym.reference(), _fromMesh);
 
 			list += fid.name;
@@ -80,6 +81,8 @@ Positions::Positions(Antigen &antigen, const Competition &comp, Mab &mab,
 	{
 		_lookup[ap.name] = &ap;
 	}
+
+	_shown = _raw;
 }
 
 Positions::~Positions()
@@ -95,7 +98,7 @@ void Positions::randomise()
 {
 	for (AntibodyPos &ap : _positions)
 	{
-		if (ap.fid)
+		if (ap.fixed)
 		{
 			continue;
 		}
@@ -105,17 +108,15 @@ void Positions::randomise()
 	}
 }
 
-AbWatch *Positions::AntibodyPos::icoAbWatch(const std::vector<glm::vec3> &raw,
-                                             int offset) const
+AbWatch *Positions::AntibodyPos::icoAbWatch(const AbWatch::Source &source,
+                                            int offset) const
 {
 	Icosahedron ico;
 	ico.triangulate();
-//	ico.setPosition(raw[start_idx + offset]);
 
 	std::string title = name + "(" + std::to_string(offset) + ")";
-	AbWatch *aw = new AbWatch(ico, version, mut, 
-	                          raw[start_idx + offset], title);
-	aw->setAntibody(name);
+	AbWatch *aw = new AbWatch(ico, source, mut, title);
+	aw->setAntibody(name, offset);
 	
 	return aw;
 }
@@ -179,13 +180,24 @@ void Positions::loadAntibodiesInto(HasRenderables *bucket,
 	{
 		for (int i = 0; i < ap.num; i++)
 		{
-			AbWatch *aw = ap.icoAbWatch(_raw, i);
-			
-			if (!ap.fid)
+			// the live position, or the one on show while viewing; the
+			// number changes with either, and with the switch between them
+			const AntibodyPos *p = &ap;
+			AbWatch::Source source = [this, p, i](glm::vec3 &where)
 			{
-				aw->setSelectable(true);
-				aw->setColour(0.2, 0.2, 0.6);
-			}
+				if (_viewing)
+				{
+					where = _shown[p->start_idx + i];
+					return (unsigned int)(0x80000000u | p->shownVersion);
+				}
+
+				where = _raw[p->start_idx + i];
+				return p->version;
+			};
+
+			AbWatch *aw = ap.icoAbWatch(source, i);
+			
+			aw->setFixedStyle(ap.fixed);
 
 			bucket->addObject(aw);
 			watches.push_back(aw);
@@ -194,14 +206,15 @@ void Positions::loadAntibodiesInto(HasRenderables *bucket,
 }
 
 const glm::vec3 &Positions::operator()(const std::string &name,
-                                       const glm::vec3 *closest) const
+                                       const glm::vec3 *closest,
+                                       bool shown) const
 {
 	if (_lookup.count(name) == 0)
 	{
 		throw std::runtime_error("Antibody name not found");
 	}
 	AntibodyPos *ap = _lookup.at(name);
-	return ap->closest_to(_raw, closest);
+	return ap->closest_to(shown ? _shown : _raw, closest);
 }
 
 const glm::vec3 &
@@ -240,7 +253,7 @@ int Positions::paramCount()
 	int total = 0;
 	for (const AntibodyPos &ap : _positions)
 	{
-		if (!ap.fid)
+		if (!ap.fixed)
 		{
 			total++;
 		}
@@ -258,7 +271,7 @@ std::vector<Positions::Placement> Positions::snapshot() const
 		std::unique_lock<std::mutex> lock(*ap.mut);
 		Placement pl;
 		pl.name = ap.name;
-		pl.fixed = (ap.fid != nullptr);
+		pl.fixed = ap.fixed;
 		pl.meshIdx = ap.meshIdx;
 		pl.copies.assign(_raw.begin() + ap.start_idx, 
 		                 _raw.begin() + ap.start_idx + ap.num);
@@ -272,7 +285,8 @@ void Positions::apply(const std::vector<Placement> &placements)
 {
 	for (const Placement &pl : placements)
 	{
-		if (pl.fixed || !_lookup.count(pl.name))
+		// whether it is fixed now, not when the result was made
+		if (!_lookup.count(pl.name) || _lookup.at(pl.name)->fixed)
 		{
 			continue;
 		}
@@ -290,122 +304,337 @@ void Positions::apply(const std::vector<Placement> &placements)
 	}
 }
 
-std::vector<size_t> 
-Positions::alignOperators(const std::vector<const std::vector<Placement> *> &all,
-                          std::map<std::string, glm::vec3> *meanOut)
+void Positions::setCopies(const std::string &name,
+                          const std::vector<glm::vec3> &copies)
 {
-	std::vector<size_t> ops(all.size(), 0);
-	if (all.empty())
+	if (!_lookup.count(name))
 	{
-		return ops;
+		return;
 	}
 
-	// Each copy k of an antibody is its reference position put through
-	// symmetry operator k, and the score only sees each antibody's closest
-	// copy, so the same solution can turn up under any operator applied to
-	// all the antibodies at once. Start from the first result, then refine
-	// against the mean.
-	std::map<std::string, glm::vec3> reference;
-	for (const Placement &pl : *all[0])
+	AntibodyPos &ap = *_lookup.at(name);
+	std::unique_lock<std::mutex> lock(*ap.mut);
+
+	for (int i = 0; i < ap.num && i < (int)copies.size(); i++)
 	{
-		if (!pl.fixed && pl.copies.size())
+		int m = -1;
+		if (_fromMesh)
 		{
-			reference[pl.name] = pl.copies[0];
+			_fromMesh(copies[i], _raw[ap.start_idx + i], m);
+		}
+		else
+		{
+			_raw[ap.start_idx + i] = copies[i];
+		}
+
+		if (i == 0)
+		{
+			ap.meshIdx = m;
 		}
 	}
 
-	std::map<std::string, glm::vec3> mean = reference;
+	ap.version++;
+}
 
-	for (int round = 0; round < 3; round++)
+bool Positions::cluster(const std::vector<const std::vector<Placement> *> &all,
+                        const std::string &name, Clusters &out)
+{
+	if (all.empty())
 	{
-		std::map<std::string, std::pair<glm::vec3, int>> sums;
+		return false;
+	}
 
-		for (size_t r = 0; r < all.size(); r++)
+	const Placement *first = nullptr;
+	for (const Placement &pl : *all[0])
+	{
+		if (pl.name == name && !pl.fixed && pl.copies.size())
 		{
-			const std::vector<Placement> *placements = all[r];
-			size_t count = SIZE_MAX;
-			for (const Placement &pl : *placements)
-			{
-				if (!pl.fixed && reference.count(pl.name))
-				{
-					count = std::min(count, pl.copies.size());
-				}
-			}
+			first = &pl;
+		}
+	}
 
-			if (count == SIZE_MAX)
-			{
-				continue;
-			}
+	if (!first)
+	{
+		return false;
+	}
 
+	// k-means, one cluster per symmetry operator, seeded by the first
+	// result's copies so that cluster k stays with operator k
+	size_t n = first->copies.size();
+	out.points.clear();
+	out.resultOf.clear();
+	for (size_t r = 0; r < all.size(); r++)
+	{
+		for (const Placement &pl : *all[r])
+		{
+			if (pl.name == name && pl.copies.size() == n)
+			{
+				out.points.insert(out.points.end(), pl.copies.begin(), 
+				                  pl.copies.end());
+				out.resultOf.insert(out.resultOf.end(), n, r);
+			}
+		}
+	}
+
+	out.centres = first->copies;
+	out.member.assign(out.points.size(), n);
+
+	for (int iter = 0; iter < 50; iter++)
+	{
+		bool changed = false;
+		std::vector<glm::vec3> sums(n, glm::vec3(0.f));
+		std::vector<int> counts(n, 0);
+
+		for (size_t p = 0; p < out.points.size(); p++)
+		{
 			size_t best = 0; float bestSq = FLT_MAX;
-			for (size_t op = 0; op < count; op++)
+			for (size_t k = 0; k < n; k++)
 			{
-				float sq = 0;
-				for (const Placement &pl : *placements)
-				{
-					if (pl.fixed || !reference.count(pl.name))
-					{
-						continue;
-					}
-
-					glm::vec3 diff = pl.copies[op] - reference.at(pl.name);
-					sq += glm::dot(diff, diff);
-				}
-
+				glm::vec3 diff = out.points[p] - out.centres[k];
+				float sq = glm::dot(diff, diff);
 				if (sq < bestSq)
 				{
 					bestSq = sq;
-					best = op;
+					best = k;
 				}
 			}
 
-			ops[r] = best;
-
-			for (const Placement &pl : *placements)
-			{
-				if (pl.fixed || !reference.count(pl.name))
-				{
-					continue;
-				}
-
-				std::pair<glm::vec3, int> &sum = sums[pl.name];
-				sum.first += pl.copies[best];
-				sum.second++;
-			}
+			changed |= (out.member[p] != best);
+			out.member[p] = best;
+			sums[best] += out.points[p];
+			counts[best]++;
 		}
 
-		for (const auto &entry : sums)
+		for (size_t k = 0; k < n; k++)
 		{
-			mean[entry.first] = entry.second.first / (float)entry.second.second;
+			if (counts[k])
+			{
+				out.centres[k] = sums[k] / (float)counts[k];
+			}
 		}
 
-		reference = mean;
+		if (!changed)
+		{
+			break;
+		}
 	}
 
-	if (meanOut)
-	{
-		*meanOut = mean;
-	}
-
-	return ops;
+	return true;
 }
 
 void Positions::applyAverage(const std::vector<const std::vector<Placement> *> 
                              &all)
 {
-	std::map<std::string, glm::vec3> mean;
-	alignOperators(all, &mean);
-
-	for (const auto &entry : mean)
+	if (all.empty())
 	{
-		if (_lookup.count(entry.first))
+		return;
+	}
+
+	for (const Placement &first : *all[0])
+	{
+		if (!_lookup.count(first.name) || _lookup.at(first.name)->fixed)
 		{
-			setPosition(entry.first, entry.second, 1.f);
+			continue;
+		}
+
+		Clusters clusters;
+		if (cluster(all, first.name, clusters))
+		{
+			setCopies(first.name, clusters.centres);
 		}
 	}
 }
 
+void Positions::copyLiveToShown()
+{
+	for (const AntibodyPos &ap : _positions)
+	{
+		std::unique_lock<std::mutex> lock(*ap.mut);
+		std::copy(_raw.begin() + ap.start_idx, 
+		          _raw.begin() + ap.start_idx + ap.num, 
+		          _shown.begin() + ap.start_idx);
+	}
+}
+
+void Positions::AntibodyPos::setShown(std::vector<glm::vec3> &shown,
+                                      const std::vector<glm::vec3> &copies,
+                                      const FromMesh &fromMesh)
+{
+	for (int i = 0; i < num && i < (int)copies.size(); i++)
+	{
+		int m = -1;
+		if (fromMesh)
+		{
+			fromMesh(copies[i], shown[start_idx + i], m);
+		}
+		else
+		{
+			shown[start_idx + i] = copies[i];
+		}
+	}
+}
+
+void Positions::view(const std::vector<Placement> &placements)
+{
+	copyLiveToShown();
+
+	for (const Placement &pl : placements)
+	{
+		// fixed now, not when the result was made
+		if (!_lookup.count(pl.name) || _lookup.at(pl.name)->fixed)
+		{
+			continue;
+		}
+
+		const AntibodyPos &ap = *_lookup.at(pl.name);
+		for (int i = 0; i < ap.num && i < (int)pl.copies.size(); i++)
+		{
+			_shown[ap.start_idx + i] = pl.copies[i];
+		}
+	}
+
+	for (AntibodyPos &ap : _positions)
+	{
+		std::unique_lock<std::mutex> lock(*ap.mut);
+		ap.shownVersion++;
+	}
+
+	_viewing = true;
+}
+
+void Positions::viewAverage(const std::vector<const std::vector<Placement> *> 
+                            &all)
+{
+	if (all.empty())
+	{
+		return;
+	}
+
+	copyLiveToShown();
+
+	for (const Placement &first : *all[0])
+	{
+		if (!_lookup.count(first.name) || _lookup.at(first.name)->fixed)
+		{
+			continue;
+		}
+
+		Clusters clusters;
+		if (cluster(all, first.name, clusters))
+		{
+			_lookup.at(first.name)->setShown(_shown, clusters.centres, 
+			                                 _fromMesh);
+		}
+	}
+
+	for (AntibodyPos &ap : _positions)
+	{
+		std::unique_lock<std::mutex> lock(*ap.mut);
+		ap.shownVersion++;
+	}
+
+	_viewing = true;
+}
+
+void Positions::resumeLive()
+{
+	_viewing = false;
+}
+
 bool Positions::isFixed(const std::string &name) const
 {
-	return (_lookup.at(name)->fid);
+	return _lookup.at(name)->fixed;
+}
+
+std::vector<std::string> Positions::structuralAntibodies() const
+{
+	std::vector<std::string> names;
+	for (const AntibodyPos &ap : _positions)
+	{
+		if (ap.fid)
+		{
+			names.push_back(ap.name);
+		}
+	}
+
+	return names;
+}
+
+std::vector<glm::vec3> Positions::structuralCopies(const std::string &name,
+                                                   bool snapped) const
+{
+	std::vector<glm::vec3> copies;
+	if (!_lookup.count(name) || !_lookup.at(name)->fid)
+	{
+		return copies;
+	}
+
+	const AntibodyPos &ap = *_lookup.at(name);
+	Symmetry sym = ap.sym;
+	glm::vec3 ref = sym.reference();
+
+	sym.reset();
+	for (const glm::mat4x4 &transform : sym.transforms())
+	{
+		sym.applyTransform(transform, Symmetry::next_pointer(&ref));
+
+		glm::vec3 where = ref;
+		int idx = -1;
+		if (snapped && _fromMesh)
+		{
+			_fromMesh(ref, where, idx);
+		}
+
+		copies.push_back(where);
+	}
+
+	return copies;
+}
+
+float Positions::randomDistance(int samples) const
+{
+	if (!_random || samples <= 0)
+	{
+		return 0.f;
+	}
+
+	Symmetry sym = _antigen.sym;
+	double total = 0;
+
+	for (int i = 0; i < samples; i++)
+	{
+		glm::vec3 one = _random();
+		glm::vec3 other = _random();
+		float nearest = glm::length(one - other);
+
+		// the other vertex put through each symmetry operator in turn
+		sym.reset();
+		for (const glm::mat4x4 &transform : sym.transforms())
+		{
+			sym.applyTransform(transform, Symmetry::next_pointer(&other));
+			nearest = std::min(nearest, glm::length(one - other));
+		}
+
+		total += nearest;
+	}
+
+	return total / samples;
+}
+
+void Positions::setFixed(const std::string &name, bool fixed)
+{
+	if (!_lookup.count(name) || !_lookup.at(name)->fid)
+	{
+		return;
+	}
+
+	AntibodyPos &ap = *_lookup.at(name);
+	bool changed = (ap.fixed != fixed);
+	ap.fixed = fixed;
+
+	// back to the structural position; when freed it simply stays put
+	if (fixed && changed)
+	{
+		ap.setPosition(_raw, ap.sym.reference(), _fromMesh);
+	}
 }

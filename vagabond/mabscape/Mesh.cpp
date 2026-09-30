@@ -17,7 +17,6 @@
 // Please email: vagabond @ hginn.co.uk for more details.
 
 #include "Mesh.h"
-#include <vagabond/gui/ColourScheme.h>
 #include "Mab.h"
 #include <vagabond/gui/GuiDensity.h>
 #include <vagabond/core/GroupBounds.h>
@@ -644,44 +643,127 @@ std::function<glm::vec3()> Mesh::random()
 	};
 }
 
-void Mesh::clearHeat()
+void MeshFaces::show(const std::vector<Vertex> &base, 
+                     const std::vector<GLuint> &strong, float strongAlpha,
+                     const std::vector<GLuint> &faint, float faintAlpha)
 {
-	for (Vertex &v : _vertices)
-	{
-		v.color = glm::vec4(0.5, 0.5, 0.8, 1.0);
-	}
+	_vertices.clear();
+	_indices.clear();
 
-	rebufferVertexData();
-	forceRender();
+	auto add = [this, &base](const std::vector<GLuint> &tris, float alpha)
+	{
+		for (GLuint idx : tris)
+		{
+			Vertex v = base[idx];
+			v.color = glm::vec4(0.f, 0.f, 0.f, alpha);
+			_indices.push_back(_vertices.size());
+			_vertices.push_back(v);
+		}
+	};
+
+	add(faint, faintAlpha);
+	add(strong, strongAlpha);
+
+	setDisabled(_indices.empty());
+	forceRender(true, true);
 }
 
-void Mesh::setHeat(const std::map<int, int> &counts)
+// Translucent triangles which overlap (the near and far side of the mesh, say)
+// would pile up, depending on the order they are drawn in. So the depth of
+// the nearest one is found first, then only fragments at that depth are
+// blended: one layer, whichever way round the mesh is.
+void MeshFaces::render(GLView *gl)
 {
-	int highest = 1;
-	for (const auto &entry : counts)
+	if (isDisabled())
 	{
-		highest = std::max(highest, entry.second);
+		Renderable::render(gl);
+		return;
 	}
 
-	ColourScheme heat(Heat);
+	glClear(GL_DEPTH_BUFFER_BIT);
+	glEnable(GL_DEPTH_TEST);
+	glDepthFunc(GL_LESS);
+	glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
+	Renderable::render(gl);
 
-	for (Vertex &v : _vertices)
+	glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+	glDepthFunc(GL_LEQUAL);
+	Renderable::render(gl);
+
+	// nothing drawn after this should be hidden by these faces
+	glDepthFunc(GL_LESS);
+	glDisable(GL_DEPTH_TEST);
+	glClear(GL_DEPTH_BUFFER_BIT);
+}
+
+// in line mode each triangle a, b, c is stored as a, b, c, a, b, c (see
+// Renderable::changeToLines()), which draws its three edges
+std::vector<GLuint> Mesh::triangles() const
+{
+	std::vector<GLuint> tris;
+	size_t stride = (_renderType == GL_LINES ? 6 : 3);
+
+	for (size_t i = 0; i + stride <= _indices.size(); i += stride)
 	{
-		v.color = glm::vec4(0.5, 0.5, 0.8, 1.0);
+		tris.push_back(_indices[i]);
+		tris.push_back(_indices[i + 1]);
+		tris.push_back(_indices[i + 2]);
 	}
 
-	for (const auto &entry : counts)
+	return tris;
+}
+
+void Mesh::clearHeat()
+{
+	if (_faces)
 	{
-		if (entry.first < 0 || entry.first >= (int)_vertices.size())
+		_faces->setDisabled(true);
+	}
+}
+
+void Mesh::setHeat(const std::map<int, int> &main, 
+                   const std::map<int, int> &others)
+{
+	auto mark = [this](const std::map<int, int> &counts)
+	{
+		std::vector<bool> found(_vertices.size(), false);
+		for (const auto &entry : counts)
 		{
-			continue;
+			if (entry.first >= 0 && entry.first < (int)found.size())
+			{
+				found[entry.first] = true;
+			}
 		}
+		return found;
+	};
 
-		// skip the black end of the scheme so that every visit shows up
-		float frac = (float)entry.second / (float)highest;
-		_vertices[entry.first].color = heat.colour(0.3 + 0.7 * frac);
+	std::vector<bool> mainFound = mark(main);
+	std::vector<bool> otherFound = mark(others);
+	std::vector<GLuint> tris = triangles();
+	std::vector<GLuint> strong, faint;
+
+	for (size_t i = 0; i + 3 <= tris.size(); i += 3)
+	{
+		auto touches = [&](const std::vector<bool> &found)
+		{
+			return (found[tris[i]] || found[tris[i + 1]] || found[tris[i + 2]]);
+		};
+
+		// a face of both is only drawn strongly
+		std::vector<GLuint> *dest = touches(mainFound) ? &strong : 
+		(touches(otherFound) ? &faint : nullptr);
+
+		if (dest)
+		{
+			dest->insert(dest->end(), tris.begin() + i, tris.begin() + i + 3);
+		}
 	}
 
-	rebufferVertexData();
-	forceRender();
+	if (!_faces)
+	{
+		_faces = new MeshFaces();
+		addObject(_faces);
+	}
+
+	_faces->show(_vertices, strong, 0.45f, faint, 0.1f);
 }

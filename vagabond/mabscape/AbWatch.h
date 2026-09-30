@@ -21,12 +21,19 @@
 
 #include <vagabond/gui/elements/SimplePolygon.h>
 #include <vagabond/gui/elements/IndexResponder.h>
+#include <functional>
+#include <mutex>
 
 class AbWatch : public IndexResponder
 {
 public:
-	AbWatch(const SimplePolygon &other, const unsigned int &version_track, 
-	        std::mutex *mut, const glm::vec3 &pos, const std::string &name);
+	// where to display this copy of an antibody: fills in the position to
+	// show and returns a number which differs from the last call whenever
+	// that position (or where it comes from) has changed
+	typedef std::function<unsigned int(glm::vec3 &)> Source;
+
+	AbWatch(const SimplePolygon &other, const Source &source, 
+	        std::mutex *mut, const std::string &name);
 
 	void interacted(int idx, bool hover, bool left);
 
@@ -41,27 +48,53 @@ public:
 	}
 
 	// the antibody this is a copy of (name() also carries the copy number)
-	void setAntibody(const std::string &ab)
+	void setAntibody(const std::string &ab, int copy)
 	{
 		_antibody = ab;
+		_copy = copy;
 	}
 
-	void setHoverJob(const std::function<void(const std::string &)> &job)
+	// the hover job says whether this copy should go on to highlight itself
+	void setHoverJob(const std::function<bool(const std::string &, int)> &job)
 	{
 		_hoverJob = job;
 	}
+
+	void setClickJob(const std::function<void(AbWatch *)> &job)
+	{
+		_clickJob = job;
+	}
+
+	const std::string &antibody() const
+	{
+		return _antibody;
+	}
+
+	int copy() const
+	{
+		return _copy;
+	}
+
+	// free antibodies are blue and selectable; fixed ones keep their own colour
+	void setFixedStyle(bool fixed);
+
+	// highlights this copy without giving it a label
+	void highlightQuietly();
 
 	void highlight();
 	virtual void reindex();
 	virtual void render(GLView *gl);
 private:
 	unsigned int _currVersion = 0;
-	const unsigned int &_versionTrack;
+	bool _started = false;
+	Source _source;
 	std::mutex *_mut{};
-	const glm::vec3 &_pos;
 	const std::string _name;
 	std::string _antibody;
-	std::function<void(const std::string &)> _hoverJob;
+	glm::vec4 _baseColour{};
+	int _copy{};
+	std::function<bool(const std::string &, int)> _hoverJob;
+	std::function<void(AbWatch *)> _clickJob;
 	glm::vec3 _last;
 
 	void doThings();

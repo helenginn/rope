@@ -30,6 +30,29 @@ struct Antigen;
 class KdTree;
 class AtomGroup;
 
+/** translucent black faces laid over the mesh (see Mesh::setHeat()). Every
+ *  triangle has its own vertices, so each can have its own opacity, and only
+ *  the frontmost layer is ever blended whichever way it is viewed. */
+class MeshFaces : public SimplePolygon
+{
+public:
+	MeshFaces()
+	{
+		setUsesProjection(true);
+		setVertexShaderFile("assets/shaders/with_matrix.vsh");
+		setFragmentShaderFile("assets/shaders/color_only.fsh");
+		setDisabled(true);
+	}
+
+	// shows just these triangles (three indices each) of `base`, the strong
+	// ones and the faint ones, in black at these opacities
+	void show(const std::vector<Vertex> &base, 
+	          const std::vector<GLuint> &strong, float strongAlpha,
+	          const std::vector<GLuint> &faint, float faintAlpha);
+
+	virtual void render(GLView *gl);
+};
+
 class Mesh : public SimplePolygon
 {
 public:
@@ -40,9 +63,10 @@ public:
 	void refine();
 	void kdTree();
 
-	// colours vertices by heat according to how often each was visited
-	// (vertex index -> count); unvisited vertices keep the base colour
-	void setHeat(const std::map<int, int> &counts);
+	// lays translucent black over every face which touches one of the
+	// vertices of `main` (strongly) or, failing that, of `others` (faintly)
+	void setHeat(const std::map<int, int> &main, 
+	             const std::map<int, int> &others = {});
 	void clearHeat();
 
 	int nearestVertex(const glm::vec3 &v);
@@ -71,6 +95,10 @@ private:
 	std::vector<GLuint> _triangleIdxs;
 	std::vector<GLuint> _lineIdxs;
 	
+	// the mesh's triangles, three indices each, whatever its render mode
+	std::vector<GLuint> triangles() const;
+
+	MeshFaces *_faces{};
 	KdTree *_tree{};
 };
 

@@ -30,6 +30,9 @@ class AbWatch;
 class PosToComp;
 class Positions;
 class MatrixPlot;
+class TextEntry;
+class GhostAb;
+class GhostLine;
 class Text;
 class ResultsView;
 
@@ -42,6 +45,7 @@ public:
 	void refine();
 
 	virtual void interactedWithNothing(bool left, bool hover);
+	virtual void keyPressEvent(SDL_Keycode pressed);
 private:
 	void showMesh(const Competition &competition);
 	void showFiducials(const Competition &comp);
@@ -49,9 +53,27 @@ private:
 	void setMatricesVisible(bool visible);
 	void label(MatrixPlot *plot, float x, float y,
 	           const std::string &text);
+	// "g": type part of an antibody name to highlight matches as you go;
+	// Enter centres on the antibody if only one matches
+	void startSearch();
+	void updateSearch(const std::string &term);
+	void finishSearch();
+	// clears an antibody's highlight unless it is a search match
+	void unhighlight(AbWatch *aw);
+	// keeps one antibody's label, highlights and mesh faces until a click
+	// on empty space (or another antibody) replaces them
+	void pin(AbWatch *aw);
+	void clearSelection();
+	void showGhost(AbWatch *aw);
+	void clearGhost();
+	void showToggleFixed();
 	void viewResults();
-	void selectResults(const std::vector<RefinedResult> &results);
-	void showHeat(const std::string &antibody);
+	void selectResults(const std::string &key,
+	                   const std::vector<RefinedResult> &results);
+	void refreshFixedStyles();
+	// the antibodies go back to showing the live (refining) positions
+	void resumeLive();
+	void showHeat(AbWatch *aw);
 	void clearHeat();
 	void saveResults();
 	void showCompetitionData();
@@ -69,8 +91,12 @@ private:
 	bool _matricesVisible = true;
 	ResultsView *_rv{};
 	std::vector<RefinedResult> _selectedResults;
-	std::vector<size_t> _selectedOps; // symmetry alignment of each
 	std::string _heatAntibody;
+	TextEntry *_search{};
+	AbWatch *_pinned{};
+	GhostAb *_ghost{};
+	GhostLine *_ghostLine{};
+	std::vector<AbWatch *> _searchHits;
 };
 
 #endif

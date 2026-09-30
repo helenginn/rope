@@ -53,7 +53,8 @@ public:
 	// changed) and refreshes both matrices. Must not be called while refining.
 	void reloadData();
 
-	Eigen::MatrixXf &fromModel();
+	// live: from the positions being refined; shown: from the ones on show
+	Eigen::MatrixXf &fromModel(bool shown = false);
 
 	// the score for two antibodies a given distance apart: 1 on top of one
 	// another, decaying (sigmoid, halfway at 2 * radius) with distance.
@@ -90,6 +91,8 @@ public:
 	std::vector<Result> results();
 	// discards the first count results (e.g. those a list is showing)
 	void removeResults(size_t count);
+	// removes every Result for which this is true
+	void removeResults(const std::function<bool(const Result &)> &which);
 	// called (from the refining thread) whenever a new Result is cached
 	void setResultJob(const std::function<void()> &job);
 	// moves the antibodies to a cached Result and updates the model matrix.
@@ -105,7 +108,7 @@ private:
 	float slopeAt(int cycle) const;
 	// the model matrix from the current positions, without refreshing the
 	// display (cheap enough to call every refinement step)
-	void fillModel();
+	void fillModel(bool shown = false);
 	float rmsDifference() const;
 	float error();
 	std::vector<float> allGradients(const std::vector<std::string> &filtered);

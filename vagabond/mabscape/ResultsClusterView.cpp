@@ -240,8 +240,12 @@ void ResultsClusterView::updateHighlight()
 		quad->rescale(halfWidth, fabs(topY - bottomY) / 2.f);
 		quad->setPosition(glm::vec3(centreX, (topY + bottomY) / 2.f,
 		                            minC.z + 0.05f));
+		// box.fsh adds the vertex colour to its texture, and an image-less
+		// Box binds none, so it would sample whatever the last draw left
+		// behind. Black is (0, 0, 0, 1): an alpha of -0.6 comes out as 0.4.
+		quad->setImage("assets/images/black.png");
 		quad->setColour(0.1, 1.0, 0.2);
-		quad->setAlpha(0.4);
+		quad->setAlpha(-0.6);
 		addObject(quad);
 		_highlightQuads.push_back(quad);
 	}

@@ -18,6 +18,8 @@
 
 #include "ContactPoint.h"
 #include "Playground.h"
+#include <algorithm>
+#include <set>
 #include "Positions.h"
 #include "PosToComp.h"
 #include "AbWatch.h"
@@ -25,12 +27,56 @@
 #include "AntibodyOrderingView.h"
 #include "ResultsView.h"
 #include "ResultsClusterView.h"
+#include "ToggleFixedView.h"
+#include "CrossCheckView.h"
+#include "GhostAb.h"
 #include "Mab.h"
 #include <vagabond/gui/elements/Icosahedron.h>
 #include <vagabond/gui/elements/TextButton.h>
 #include <vagabond/gui/elements/Menu.h>
 #include <vagabond/gui/elements/Text.h>
+#include <vagabond/gui/elements/TextEntry.h>
+#include <vagabond/gui/elements/Window.h>
 #include <vagabond/gui/MatrixPlot.h>
+
+// a text entry that reports the text after every key
+class SearchEntry : public TextEntry
+{
+public:
+	SearchEntry(const std::string &text, ButtonResponder *sender)
+	: TextEntry(text, sender) {}
+
+	void setChangedJob(const std::function<void(const std::string &)> &job)
+	{
+		_changed = job;
+	}
+
+	virtual void keyPressed(char key)
+	{
+		TextEntry::keyPressed(key);
+		notify();
+	}
+
+	virtual void keyPressed(SDL_Keycode other)
+	{
+		TextEntry::keyPressed(other);
+
+		if (other != SDLK_RETURN)
+		{
+			notify();
+		}
+	}
+private:
+	void notify()
+	{
+		if (_changed)
+		{
+			_changed(scratch());
+		}
+	}
+
+	std::function<void(const std::string &)> _changed;
+};
 
 Playground::Playground(Scene *prev, Mab &mab) 
 : Scene(prev), Display(prev), _mab(mab)
@@ -65,20 +111,45 @@ void Playground::showFiducials(const Competition &comp)
 	for (AbWatch *aw : _watches)
 	{
 		addIndexResponder(aw);
-		aw->setHoverJob([this, aw](const std::string &ab)
+		aw->setHoverJob([this, aw](const std::string &ab, int copy)
 		{
+			// a clicked antibody stays as it is
+			if (_pinned)
+			{
+				return false;
+			}
+
 			// only one antibody at a time: sliding straight from one onto
 			// another never passes over empty space to clear the last
+			// (its other symmetry copies light up too, with no label)
 			for (AbWatch *other : _watches)
 			{
-				if (other != aw)
+				if (other == aw)
 				{
-					other->setHighlighted(false);
-					other->deleteTemps();
+					continue;
+				}
+
+				other->deleteTemps();
+
+				if (other->antibody() == ab)
+				{
+					other->highlightQuietly();
+				}
+				else
+				{
+					unhighlight(other);
 				}
 			}
 
-			showHeat(ab);
+			clearGhost();
+			showGhost(aw);
+			showHeat(aw);
+			return true;
+		});
+		aw->setClickJob([this](AbWatch *clicked)
+		{
+			clearSelection();
+			pin(clicked);
 		});
 	}
 }
@@ -87,6 +158,13 @@ void Playground::setup()
 {
 	Competition &comp = *_mab.competitions.begin();
 	showMesh(comp);
+
+	// before the antibodies, so that these never hide them from the mouse
+	_ghost = new GhostAb();
+	addObject(_ghost);
+	_ghostLine = new GhostLine();
+	addObject(_ghostLine);
+
 	showFiducials(comp);
 
 	// picks up any results saved in the json
@@ -101,6 +179,11 @@ void Playground::setup()
 		Menu *menu = new Menu(this);
 		menu->addOption("save", [this]() { saveResults(); });
 		menu->addOption("competition data", [this]() { showCompetitionData(); });
+		if (_positions->viewing())
+		{
+			menu->addOption("watch live positions", [this]() { resumeLive(); });
+		}
+		menu->addOption("toggle fixed", [this]() { showToggleFixed(); });
 		if (_matricesVisible)
 		{
 			menu->addOption("hide matrices",
@@ -133,13 +216,216 @@ void Playground::setup()
 	Display::setup();
 }
 
-void Playground::interactedWithNothing(bool left, bool hover)
+void Playground::unhighlight(AbWatch *aw)
 {
-	clearHeat();
+	if (std::find(_searchHits.begin(), _searchHits.end(), aw) == 
+	    _searchHits.end())
+	{
+		aw->setHighlighted(false);
+	}
+}
+
+void Playground::keyPressEvent(SDL_Keycode pressed)
+{
+	// while text is being entered every key, "g" included, goes to the entry;
+	// Display would otherwise take "g" to focus on a residue
+	if (keyResponder())
+	{
+		Mouse2D::keyPressEvent(pressed);
+		return;
+	}
+
+	if (pressed == SDLK_g && !lastModal())
+	{
+		startSearch();
+		return;
+	}
+
+	Display::keyPressEvent(pressed);
+}
+
+void Playground::startSearch()
+{
+	SearchEntry *se = new SearchEntry("search antibody", this);
+	se->setValidationType(TextEntry::None);
+	se->setChangedJob([this](const std::string &term) { updateSearch(term); });
+	se->setReturnJob([this]() { finishSearch(); });
+	se->setCentre(0.5, 0.3);
+	addObject(se);
+	_search = se;
+
+	addMainThreadJob([se]() { se->click(); });
+}
+
+void Playground::updateSearch(const std::string &term)
+{
+	std::vector<AbWatch *> old = _searchHits;
+	_searchHits.clear();
+
+	for (AbWatch *aw : old)
+	{
+		aw->setHighlighted(false);
+	}
+
+	std::string lower = term;
+	std::transform(lower.begin(), lower.end(), lower.begin(), ::tolower);
+
+	if (lower.length() == 0)
+	{
+		return;
+	}
+
+	// a name which is exactly what was typed wins over longer names which
+	// merely contain it (AB4 over AB40)
+	bool exact = false;
+	std::vector<std::pair<AbWatch *, bool>> matches;
+
+	for (AbWatch *aw : _watches)
+	{
+		std::string name = aw->antibody();
+		std::transform(name.begin(), name.end(), name.begin(), ::tolower);
+
+		if (name.find(lower) != std::string::npos)
+		{
+			matches.push_back({aw, name == lower});
+			exact |= (name == lower);
+		}
+	}
+
+	for (const auto &match : matches)
+	{
+		if (!exact || match.second)
+		{
+			_searchHits.push_back(match.first);
+			match.first->setHighlighted(true);
+		}
+	}
+}
+
+void Playground::finishSearch()
+{
+	std::set<std::string> names;
+	for (AbWatch *aw : _searchHits)
+	{
+		names.insert(aw->antibody());
+	}
+
+	// one antibody matched: its first copy
+	bool centre = (names.size() == 1);
+	glm::vec3 where = centre ? _searchHits[0]->centroid() : glm::vec3(0.f);
+
+	if (_search)
+	{
+		removeObject(_search);
+		Window::setDelete(_search);
+		_search = nullptr;
+	}
+
+	// the matches stay highlighted until a click on empty space; a single
+	// antibody is pinned, with its label and mesh faces
+	if (centre)
+	{
+		pin(_searchHits[0]);
+		shiftToCentre(where, 0);
+	}
+}
+
+void Playground::pin(AbWatch *aw)
+{
+	_pinned = aw;
+
+	for (AbWatch *other : _watches)
+	{
+		if (other != aw && other->antibody() == aw->antibody())
+		{
+			other->highlightQuietly();
+		}
+	}
+
+	aw->highlight();
+	showGhost(aw);
+	showHeat(aw);
+}
+
+// for an antibody which has a structure but is not fixed to it just now: a
+// ghost where the structure puts it, snapped to the mesh as it would be if
+// fixed (the symmetry copy nearest to where this
+// one is), and a line to it from where this one is
+void Playground::showGhost(AbWatch *aw)
+{
+	const std::string &name = aw->antibody();
+	std::vector<std::string> known = _positions->structuralAntibodies();
+
+	if (_positions->isFixed(name) || 
+	    std::find(known.begin(), known.end(), name) == known.end())
+	{
+		return;
+	}
+
+	glm::vec3 here = aw->centroid();
+	glm::vec3 target = here;
+	float nearestSq = FLT_MAX;
+	for (const glm::vec3 &copy : _positions->structuralCopies(name, true))
+	{
+		glm::vec3 diff = copy - here;
+		float sq = glm::dot(diff, diff);
+		if (sq < nearestSq)
+		{
+			nearestSq = sq;
+			target = copy;
+		}
+	}
+
+	if (nearestSq < FLT_MAX)
+	{
+		_ghost->show(target);
+		_ghostLine->show(here, target);
+	}
+}
+
+void Playground::clearGhost()
+{
+	_ghost->hide();
+	_ghostLine->hide();
+}
+
+void Playground::clearSelection()
+{
+	_pinned = nullptr;
+	clearGhost();
+
+	std::vector<AbWatch *> hits = _searchHits;
+	_searchHits.clear();
 
 	for (AbWatch *aw : _watches)
 	{
 		aw->setHighlighted(false);
+		aw->deleteTemps();
+	}
+
+	clearHeat();
+}
+
+void Playground::interactedWithNothing(bool left, bool hover)
+{
+	if (!hover)
+	{
+		// a click on empty space lets go of everything
+		clearSelection();
+		return;
+	}
+
+	if (_pinned)
+	{
+		return;
+	}
+
+	clearGhost();
+	clearHeat();
+
+	for (AbWatch *aw : _watches)
+	{
+		unhighlight(aw);
 		aw->deleteTemps();
 	}
 }
@@ -211,68 +497,136 @@ void Playground::showMatrices()
 	_model->setPlot(_mpModel);
 }
 
+// the free/fixed colouring and selectability of the antibodies
+void Playground::refreshFixedStyles()
+{
+	for (AbWatch *aw : _watches)
+	{
+		aw->setFixedStyle(_positions->isFixed(aw->antibody()));
+	}
+}
+
+void Playground::showToggleFixed()
+{
+	if (_model && _model->isRefining())
+	{
+		std::cout << "Stop refining before changing which antibodies are fixed."
+		<< std::endl;
+		return;
+	}
+
+	ToggleFixedView *tfv = new ToggleFixedView(this, *_positions);
+	tfv->setChangedJob([this]()
+	{
+		clearSelection();
+		refreshFixedStyles();
+	});
+	tfv->show();
+}
+
 void Playground::refine()
 {
 	showMatrices();
 	_model->refine();
 }
 
-void Playground::selectResults(const std::vector<RefinedResult> &results)
+void Playground::selectResults(const std::string &key,
+                               const std::vector<RefinedResult> &results)
 {
 	clearHeat();
 	_selectedResults = results;
+
+	if (results.empty())
+	{
+		// let go of the group: back to watching the live positions
+		resumeLive();
+		return;
+	}
+
+	// The antibodies fixed for these results are fixed now, and the rest of
+	// those with a structure are free. Not while refining though: that
+	// would pull the rug from under it, so the set stays as it is.
+	if (!_model->isRefining())
+	{
+		std::vector<std::string> fixed = ResultsView::keyNames(key);
+		for (const std::string &name : _positions->structuralAntibodies())
+		{
+			bool isFixed = (std::find(fixed.begin(), fixed.end(), name) != 
+			                fixed.end());
+			_positions->setFixed(name, isFixed);
+		}
+		refreshFixedStyles();
+	}
+
+	// refinement can carry on behind this, only the matrix follows it
+	showMatrices();
+	_model->showAverage(results);
+}
+
+void Playground::resumeLive()
+{
+	if (!_positions->viewing())
+	{
+		return;
+	}
+
+	_positions->resumeLive();
+	clearSelection();
+
+	if (!_model->isRefining())
+	{
+		_model->fromModel();
+	}
+}
+
+// the cluster nearest to where the hovered symmetry copy actually sits, over
+// the selected group's runs. Going by position rather than by the copy's
+// number matters for a fixed antibody, whose copies sit at their structural
+// positions, which need not line up with the clusters numbered to match.
+void Playground::showHeat(AbWatch *aw)
+{
+	const std::string &antibody = aw->antibody();
+	std::string key = antibody + "#" + std::to_string(aw->copy()) +
+	(_positions->isFixed(antibody) ? "f" : "");
+	if (_selectedResults.empty() || key == _heatAntibody || !_mesh)
+	{
+		return;
+	}
 
 	std::vector<const std::vector<Positions::Placement> *> all;
 	for (const RefinedResult &r : _selectedResults)
 	{
 		all.push_back(&r.placements);
 	}
-	_selectedOps = Positions::alignOperators(all);
 
-	if (results.empty())
+	Positions::Clusters clusters;
+	if (!Positions::cluster(all, antibody, clusters))
 	{
 		return;
 	}
 
-	if (_model->isRefining())
+	glm::vec3 where = aw->centroid();
+	size_t nearest = 0; float nearestSq = FLT_MAX;
+	for (size_t k = 0; k < clusters.centres.size(); k++)
 	{
-		std::cout << "Stop refining before moving to a group's average."
-		<< std::endl;
-		return;
-	}
-
-	showMatrices();
-	_model->showAverage(results);
-}
-
-// how often the antibody sat on each mesh vertex across the selected group
-void Playground::showHeat(const std::string &antibody)
-{
-	if (_selectedResults.empty() || antibody == _heatAntibody || !_mesh)
-	{
-		return;
-	}
-
-	std::map<int, int> counts;
-	for (size_t i = 0; i < _selectedResults.size(); i++)
-	{
-		// the copy that lines up with the rest under the best symmetry
-		// operator, rather than always the first
-		for (const Positions::Placement &pl : _selectedResults[i].placements)
+		glm::vec3 diff = clusters.centres[k] - where;
+		float sq = glm::dot(diff, diff);
+		if (sq < nearestSq)
 		{
-			size_t op = _selectedOps[i];
-			if (pl.name != antibody || pl.copies.empty())
-			{
-				continue;
-			}
-
-			op = (op < pl.copies.size() ? op : 0);
-			counts[_mesh->nearestVertex(pl.copies[op])]++;
+			nearestSq = sq;
+			nearest = k;
 		}
 	}
 
-	_heatAntibody = antibody;
-	_mesh->setHeat(counts);
+	std::map<int, int> counts, others;
+	for (size_t p = 0; p < clusters.points.size(); p++)
+	{
+		bool mine = (clusters.member[p] == nearest);
+		(mine ? counts : others)[_mesh->nearestVertex(clusters.points[p])]++;
+	}
+
+	_heatAntibody = key;
+	_mesh->setHeat(counts, others);
 }
 
 void Playground::clearHeat()
@@ -289,38 +643,57 @@ void Playground::viewResults()
 {
 	if (!_rv)
 	{
+		// refinement can carry on behind this: the antibodies stop following
+		// the live positions and show the result instead
 		auto apply = [this](const PosToComp::Result &result)
 		{
-			if (_model->isRefining())
-			{
-				std::cout << "Stop refining before viewing a result."
-				<< std::endl;
-				return;
-			}
-
 			showMatrices();
 			_model->showResult(result);
 		};
 
 		_rv = new ResultsView(this, apply);
-		_rv->setClusterJob([this](const std::vector<PosToComp::Result> &results)
+
+		// the groups saved in the json
+		for (const ResultGroup &group : _mab.competitions.begin()->groups)
+		{
+			_rv->addGroup(group.key, group.name, group.results);
+		}
+
+		_rv->setClusterJob([this](const std::string &key,
+		                          const std::vector<PosToComp::Result> &results)
 		{
 			ResultsClusterView *cv = new ResultsClusterView(this, results);
-			cv->setGroupJob([this](const std::vector<PosToComp::Result> &picked)
+			cv->setGroupJob([this, key](const std::vector<PosToComp::Result> &picked)
 			{
-				_rv->addGroup("best", picked);
+				_rv->addGroup(key, "best", picked);
 			});
 			cv->show();
 		});
 
-		_rv->setSelectJob([this](const std::vector<RefinedResult> &results)
+		_rv->setCrossCheckJob([this](const std::string &key,
+		                             const std::string &name,
+		                             const std::vector<PosToComp::Result> &results)
 		{
-			selectResults(results);
+			CrossCheckView::Stats stats = CrossCheckView::compute(*_positions,
+			                                                      key, results);
+			std::string title = name + " - " + (key.length() ? 
+			"fixed abs " + key : "no fixed abs");
+			CrossCheckView *ccv = new CrossCheckView(this, title, stats);
+			ccv->show();
 		});
 
-		_rv->setDeleteJob([this](size_t count)
+		_rv->setSelectJob([this](const std::string &key,
+		                         const std::vector<RefinedResult> &results)
 		{
-			_model->removeResults(count);
+			selectResults(key, results);
+		});
+
+		_rv->setDeleteJob([this](const std::string &key, size_t count)
+		{
+			_model->removeResults([key](const PosToComp::Result &r)
+			{
+				return ResultsView::bucketKey(r) == key;
+			});
 			_rv->update(_model->results());
 		});
 
@@ -350,6 +723,12 @@ void Playground::saveResults()
 	// its lock) here, on the main thread, so a refinement in progress can't
 	// race the json being written.
 	_mab.competitions.begin()->results = _model->results();
+
+	// the groups only change once the list has been opened
+	if (_rv)
+	{
+		_mab.competitions.begin()->groups = _rv->groups();
+	}
 	_mab.save();
 }
 

@@ -144,6 +144,8 @@ struct Competition
 
 	// cached refinements (see PosToComp), saved to and loaded from json
 	std::vector<RefinedResult> results;
+	// named selections of those results, such as the best picks
+	std::vector<ResultGroup> groups;
 
 	std::string validate(const Antigens &antigens) const;
 
@@ -165,6 +167,7 @@ inline void to_json(json &j, const Competition &c)
 	j["scale"] = c.scale;
 	j["antigen"] = c.antigen;
 	j["results"] = c.results;
+	j["groups"] = c.groups;
 }
 
 inline void from_json(const json &j, Competition &c)
@@ -188,6 +191,11 @@ inline void from_json(const json &j, Competition &c)
 	if (j.count("results"))
 	{
 		c.results = j.at("results").get<std::vector<RefinedResult>>();
+	}
+
+	if (j.count("groups"))
+	{
+		c.groups = j.at("groups").get<std::vector<ResultGroup>>();
 	}
 }
 

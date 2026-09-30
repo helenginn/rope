@@ -66,7 +66,7 @@ void PosToComp::reloadData()
 	fromModel();
 }
 
-void PosToComp::fillModel()
+void PosToComp::fillModel(bool shown)
 {
 	auto convert = [this](const float &f)
 	{
@@ -78,13 +78,13 @@ void PosToComp::fillModel()
 	for (auto it = names.begin(); it != names.end(); it++)
 	{
 		const std::string &left = *it;
-		const glm::vec3 &lpos = _positions(left);
+		const glm::vec3 &lpos = _positions(left, nullptr, shown);
 
 		n = m;
 		for (auto jt = it + 1; jt != names.end(); jt++)
 		{
 			const std::string &right = *jt;
-			const glm::vec3 &rpos = _positions(right, &lpos);
+			const glm::vec3 &rpos = _positions(right, &lpos, shown);
 
 			float dist = glm::length(rpos - lpos);
 			float score = convert(dist);
@@ -99,9 +99,9 @@ void PosToComp::fillModel()
 	}
 }
 
-Eigen::MatrixXf &PosToComp::fromModel()
+Eigen::MatrixXf &PosToComp::fromModel(bool shown)
 {
-	fillModel();
+	fillModel(shown);
 
 	if (_plot)
 	{
@@ -417,6 +417,13 @@ void PosToComp::removeResults(size_t count)
 	_results.erase(_results.begin(), _results.begin() + count);
 }
 
+void PosToComp::removeResults(const std::function<bool(const Result &)> &which)
+{
+	std::unique_lock<std::mutex> lock(_resultsMutex);
+	_results.erase(std::remove_if(_results.begin(), _results.end(), which),
+	               _results.end());
+}
+
 void PosToComp::setResultJob(const std::function<void()> &job)
 {
 	std::unique_lock<std::mutex> lock(_resultsMutex);
@@ -425,8 +432,13 @@ void PosToComp::setResultJob(const std::function<void()> &job)
 
 void PosToComp::showResult(const Result &result)
 {
-	_positions.apply(result.placements);
-	fromModel();
+	_positions.view(result.placements);
+
+	// while refining, the model matrix carries on showing the live positions
+	if (!_refining)
+	{
+		fromModel(true);
+	}
 }
 
 void PosToComp::showAverage(const std::vector<Result> &results)
@@ -437,8 +449,12 @@ void PosToComp::showAverage(const std::vector<Result> &results)
 		all.push_back(&r.placements);
 	}
 
-	_positions.applyAverage(all);
-	fromModel();
+	_positions.viewAverage(all);
+
+	if (!_refining)
+	{
+		fromModel(true);
+	}
 }
 
 void PosToComp::stopRefining()

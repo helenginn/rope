@@ -30,6 +30,12 @@
 #include <vagabond/gui/elements/AskForText.h>
 #include <vagabond/core/SequenceComparison.h>
 
+// entities with less sequence identity than this to a chain are not offered
+static const float MIN_IDENTITY = 0.10;
+
+// more entries than this and the legend is squashed to fit
+static const size_t LEGEND_FULL_SIZE = 12;
+
 AssignChains::AssignChains(Scene *parent, 
                            Model &model, 
                            ColourMap &colours,
@@ -148,6 +154,12 @@ std::function<void()> AssignChains::operator()()
 			new SequenceComparison(ch->fullSequence(), trial);
 			                 
 			float match = sc->match();
+
+			// nothing like this chain: not worth offering
+			if (match < MIN_IDENTITY)
+			{
+				continue;
+			}
 			
 			std::string msg = "assign as " + ent->name();
 			msg += " (" + f_to_str(match * 100, 1) + "% alignment)";
@@ -169,22 +181,31 @@ std::function<void()> AssignChains::operator()()
 		EntityManager *m = Environment::entityManager();
 		std::vector<Entity *> entities = m->entities();
 
+		// up to a dozen entries are shown at full size, beyond that the
+		// circles, text and spacing all shrink to take the same room
+		float scale = 1.f;
+		if (entities.size() > LEGEND_FULL_SIZE)
+		{
+			scale = (float)LEGEND_FULL_SIZE / (float)entities.size();
+		}
+
 		Box *box = new Box();
 		float top = 0;
 		for (Entity *const &ent : entities)
 		{
 			Image *image = new Image("assets/images/circle.png");
-			image->resize(0.05);
+			image->resize(0.05 * scale);
 			image->setLeft(0, top);
 			glm::vec3 colour = colours->colour_for(ent->name());
 			image->setColour(colour.x, colour.y, colour.z);
 			box->addObject(image);
 
 			Text *text = new Text(ent->name());
+			text->resize(scale);
 			text->setRight(-0.01, top);
 			box->addObject(text);
 			
-			top += 0.07;
+			top += 0.07 * scale;
 		}
 		return box;
 	};

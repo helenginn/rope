@@ -39,12 +39,13 @@ public:
 	}
 };
 
-AbWatch::AbWatch(const SimplePolygon &other, const unsigned int &version_track, 
-                 std::mutex *mut, const glm::vec3 &pos, const std::string &name)
-: _versionTrack(version_track), _mut(mut), _pos(pos), _name(name)
+AbWatch::AbWatch(const SimplePolygon &other, const Source &source, 
+                 std::mutex *mut, const std::string &name)
+: _source(source), _mut(mut), _name(name)
 {
 	_vertices = other.vertices();
 	_indices = other.indices();
+	_baseColour = (_vertices.size() ? _vertices[0].color : glm::vec4(1.f));
 	_hc = {0.5, 0.5, 0.9};
 	_selectionResize = 1.3;
 
@@ -62,13 +63,17 @@ void AbWatch::doThings()
 		return;
 	}
 
-	if (_currVersion >= _versionTrack)
+	glm::vec3 where;
+	unsigned int version = _source(where);
+
+	if (_started && version == _currVersion)
 	{
 		return;
 	}
-	
-	_currVersion = _versionTrack;
-	_last = _pos;
+
+	_started = true;
+	_currVersion = version;
+	_last = where;
 	if (_last.x == _last.x)
 	{
 		setPosition(_last);
@@ -86,12 +91,42 @@ void AbWatch::reindex()
 	}
 }
 
-void AbWatch::highlight()
+void AbWatch::setFixedStyle(bool fixed)
+{
+	// a highlighted copy would bring its old colours back when let go
+	if (isSelected())
+	{
+		setHighlighted(false);
+	}
+
+	setSelectable(!fixed);
+
+	if (fixed)
+	{
+		for (Vertex &v : _vertices)
+		{
+			v.color = _baseColour;
+		}
+	}
+	else
+	{
+		setColour(0.2, 0.2, 0.6);
+	}
+
+	forceRender(true, false);
+}
+
+void AbWatch::highlightQuietly()
 {
 	if (isSelectable())
 	{
 		setHighlighted(true);
 	}
+}
+
+void AbWatch::highlight()
+{
+	highlightQuietly();
 
 	// already labelled: don't stack another label on every mouse move
 	if (_temps.size())
@@ -108,12 +143,16 @@ void AbWatch::interacted(int idx, bool hover, bool left)
 {
 	if (hover)
 	{
-		highlight();
-
-		if (_hoverJob)
+		if (_hoverJob && !_hoverJob(_antibody, _copy))
 		{
-			_hoverJob(_antibody);
+			return;
 		}
+
+		highlight();
+	}
+	else if (left && _clickJob)
+	{
+		_clickJob(this);
 	}
 }
 

@@ -89,6 +89,14 @@ void FiducialSetup::chooseName()
 void FiducialSetup::refresh()
 {
 	deleteTemps();
+
+	// nothing to choose between, so fill it in for any fiducial (including
+	// ones added with "+" or loaded without one)
+	if (_antigens.size() == 1 && fiducial().antigen.length() == 0)
+	{
+		fiducial().antigen = _antigens.front().title;
+	}
+
 	chooseName();
 	choosePDB();
 	assignChains();
