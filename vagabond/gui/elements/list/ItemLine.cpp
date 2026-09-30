@@ -16,6 +16,7 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
+#include <algorithm>
 #include <vagabond/gui/elements/TextEntry.h>
 #include <vagabond/gui/elements/TextButton.h>
 #include <vagabond/gui/elements/GLView.h>
@@ -50,6 +51,50 @@ ItemLine::ItemLine(LineGroup *group, Item *item,
 	_item->setResponder(this);
 }
 
+size_t ItemLine::nameLines() const
+{
+	const std::string &name = _item->displayName();
+	return std::count(name.begin(), name.end(), '\n') + 1;
+}
+
+float ItemLine::firstLineShift()
+{
+	size_t lines = nameLines();
+	if (lines < 2 || !_content)
+	{
+		return 0.f;
+	}
+
+	// as in LineGroup, a height in screen fractions is half the GL height
+	float height = _content->maximalHeight() / 2;
+	// less a smidge, found by eye, to sit level with the text
+	return -height * (float)(lines - 1) / (float)(2 * lines) - 0.005f;
+}
+
+void ItemLine::balanceMarker(float x, float y)
+{
+	if (_balance)
+	{
+		removeObject(_balance);
+		delete _balance;
+		_balance = nullptr;
+	}
+
+	float shift = firstLineShift();
+	if (shift == 0.f)
+	{
+		return;
+	}
+
+	// the marker is at y + shift: a mirror image of that about y
+	Image *image = new Image("assets/images/dot.png");
+	image->resize(0.01);
+	image->setLeft(x, y - shift);
+	image->setDisabled(true);
+	addObject(image);
+	_balance = image;
+}
+
 void ItemLine::addBranch()
 {
 	size_t depth = _item->depth();
@@ -63,9 +108,10 @@ void ItemLine::addBranch()
 
 	Image *image = new Image("assets/images/dot.png");
 	image->resize(0.01);
-	image->setLeft(branch_indent, 0.0);
+	image->setLeft(branch_indent, firstLineShift());
 	addObject(image);
 	_dot = image;
+	balanceMarker(branch_indent, 0.0);
 }
 
 void ItemLine::turnArrow()
@@ -160,7 +206,7 @@ void ItemLine::addArrow()
 		// landing it far from (previously: on top of, before an earlier,
 		// incomplete fix to this same issue) the text.
 		glm::vec2 contentXY = _content ? _content->xy() : glm::vec2(0.f);
-		b->setLeft(contentXY.x - _unitHeight, contentXY.y);
+		b->setLeft(contentXY.x - _unitHeight, contentXY.y + firstLineShift());
 
 		auto toggle_button = [this]()
 		{
@@ -171,6 +217,7 @@ void ItemLine::addArrow()
 //		b->setReturnTag("toggle_" + _item->tag());
 		b->setReturnJob(toggle_button);
 		addObject(b);
+		balanceMarker(contentXY.x - _unitHeight, contentXY.y);
 		_displayCollapse = false;
 		_triangle = b;
 		turnArrow();
@@ -200,7 +247,9 @@ void ItemLine::replaceContent()
 	}
 
 	_content = displayRenderable(_group);
-	_unitHeight = _content->maximalHeight() / 4;
+	// the height of one line, so that a name broken over several lines does
+	// not indent itself and its children further
+	_unitHeight = _content->maximalHeight() / 4 / nameLines();
 
 	size_t depth = _item->depth();
 
