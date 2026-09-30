@@ -50,6 +50,12 @@ private:
 	void growOrShrinkBorder(ArbitraryMap &map, int dir);
 	void marchingCubes();
 	void normalsFromLines();
+
+	std::string cachePath();
+	bool loadCache();
+	void saveCache();
+	bool _loadedFromCache = false;
+
 	Antigen &_antigen;
 
 	AtomGroup *_atoms{};

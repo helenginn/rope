@@ -240,6 +240,16 @@ bool file_exists(const std::string &name)
 	return found;
 }
 
+time_t file_mod_time(const std::string &name)
+{
+	struct stat buffer;
+	if (stat(name.c_str(), &buffer) != 0)
+	{
+		return 0;
+	}
+	return buffer.st_mtime;
+}
+
 std::string get_file_contents(std::string filename)
 {
 	std::ifstream in(filename, std::ios::in | std::ios::binary);

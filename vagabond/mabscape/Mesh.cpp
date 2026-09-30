@@ -23,13 +23,133 @@
 #include <vagabond/core/AtomGroup.h>
 #include <vagabond/core/matrix_functions.h>
 #include <vagabond/utils/KdTree.h>
+#include <vagabond/utils/FileReader.h>
+#include <vagabond/utils/glm_json.h>
+#include <fstream>
 
 Mesh::Mesh(Antigen &antigen) : _antigen(antigen)
 {
 	setUsesProjection(true);
 	setVertexShaderFile("assets/shaders/with_matrix.vsh");
 	setFragmentShaderFile("assets/shaders/color_only.fsh");
-	marchingCubes();
+
+	if (!loadCache())
+	{
+		marchingCubes();
+	}
+}
+
+std::string Mesh::cachePath()
+{
+	std::string source = _antigen.model.filename();
+	if (source.length() == 0)
+	{
+		return "";
+	}
+
+	return source + ".mesh_cache.json";
+}
+
+bool Mesh::loadCache()
+{
+	std::string source = _antigen.model.filename();
+	std::string path = cachePath();
+	if (path.length() == 0 || !file_exists(path))
+	{
+		return false;
+	}
+
+	std::ifstream file(path);
+	if (!file)
+	{
+		return false;
+	}
+
+	json data;
+	try
+	{
+		file >> data;
+	}
+	catch (const std::exception &e)
+	{
+		std::cout << "Could not parse mesh cache " << path << ": "
+		<< e.what() << std::endl;
+		return false;
+	}
+
+	std::string cached_source = data.value("source_filename", "");
+	time_t cached_mtime = data.value("source_mtime", (time_t)0);
+
+	if (cached_source != source || cached_mtime != file_mod_time(source))
+	{
+		std::cout << "Mesh cache for " << source
+		<< " is out of date, recalculating" << std::endl;
+		return false;
+	}
+
+	std::vector<Vertex> verts;
+	verts.reserve(data["vertices"].size());
+	for (const json &v : data["vertices"])
+	{
+		Vertex vertex{};
+		vertex.pos = v.at("pos").get<glm::vec3>();
+		vertex.normal = v.at("normal").get<glm::vec3>();
+		vertex.color = glm::vec4(0.5, 0.5, 0.8, 1.0);
+		verts.push_back(vertex);
+	}
+
+	_vertices = verts;
+	_indices = data["indices"].get<std::vector<GLuint>>();
+
+	// marchingCubes() leaves the live (uncached) mesh in GL_LINES mode -
+	// refine()'s triangulate() call is a no-op in that mode (it bails
+	// out immediately if _renderType == GL_LINES), so the cached
+	// _indices are still line pairs, not a triangle list. Without this,
+	// _renderType defaults to GL_TRIANGLES and those line pairs get
+	// misinterpreted as (garbled, opaque) triangles.
+	_renderType = GL_LINES;
+
+	forceRender(true, true);
+	_loadedFromCache = true;
+
+	std::cout << "Loaded cached mesh for " << source << std::endl;
+	return true;
+}
+
+void Mesh::saveCache()
+{
+	std::string source = _antigen.model.filename();
+	std::string path = cachePath();
+	if (path.length() == 0)
+	{
+		return;
+	}
+
+	json data;
+	data["source_filename"] = source;
+	data["source_mtime"] = file_mod_time(source);
+
+	json verts = json::array();
+	for (const Vertex &v : _vertices)
+	{
+		json vj;
+		vj["pos"] = v.pos;
+		vj["normal"] = v.normal;
+		verts.push_back(vj);
+	}
+	data["vertices"] = verts;
+	data["indices"] = _indices;
+
+	std::ofstream file;
+	file.open(path);
+	if (!file)
+	{
+		std::cout << "Could not write mesh cache to " << path << std::endl;
+		return;
+	}
+	file << data.dump(1);
+	file << std::endl;
+	file.close();
 }
 
 AtomGroup *Mesh::atoms()
@@ -444,6 +564,11 @@ void Mesh::marchingCubes()
 
 void Mesh::refine()
 {
+	if (_loadedFromCache)
+	{
+		return;
+	}
+
 	auto loop = [this](bool planar)
 	{
 		while (true)
@@ -460,6 +585,8 @@ void Mesh::refine()
 	loop(true);
 	loop(false);
 	triangulate();
+
+	saveCache();
 }
 
 void Mesh::kdTree()

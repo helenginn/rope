@@ -11,6 +11,7 @@
 
 #include <sstream>
 
+#include <ctime>
 #include <iostream>
 #include <string>
 #include <vector>
@@ -21,6 +22,9 @@ std::vector<std::string> split(const std::string &s, char delim);
 void check_path_and_make(std::string &path);
 bool file_exists(const std::string& name);
 bool is_directory(const std::string &name);
+
+/** returns the file's last-modified time, or 0 if it does not exist */
+time_t file_mod_time(const std::string &name);
 void escape_filename(std::string &file);
 
 std::string getPath(std::string whole);
