@@ -122,8 +122,39 @@ void ResultsPCAView::setPoints(const std::vector<glm::vec3> &points,
 		}
 	}
 
+	// the numbers the mouse picks points out by
+	reindex();
 	rebufferVertexData();
 	forceRender();
+}
+
+bool ResultsPCAView::rowOf(int idx, size_t &row)
+{
+	if (idx < 0 || idx >= (int)vertexCount())
+	{
+		return false;
+	}
+
+	row = vertexCount() - 1 - idx;
+	return true;
+}
+
+void ResultsPCAView::selected(int idx, bool inverse)
+{
+	size_t row;
+	if (_select && rowOf(idx, row))
+	{
+		_select(row, inverse);
+	}
+}
+
+void ResultsPCAView::interacted(int idx, bool hover, bool left)
+{
+	size_t row;
+	if (!hover && left && _click && rowOf(idx, row))
+	{
+		_click(row);
+	}
 }
 
 void ResultsPCAView::setStarred(const std::vector<size_t> &starred)

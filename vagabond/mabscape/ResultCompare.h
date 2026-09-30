@@ -32,4 +32,27 @@ float compareResults(const PosToComp::Result &left,
                      const PosToComp::Result &right,
                      float radius = 11.f);
 
+/** The other way to compare Results. Each antibody's positions in all the
+ *  Results are divided into a cluster for each symmetry operator (see
+ *  Positions::cluster()). In each Result, the vector from the centre of a
+ *  cluster to where the antibody sits in it says which way, and how far, that
+ *  Result pulls that symmetry-related antibody from the average. */
+struct VectorModel
+{
+	// for each antibody, how sharp its clusters are (Positions::silhouette())
+	std::vector<float> weights;
+	// [antibody][result][cluster]: zero where a result has no position there
+	std::vector<std::vector<std::vector<glm::vec3>>> vectors;
+};
+
+VectorModel buildVectorModel(const std::vector<PosToComp::Result> &results);
+
+/** How alike two Results pull their antibodies: for each symmetry operator,
+ *  the dot product of their vectors divided by the product of their lengths
+ *  (the cosine of the angle between them, so -1 to 1 whatever the size),
+ *  averaged over the operators, then over the antibodies weighted by the
+ *  sharpness of each one's clusters. Fixed antibodies are left out, having no
+ *  vectors. */
+float compareByVectors(const VectorModel &model, size_t left, size_t right);
+
 #endif

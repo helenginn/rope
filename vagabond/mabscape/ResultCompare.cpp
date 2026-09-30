@@ -58,3 +58,95 @@ float compareResults(const PosToComp::Result &left,
 
 	return (count ? sum / count : 0.f);
 }
+
+VectorModel buildVectorModel(const std::vector<PosToComp::Result> &results)
+{
+	VectorModel model;
+
+	if (results.empty())
+	{
+		return model;
+	}
+
+	std::vector<const std::vector<Positions::Placement> *> all;
+	for (const PosToComp::Result &r : results)
+	{
+		all.push_back(&r.placements);
+	}
+
+	for (const Positions::Placement &first : *all[0])
+	{
+		Positions::Clusters clusters;
+		if (!Positions::cluster(all, first.name, clusters))
+		{
+			continue;
+		}
+
+		size_t n = clusters.centres.size();
+		std::vector<std::vector<glm::vec3>> sums(results.size(), 
+		std::vector<glm::vec3>(n, glm::vec3(0.f)));
+		std::vector<std::vector<int>> counts(results.size(), 
+		std::vector<int>(n, 0));
+
+		for (size_t p = 0; p < clusters.points.size(); p++)
+		{
+			size_t r = clusters.resultOf[p];
+			size_t k = clusters.member[p];
+			sums[r][k] += clusters.points[p] - clusters.centres[k];
+			counts[r][k]++;
+		}
+
+		// should a result put two copies in one cluster, their mean
+		for (size_t r = 0; r < results.size(); r++)
+		{
+			for (size_t k = 0; k < n; k++)
+			{
+				if (counts[r][k] > 1)
+				{
+					sums[r][k] /= (float)counts[r][k];
+				}
+			}
+		}
+
+		model.weights.push_back(Positions::silhouette(clusters));
+		model.vectors.push_back(sums);
+	}
+
+	return model;
+}
+
+float compareByVectors(const VectorModel &model, size_t left, size_t right)
+{
+	double total = 0;
+	double weights = 0;
+
+	for (size_t a = 0; a < model.weights.size(); a++)
+	{
+		float weight = model.weights[a];
+		if (weight <= 0)
+		{
+			continue;
+		}
+
+		const std::vector<glm::vec3> &l = model.vectors[a][left];
+		const std::vector<glm::vec3> &r = model.vectors[a][right];
+
+		// the dot product over the product of the lengths: the cosine of the
+		// angle between the two pulls, whatever their size. A pull of nothing
+		// has no direction to agree with, so it scores 0.
+		double dots = 0;
+		for (size_t k = 0; k < l.size(); k++)
+		{
+			float lengths = glm::length(l[k]) * glm::length(r[k]);
+			if (lengths > 1e-12f)
+			{
+				dots += glm::dot(l[k], r[k]) / lengths;
+			}
+		}
+
+		total += weight * dots / l.size();
+		weights += weight;
+	}
+
+	return (weights > 0 ? total / weights : 0.f);
+}

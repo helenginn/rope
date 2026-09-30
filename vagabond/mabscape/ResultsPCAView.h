@@ -21,6 +21,7 @@
 
 #include <vagabond/gui/PointyView.h>
 #include <vagabond/utils/Eigen/Dense>
+#include <functional>
 #include <set>
 #include <vector>
 
@@ -51,6 +52,28 @@ public:
 	// Kept across setPoints() calls; must be called from the main thread.
 	void setStarred(const std::vector<size_t> &starred);
 
+	// Selection, as for the other point views: box selections and clicks
+	// on points come to these. Points are numbered as the rows they stand for.
+	// row, then whether it is taken out of the selection instead of put in
+	void setSelectJob(const std::function<void(size_t, bool)> &job)
+	{
+		_select = job;
+	}
+
+	// a click on one of the points, by row
+	void setClickJob(const std::function<void(size_t)> &job)
+	{
+		_click = job;
+	}
+
+	virtual bool selectable() const
+	{
+		return true;
+	}
+
+	virtual void selected(int idx, bool inverse);
+	virtual void interacted(int idx, bool hover, bool left);
+
 	virtual void makePoints() {};
 	virtual void updatePoints() {};
 protected:
@@ -62,6 +85,10 @@ private:
 	// offset in normalised device coordinates (-1 to 1 across the screen)
 	float _shift{0.5f};
 	std::set<size_t> _starred;
+	std::function<void(size_t, bool)> _select;
+	std::function<void(size_t)> _click;
+	// points are added last row first, so the best are drawn on top
+	bool rowOf(int idx, size_t &row);
 };
 
 #endif

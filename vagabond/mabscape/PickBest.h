@@ -20,6 +20,7 @@
 #define __vagabond__PickBest__
 
 #include <vagabond/utils/Eigen/Dense>
+#include <set>
 #include <vector>
 
 /** Chooses a set of mutually similar, well-scoring results.
@@ -36,9 +37,13 @@
  *  @param scores one per row of the matrix, lower is better
  *  @param fraction share of all the results to choose (at least two are
  *  chosen, if there are that many)
+ *  @param locked results which are always chosen, and never swapped out. If
+ *  there are any, the rest are chosen for being most like these, instead of
+ *  most like each other
  *  @return the indices of the chosen results, in ascending order */
 std::vector<size_t> pickBest(const Eigen::MatrixXf &similarity,
                              const std::vector<float> &scores,
-                             float fraction);
+                             float fraction,
+                             const std::set<size_t> &locked = {});
 
 #endif

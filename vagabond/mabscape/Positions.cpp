@@ -422,6 +422,43 @@ bool Positions::cluster(const std::vector<const std::vector<Placement> *> &all,
 	return true;
 }
 
+float Positions::silhouette(const Clusters &clusters)
+{
+	size_t n = clusters.centres.size();
+	if (n < 2)
+	{
+		return 1.f;
+	}
+
+	if (clusters.points.empty())
+	{
+		return 0.f;
+	}
+
+	double total = 0;
+	for (size_t p = 0; p < clusters.points.size(); p++)
+	{
+		size_t own = clusters.member[p];
+		float a = glm::length(clusters.points[p] - clusters.centres[own]);
+		float b = FLT_MAX;
+
+		for (size_t k = 0; k < n; k++)
+		{
+			if (k != own)
+			{
+				b = std::min(b, glm::length(clusters.points[p] - 
+				                            clusters.centres[k]));
+			}
+		}
+
+		float biggest = std::max(a, b);
+		total += (biggest > 0 ? (b - a) / biggest : 0.f);
+	}
+
+	float mean = total / clusters.points.size();
+	return std::min(1.f, std::max(0.f, mean));
+}
+
 void Positions::applyAverage(const std::vector<const std::vector<Placement> *> 
                              &all)
 {

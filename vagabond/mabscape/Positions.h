@@ -115,6 +115,15 @@ public:
 	static bool cluster(const std::vector<const std::vector<Placement> *> &all,
 	                    const std::string &name, Clusters &out);
 
+	// How sharply the clusters are separated, from 0 to 1: the silhouette of
+	// every position, (b - a) / max(a, b) with a its distance to its own
+	// cluster centre and b to the nearest other one, averaged and with
+	// anything negative made 0. (Distances to the centres stand in for the
+	// usual mean distances to every member, which would be quadratic in the
+	// number of positions.) With a single cluster there is nothing to tell
+	// apart, which counts as 1.
+	static float silhouette(const Clusters &clusters);
+
 	// For each non-fixed antibody, all its positions in these snapshots (every
 	// symmetry copy of every result) are divided into as many clusters as
 	// there are symmetry operators, starting from the first snapshot's
