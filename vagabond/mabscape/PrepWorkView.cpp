@@ -17,6 +17,7 @@
 // Please email: vagabond @ hginn.co.uk for more details.
 
 #include "AntibodyOrderingView.h"
+#include "Playground.h"
 #include "ContactPoint.h"
 #include "AlignmentView.h"
 #include "PrepWorkView.h"
@@ -39,8 +40,22 @@ void PrepWorkView::setup()
 {
 	addTitle("Preparing workspace");
 
+	// an exception escaping a worker thread would end the whole program
 	DoJob *doJob = new DoJob([this]() 
-	                         { prepareAntigens(_mab.antigens); }, true);
+	{
+		try
+		{
+			prepareAntigens(_mab.antigens);
+		}
+		catch (const std::exception &err)
+		{
+			std::cout << "Preparation failed: " << err.what() << std::endl;
+			PrepMessage message = {std::string("Preparation stopped: ") + 
+			                       err.what(), false};
+			message.failure = true;
+			_messages.push_back(message);
+		}
+	}, true);
 	
 	auto displayResults = [this]()
 	{
@@ -57,6 +72,21 @@ void PrepWorkView::setup()
 		Mab *mab = &_mab;
 		auto next = [mab](Scene *scene)
 		{
+			// reordered before (and kept)? then straight on to the playground;
+			// the ordering can still be changed from its menu
+			bool ordered = true;
+			for (const Competition &comp : mab->competitions)
+			{
+				ordered &= (comp.favoured_ordering.size() > 0);
+			}
+
+			if (ordered && mab->competitions.size())
+			{
+				Playground *playground = new Playground(scene, *mab);
+				playground->show();
+				return;
+			}
+
 			AntibodyOrderingView *aov = new AntibodyOrderingView(scene, *mab);
 			aov->show();
 		};
@@ -92,81 +122,117 @@ void PrepWorkView::prepareAntigens(Antigens &antigens)
 			setInformation("Aligning " + fid.name);
 			if (fid.antigen == antigen.title)
 			{
-				// worked out before, from the same models? then no need to
-				// load them or go through it all again
-				ContactPoint *contact = new ContactPoint(fid, _mab.antigens, 
-				                                         false);
-				bool saved = contact->restore(fid.alignment);
 				DisplayUnit *unit = nullptr;
-
-				if (!saved)
+				bool loaded = false;
+				try
 				{
-					delete contact;
+					// worked out before, from the same models? then no need to
+					// load them or go through it all again
+					ContactPoint *contact = new ContactPoint(fid, _mab.antigens, 
+					                                         false);
+					bool saved = contact->restore(fid.alignment);
 
-					fid.model.load();
-					unit = new DisplayUnit(this);
-					unit->loadAtoms(fid.model.currentAtoms());
-					addMainThreadJob
-					([this, unit]()
-					 {
-						unit->displayAtoms();
-						unit->startWatch();
-						addDisplayUnit(unit);
-					 });
-
-					contact = new ContactPoint(fid, _mab.antigens);
-					contact->findMapping();
-					fid.alignment = contact->alignmentJson();
-				}
-
-				fid.contact = contact;
-
-				int total = contact->transforms().size();
-				_messages.push_back({"Mapped " + std::to_string(total) + 
-				" orientation" + (total == 1 ? "" : "s") + 
-				" for antibody " + fid.name + (saved ? " (saved)" : ""), 
-				false});
-
-				// a poor alignment of any of them
-				for (const ContactPoint::Warning &warning : contact->warnings())
-				{
-					PrepMessage message = {warning.text, true};
-					Antigen *ag = &antigen; Fiducial *fd = &fid;
-					glm::mat4x4 tr = warning.transform;
-					std::string text = warning.text;
-					message.show = [ag, fd, tr, text](Scene *scene)
+					if (!saved)
 					{
-						AlignmentView *av = new AlignmentView(scene, *ag, *fd,
-						                                      tr, text);
-						av->show();
-					};
-					_messages.push_back(message);
-				}
+						delete contact;
 
-				if (saved)
-				{
+						fid.model.load();
+						loaded = true;
+						unit = new DisplayUnit(this);
+						unit->loadAtoms(fid.model.currentAtoms());
+						addMainThreadJob
+						([this, unit]()
+						 {
+							unit->displayAtoms();
+							unit->startWatch();
+							addDisplayUnit(unit);
+						 });
+
+						contact = new ContactPoint(fid, _mab.antigens);
+						contact->findMapping();
+						fid.alignment = contact->alignmentJson();
+					}
+
+					fid.contact = contact;
+
+					int total = contact->transforms().size();
+					_messages.push_back({"Mapped " + std::to_string(total) + 
+					" orientation" + (total == 1 ? "" : "s") + 
+					" for antibody " + fid.name + (saved ? " (saved)" : ""), 
+					false});
+
+					// a poor alignment of any of them
+					for (const ContactPoint::Warning &warning : contact->warnings())
+					{
+						PrepMessage message = {warning.text, true};
+						Antigen *ag = &antigen; Fiducial *fd = &fid;
+						glm::mat4x4 tr = warning.transform;
+						std::string text = warning.text;
+						message.show = [ag, fd, tr, text](Scene *scene)
+						{
+							AlignmentView *av = new AlignmentView(scene, *ag, *fd,
+							                                      tr, text);
+							av->show();
+						};
+						_messages.push_back(message);
+					}
+
+					if (saved)
+					{
+						for (const glm::mat4x4 &mat : contact->transforms())
+						{
+							antigen.sym.add_if_new(mat);
+						}
+						continue;
+					}
+
+					std::this_thread::sleep_for(std::chrono::milliseconds(200));
+				
 					for (const glm::mat4x4 &mat : contact->transforms())
 					{
+						contact->applyTransform(mat);
+						std::this_thread::sleep_for(std::chrono::milliseconds(200));
 						antigen.sym.add_if_new(mat);
 					}
-					continue;
-				}
 
-				std::this_thread::sleep_for(std::chrono::milliseconds(200));
-				
-				for (const glm::mat4x4 &mat : contact->transforms())
+					_tidy.push_back
+					([unit, &fid, this]()
+					 {
+						removeDisplayUnit(unit);
+						fid.model.unload();
+					});
+				}
+				catch (const std::exception &err)
 				{
-					contact->applyTransform(mat);
-					std::this_thread::sleep_for(std::chrono::milliseconds(200));
-					antigen.sym.add_if_new(mat);
-				}
+					// this antibody cannot be aligned: say so, carry on with
+					// the others. Without a contact it is not a fixed one.
+					std::cout << "Could not align " << fid.name << ": " 
+					<< err.what() << std::endl;
+					fid.contact = nullptr;
 
-				_tidy.push_back
-				([unit, &fid, this]()
-				 {
-					removeDisplayUnit(unit);
-					fid.model.unload();
-				});
+					// and what was shown for it goes with the others
+					if (unit || loaded)
+					{
+						_tidy.push_back
+						([unit, loaded, &fid, this]()
+						 {
+							if (unit)
+							{
+								removeDisplayUnit(unit);
+							}
+
+							if (loaded)
+							{
+								fid.model.unload();
+							}
+						});
+					}
+
+					PrepMessage message = {"Could not align antibody " + 
+					                       fid.name + ": " + err.what(), false};
+					message.failure = true;
+					_messages.push_back(message);
+				}
 			}
 		}
 

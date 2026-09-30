@@ -18,6 +18,7 @@
 
 #include "PrepResultsView.h"
 #include <vagabond/gui/elements/Box.h>
+#include <vagabond/gui/elements/Image.h>
 #include <vagabond/gui/elements/ImageButton.h>
 #include <vagabond/gui/elements/Text.h>
 #include <vagabond/gui/elements/TextButton.h>
@@ -59,7 +60,14 @@ Renderable *PrepResultsView::getLine(int i)
 
 	Box *b = new Box();
 
-	if (message.warning)
+	if (message.failure)
+	{
+		Image *cross = new Image("assets/images/cross.png");
+		cross->resize(0.04);
+		cross->setLeft(0.0, 0.0);
+		b->addObject(cross);
+	}
+	else if (message.warning)
 	{
 		ImageButton *warning = new ImageButton("assets/images/warning.png", 
 		                                       nullptr);

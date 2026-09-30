@@ -30,6 +30,8 @@ struct PrepMessage
 {
 	std::string text;
 	bool warning{};
+	// something failed outright: shown with a cross
+	bool failure{};
 	// clicking the warning symbol calls this with the scene it is in
 	std::function<void(Scene *)> show{};
 };
