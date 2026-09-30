@@ -59,6 +59,8 @@ void ResultsClusterView::addSlider()
 	Slider *s = new Slider();
 	s->resize(0.5);
 	s->setDecimals(1);
+	// the slider sits 0.02 lower, but the label stays where it was
+	s->setLabelOffset(0.06);
 	s->setup("sensitivity", min, max, step);
 	s->setPrefixSuffix("sensitivity: ", "");
 	s->setDragFunction([this](double val, double)
@@ -72,7 +74,7 @@ void ResultsClusterView::addSlider()
 		requestCalculation();
 	});
 	s->setStart((start - min) / (step * ((max - min) / step + 1)), 0.);
-	s->setCentre(0.3, 0.88);
+	s->setCentre(0.3, 0.9);
 	addObject(s);
 
 	_sliderReady = true;

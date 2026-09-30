@@ -44,7 +44,7 @@ void Slider::setup(std::string text, double min, double max, double step,
 	{
 		_display = new Text(text);
 		_display->resize(0.6);
-		_display->setCentre(0.0, +0.08);
+		_display->setCentre(0.0, _labelOffset);
 		addObject(_display);
 	}
 
@@ -80,7 +80,7 @@ void Slider::setStart(double x, double y)
 	{
 		double w = _width;
 		double wl = -w / 2 + w * (_vert ? y : x);
-		_display->setCentre(wl / 2, +0.08);
+		_display->setCentre(wl / 2, _labelOffset);
 	}
 }
 

@@ -49,6 +49,13 @@ public:
 		_decimals = decimals;
 	}
 
+	// vertical offset of the number display from the slider (default 0.08).
+	// Call before setup().
+	void setLabelOffset(double offset)
+	{
+		_labelOffset = offset;
+	}
+
 	double value()
 	{
 		return _val;
@@ -80,6 +87,7 @@ private:
 	std::string _suffix;
 	bool _vert = false;
 	int _decimals = 0;
+	double _labelOffset = 0.08;
 	
 	DraggableImage *_dot = nullptr;
 	DragResponder *_responder = nullptr;
