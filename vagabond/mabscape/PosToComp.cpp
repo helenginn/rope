@@ -18,8 +18,6 @@
 
 #include "PosToComp.h"
 #include <vagabond/gui/MatrixPlot.h>
-#include <vagabond/core/LBFGSEngine.h>
-#include <vagabond/core/SimplexEngine.h>
 #include <vagabond/utils/DoJob.h>
 #include <vagabond/utils/OpVec.h>
 #include "Mab.h"
@@ -130,20 +128,12 @@ float PosToComp::score()
 			n++;
 		}
 	}
+	if (n == 0)
+	{
+		return 0;
+	}
+
 	return sqrt(sum / n);
-}
-
-int PosToComp::sendJob(const std::vector<float> &all, Engine *sender)
-{
-	_setter(all, false);
-	int ticket = getNextTicket();
-//	float result = rand() / (float)RAND_MAX;
-
-	float result = score();
-
-	std::cout << "Result: " << ticket << " " << result << std::endl;
-	setScoreForTicket(ticket, result);
-	return ticket;
 }
 
 void PosToComp::zeroSetter()
@@ -178,30 +168,40 @@ void PosToComp::zeroSetter()
 			i += 3;
 		}
 	};
+}
 
-	_gradient_for = [this, filtered, names] (int n, int coord)
+// gradient of the score with respect to the position of every antibody being
+// refined (x, y, z for each in turn), computing all three components together.
+std::vector<float> PosToComp::allGradients(const std::vector<std::string> &filtered)
+{
+	auto &names = _comp.favoured_ordering;
+	std::vector<float> gs(filtered.size() * 3, 0);
+	float inflection = _radius * 2;
+
+	for (size_t n = 0; n < filtered.size(); n++)
 	{
 		const std::string &left = filtered[n];
+		// the row of the data matrix follows the full ordering, which includes
+		// the fixed antibodies which are not being refined.
+		int row = _rowOf.at(left);
 		glm::vec3 chosen = _positions(left);
 
-		float sum = 0;
+		glm::vec3 sum = {};
 		float count = 0;
-		for (int i = 0; i < names.size(); i++)
+		for (size_t i = 0; i < names.size(); i++)
 		{
-			const std::string &right = names[i];
-
-			if (left == right)
+			if ((int)i == row)
 			{
 				continue;
 			}
-			
-			float target = _data(n, i);
+
+			float target = _data(row, i);
 			if (target != target)
 			{
 				continue;
 			}
 
-			glm::vec3 other = _positions(right, &chosen);
+			glm::vec3 other = _positions(names[i], &chosen);
 			glm::vec3 diff = chosen - other;
 			float dist = glm::length(diff);
 			if (dist < 1e-6)
@@ -209,41 +209,16 @@ void PosToComp::zeroSetter()
 				dist = 0.1;
 			}
 
-			float invdist = 1 / dist;
-			float distgrad = invdist * diff[coord];
-			float inflection = _radius * 2;
 			float xpn = exp((inflection - dist) / _slope);
 			float curr = xpn / (1 + xpn);
-
 			float curve_grad = - (xpn / _slope) / ((1 + xpn) * (1 + xpn));
 
 			if ((target < 0.5 && 0.5 < curr) || (curr < 0.5 && 0.5 < target))
 			{
-				float max_grad = - (1 / _slope) / ((1 + xpn) * (1 + xpn));
-				curve_grad = max_grad;
+				curve_grad = - (1 / _slope) / ((1 + xpn) * (1 + xpn));
 			}
 
-			float grad = curve_grad * distgrad;
-			float contrib = 2 * (target - curr) * grad;
-			
-			if (left == "EV7" && false)
-			{
-				std::cout << "Comparing " << left << " to " << right << " (" << coord << ")" << std::endl;
-				std::cout << "\tData target: " << target << std::endl;
-				std::cout << "\tCurrent value: " << curr << std::endl;
-				std::cout << "\tleft's position: " << chosen << std::endl;
-				std::cout << "\tright's position: " << other << std::endl;
-				std::cout << "\tdiff between: " << diff << std::endl;
-				std::cout << "\tdistance between: " << dist << std::endl;
-				std::cout << "\tinvdist between: " << invdist << std::endl;
-				std::cout << "\tinteresting coord: " << diff[coord] << std::endl;
-				std::cout << "\tgrad of distance: " << distgrad << std::endl;
-				std::cout << "\tgradient of comp: " << curve_grad << std::endl;
-				std::cout << "\tgradient of score: " << grad << std::endl;
-				std::cout << "\tfinal decision: " << contrib << std::endl;
-				std::cout << std::endl;
-			}
-			
+			glm::vec3 contrib = 2 * (target - curr) * curve_grad * (diff / dist);
 			if (contrib != contrib)
 			{
 				continue;
@@ -252,13 +227,18 @@ void PosToComp::zeroSetter()
 			sum += contrib;
 			count++;
 		}
-		sum /= count;
-		if (sum != sum)
+
+		if (count > 0)
 		{
-			sum = 0;
+			sum /= count;
 		}
-		return sum;
-	};
+
+		gs[n * 3 + 0] = sum.x;
+		gs[n * 3 + 1] = sum.y;
+		gs[n * 3 + 2] = sum.z;
+	}
+
+	return gs;
 }
 
 void PosToComp::refineEngine()
@@ -266,51 +246,20 @@ void PosToComp::refineEngine()
 	auto &names = _comp.favoured_ordering;
 	int n = 0;
 	std::vector<std::string> filtered;
-	for (auto it = names.begin(); it != names.end(); it++)
+	_rowOf.clear();
+	for (size_t i = 0; i < names.size(); i++)
 	{
-		if (_positions.isFixed(*it))
+		_rowOf[names[i]] = i;
+
+		if (_positions.isFixed(names[i]))
 		{
 			continue;
 		}
 
-		glm::vec3 pos = _positions(*it);
-		filtered.push_back(*it);
+		filtered.push_back(names[i]);
 	}
 	
 	zeroSetter();
-
-	LBFGSEngine *engine = 
-	new LBFGSEngine(this, [this]() { return _positions.paramCount(); });
-
-	engine->setGetScoreGetTicket
-	([this](int *job_id)
-	 {
-		float result = getResult(job_id, nullptr);
-		return result;
-	});
-
-	engine->setSendJobGetTicket
-	([this](const std::vector<float> &all)
-	 {
-		return sendJob(all, nullptr);
-	});
-
-	auto get_all_gradients = [this, filtered]()
-	 {
-		std::vector<float> gs(_positions.paramCount(), 0);
-		int n = 0;
-		for (int i = 0; i < filtered.size(); i++)
-		{
-			for (int d = 0; d < 3; d++)
-			{
-				float g = _gradient_for(i, d);
-				gs[n] = g; n++;
-			}
-		}
-
-		return gs;
-	};
-	engine->setGetGradientVector(get_all_gradients);
 
 	OpVec<float> values(_positions.paramCount());
 	while (!_stop)
@@ -323,9 +272,7 @@ void PosToComp::refineEngine()
 		int cycle = 0;
 		while (n < 2000 && !_stop)
 		{
-			score();
-
-			std::vector<float> grads = get_all_gradients();
+			std::vector<float> grads = allGradients(filtered);
 			momentum *= 0.9;
 			momentum += grads;
 			values += momentum;
@@ -337,6 +284,11 @@ void PosToComp::refineEngine()
 			n++;
 			cycle++;
 
+			if (cycle % _displayEvery == 0)
+			{
+				fromModel();
+			}
+
 			if (cycle % _snapEvery == 0)
 			{
 				// snap each symmetry-related copy to its nearest mesh
@@ -345,6 +297,8 @@ void PosToComp::refineEngine()
 				_setter(values, true);
 				zeroSetter();
 				values = OpVec<float>(_positions.paramCount());
+				// the old velocity belongs to the pre-snap positions
+				momentum = OpVec<float>(_positions.paramCount());
 			}
 
 			if (sumsq < 0.001)

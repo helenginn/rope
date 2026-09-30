@@ -25,7 +25,9 @@
 #include "Positions.h"
 #include "RefinedResult.h"
 #include <atomic>
+#include <map>
 #include <mutex>
+#include <string>
 #include <vector>
 
 struct Competition;
@@ -96,7 +98,7 @@ public:
 	float score();
 private:
 	void refineEngine();
-	int sendJob(const std::vector<float> &all, Engine *sender);
+	std::vector<float> allGradients(const std::vector<std::string> &filtered);
 	void zeroSetter();
 
 	Competition &_comp;
@@ -122,9 +124,11 @@ private:
 	float _radius{11.f};
 	float _slope{2.f};
 	int _snapEvery{200};
+	int _displayEvery{10};
+	// index of each antibody in the competition's favoured ordering
+	std::map<std::string, int> _rowOf;
 	
 	std::function<void(const std::vector<float> &, bool)> _setter{};
-	std::function<float(int n, int coord)> _gradient_for{};
 };
 
 #endif
