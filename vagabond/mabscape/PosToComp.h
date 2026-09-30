@@ -101,6 +101,19 @@ public:
 	// moves the antibodies to the mean of these Results, snapped to the mesh
 	void showAverage(const std::vector<Result> &results);
 	float score();
+
+	// The scores of the Results kept were worked out when the model matrix
+	// was being filled in with its pairs one column out, so they are worked
+	// out again from the positions of each. Returns how many.
+	float scoreOf(const Result &result);
+	size_t rescoreResults();
+
+	/** What one antibody's row of the data matrix (or of the model matrix)
+	 * holds for each of the others: its value, and whether the data has an
+	 * entry there at all (the model has a value for every pair). False if
+	 * the antibody is not in the matrix. */
+	bool rowValues(const std::string &name, bool fromModel,
+	               std::map<std::string, std::pair<float, bool>> &row);
 private:
 	void refineEngine();
 	void descend(const std::vector<std::string> &filtered, int cycles,
@@ -110,6 +123,8 @@ private:
 	// display (cheap enough to call every refinement step)
 	void fillModel(bool shown = false);
 	float rmsDifference() const;
+	// how much the entry of the data counts for: 1, or less if it was inferred
+	float weightOf(int i, int j) const;
 	float error();
 	std::vector<float> allGradients(const std::vector<std::string> &filtered);
 	void zeroSetter();
@@ -123,6 +138,7 @@ private:
 	std::atomic<bool> _refining{false};
 	std::atomic<bool> _stop{false};
 
+	Eigen::MatrixXf _weights; // how much each entry of _data counts for
 	Eigen::MatrixXf _data;
 	Eigen::MatrixXf _model;
 	

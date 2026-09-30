@@ -149,6 +149,35 @@ struct Competition
 
 	std::string validate(const Antigens &antigens) const;
 
+	/** Competition worked out from the rest of the data: for two antibodies
+	 *  with no entry of their own, a third which competes strongly with both
+	 *  (see infer()). Kept apart from the data, which is never changed; while
+	 *  useInferred is on they fill in the gaps of make_plot(), and count
+	 *  towards the fit in proportion to their value. */
+	struct Inferred
+	{
+		std::string left;
+		std::string right;
+		float value{};
+	};
+
+	std::vector<Inferred> inferred;
+	bool useInferred{false};
+
+	/** A single Floyd-Warshall step over the data: wherever i competes with
+	 *  j and j with k, both above 0.5, i competes with k by the product of the
+	 *  two (each counted as 1 at most), if there is nothing of its own for
+	 *  that pair. The strongest route wins. Only the data itself is used, never
+	 *  a value inferred from it, so nothing is inferred from a chain of more
+	 *  than two. Returns how many pairs were inferred; any earlier inference
+	 *  is replaced. */
+	size_t infer();
+	// NaN if the pair was not inferred
+	float inferredValue(const std::string &ab1, const std::string &ab2) const;
+	/** how much each entry of make_plot() counts for with this order (as
+	 *  it leaves it): 1 for the data, the value for one inferred, else 0 */
+	Eigen::MatrixXf make_weights(const std::vector<std::string> &order);
+
 	friend void to_json(json &j, const Competition &c);
 	friend void from_json(const json &j, Competition &c);
 };
@@ -168,6 +197,15 @@ inline void to_json(json &j, const Competition &c)
 	j["antigen"] = c.antigen;
 	j["results"] = c.results;
 	j["groups"] = c.groups;
+
+	json inferred = json::array();
+	for (const Competition::Inferred &i : c.inferred)
+	{
+		inferred.push_back({{"left", i.left}, {"right", i.right}, 
+		                    {"value", i.value}});
+	}
+	j["inferred"] = inferred;
+	j["use_inferred"] = c.useInferred;
 }
 
 inline void from_json(const json &j, Competition &c)
@@ -196,6 +234,19 @@ inline void from_json(const json &j, Competition &c)
 	if (j.count("groups"))
 	{
 		c.groups = j.at("groups").get<std::vector<ResultGroup>>();
+	}
+
+	if (j.count("inferred"))
+	{
+		for (const json &i : j.at("inferred"))
+		{
+			c.inferred.push_back({i.at("left"), i.at("right"), i.at("value")});
+		}
+	}
+
+	if (j.count("use_inferred"))
+	{
+		c.useInferred = j.at("use_inferred");
 	}
 }
 

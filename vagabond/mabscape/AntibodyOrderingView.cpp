@@ -20,6 +20,7 @@
 #include "Playground.h"
 #include <vagabond/gui/MatrixBox.h>
 #include <vagabond/gui/MatrixPlot.h>
+#include <vagabond/gui/elements/TickBoxes.h>
 #include "Mab.h"
 
 AntibodyOrderingView::AntibodyOrderingView(Scene *prev, Mab &mab)
@@ -33,6 +34,7 @@ void AntibodyOrderingView::setup()
 	addTitle("Adjust antibody ordering");
 	
 	refresh();
+	addButtons();
 }
 
 void AntibodyOrderingView::makePlot()
@@ -49,10 +51,15 @@ void AntibodyOrderingView::makePlot()
 	MatrixBox *mb = new MatrixBox(plot, order, order, reorder, this);
 	mb->setCentre(0.5, 0.6);
 	addTempObject(mb);
+	_mb = mb;
+	_baseOrder = order;
+}
 
-	auto save_and_move_on = [this, mb]()
+void AntibodyOrderingView::addButtons()
+{
+	auto save_and_move_on = [this]()
 	{
-		std::vector<std::string> reordered = mb->rowNames();
+		std::vector<std::string> reordered = _mb->rowNames();
 		comp().favoured_ordering = reordered;
 
 		if (_returnJob)
@@ -66,11 +73,18 @@ void AntibodyOrderingView::makePlot()
 		playground->show();
 	};
 	
-	auto save_json = [this, mb]()
+	auto save_json = [this]()
 	{
-		std::vector<std::string> reordered = mb->rowNames();
+		std::vector<std::string> reordered = _mb->rowNames();
 		comp().favoured_ordering = reordered;
 		_mab.save();
+
+		// shown again from the playground, with no Next: saving is how the
+		// new ordering reaches it
+		if (_returnJob)
+		{
+			_returnJob();
+		}
 	};
 
 	{
@@ -80,6 +94,9 @@ void AntibodyOrderingView::makePlot()
 		addObject(tb);
 	}
 
+	// Next goes on to a playground; when this was shown from one already
+	// there is nowhere to go on to
+	if (!_returnJob)
 	{
 		TextButton *tb = new TextButton("Next");
 		tb->setRight(0.9, 0.9);
@@ -87,6 +104,50 @@ void AntibodyOrderingView::makePlot()
 		addObject(tb);
 	}
 
+	// Competition inferred from the rest of the data, kept apart from it, in
+	// the bottom right corner
+	{
+		const std::string text = "infer competition";
+		TickBoxes *tb = new TickBoxes(this, this);
+		tb->setOneOnly(false);
+		tb->addOption(text, [this, tb, text]()
+		{
+			bool on = tb->isTicked(text);
+
+			if (on)
+			{
+				size_t made = comp().infer();
+				std::cout << "Inferred " << made << " competition values" 
+				<< std::endl;
+			}
+
+			comp().useInferred = on;
+			updateValues();
+
+			// shown again from the playground: its data matrix and its fit
+			// have to be made again from this, as saving would do
+			if (_returnJob)
+			{
+				_returnJob();
+			}
+		}, comp().useInferred);
+		tb->arrange(0.74, 0.945, 0.98, 0.99);
+		addObject(tb);
+	}
+}
+
+void AntibodyOrderingView::updateValues()
+{
+	if (!_mb)
+	{
+		return;
+	}
+
+	// the same rows and columns as it was made with, whatever the order they
+	// are shown in now, so that nothing moves
+	std::vector<std::string> order = _baseOrder;
+	Eigen::MatrixXf mat = comp().make_plot(order);
+	_mb->setOriginalMatrix(mat);
 }
 
 void AntibodyOrderingView::refresh()

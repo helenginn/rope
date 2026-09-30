@@ -418,6 +418,10 @@ Eigen::MatrixXf Competition::make_plot(std::vector<std::string> &order)
 			{
 				val = value(b, a);
 			}
+			if (val != val && useInferred)
+			{
+				val = inferredValue(a, b);
+			}
 			mat(i, j) = val;
 		}
 
@@ -425,6 +429,135 @@ Eigen::MatrixXf Competition::make_plot(std::vector<std::string> &order)
 
 	order = all;
 	return mat;
+}
+
+float Competition::inferredValue(const std::string &ab1, 
+                                 const std::string &ab2) const
+{
+	for (const Inferred &i : inferred)
+	{
+		if ((i.left == ab1 && i.right == ab2) || 
+		    (i.left == ab2 && i.right == ab1))
+		{
+			return i.value;
+		}
+	}
+
+	return NAN;
+}
+
+Eigen::MatrixXf Competition::make_weights(const std::vector<std::string> &order)
+{
+	int n = order.size();
+	Eigen::MatrixXf weights = Eigen::MatrixXf::Zero(n, n);
+
+	for (int i = 0; i < n; i++)
+	{
+		for (int j = 0; j < n; j++)
+		{
+			if (i == j)
+			{
+				continue;
+			}
+
+			float val = value(order[i], order[j]);
+			if (val != val)
+			{
+				val = value(order[j], order[i]);
+			}
+
+			if (val == val)
+			{
+				weights(i, j) = 1.f;
+			}
+			else if (useInferred)
+			{
+				float guess = inferredValue(order[i], order[j]);
+				weights(i, j) = (guess == guess ? guess : 0.f);
+			}
+		}
+	}
+
+	return weights;
+}
+
+size_t Competition::infer()
+{
+	// the data alone
+	bool kept = useInferred;
+	useInferred = false;
+	std::vector<std::string> order = favoured_ordering;
+	Eigen::MatrixXf real = make_plot(order);
+	useInferred = kept;
+
+	int n = real.rows();
+
+	// one entry for a pair, whichever way round it was found
+	for (int i = 0; i < n; i++)
+	{
+		for (int j = i + 1; j < n; j++)
+		{
+			if (real(i, j) != real(i, j))
+			{
+				real(i, j) = real(j, i);
+			}
+			real(j, i) = real(i, j);
+		}
+	}
+
+	// only the data itself is ever read, so what is made up is never made
+	// use of to make up more
+	Eigen::MatrixXf now = real;
+	std::vector<std::vector<bool>> made(n, std::vector<bool>(n, false));
+
+	for (int j = 0; j < n; j++)
+	{
+		for (int i = 0; i < n; i++)
+		{
+			if (i == j || !(real(i, j) > 0.5f))
+			{
+				continue;
+			}
+
+			for (int k = 0; k < n; k++)
+			{
+				if (k == i || k == j || !(real(j, k) > 0.5f))
+				{
+					continue;
+				}
+
+				// real data for this pair is not to be replaced
+				if (real(i, k) == real(i, k))
+				{
+					continue;
+				}
+
+				float guess = std::min(1.f, real(i, j)) * 
+				std::min(1.f, real(j, k));
+				if (!(now(i, k) == now(i, k)) || guess > now(i, k))
+				{
+					now(i, k) = guess;
+					now(k, i) = guess;
+					made[i][k] = true;
+					made[k][i] = true;
+				}
+			}
+		}
+	}
+
+	inferred.clear();
+	for (int i = 0; i < n; i++)
+	{
+		for (int k = i + 1; k < n; k++)
+		{
+			if (made[i][k])
+			{
+				inferred.push_back({order[i], order[k], now(i, k)});
+			}
+		}
+	}
+
+	return inferred.size();
 }
 
 TabulatedData *Competition::asData()

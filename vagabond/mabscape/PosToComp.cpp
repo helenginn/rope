@@ -30,6 +30,7 @@ PosToComp::PosToComp(Competition &comp, Positions &pos)
 : _comp(comp), _positions(pos)
 {
 	_data = _comp.make_plot(_comp.favoured_ordering);
+	_weights = _comp.make_weights(_comp.favoured_ordering);
 	_model = Eigen::MatrixXf(_data);
 	_model.setZero();
 
@@ -42,6 +43,7 @@ PosToComp::PosToComp(Competition &comp, Positions &pos)
 void PosToComp::reloadData()
 {
 	_data = _comp.make_plot(_comp.favoured_ordering);
+	_weights = _comp.make_weights(_comp.favoured_ordering);
 	_model = Eigen::MatrixXf(_data);
 	_model.setZero();
 
@@ -80,7 +82,9 @@ void PosToComp::fillModel(bool shown)
 		const std::string &left = *it;
 		const glm::vec3 &lpos = _positions(left, nullptr, shown);
 
-		n = m;
+		// the pairs of this antibody with those after it, from the column
+		// after its own
+		n = m + 1;
 		for (auto jt = it + 1; jt != names.end(); jt++)
 		{
 			const std::string &right = *jt;
@@ -115,10 +119,12 @@ Eigen::MatrixXf &PosToComp::fromModel(bool shown)
 	return _model;
 }
 
+// Each entry counts in proportion to its weight: 1 for the data itself, and
+// the value of the competition for one that was inferred.
 float PosToComp::rmsDifference() const
 {
-	int n = 0;
-	float sum = 0;
+	double weights = 0;
+	double sum = 0;
 	for (int i = 0; i < _model.rows(); i++)
 	{
 		for (int j = 0; j < _model.cols(); j++)
@@ -128,17 +134,30 @@ float PosToComp::rmsDifference() const
 			{
 				continue;
 			}
-			sum += f * f;
-			n++;
+
+			float w = weightOf(i, j);
+			sum += w * f * f;
+			weights += w;
 		}
 	}
 
-	if (n == 0)
+	if (weights <= 0)
 	{
 		return 0;
 	}
 
-	return sqrt(sum / n);
+	return sqrt(sum / weights);
+}
+
+float PosToComp::weightOf(int i, int j) const
+{
+	if (i >= _weights.rows() || j >= _weights.cols())
+	{
+		return 1.f;
+	}
+
+	float w = _weights(i, j);
+	return (w == w && w > 0 ? w : 0.f);
 }
 
 float PosToComp::error()
@@ -151,6 +170,90 @@ float PosToComp::score()
 {
 	fromModel();
 	return rmsDifference();
+}
+
+// the score a Result has, worked out from its own positions alone: the same as
+// score() gives with its antibodies in place
+float PosToComp::scoreOf(const Result &result)
+{
+	auto &names = _comp.favoured_ordering;
+	std::map<std::string, const Positions::Placement *> lookup;
+	for (const Positions::Placement &pl : result.placements)
+	{
+		lookup[pl.name] = &pl;
+	}
+
+	double sum = 0;
+	double count = 0;
+
+	for (int i = 0; i < (int)names.size() && i < _data.rows(); i++)
+	{
+		for (int j = i + 1; j < (int)names.size() && j < _data.cols(); j++)
+		{
+			float data = _data(i, j);
+			if (data != data || !lookup.count(names[i]) || 
+			    !lookup.count(names[j]))
+			{
+				continue;
+			}
+
+			const Positions::Placement &left = *lookup.at(names[i]);
+			const Positions::Placement &right = *lookup.at(names[j]);
+			if (left.copies.empty() || right.copies.empty())
+			{
+				continue;
+			}
+
+			// as fillModel(): the first copy of one, the nearest of the other
+			float nearest = FLT_MAX;
+			for (const glm::vec3 &copy : right.copies)
+			{
+				nearest = std::min(nearest, glm::length(copy - left.copies[0]));
+			}
+
+			float w = weightOf(i, j);
+			float diff = closeness(nearest, _radius, _targetSlope) - data;
+			sum += w * diff * diff;
+			count += w;
+		}
+	}
+
+	return (count ? sqrt(sum / count) : 0.f);
+}
+
+size_t PosToComp::rescoreResults()
+{
+	std::unique_lock<std::mutex> lock(_resultsMutex);
+
+	for (Result &result : _results)
+	{
+		result.score = scoreOf(result);
+	}
+
+	return _results.size();
+}
+
+bool PosToComp::rowValues(const std::string &name, bool fromModel,
+                          std::map<std::string, std::pair<float, bool>> &row)
+{
+	auto &names = _comp.favoured_ordering;
+	auto at = std::find(names.begin(), names.end(), name);
+	if (at == names.end() || (size_t)(at - names.begin()) >= (size_t)_data.rows())
+	{
+		return false;
+	}
+
+	int i = at - names.begin();
+	row.clear();
+
+	for (int j = 0; j < (int)names.size() && j < _data.cols(); j++)
+	{
+		float data = _data(i, j);
+		bool present = (data == data);
+		row[names[j]] = {fromModel ? _model(i, j) : data, present};
+	}
+
+	return true;
 }
 
 void PosToComp::zeroSetter()
@@ -236,14 +339,21 @@ std::vector<float> PosToComp::allGradients(const std::vector<std::string> &filte
 				curve_grad = - (1 / slope) / ((1 + xpn) * (1 + xpn));
 			}
 
+			// an inferred value counts for less, as it does in the score
+			float weight = weightOf(row, i);
+			if (weight <= 0)
+			{
+				continue;
+			}
+
 			glm::vec3 contrib = 2 * (target - curr) * curve_grad * (diff / dist);
 			if (contrib != contrib)
 			{
 				continue;
 			}
 
-			sum += contrib;
-			count++;
+			sum += weight * contrib;
+			count += weight;
 		}
 
 		if (count > 0)

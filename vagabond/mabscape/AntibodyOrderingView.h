@@ -24,6 +24,8 @@
 #include <mutex>
 
 struct Mab;
+class MatrixBox;
+class TextButton;
 struct Competition;
 
 class AntibodyOrderingView : public MultipleSetup<Competition>
@@ -49,9 +51,15 @@ protected:
 	virtual bool acceptable_to_add_after(Competition &comp);
 private:
 	void makePlot();
+	void addButtons();
+	// the values of the plot again (inferred competition on or off), in the
+	// order it has now, which is left as it is
+	void updateValues();
 	PCA::Matrix _forDisplay{};
 	Mab &_mab;
 	std::mutex _mutex;
+	MatrixBox *_mb{};
+	std::vector<std::string> _baseOrder; // the order the plot was made in
 	std::function<void()> _returnJob{};
 
 };
