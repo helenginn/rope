@@ -134,11 +134,11 @@ private:
 	// refinement, when it is annealed down to it (see slopeAt())
 	std::atomic<float> _slope{2.f};
 	float _targetSlope{2.f};
-	float _startSlopeFactor{5.f};
-	int _annealCycles{1000};
-	int _annealEvery{20};
-	float _learningRate{1.f};
-	float _maxLearningRate{2.f};
+	// measured on synthetic data (see the commit message): the earlier step
+	// of 1 was too small to converge in 2000 cycles
+	float _startSlopeFactor{3.f};
+	int _annealCycles{1500};
+	float _learningRate{3.f};
 	int _polishRounds{5};
 	int _snapEvery{200};
 	int _displayEvery{10};

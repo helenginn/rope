@@ -270,9 +270,10 @@ float PosToComp::slopeAt(int cycle) const
 }
 
 // momentum descent from wherever the antibodies currently are, ending with
-// every antibody snapped to the mesh. Steps that make the score worse are
-// rejected (halving the step size and dropping the momentum); steps that
-// improve it grow the step size a little.
+// every antibody snapped to the mesh. The gradient is deliberately not the
+// exact derivative of the score (see allGradients()), so steps are never
+// rejected for making the score worse: that stalls the pairs which need to
+// pass through the flat part of the sigmoid.
 void PosToComp::descend(const std::vector<std::string> &filtered, int cycles,
                         bool anneal)
 {
@@ -280,24 +281,11 @@ void PosToComp::descend(const std::vector<std::string> &filtered, int cycles,
 
 	OpVec<float> values(_positions.paramCount());
 	OpVec<float> momentum(_positions.paramCount());
-	float rate = _learningRate;
-	float last = 0;
-	bool baseline = false;
 
 	for (int cycle = 0; cycle < cycles && !_stop; cycle++)
 	{
 		bool annealing = (anneal && cycle < _annealCycles);
-
-		if (annealing && cycle % _annealEvery == 0)
-		{
-			_slope = slopeAt(cycle);
-			baseline = false;
-		}
-		else if (!annealing && _slope != _targetSlope)
-		{
-			_slope = _targetSlope;
-			baseline = false;
-		}
+		_slope = (annealing ? slopeAt(cycle) : _targetSlope);
 
 		if (cycle > 0 && cycle % _snapEvery == 0)
 		{
@@ -309,41 +297,15 @@ void PosToComp::descend(const std::vector<std::string> &filtered, int cycles,
 			values = OpVec<float>(_positions.paramCount());
 			// the old velocity belongs to the pre-snap positions
 			momentum = OpVec<float>(_positions.paramCount());
-			baseline = false;
-		}
-
-		if (!baseline)
-		{
-			last = error();
-			baseline = true;
 		}
 
 		std::vector<float> grads = allGradients(filtered);
 		momentum *= 0.9;
 		momentum += grads;
 
-		OpVec<float> step = momentum * rate;
-		OpVec<float> trial = values + step;
-		_setter(trial, false);
-
-		float trialError = error();
-		if (trialError > last)
-		{
-			_setter(values, false);
-			momentum = OpVec<float>(_positions.paramCount());
-			rate *= 0.5;
-
-			if (!annealing && rate < 1e-6)
-			{
-				break;
-			}
-
-			continue;
-		}
-
-		values = trial;
-		last = trialError;
-		rate = std::min(rate * 1.05f, _maxLearningRate);
+		OpVec<float> step = momentum * _learningRate;
+		values += step;
+		_setter(values, false);
 
 		if (cycle % _displayEvery == 0)
 		{
