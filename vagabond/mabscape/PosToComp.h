@@ -98,6 +98,14 @@ public:
 	float score();
 private:
 	void refineEngine();
+	void descend(const std::vector<std::string> &filtered, int cycles,
+	             bool anneal);
+	float slopeAt(int cycle) const;
+	// the model matrix from the current positions, without refreshing the
+	// display (cheap enough to call every refinement step)
+	void fillModel();
+	float rmsDifference() const;
+	float error();
 	std::vector<float> allGradients(const std::vector<std::string> &filtered);
 	void zeroSetter();
 
@@ -122,7 +130,16 @@ private:
 	MatrixPlot *_dataPlot{};
 	
 	float _radius{11.f};
-	float _slope{2.f};
+	// slope in use right now: the target slope, except part way through a
+	// refinement, when it is annealed down to it (see slopeAt())
+	std::atomic<float> _slope{2.f};
+	float _targetSlope{2.f};
+	float _startSlopeFactor{5.f};
+	int _annealCycles{1000};
+	int _annealEvery{20};
+	float _learningRate{1.f};
+	float _maxLearningRate{2.f};
+	int _polishRounds{5};
 	int _snapEvery{200};
 	int _displayEvery{10};
 	// index of each antibody in the competition's favoured ordering

@@ -22,7 +22,9 @@
 #include <vagabond/utils/OpVec.h>
 #include "Mab.h"
 #include "Positions.h"
+#include <algorithm>
 #include <chrono>
+#include <cmath>
 
 PosToComp::PosToComp(Competition &comp, Positions &pos) 
 : _comp(comp), _positions(pos)
@@ -64,7 +66,7 @@ void PosToComp::reloadData()
 	fromModel();
 }
 
-Eigen::MatrixXf &PosToComp::fromModel()
+void PosToComp::fillModel()
 {
 	auto convert = [this](const float &f)
 	{
@@ -95,7 +97,12 @@ Eigen::MatrixXf &PosToComp::fromModel()
 		
 		m++;
 	}
-	
+}
+
+Eigen::MatrixXf &PosToComp::fromModel()
+{
+	fillModel();
+
 	if (_plot)
 	{
 		{
@@ -108,18 +115,15 @@ Eigen::MatrixXf &PosToComp::fromModel()
 	return _model;
 }
 
-float PosToComp::score()
+float PosToComp::rmsDifference() const
 {
-	Eigen::MatrixXf tmp = fromModel();
-	tmp -= _data;
-
 	int n = 0;
 	float sum = 0;
-	for (int i = 0; i < tmp.rows(); i++)
+	for (int i = 0; i < _model.rows(); i++)
 	{
-		for (int j = 0; j < tmp.rows(); j++)
+		for (int j = 0; j < _model.cols(); j++)
 		{
-			float &f = tmp(i, j);
+			float f = _model(i, j) - _data(i, j);
 			if (f != f)
 			{
 				continue;
@@ -128,12 +132,25 @@ float PosToComp::score()
 			n++;
 		}
 	}
+
 	if (n == 0)
 	{
 		return 0;
 	}
 
 	return sqrt(sum / n);
+}
+
+float PosToComp::error()
+{
+	fillModel();
+	return rmsDifference();
+}
+
+float PosToComp::score()
+{
+	fromModel();
+	return rmsDifference();
 }
 
 void PosToComp::zeroSetter()
@@ -177,6 +194,7 @@ std::vector<float> PosToComp::allGradients(const std::vector<std::string> &filte
 	auto &names = _comp.favoured_ordering;
 	std::vector<float> gs(filtered.size() * 3, 0);
 	float inflection = _radius * 2;
+	float slope = _slope;
 
 	for (size_t n = 0; n < filtered.size(); n++)
 	{
@@ -209,13 +227,13 @@ std::vector<float> PosToComp::allGradients(const std::vector<std::string> &filte
 				dist = 0.1;
 			}
 
-			float xpn = exp((inflection - dist) / _slope);
+			float xpn = exp((inflection - dist) / slope);
 			float curr = xpn / (1 + xpn);
-			float curve_grad = - (xpn / _slope) / ((1 + xpn) * (1 + xpn));
+			float curve_grad = - (xpn / slope) / ((1 + xpn) * (1 + xpn));
 
 			if ((target < 0.5 && 0.5 < curr) || (curr < 0.5 && 0.5 < target))
 			{
-				curve_grad = - (1 / _slope) / ((1 + xpn) * (1 + xpn));
+				curve_grad = - (1 / slope) / ((1 + xpn) * (1 + xpn));
 			}
 
 			glm::vec3 contrib = 2 * (target - curr) * curve_grad * (diff / dist);
@@ -241,10 +259,113 @@ std::vector<float> PosToComp::allGradients(const std::vector<std::string> &filte
 	return gs;
 }
 
+// the slope of the antibody-antibody score at a given cycle of a refinement:
+// broad at first, so that antibodies which are far apart still feel a pull
+// towards the ones they should be near, then tightening to the target slope.
+float PosToComp::slopeAt(int cycle) const
+{
+	float remaining = 1.f - (float)cycle / _annealCycles;
+	remaining = std::max(0.f, remaining);
+	return _targetSlope * pow(_startSlopeFactor, remaining);
+}
+
+// momentum descent from wherever the antibodies currently are, ending with
+// every antibody snapped to the mesh. Steps that make the score worse are
+// rejected (halving the step size and dropping the momentum); steps that
+// improve it grow the step size a little.
+void PosToComp::descend(const std::vector<std::string> &filtered, int cycles,
+                        bool anneal)
+{
+	zeroSetter();
+
+	OpVec<float> values(_positions.paramCount());
+	OpVec<float> momentum(_positions.paramCount());
+	float rate = _learningRate;
+	float last = 0;
+	bool baseline = false;
+
+	for (int cycle = 0; cycle < cycles && !_stop; cycle++)
+	{
+		bool annealing = (anneal && cycle < _annealCycles);
+
+		if (annealing && cycle % _annealEvery == 0)
+		{
+			_slope = slopeAt(cycle);
+			baseline = false;
+		}
+		else if (!annealing && _slope != _targetSlope)
+		{
+			_slope = _targetSlope;
+			baseline = false;
+		}
+
+		if (cycle > 0 && cycle % _snapEvery == 0)
+		{
+			// snap each symmetry-related copy to its nearest mesh
+			// position, then take the snapped positions as the new
+			// reference so that the refinement continues from the grid.
+			_setter(values, true);
+			zeroSetter();
+			values = OpVec<float>(_positions.paramCount());
+			// the old velocity belongs to the pre-snap positions
+			momentum = OpVec<float>(_positions.paramCount());
+			baseline = false;
+		}
+
+		if (!baseline)
+		{
+			last = error();
+			baseline = true;
+		}
+
+		std::vector<float> grads = allGradients(filtered);
+		momentum *= 0.9;
+		momentum += grads;
+
+		OpVec<float> step = momentum * rate;
+		OpVec<float> trial = values + step;
+		_setter(trial, false);
+
+		float trialError = error();
+		if (trialError > last)
+		{
+			_setter(values, false);
+			momentum = OpVec<float>(_positions.paramCount());
+			rate *= 0.5;
+
+			if (!annealing && rate < 1e-6)
+			{
+				break;
+			}
+
+			continue;
+		}
+
+		values = trial;
+		last = trialError;
+		rate = std::min(rate * 1.05f, _maxLearningRate);
+
+		if (cycle % _displayEvery == 0)
+		{
+			fromModel();
+		}
+
+		float sumsq = 0;
+		step.do_on_each([&sumsq](const float &f) { sumsq += f * f; });
+
+		if (!annealing && sumsq < 0.001)
+		{
+			break;
+		}
+	}
+
+	_setter(values, true);
+	zeroSetter();
+}
+
 void PosToComp::refineEngine()
 {
 	auto &names = _comp.favoured_ordering;
-	int n = 0;
 	std::vector<std::string> filtered;
 	_rowOf.clear();
 	for (size_t i = 0; i < names.size(); i++)
@@ -258,53 +379,35 @@ void PosToComp::refineEngine()
 
 		filtered.push_back(names[i]);
 	}
-	
-	zeroSetter();
 
-	OpVec<float> values(_positions.paramCount());
 	while (!_stop)
 	{
-		n = 0;
 		_positions.randomise();
-		zeroSetter();
-		values = OpVec<float>(_positions.paramCount());
-		OpVec<float> momentum(_positions.paramCount());
-		int cycle = 0;
-		while (n < 2000 && !_stop)
+		descend(filtered, 2000, true);
+		_slope = _targetSlope;
+
+		if (_stop)
 		{
-			std::vector<float> grads = allGradients(filtered);
-			momentum *= 0.9;
-			momentum += grads;
-			values += momentum;
+			break;
+		}
 
-			float sumsq = 0;
-			momentum.do_on_each([&sumsq](const float &f) { sumsq += f * f; });
+		// snapping can cost some of the score: keep refining from the grid
+		// and re-snapping for as long as that makes the snapped score better.
+		float best = error();
+		std::vector<Positions::Placement> bestPlacements = _positions.snapshot();
 
-			_setter(values, false);
-			n++;
-			cycle++;
+		for (int round = 0; round < _polishRounds && !_stop; round++)
+		{
+			descend(filtered, _snapEvery, false);
+			float polished = error();
 
-			if (cycle % _displayEvery == 0)
-			{
-				fromModel();
-			}
-
-			if (cycle % _snapEvery == 0)
-			{
-				// snap each symmetry-related copy to its nearest mesh
-				// position, then take the snapped positions as the new
-				// reference so that the refinement continues from the grid.
-				_setter(values, true);
-				zeroSetter();
-				values = OpVec<float>(_positions.paramCount());
-				// the old velocity belongs to the pre-snap positions
-				momentum = OpVec<float>(_positions.paramCount());
-			}
-
-			if (sumsq < 0.001)
+			if (polished >= best - 1e-6)
 			{
 				break;
 			}
+
+			best = polished;
+			bestPlacements = _positions.snapshot();
 		}
 
 		if (_stop)
@@ -313,12 +416,11 @@ void PosToComp::refineEngine()
 			break;
 		}
 
-		_setter(values, true);
-		zeroSetter();
+		_positions.apply(bestPlacements);
 
 		Result result;
 		result.score = score();
-		result.placements = _positions.snapshot();
+		result.placements = bestPlacements;
 
 		std::function<void()> job;
 		{
@@ -335,6 +437,7 @@ void PosToComp::refineEngine()
 		}
 	}
 
+	_slope = _targetSlope;
 	fromModel();
 	_refining = false;
 }
