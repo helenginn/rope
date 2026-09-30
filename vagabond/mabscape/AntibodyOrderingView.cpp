@@ -46,7 +46,7 @@ void AntibodyOrderingView::makePlot()
 
 	MatrixPlot *plot = new MatrixPlot(_forDisplay);
 	plot->resize(1.5);
-	MatrixBox *mb = new MatrixBox(plot, order, order, reorder);
+	MatrixBox *mb = new MatrixBox(plot, order, order, reorder, this);
 	mb->setCentre(0.5, 0.6);
 	addTempObject(mb);
 
