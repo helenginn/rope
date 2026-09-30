@@ -22,10 +22,14 @@
 #include "PosToComp.h"
 #include "AbWatch.h"
 #include "Mesh.h"
+#include "AntibodyOrderingView.h"
+#include "ResultsView.h"
+#include "ResultsClusterView.h"
 #include "Mab.h"
 #include <vagabond/gui/elements/Icosahedron.h>
 #include <vagabond/gui/elements/TextButton.h>
 #include <vagabond/gui/elements/Menu.h>
+#include <vagabond/gui/elements/Text.h>
 #include <vagabond/gui/MatrixPlot.h>
 
 Playground::Playground(Scene *prev, Mab &mab) 
@@ -69,6 +73,9 @@ void Playground::setup()
 	Competition &comp = *_mab.competitions.begin();
 	showMesh(comp);
 	showFiducials(comp);
+
+	// picks up any results saved in the json
+	_model = new PosToComp(comp, *_positions);
 	
 	TextButton *tb = new TextButton("Menu");
 	tb->setCentre(0.9, 0.1);
@@ -76,6 +83,8 @@ void Playground::setup()
 	auto show_menu = [this, tb]()
 	{
 		Menu *menu = new Menu(this);
+		menu->addOption("save", [this]() { saveResults(); });
+		menu->addOption("competition data", [this]() { showCompetitionData(); });
 		menu->addOption("show matrices", [this]() { showMatrices(); });
 		if (_model && _model->isRefining())
 		{
@@ -84,6 +93,10 @@ void Playground::setup()
 		else
 		{
 			menu->addOption("refine", [this]() { refine(); });
+		}
+		if (_model && _model->results().size())
+		{
+			menu->addOption("view results", [this]() { viewResults(); });
 		}
 		menu->setup(tb, 1);
 		setModal(menu);
@@ -102,6 +115,19 @@ void Playground::interactedWithNothing(bool left, bool hover)
 		aw->setHighlighted(false);
 		aw->deleteTemps();
 	}
+}
+
+// text centred just under a matrix plot centred at (x, y)
+void Playground::label(MatrixPlot *plot, float x, float y,
+                       const std::string &text)
+{
+	// maximalHeight() is in GL units (the whole screen being 2 high)
+	y += plot->maximalHeight() / 4 + 0.03;
+
+	Text *t = new Text(text);
+	t->resize(0.5);
+	t->setCentre(x, y);
+	addObject(t);
 }
 
 void Playground::showMatrices()
@@ -124,6 +150,7 @@ void Playground::showMatrices()
 		mp->setCentre(0.9, 0.85);
 		addObject(mp);
 		_mpModel = mp;
+		label(mp, 0.9, 0.85, "model");
 	}
 
 	if (!_mpData)
@@ -136,6 +163,8 @@ void Playground::showMatrices()
 		mp->setCentre(0.75, 0.85);
 		addObject(mp);
 		_mpData = mp;
+		label(mp, 0.75, 0.85, "data");
+		_model->setDataPlot(mp);
 	}
 	
 	_model->setPlot(_mpModel);
@@ -145,4 +174,77 @@ void Playground::refine()
 {
 	showMatrices();
 	_model->refine();
+}
+
+void Playground::viewResults()
+{
+	if (!_rv)
+	{
+		auto apply = [this](const PosToComp::Result &result)
+		{
+			if (_model->isRefining())
+			{
+				std::cout << "Stop refining before viewing a result."
+				<< std::endl;
+				return;
+			}
+
+			showMatrices();
+			_model->showResult(result);
+		};
+
+		_rv = new ResultsView(this, apply);
+		_rv->setClusterJob([this](const std::vector<PosToComp::Result> &results)
+		{
+			ResultsClusterView *cv = new ResultsClusterView(this, results);
+			cv->show();
+		});
+
+		_rv->setDeleteJob([this](size_t count)
+		{
+			_model->removeResults(count);
+			_rv->update(_model->results());
+		});
+
+		// keep the "All (n results)" list current as refinement goes on
+		_model->setResultJob([this]()
+		{
+			addMainThreadJob([this]()
+			{
+				_rv->update(_model->results());
+			});
+		});
+
+		_rv->setKillAndClean([this]() { removeObject(_rv); });
+	}
+
+	_rv->update(_model->results());
+
+	if (!hasObject(_rv))
+	{
+		addObject(_rv);
+	}
+}
+
+void Playground::saveResults()
+{
+	// results live in _model while running; only copy them across (under
+	// its lock) here, on the main thread, so a refinement in progress can't
+	// race the json being written.
+	_mab.competitions.begin()->results = _model->results();
+	_mab.save();
+}
+
+void Playground::showCompetitionData()
+{
+	if (_model->isRefining())
+	{
+		std::cout << "Stop refining before changing the competition data."
+		<< std::endl;
+		return;
+	}
+
+	AntibodyOrderingView *aov = new AntibodyOrderingView(this, _mab);
+	aov->setReturnJob([this]() { _model->reloadData(); });
+	aov->show();
 }

@@ -52,9 +52,15 @@ void AntibodyOrderingView::makePlot()
 
 	auto save_and_move_on = [this, mb]()
 	{
-		std::cout << "Here" << std::endl;
 		std::vector<std::string> reordered = mb->rowNames();
 		comp().favoured_ordering = reordered;
+
+		if (_returnJob)
+		{
+			_returnJob();
+			back();
+			return;
+		}
 
 		Playground *playground = new Playground(this, _mab);
 		playground->show();

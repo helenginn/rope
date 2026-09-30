@@ -124,7 +124,21 @@ void ProgressBar::setMaxTicks(int count)
 void ProgressBar::finish()
 {
 	setDisabled(true);
-	VagWindow::window()->requestProgressBarRemoval();
+
+	// only VagWindow tracks its bar (BarDetails) - any other window just
+	// has this bar as a plain window-level object to take back off.
+	VagWindow *vw = dynamic_cast<VagWindow *>(Window::window());
+	if (vw)
+	{
+		vw->requestProgressBarRemoval();
+		return;
+	}
+
+	Window::window()->addMainThreadJob([this]()
+	                                   {
+		                               Window::window()->removeObject(this);
+		                               Window::setDelete(this);
+	});
 }
 
 void ProgressBar::sendObject(std::string tag, void *object)
@@ -143,7 +157,7 @@ void ProgressBar::sendObject(std::string tag, void *object)
 	// called on the current Scene) recurses doJobs() into Scene children.
 	// Window-level objects only ever get ->render() called on them
 	// (Window::render()). Queuing here instead would silently never run.
-	VagWindow::window()->addMainThreadJob([this, tag]()
+	Window::window()->addMainThreadJob([this, tag]()
 	                 {
 		                handleProgressEvent(tag);
 	});

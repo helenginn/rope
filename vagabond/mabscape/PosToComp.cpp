@@ -33,18 +33,44 @@ PosToComp::PosToComp(Competition &comp, Positions &pos)
 	_model = Eigen::MatrixXf(_data);
 	_model.setZero();
 
+	_results = _comp.results;
+
 	_dataDisplay = PCA::Matrix(_data);
 	_modelDisplay = PCA::Matrix(_model);
+}
+
+void PosToComp::reloadData()
+{
+	_data = _comp.make_plot(_comp.favoured_ordering);
+	_model = Eigen::MatrixXf(_data);
+	_model.setZero();
+
+	{
+		std::unique_lock<std::mutex> lock(_dataMutex);
+		if (_dataDisplay.rows == _data.rows() && _dataDisplay.cols == _data.cols())
+		{
+			_dataDisplay.dropFromEigen(_data);
+		}
+		else
+		{
+			std::cout << "Competition data changed size; reopen to resize "\
+			"the matrices." << std::endl;
+		}
+	}
+
+	if (_dataPlot)
+	{
+		_dataPlot->update();
+	}
+
+	fromModel();
 }
 
 Eigen::MatrixXf &PosToComp::fromModel()
 {
 	auto convert = [this](const float &f)
 	{
-		float inflection = _radius * 2;
-		float exponent = exp((inflection - f) / _slope);
-		float val = exponent / (1 + exponent);
-		return val;
+		return closeness(f, _radius, _slope);
 	};
 
 	auto &names = _comp.favoured_ordering;
@@ -295,7 +321,7 @@ void PosToComp::refineEngine()
 		values = OpVec<float>(_positions.paramCount());
 		OpVec<float> momentum(_positions.paramCount());
 		int cycle = 0;
-		while (n < 10000 && !_stop)
+		while (n < 2000 && !_stop)
 		{
 			score();
 
@@ -340,10 +366,19 @@ void PosToComp::refineEngine()
 		result.score = score();
 		result.placements = _positions.snapshot();
 
-		std::unique_lock<std::mutex> lock(_resultsMutex);
-		_results.push_back(result);
-		std::cout << "Cached result " << _results.size() << " with score "
-		<< result.score << std::endl;
+		std::function<void()> job;
+		{
+			std::unique_lock<std::mutex> lock(_resultsMutex);
+			_results.push_back(result);
+			std::cout << "Cached result " << _results.size() << " with score "
+			<< result.score << std::endl;
+			job = _resultJob;
+		}
+
+		if (job)
+		{
+			job();
+		}
 	}
 
 	fromModel();
@@ -354,6 +389,25 @@ std::vector<PosToComp::Result> PosToComp::results()
 {
 	std::unique_lock<std::mutex> lock(_resultsMutex);
 	return _results;
+}
+
+void PosToComp::removeResults(size_t count)
+{
+	std::unique_lock<std::mutex> lock(_resultsMutex);
+	count = std::min(count, _results.size());
+	_results.erase(_results.begin(), _results.begin() + count);
+}
+
+void PosToComp::setResultJob(const std::function<void()> &job)
+{
+	std::unique_lock<std::mutex> lock(_resultsMutex);
+	_resultJob = job;
+}
+
+void PosToComp::showResult(const Result &result)
+{
+	_positions.apply(result.placements);
+	fromModel();
 }
 
 void PosToComp::stopRefining()

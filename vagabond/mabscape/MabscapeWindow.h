@@ -32,6 +32,13 @@ public:
 	{
 		flags += SDL_WINDOW_RESIZABLE;
 	}
+
+	// window-level main thread jobs (e.g. ProgressBar's tick/removal) are
+	// never drained by anything else
+	virtual void mainThreadActivities()
+	{
+		doJobs();
+	}
 private:
 
 };

@@ -267,6 +267,28 @@ std::vector<Positions::Placement> Positions::snapshot() const
 	return placements;
 }
 
+void Positions::apply(const std::vector<Placement> &placements)
+{
+	for (const Placement &pl : placements)
+	{
+		if (pl.fixed || !_lookup.count(pl.name))
+		{
+			continue;
+		}
+
+		AntibodyPos &ap = *_lookup.at(pl.name);
+		std::unique_lock<std::mutex> lock(*ap.mut);
+
+		for (int i = 0; i < ap.num && i < (int)pl.copies.size(); i++)
+		{
+			_raw[ap.start_idx + i] = pl.copies[i];
+		}
+
+		ap.meshIdx = pl.meshIdx;
+		ap.version++;
+	}
+}
+
 bool Positions::isFixed(const std::string &name) const
 {
 	return (_lookup.at(name)->fid);

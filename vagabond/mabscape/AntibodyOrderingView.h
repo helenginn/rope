@@ -34,6 +34,13 @@ public:
 	virtual void setup();
 	virtual void refresh();
 
+	// when set, "Next" applies the new ordering, calls this and goes back to
+	// the previous scene, rather than opening a new Playground
+	void setReturnJob(const std::function<void()> &job)
+	{
+		_returnJob = job;
+	}
+
 	Competition &comp()
 	{
 		return *_object;
@@ -45,6 +52,7 @@ private:
 	PCA::Matrix _forDisplay{};
 	Mab &_mab;
 	std::mutex _mutex;
+	std::function<void()> _returnJob{};
 
 };
 

@@ -23,6 +23,7 @@
 #include <vagabond/utils/svd/PCA.h>
 #include <vagabond/core/Engine.h>
 #include "Positions.h"
+#include "RefinedResult.h"
 #include <atomic>
 #include <mutex>
 #include <vector>
@@ -41,7 +42,24 @@ public:
 		_plot = mp;
 	}
 
+	void setDataPlot(MatrixPlot *mp)
+	{
+		_dataPlot = mp;
+	}
+
+	// re-reads the competition data (e.g. after the antibody ordering has
+	// changed) and refreshes both matrices. Must not be called while refining.
+	void reloadData();
+
 	Eigen::MatrixXf &fromModel();
+
+	// the score for two antibodies a given distance apart: 1 on top of one
+	// another, decaying (sigmoid, halfway at 2 * radius) with distance.
+	static float closeness(float dist, float radius = 11.f, float slope = 2.f)
+	{
+		float exponent = exp((radius * 2 - dist) / slope);
+		return exponent / (1 + exponent);
+	}
 
 	PCA::Matrix &modelDisplay(std::mutex **mut)
 	{
@@ -55,12 +73,7 @@ public:
 		return _dataDisplay;
 	}
 
-	// the outcome of one completed refinement from random starting positions
-	struct Result
-	{
-		std::vector<Positions::Placement> placements;
-		float score{};
-	};
+	typedef RefinedResult Result;
 
 	// starts repeated refinements from random positions, caching each
 	// completed one in results(), until stopRefining() is called.
@@ -73,6 +86,13 @@ public:
 	}
 
 	std::vector<Result> results();
+	// discards the first count results (e.g. those a list is showing)
+	void removeResults(size_t count);
+	// called (from the refining thread) whenever a new Result is cached
+	void setResultJob(const std::function<void()> &job);
+	// moves the antibodies to a cached Result and updates the model matrix.
+	// Must not be called while refining.
+	void showResult(const Result &result);
 	float score();
 private:
 	void refineEngine();
@@ -83,6 +103,7 @@ private:
 	Positions &_positions;
 
 	std::vector<Result> _results;
+	std::function<void()> _resultJob{};
 	std::mutex _resultsMutex;
 	std::atomic<bool> _refining{false};
 	std::atomic<bool> _stop{false};
@@ -96,6 +117,7 @@ private:
 	std::mutex _dataMutex;
 	
 	MatrixPlot *_plot{};
+	MatrixPlot *_dataPlot{};
 	
 	float _radius{11.f};
 	float _slope{2.f};

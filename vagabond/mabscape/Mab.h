@@ -22,6 +22,7 @@
 #include <list>
 #include "Symmetry.h"
 #include <vagabond/core/Model.h>
+#include "RefinedResult.h"
 #include <vagabond/utils/OpSet.h>
 #include <vagabond/utils/Eigen/Dense>
 
@@ -141,6 +142,9 @@ struct Competition
 	
 	std::vector<std::string> favoured_ordering;
 
+	// cached refinements (see PosToComp), saved to and loaded from json
+	std::vector<RefinedResult> results;
+
 	std::string validate(const Antigens &antigens) const;
 
 	friend void to_json(json &j, const Competition &c);
@@ -160,6 +164,7 @@ inline void to_json(json &j, const Competition &c)
 	j["as_competition"] = c.as_competition;
 	j["scale"] = c.scale;
 	j["antigen"] = c.antigen;
+	j["results"] = c.results;
 }
 
 inline void from_json(const json &j, Competition &c)
@@ -179,6 +184,11 @@ inline void from_json(const json &j, Competition &c)
 	c.as_competition = j.at("as_competition");
 	c.scale = j.at("scale");
 	c.antigen = j.at("antigen");
+
+	if (j.count("results"))
+	{
+		c.results = j.at("results").get<std::vector<RefinedResult>>();
+	}
 }
 
 class Competitions : public std::list<Competition>

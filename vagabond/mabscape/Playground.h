@@ -29,6 +29,7 @@ class AbWatch;
 class PosToComp;
 class Positions;
 class MatrixPlot;
+class ResultsView;
 
 class Playground : public Display
 {
@@ -43,6 +44,11 @@ private:
 	void showMesh(const Competition &competition);
 	void showFiducials(const Competition &comp);
 	void showMatrices();
+	void label(MatrixPlot *plot, float x, float y,
+	           const std::string &text);
+	void viewResults();
+	void saveResults();
+	void showCompetitionData();
 
 	Mab &_mab;
 
@@ -53,6 +59,7 @@ private:
 	PosToComp *_model{};
 	MatrixPlot *_mpModel{};
 	MatrixPlot *_mpData{};
+	ResultsView *_rv{};
 };
 
 #endif

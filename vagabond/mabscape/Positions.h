@@ -64,6 +64,8 @@ public:
 	};
 
 	std::vector<Placement> snapshot() const;
+	// puts every non-fixed antibody back where a snapshot() had it
+	void apply(const std::vector<Placement> &placements);
 private:
 	Antigen &_antigen;
 	Mab &_mab;
