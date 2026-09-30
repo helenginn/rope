@@ -58,15 +58,15 @@ private:
 	bool shouldHaveArrow();
 	/** number of lines the display name is broken into */
 	size_t nameLines() const;
-	/** how far up from the middle of the content the centre of its first
-	 * line is (negative y): zero for a single line, so the arrow and dot
-	 * stay at the middle of the text, otherwise they go with the first line */
+	/** Each line of the list is placed by the centre of its text, on the top
+	 * of its slot, so text of several lines would stick out above the slot and
+	 * leave a gap below it. This is how far (down, in screen fractions) the
+	 * text of a name over several lines is put, for its top to be where a
+	 * single line would have its top: zero for a single line. */
+	float contentDrop();
+	/** how far up from the centre of the content (negative y) the arrow and
+	 * dot are put to be level with its first line: zero for a single line */
 	float firstLineShift();
-	/** An ItemLine is aligned by the mean of the centres of what it holds, so
-	 * a marker moved off the middle of the text drags the whole line with it.
-	 * This adds a hidden counterweight (disabled, so it adds nothing to the
-	 * size) on the other side of the text's middle, to put that mean back. */
-	void balanceMarker(float x, float y);
 	void replaceContent();
 	/** prepare content of box */
 	void setup();
@@ -80,7 +80,6 @@ private:
 	LineGroup *_group = nullptr;
 	ImageButton *_triangle = nullptr;
 	Image *_dot = nullptr;
-	Image *_balance = nullptr;
 	Renderable *_content = nullptr;
     std::function<void(Item *)> _job{};
 };

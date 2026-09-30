@@ -398,7 +398,7 @@ void Instance::addBFactorsToGroup(BFactorData &group)
 
 glm::mat4x4 Instance::superposeInstances(const std::list<Instance *> &lefts,
                                          const std::list<Instance *> &rights,
-                                         bool do_it)
+                                         bool do_it, float *rmsd)
 {
 	if (lefts.size() != rights.size())
 	{
@@ -432,7 +432,11 @@ glm::mat4x4 Instance::superposeInstances(const std::list<Instance *> &lefts,
 	
 	Superpose sp;
 
-	auto add_to_superpose = [&sp]
+	// Superpose::rmsd() cannot be used afterwards, as superpose() empties
+	// the pairs: keep them here to measure how well they end up lined up.
+	std::vector<std::pair<glm::vec3, glm::vec3>> kept;
+
+	auto add_to_superpose = [&sp, &kept]
 	(Instance *const &left, Instance *const &right)
 	{
 		AtomGroup *myAtoms = left->currentAtoms();
@@ -453,6 +457,11 @@ glm::mat4x4 Instance::superposeInstances(const std::list<Instance *> &lefts,
 				glm::vec3 d = mine->derivedPosition();
 				mine->setOtherPosition("original", t);
 				sp.addPositionPair(t, d);
+
+				if (t.x == t.x && d.x == d.x)
+				{
+					kept.push_back({t, d});
+				}
 			}
 		}
 
@@ -462,6 +471,20 @@ glm::mat4x4 Instance::superposeInstances(const std::list<Instance *> &lefts,
 
 	sp.superpose();
 	glm::mat4 tr = sp.transformation();
+
+	// how well the atoms line up once superposed, if it is wanted
+	if (rmsd)
+	{
+		double sum = 0;
+		for (const auto &pair : kept)
+		{
+			glm::vec3 moved = glm::vec3(tr * glm::vec4(pair.second, 1.f));
+			glm::vec3 diff = moved - pair.first;
+			sum += glm::dot(diff, diff);
+		}
+
+		*rmsd = (kept.size() ? sqrt(sum / kept.size()) : NAN);
+	}
 
 	if (do_it)
 	{

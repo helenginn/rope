@@ -193,7 +193,8 @@ public:
 	
 	static glm::mat4x4 superposeInstances(const std::list<Instance *> &lefts,
 	                                      const std::list<Instance *> &rights,
-	                                      bool do_it = true);
+	                                      bool do_it = true,
+	                                      float *rmsd = nullptr);
 protected:
 	void grabBFactors(RAFloats &bVals);
 

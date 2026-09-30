@@ -57,7 +57,7 @@ size_t ItemLine::nameLines() const
 	return std::count(name.begin(), name.end(), '\n') + 1;
 }
 
-float ItemLine::firstLineShift()
+float ItemLine::contentDrop()
 {
 	size_t lines = nameLines();
 	if (lines < 2 || !_content)
@@ -67,32 +67,19 @@ float ItemLine::firstLineShift()
 
 	// as in LineGroup, a height in screen fractions is half the GL height
 	float height = _content->maximalHeight() / 2;
-	// less a smidge, found by eye, to sit level with the text
-	return -height * (float)(lines - 1) / (float)(2 * lines) - 0.005f;
+	return height * (float)(lines - 1) / (float)(2 * lines);
 }
 
-void ItemLine::balanceMarker(float x, float y)
+float ItemLine::firstLineShift()
 {
-	if (_balance)
+	if (nameLines() < 2 || !_content)
 	{
-		removeObject(_balance);
-		delete _balance;
-		_balance = nullptr;
+		return 0.f;
 	}
 
-	float shift = firstLineShift();
-	if (shift == 0.f)
-	{
-		return;
-	}
-
-	// the marker is at y + shift: a mirror image of that about y
-	Image *image = new Image("assets/images/dot.png");
-	image->resize(0.01);
-	image->setLeft(x, y - shift);
-	image->setDisabled(true);
-	addObject(image);
-	_balance = image;
+	// level with the first line, less a smidge found by eye to sit level
+	// with the text
+	return -contentDrop() - 0.005f;
 }
 
 void ItemLine::addBranch()
@@ -108,10 +95,9 @@ void ItemLine::addBranch()
 
 	Image *image = new Image("assets/images/dot.png");
 	image->resize(0.01);
-	image->setLeft(branch_indent, firstLineShift());
+	image->setLeft(branch_indent, firstLineShift() + contentDrop());
 	addObject(image);
 	_dot = image;
-	balanceMarker(branch_indent, 0.0);
 }
 
 void ItemLine::turnArrow()
@@ -217,7 +203,6 @@ void ItemLine::addArrow()
 //		b->setReturnTag("toggle_" + _item->tag());
 		b->setReturnJob(toggle_button);
 		addObject(b);
-		balanceMarker(contentXY.x - _unitHeight, contentXY.y);
 		_displayCollapse = false;
 		_triangle = b;
 		turnArrow();
@@ -255,7 +240,7 @@ void ItemLine::replaceContent()
 
 	float start_indent = (float)(depth + 1) * _unitHeight;
 
-	_content->setLeft(start_indent, 0.0);
+	_content->setLeft(start_indent, contentDrop());
 	if (reuse_old)
 	{
 		_content->setArbitrary(xy.x, xy.y, Alignment::Left);
