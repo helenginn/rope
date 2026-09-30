@@ -43,6 +43,12 @@ public:
 		_suffix = suffix;
 	}
 	
+	// decimal places shown in the number display (default 0)
+	void setDecimals(int decimals)
+	{
+		_decimals = decimals;
+	}
+
 	double value()
 	{
 		return _val;
@@ -73,6 +79,7 @@ private:
 	std::string _prefix;
 	std::string _suffix;
 	bool _vert = false;
+	int _decimals = 0;
 	
 	DraggableImage *_dot = nullptr;
 	DragResponder *_responder = nullptr;

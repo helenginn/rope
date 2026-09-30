@@ -88,7 +88,7 @@ void Slider::updateDisplay(double val)
 {
 	if (_display)
 	{
-		_display->setText(_prefix + f_to_str(val, 0) + _suffix);
+		_display->setText(_prefix + f_to_str(val, _decimals) + _suffix);
 		_display->resize(0.6);
 	}
 }
