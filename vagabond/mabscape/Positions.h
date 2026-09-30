@@ -74,6 +74,19 @@ public:
 	int paramCount();
 	void randomise();
 
+	// Bulk reading for the refinement loop, avoiding a name lookup and lock
+	// per position: every symmetry copy of every antibody in one vector,
+	// with extent() saying which run of it belongs to an antibody. Not
+	// locked, so only for the thread which is changing the positions, or
+	// for when none is.
+	const std::vector<glm::vec3> &copies(bool shown = false) const
+	{
+		return (shown ? _shown : _raw);
+	}
+
+	// false if there is no such antibody
+	bool extent(const std::string &name, int &start, int &num) const;
+
 	// where one antibody (and all its symmetry copies) currently sits
 	struct Placement
 	{
@@ -124,11 +137,16 @@ public:
 	// apart, which counts as 1.
 	static float silhouette(const Clusters &clusters);
 
+	// the median of each cluster: of the vertices occupied by its members
+	// (across all the results), the one with the least total distance to
+	// the rest. Falls back to the cluster's centre if it has no members.
+	static std::vector<glm::vec3> medoids(const Clusters &clusters);
+
 	// For each non-fixed antibody, all its positions in these snapshots (every
 	// symmetry copy of every result) are divided into as many clusters as
 	// there are symmetry operators, starting from the first snapshot's
 	// copies, so that cluster k belongs to operator k. Each copy is then
-	// placed at the mean of its cluster, snapped to the nearest mesh vertex.
+	// placed at the median occupied vertex of its cluster (see medoids()).
 	void applyAverage(const std::vector<const std::vector<Placement> *> &all);
 private:
 	Antigen &_antigen;

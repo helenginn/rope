@@ -128,13 +128,15 @@ CrossCheckView::compute(const Positions &positions, Competition &comp,
 			continue;
 		}
 
-		// its average position against the structure, allowing for the
-		// symmetry operator which brings the two together
+		// its average position (the median vertex, as shown) against the
+		// structure, allowing for the symmetry operator which brings the two
+		// together
 		std::vector<glm::vec3> known = positions.structuralCopies(pl.name);
+		glm::vec3 median = Positions::medoids(clusters)[0];
 		float best = FLT_MAX;
 		for (const glm::vec3 &k : known)
 		{
-			best = std::min(best, glm::length(clusters.centres[0] - k));
+			best = std::min(best, glm::length(median - k));
 		}
 
 		if (best < FLT_MAX)

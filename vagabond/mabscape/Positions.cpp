@@ -248,6 +248,19 @@ Positions::AntibodyPos::closest_to(const std::vector<glm::vec3> &raw,
 	return raw[n];
 }
 
+bool Positions::extent(const std::string &name, int &start, int &num) const
+{
+	auto it = _lookup.find(name);
+	if (it == _lookup.end())
+	{
+		return false;
+	}
+
+	start = it->second->start_idx;
+	num = it->second->num;
+	return true;
+}
+
 int Positions::paramCount()
 {
 	int total = 0;
@@ -422,6 +435,45 @@ bool Positions::cluster(const std::vector<const std::vector<Placement> *> &all,
 	return true;
 }
 
+std::vector<glm::vec3> Positions::medoids(const Clusters &clusters)
+{
+	// the centre of a cluster is a mean, which is not generally a vertex
+	// anyone sits on; its median is the occupied vertex which is closest to
+	// all the others in its cluster
+	std::vector<glm::vec3> out = clusters.centres;
+	size_t n = clusters.centres.size();
+
+	for (size_t k = 0; k < n; k++)
+	{
+		std::vector<const glm::vec3 *> members;
+		for (size_t p = 0; p < clusters.points.size(); p++)
+		{
+			if (clusters.member[p] == k)
+			{
+				members.push_back(&clusters.points[p]);
+			}
+		}
+
+		float best = FLT_MAX;
+		for (const glm::vec3 *candidate : members)
+		{
+			float total = 0;
+			for (const glm::vec3 *other : members)
+			{
+				total += glm::length(*other - *candidate);
+			}
+
+			if (total < best)
+			{
+				best = total;
+				out[k] = *candidate;
+			}
+		}
+	}
+
+	return out;
+}
+
 float Positions::silhouette(const Clusters &clusters)
 {
 	size_t n = clusters.centres.size();
@@ -477,7 +529,7 @@ void Positions::applyAverage(const std::vector<const std::vector<Placement> *>
 		Clusters clusters;
 		if (cluster(all, first.name, clusters))
 		{
-			setCopies(first.name, clusters.centres);
+			setCopies(first.name, medoids(clusters));
 		}
 	}
 }
@@ -559,7 +611,7 @@ void Positions::viewAverage(const std::vector<const std::vector<Placement> *>
 		Clusters clusters;
 		if (cluster(all, first.name, clusters))
 		{
-			_lookup.at(first.name)->setShown(_shown, clusters.centres, 
+			_lookup.at(first.name)->setShown(_shown, medoids(clusters),
 			                                 _fromMesh);
 		}
 	}

@@ -26,6 +26,40 @@
 #include <chrono>
 #include <cmath>
 
+// the copy of an antibody nearest to a point, as Positions::operator() gives
+static const glm::vec3 &nearestCopy(const std::vector<glm::vec3> &raw,
+                                    int start, int num, const glm::vec3 &to)
+{
+	int best = start; float bestSq = FLT_MAX;
+	for (int k = start; k < start + num; k++)
+	{
+		glm::vec3 diff = raw[k] - to;
+		float sq = glm::dot(diff, diff);
+		if (sq < bestSq)
+		{
+			bestSq = sq;
+			best = k;
+		}
+	}
+
+	return raw[best];
+}
+
+void PosToComp::layout(std::vector<int> &start, std::vector<int> &num) const
+{
+	auto &names = _comp.favoured_ordering;
+	start.assign(names.size(), 0);
+	num.assign(names.size(), 0);
+
+	for (size_t i = 0; i < names.size(); i++)
+	{
+		if (!_positions.extent(names[i], start[i], num[i]))
+		{
+			throw std::runtime_error("Antibody name not found");
+		}
+	}
+}
+
 PosToComp::PosToComp(Competition &comp, Positions &pos) 
 : _comp(comp), _positions(pos)
 {
@@ -76,30 +110,26 @@ void PosToComp::fillModel(bool shown)
 	};
 
 	auto &names = _comp.favoured_ordering;
-	int n = 0; int m = 0;
-	for (auto it = names.begin(); it != names.end(); it++)
-	{
-		const std::string &left = *it;
-		const glm::vec3 &lpos = _positions(left, nullptr, shown);
+	std::vector<int> start, num;
+	layout(start, num);
+	const std::vector<glm::vec3> &raw = _positions.copies(shown);
 
-		// the pairs of this antibody with those after it, from the column
-		// after its own
-		n = m + 1;
-		for (auto jt = it + 1; jt != names.end(); jt++)
+	for (size_t m = 0; m < names.size(); m++)
+	{
+		// the first copy of this antibody, and the nearest copy of each of
+		// the antibodies after it (from the column after its own)
+		const glm::vec3 &lpos = raw[start[m]];
+
+		for (size_t n = m + 1; n < names.size(); n++)
 		{
-			const std::string &right = *jt;
-			const glm::vec3 &rpos = _positions(right, &lpos, shown);
+			const glm::vec3 &rpos = nearestCopy(raw, start[n], num[n], lpos);
 
 			float dist = glm::length(rpos - lpos);
 			float score = convert(dist);
-			
+
 			_model(m, n) = score;
 			_model(n, m) = score;
-			
-			n++;
 		}
-		
-		m++;
 	}
 }
 
@@ -298,6 +328,7 @@ std::vector<float> PosToComp::allGradients(const std::vector<std::string> &filte
 	std::vector<float> gs(filtered.size() * 3, 0);
 	float inflection = _radius * 2;
 	float slope = _slope;
+	const std::vector<glm::vec3> &raw = _positions.copies();
 
 	for (size_t n = 0; n < filtered.size(); n++)
 	{
@@ -305,7 +336,7 @@ std::vector<float> PosToComp::allGradients(const std::vector<std::string> &filte
 		// the row of the data matrix follows the full ordering, which includes
 		// the fixed antibodies which are not being refined.
 		int row = _rowOf.at(left);
-		glm::vec3 chosen = _positions(left);
+		glm::vec3 chosen = raw[_start[row]];
 
 		glm::vec3 sum = {};
 		float count = 0;
@@ -322,12 +353,21 @@ std::vector<float> PosToComp::allGradients(const std::vector<std::string> &filte
 				continue;
 			}
 
-			glm::vec3 other = _positions(names[i], &chosen);
+			glm::vec3 other = nearestCopy(raw, _start[i], _num[i], chosen);
 			glm::vec3 diff = chosen - other;
 			float dist = glm::length(diff);
+			glm::vec3 direction = diff;
 			if (dist < 1e-6)
 			{
-				dist = 0.1;
+				// on top of one another, there is no direction to push in:
+				// pick one which both agree on, opposite for each of the pair
+				size_t lo = std::min((size_t)row, i);
+				size_t hi = std::max((size_t)row, i);
+				float angle = 2.399963f * (float)(lo * names.size() + hi + 1);
+				direction = glm::normalize(glm::vec3(cos(angle), sin(angle),
+				                                     cos(angle * 1.7f + 0.3f)));
+				direction *= ((size_t)row < i ? 1.f : -1.f);
+				dist = 1.f;
 			}
 
 			float xpn = exp((inflection - dist) / slope);
@@ -346,7 +386,7 @@ std::vector<float> PosToComp::allGradients(const std::vector<std::string> &filte
 				continue;
 			}
 
-			glm::vec3 contrib = 2 * (target - curr) * curve_grad * (diff / dist);
+			glm::vec3 contrib = 2 * (target - curr) * curve_grad * (direction / dist);
 			if (contrib != contrib)
 			{
 				continue;
@@ -440,6 +480,7 @@ void PosToComp::refineEngine()
 	auto &names = _comp.favoured_ordering;
 	std::vector<std::string> filtered;
 	_rowOf.clear();
+	layout(_start, _num);
 	for (size_t i = 0; i < names.size(); i++)
 	{
 		_rowOf[names[i]] = i;

@@ -98,7 +98,7 @@ public:
 	// moves the antibodies to a cached Result and updates the model matrix.
 	// Must not be called while refining.
 	void showResult(const Result &result);
-	// moves the antibodies to the mean of these Results, snapped to the mesh
+	// moves the antibodies to the median occupied vertex of these Results
 	void showAverage(const std::vector<Result> &results);
 	float score();
 
@@ -119,6 +119,9 @@ private:
 	void descend(const std::vector<std::string> &filtered, int cycles,
 	             bool anneal);
 	float slopeAt(int cycle) const;
+	// where each antibody's symmetry copies are in Positions::copies(), for
+	// each in the competition's ordering
+	void layout(std::vector<int> &start, std::vector<int> &num) const;
 	// the model matrix from the current positions, without refreshing the
 	// display (cheap enough to call every refinement step)
 	void fillModel(bool shown = false);
@@ -165,6 +168,8 @@ private:
 	int _displayEvery{10};
 	// index of each antibody in the competition's favoured ordering
 	std::map<std::string, int> _rowOf;
+	std::vector<int> _start;
+	std::vector<int> _num;
 	
 	std::function<void(const std::vector<float> &, bool)> _setter{};
 };
