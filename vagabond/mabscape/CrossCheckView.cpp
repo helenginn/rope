@@ -108,6 +108,10 @@ CrossCheckView::compute(const Positions &positions, Competition &comp,
 
 		stats.antibodies++;
 
+		// the same sums as for all the antibodies, for this one alone
+		std::vector<double> abSumsq(results.size(), 0);
+		std::vector<size_t> abCounts(results.size(), 0);
+
 		for (size_t p = 0; p < clusters.points.size(); p++)
 		{
 			size_t r = clusters.resultOf[p];
@@ -115,6 +119,8 @@ CrossCheckView::compute(const Positions &positions, Competition &comp,
 			clusters.centres[clusters.member[p]];
 			sumsq[r] += glm::dot(diff, diff);
 			counts[r]++;
+			abSumsq[r] += glm::dot(diff, diff);
+			abCounts[r]++;
 		}
 
 		if (!structural.count(pl.name) || fixedHere.count(pl.name))
@@ -133,30 +139,20 @@ CrossCheckView::compute(const Positions &positions, Competition &comp,
 
 		if (best < FLT_MAX)
 		{
-			// and result by result, each one's nearest copy to the nearest
-			// copy of the structure
-			std::vector<float> perResult(results.size(), FLT_MAX);
-			for (size_t p = 0; p < clusters.points.size(); p++)
+			// and its RMSD as for the overall one: per result, the root mean
+			// square distance of its positions from their cluster centres,
+			// then the mean and spread over the results
+			std::vector<float> abRmsds;
+			for (size_t r = 0; r < results.size(); r++)
 			{
-				for (const glm::vec3 &k : known)
+				if (abCounts[r])
 				{
-					float d = glm::length(clusters.points[p] - k);
-					float &nearest = perResult[clusters.resultOf[p]];
-					nearest = std::min(nearest, d);
-				}
-			}
-
-			std::vector<float> seen;
-			for (float d : perResult)
-			{
-				if (d < FLT_MAX)
-				{
-					seen.push_back(d);
+					abRmsds.push_back(sqrt(abSumsq[r] / abCounts[r]));
 				}
 			}
 
 			float mean, sd;
-			meanAndSd(seen, mean, sd);
+			meanAndSd(abRmsds, mean, sd);
 
 			size_t elements = 0;
 			auto at = std::find(order.begin(), order.end(), pl.name);
@@ -173,7 +169,7 @@ CrossCheckView::compute(const Positions &positions, Competition &comp,
 				}
 			}
 
-			stats.freed.push_back({pl.name, best, sd, elements});
+			stats.freed.push_back({pl.name, best, mean, sd, elements});
 			freedDistances.push_back(best);
 		}
 	}
@@ -223,7 +219,7 @@ void CrossCheckView::setup()
 	const float top = 0.2;
 	const float bottom = 0.93;
 	size_t freed = _stats.freed.size();
-	size_t rows = 1 + 2 + 1 + 1 + (freed ? 1 + freed : 1) + 1;
+	size_t rows = 1 + 2 + 1 + 1 + 1 + (freed ? 1 + freed : 0) + 1;
 	float needed = rows * 0.06 + 3 * 0.03;
 	float scale = std::min(1.f, (bottom - top) / needed);
 
@@ -247,25 +243,30 @@ void CrossCheckView::setup()
 		y += 0.06 * scale;
 	};
 
-	// a line with a second value in a box of its own, further to the left
-	auto line2 = [this, &y, scale](const std::string &label, 
-	                               const std::string &middle,
-	                               const std::string &value)
+	// a line with values in boxes of their own, in columns to the right
+	auto line3 = [this, &y, scale](const std::string &label, 
+	                               const std::string &first,
+	                               const std::string &second,
+	                               const std::string &third)
 	{
 		Text *l = new Text(label);
 		l->resize(0.6 * scale);
 		l->setLeft(0.15, y);
 		addObject(l);
 
-		Text *m = new Text(middle);
-		m->resize(0.6 * scale);
-		m->setRight(0.62, y);
-		addObject(m);
+		const std::pair<const std::string *, float> columns[] =
+		{{&first, 0.5f}, {&second, 0.68f}, {&third, 0.85f}};
 
-		Text *v = new Text(value);
-		v->resize(0.6 * scale);
-		v->setRight(0.85, y);
-		addObject(v);
+		for (const auto &column : columns)
+		{
+			if (column.first->length())
+			{
+				Text *v = new Text(*column.first);
+				v->resize(0.6 * scale);
+				v->setRight(column.second, y);
+				addObject(v);
+			}
+		}
 
 		y += 0.06 * scale;
 	};
@@ -294,12 +295,15 @@ void CrossCheckView::setup()
 		     withError(_stats.freedMean, _stats.freedSd, 
 		               _stats.freed.size() > 1));
 
+		// each one: how far its average position is from its known one, its
+		// RMSD (as above) and how much data there is for it
+		line3("", "distance", "rmsd", "data");
+
 		for (const auto &entry : _stats.freed)
 		{
-			// the distance and its spread over the results, then how much
-			// data there is
-			line2("   " + entry.name, 
-			      withError(entry.distance, entry.sd, _stats.results > 1),
+			line3("   " + entry.name, 
+			      withError(entry.distance, 0, false),
+			      withError(entry.rmsd, entry.rmsdSd, _stats.results > 1),
 			      std::to_string(entry.elements) + " entries");
 		}
 	}

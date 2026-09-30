@@ -40,21 +40,30 @@ public:
 		// per result: mean and standard deviation over the results
 		float rmsd{};
 		float rmsdSd{};
+
 		// fiducials with structural information which were free in these
-		// results, and the distance of each one's average position from its
-		// structural position (under its best symmetry operator)
+		// results
 		struct Freed
 		{
 			std::string name;
+			// the distance of the average position of this antibody from its
+			// structural position (under the best symmetry operator)
 			float distance{};
-			// the same distance taken result by result: spread over the results
-			float sd{};
+			// the RMSD of this antibody's positions, worked out just as the
+			// overall one is but for this antibody alone: mean and standard
+			// deviation over the results
+			float rmsd{};
+			float rmsdSd{};
 			// how many of the data matrix elements which involve this antibody
 			// have a value (the rest are missing)
 			size_t elements{};
 		};
 
 		std::vector<Freed> freed;
+
+		// the distance of each one's average position from its structural
+		// position (under its best symmetry operator): mean and standard
+		// deviation over the fiducials
 		float freedMean{};
 		float freedSd{};
 		// what chance would give for that distance: two random mesh vertices,
