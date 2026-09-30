@@ -38,8 +38,8 @@ public:
 	static std::vector<glm::vec3> pcaPoints(const Eigen::MatrixXf &matrix,
 	                                        float extent = 1.5f);
 
-	// yellow at the lowest score, blue at half of the highest score (and
-	// blue beyond that).
+	// blue at the lowest score, yellow halfway between the lowest and the
+	// highest (and yellow beyond that).
 	static std::vector<glm::vec4> scoreColours(const std::vector<float> &scores);
 
 	// replaces all points; must be called from the main thread.
