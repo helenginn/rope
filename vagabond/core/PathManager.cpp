@@ -655,16 +655,19 @@ std::vector<double> PathManager::pathEntropyInstancePair(int numPaths, std::vect
 
     if (mist == false)
     {
-        struct EntropyForMatrix ent4Mat = pE->calculateEntropyIndependent(numPaths, flagPar, torsRes, numDivisions);
-
-        entropy = ent4Mat.totalEntropy;
+        pE->calculateEntropyIndependent(numPaths, flagPar, torsRes, numDivisions);
     }
     else
     {
-        struct EntropyForMatrix ent4Mat = pE->calculateEntropyMI(numPaths, flagPar, torsRes);
-
-        entropy = ent4Mat.totalEntropy;
+        pE->calculateEntropyMI(numPaths, flagPar, torsRes);
     }
+
+    const std::vector<EntropyResults>& results = pE->result();
+
+    for(const EntropyResults& result : results)
+    {
+         entropy.push_back(result.totalEntropy);
+    } 
 
     return entropy;
 }
