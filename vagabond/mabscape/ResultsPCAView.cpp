@@ -17,6 +17,7 @@
 // Please email: vagabond @ hginn.co.uk for more details.
 
 #include "ResultsPCAView.h"
+#include <vagabond/gui/ColourScheme.h>
 #include <algorithm>
 
 ResultsPCAView::ResultsPCAView()
@@ -65,10 +66,7 @@ std::vector<glm::vec3> ResultsPCAView::pcaPoints(const Eigen::MatrixXf &matrix,
 std::vector<glm::vec4>
 ResultsPCAView::scoreColours(const std::vector<float> &scores)
 {
-	const glm::vec4 yellow(1.f, 1.f, 0.f, 1.f);
-	const glm::vec4 blue(0.f, 0.f, 1.f, 1.f);
-
-	std::vector<glm::vec4> colours(scores.size(), blue);
+	std::vector<glm::vec4> colours;
 
 	if (scores.empty())
 	{
@@ -76,16 +74,20 @@ ResultsPCAView::scoreColours(const std::vector<float> &scores)
 	}
 
 	float lowest = *std::min_element(scores.begin(), scores.end());
-	float top = *std::max_element(scores.begin(), scores.end());
-	float span = 0.5f * (lowest + top) - lowest;
+	float highest = *std::max_element(scores.begin(), scores.end());
+	float span = highest - lowest;
 
-	for (size_t i = 0; i < scores.size(); i++)
+	ColourScheme *heat = new ColourScheme(Heat);
+
+	for (const float &score : scores)
 	{
-		float t = (span > 1e-6 ? (scores[i] - lowest) / span : 0.f);
-		t = std::min(1.f, std::max(0.f, t));
-		colours[i] = blue + t * (yellow - blue);
+		// the heat scheme runs black (0) to white (1); lower scores are
+		// better, so the best score is white and the worst black.
+		float goodness = (span > 1e-6 ? 1.f - (score - lowest) / span : 1.f);
+		colours.push_back(heat->colour(goodness));
 	}
 
+	delete heat;
 	return colours;
 }
 

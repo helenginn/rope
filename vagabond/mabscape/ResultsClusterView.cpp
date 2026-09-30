@@ -198,10 +198,11 @@ void ResultsClusterView::calculate()
 	{
 		scores.push_back(r.score);
 	}
-	std::vector<glm::vec4> colours = ResultsPCAView::scoreColours(scores);
 
-	addMainThreadJob([this, tmp, points, colours]()
+	addMainThreadJob([this, tmp, points, scores]()
 	{
+		std::vector<glm::vec4> colours = ResultsPCAView::scoreColours(scores);
+
 		{
 			std::unique_lock<std::mutex> lock(_mutex);
 			_matrix = tmp;
