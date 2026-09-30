@@ -125,11 +125,16 @@ void PathThermodynamics::buttonPressed(std::string tag, Button *button)
 		{
 			_numPaths = lrint(min);
 			
+            std::vector<double> entropyVec;
 			std::vector<TorsRes4NN*> torsRes = _pathEntropy->getAtomsAndResidues(_numPaths, _paths, 15);
 
-			struct EntropyForMatrix entropy4Mat = _pathEntropy->calculateEntropyIndependent(_numPaths, flagPar, torsRes,15);
+			_pathEntropy->calculateEntropyIndependent(_numPaths, flagPar, torsRes,15);
+            const std::vector<EntropyResults>& results = _pathEntropy->result();
 
-            std::vector<double> entropyVec = entropy4Mat.totalEntropy;
+			for (const EntropyResults& result : results)
+			{
+			    entropyVec.push_back(result.totalEntropy);
+		    }
 
 	        makeGraph(entropyVec);
 		};
@@ -164,12 +169,18 @@ void PathThermodynamics::buttonPressed(std::string tag, Button *button)
 		auto respondToVal = [this, flagPar](float min, float max)
 		{
 			_numPaths = lrint(min);
-			
+		
+            std::vector<double> entropyVec;	
 			std::vector<TorsRes4NN*> torsRes = _pathEntropy->getAtomsAndResidues(_numPaths, _paths);
 
-			struct EntropyForMatrix ent4Mat = _pathEntropy->calculateEntropyMI(_numPaths, flagPar, torsRes);
+			_pathEntropy->calculateEntropyMI(_numPaths, flagPar, torsRes);
 
-            std::vector<double> entropyVec = ent4Mat.totalEntropy;
+            const std::vector<EntropyResults>& results = _pathEntropy->result();
+
+			for (const EntropyResults& result : results)
+			{
+			    entropyVec.push_back(result.totalEntropy);
+		    }
 
             double meanTotalEntropy = (std::accumulate(entropyVec.begin(), entropyVec.end(), 0))/entropyVec.size();
 
@@ -205,11 +216,17 @@ void PathThermodynamics::buttonPressed(std::string tag, Button *button)
 		{
 			_numPaths = lrint(min);
 			
+            std::vector<double> entropyVec;
 			std::vector<TorsRes4NN*> torsRes = _pathEntropy->getAtomsAndResidues(_numPaths, _paths, 15);
 
-			struct EntropyForMatrix entropy4Mat = _pathEntropy->calculateEntropyIndependent(_numPaths, flagPar, torsRes,15);
+			_pathEntropy->calculateEntropyIndependent(_numPaths, flagPar, torsRes,15);
 
-            std::vector<double> entropyVec = entropy4Mat.totalEntropy;
+            const std::vector<EntropyResults>& results = _pathEntropy->result();
+
+			for (const EntropyResults& result : results)
+			{
+			    entropyVec.push_back(result.totalEntropy);
+		    }
 
 	        makeGraph(entropyVec);
 		};

@@ -14,10 +14,11 @@ class Instance;
 class Entropy : public Progressor
 {
 public:
-    Entropy(const std::vector<PathGroup> &paths, const struct FlagParameters &flagPar);
-	struct EntropyForHeatMap
+    Entropy(const std::vector<PathGroup>& paths, const struct FlagParameters& flagPar);
+	
+    struct EntropyForHeatMap
 	{
-		int numDivisions;
+		int numDivisions{};
 
 		~EntropyForHeatMap()
 		{
@@ -26,7 +27,7 @@ public:
 		std::vector<Instance*> start;
 		std::vector<Instance*> end;
 		std::vector<std::vector<double>> total;
-		std::vector<std::vector<double>> perRes;
+	    std::vector<std::vector<std::vector<double>>> perRes;
 
 		std::vector<Eigen::MatrixXf> dataMatrix;
 	}; 
@@ -38,7 +39,7 @@ public:
         return "Generating heatmap";
     }
 
-    std::vector<double> pathEntropyInstancePair(int numPaths, std::vector<Path *> paths, int numDivisions, bool mist);
+    void pathEntropyInstancePair(int numPaths, std::vector<Path *> paths, int numDivisions, bool mist);
 
     struct compare_ids
     {
@@ -97,7 +98,9 @@ public:
 
 private:
     std::vector<PathGroup> _paths;
-    struct FlagParameters _flagPar;
+    FlagParameters _flagPar;
+
+    PathEntropy _pathEntropy;
 
     InstanceSet _starts;
     InstanceSet _ends;

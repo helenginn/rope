@@ -475,22 +475,25 @@ std::vector<double> PathManager::pathEntropyInstancePair(int numPaths, std::vect
     PathEntropy *pE = new PathEntropy();
     std::vector<double> entropy;
 
-    struct FlagParameters flagPar = pE->initFlagPar();
+    FlagParameters flagPar = pE->initFlagPar();
 
     std::vector<TorsRes4NN*> torsRes = pE->getAtomsAndResidues(numPaths, paths, numDivisions);
 
     if (mist == false)
     {
-        struct EntropyForMatrix ent4Mat = pE->calculateEntropyIndependent(numPaths, flagPar, torsRes, numDivisions);
-
-        entropy = ent4Mat.totalEntropy;
+        pE->calculateEntropyIndependent(numPaths, flagPar, torsRes, numDivisions);
     }
     else
     {
-        struct EntropyForMatrix ent4Mat = pE->calculateEntropyMI(numPaths, flagPar, torsRes);
-
-        entropy = ent4Mat.totalEntropy;
+        pE->calculateEntropyMI(numPaths, flagPar, torsRes);
     }
+
+    const std::vector<EntropyResults>& results = pE->result();
+
+    for(const EntropyResults& result : results)
+    {
+         entropy.push_back(result.totalEntropy);
+    } 
 
     return entropy;
 }
