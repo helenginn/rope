@@ -19,13 +19,15 @@
 #include "EntropyTableView.h"
 #include "TableView.h"
 
+#include <vagabond/core/Entity.h>
 #include <vagabond/core/PathEntropy.h>
-#include <vagabond/core/Entropy.h>
+#include <vagabond/core/paths/Entropy.h>
 #include <vagabond/gui/elements/TextButton.h>
 #include <vagabond/gui/elements/Menu.h>
 
-EntropyTableView::EntropyTableView(Scene *prev, struct EntropyForMatrix *entropy) : Scene(prev)
+EntropyTableView::EntropyTableView(Scene *prev, Entity *entity, const std::vector<EntropyResults> &entropy) : ListView(prev)
 {
+    _entity = entity;
 	_entropy = entropy;
 }
 
@@ -38,20 +40,46 @@ void EntropyTableView::setup()
 {
 	addTitle("Entropy - Residue Contributions");
 	{
-		Text *t = new Text("Number of entries");
+		Text *t = new Text("Number of residues");
 		t->setLeft(0.2, 0.3);
 		addObject(t);
 	}
 	{
-		std::string num = i_to_str();
+		std::string num = i_to_str(_entity->sequence()->size());
 		Text *t = new Text(num);
 		t->setLeft(0.8, 0.3);
 		addObject(t);
 	}
+
+    ListView::setup();
+}
+
+size_t EntropyTableView::lineCount()
+{
+    return _entity->sequence()->size();
+}
+
+Renderable *EntropyTableView::getLine(int i)
+{
+    Box *b = new Box();
+
+    const std::string desc = _entity->sequence()->residue(i)->code();
+
+    double entRes = _entropy[i].entResidue.front();
+
+    Text *res = new Text(desc);
+    res->setLeft(0.0, 0.);
+    b->addObject(res);
+
+    Text *ent = new Text(std::to_string(entRes));
+    ent->setRight(0.6,0.);
+    b->addObject(ent);
+
+	return b;
 }
 
 void EntropyTableView::buttonPressed(std::string tag, Button *button)
 {
-Scene::buttonPressed(tag, button);
+    Scene::buttonPressed(tag, button);
 }
 
