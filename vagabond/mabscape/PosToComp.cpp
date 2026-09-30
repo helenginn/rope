@@ -294,6 +294,7 @@ void PosToComp::refineEngine()
 		zeroSetter();
 		values = OpVec<float>(_positions.paramCount());
 		OpVec<float> momentum(_positions.paramCount());
+		int cycle = 0;
 		while (n < 10000)
 		{
 			float val = score();
@@ -309,6 +310,17 @@ void PosToComp::refineEngine()
 			_setter(values, false);
 			std::cout << "Score: " << val << " sum^2(g) " << sumsq << std::endl;
 			n++;
+			cycle++;
+
+			if (cycle % _snapEvery == 0)
+			{
+				// snap each symmetry-related copy to its nearest mesh
+				// position, then take the snapped positions as the new
+				// reference so that the refinement continues from the grid.
+				_setter(values, true);
+				zeroSetter();
+				values = OpVec<float>(_positions.paramCount());
+			}
 
 			if (sumsq < 0.001)
 			{
