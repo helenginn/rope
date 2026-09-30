@@ -36,6 +36,7 @@ mabscapefiles = [
 
 executable('mabscape', mabscapefiles,
     link_with : [gui, core],
+    cpp_args: [compile_args],
     link_args: [links],
 	include_directories: ['../..'],
     dependencies : gui_deps,

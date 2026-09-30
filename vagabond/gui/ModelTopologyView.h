@@ -21,6 +21,7 @@
 
 #include <vagabond/gui/elements/IndexResponseView.h>
 #include <vagabond/gui/elements/Mouse3D.h>
+#include <vagabond/utils/OpSet.h>
 #include <map>
 
 class Box;
@@ -75,6 +76,12 @@ private:
 
 	Model &_model;
 	PositionShifter *_shifter{};
+
+	// replaces PositionShifter's former limitSensitivity()/depth=2 relay
+	// mechanism: addLinks() fills this with each chain image's linked
+	// neighbours, and _shifter's weightFn (set in makeShifter()) looks it
+	// up - see ProtonNetworkView's _reach for the same pattern.
+	std::map<void *, OpSet<void *>> _reach;
 	
 	typedef struct 
 	{

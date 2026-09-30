@@ -69,6 +69,20 @@ void ModelTopologyView::makeShifter()
 {
 	_shifter = new PositionShifter(getModel());
 //	_shifter->setUniformDistance(10.f);
+
+	// see _reach's comment in the header - replaces the old
+	// limitSensitivity()/depth=2 relay mechanism.
+	_shifter->setWeightFn([this](void *left, void *right) -> float
+	{
+		auto found = _reach.find(left);
+		if (found == _reach.end())
+		{
+			return 0.f;
+		}
+		return found->second.count(right) ? 1.f : 0.f;
+	});
+	_shifter->setExemptWeightedFromRepulsion(true);
+
 	_shifter->run();
 	
 	auto make_init = [](ChainInfo &info)
@@ -173,7 +187,6 @@ void ModelTopologyView::addLinks()
 		Chain *left = ac->chain(i);
 		GroupBounds bounds(left);
 
-		OpSet<void *> list;
 		for (size_t j = i + 1; j < ac->chainCount(); j++)
 		{
 			Chain *right = ac->chain(j);
@@ -186,15 +199,16 @@ void ModelTopologyView::addLinks()
 			{
 				continue;
 			}
-			
+
 			Line *line = new Line();
 			line->addPoint(posForChain(left));
 			line->addPoint(posForChain(right));
 			addObject(line);
 			_links[line] = {_chain2Image[left], _chain2Image[right]};
-			list += (void *)_chain2Image[right];
+
+			_reach[(void *)_chain2Image[left]] += (void *)_chain2Image[right];
+			_reach[(void *)_chain2Image[right]] += (void *)_chain2Image[left];
 		}
-		_shifter->limitSensitivity(_chain2Image[left], list);
 	}
 	
 	auto tidy = [this]()

@@ -19,6 +19,11 @@
 #include "MabscapeWindow.h"
 #include <vagabond/utils/gl_import.h>
 
+#ifdef ROPE_INLINE_TESTS
+#define DOCTEST_CONFIG_IMPLEMENT
+#include <doctest/doctest.h>
+#endif
+
 #ifdef __EMSCRIPTEN__
 #include <emscripten.h>
 #else
