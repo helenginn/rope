@@ -18,6 +18,7 @@
 
 #include "CrossCheckView.h"
 #include "Positions.h"
+#include "Mab.h"
 #include <vagabond/gui/elements/Text.h>
 #include <algorithm>
 #include <cmath>
@@ -51,7 +52,8 @@ static void meanAndSd(const std::vector<float> &values, float &mean, float &sd)
 }
 
 CrossCheckView::Stats 
-CrossCheckView::compute(const Positions &positions, const std::string &key,
+CrossCheckView::compute(const Positions &positions, Competition &comp,
+                        const std::string &key,
                         const std::vector<PosToComp::Result> &results)
 {
 	Stats stats;
@@ -87,6 +89,10 @@ CrossCheckView::compute(const Positions &positions, const std::string &key,
 	{
 		structural.insert(s);
 	}
+
+	// the data, for how much of it involves each antibody
+	std::vector<std::string> order = comp.favoured_ordering;
+	Eigen::MatrixXf data = comp.make_plot(order);
 
 	std::vector<double> sumsq(results.size(), 0);
 	std::vector<size_t> counts(results.size(), 0);
@@ -127,7 +133,47 @@ CrossCheckView::compute(const Positions &positions, const std::string &key,
 
 		if (best < FLT_MAX)
 		{
-			stats.freed.push_back({pl.name, best});
+			// and result by result, each one's nearest copy to the nearest
+			// copy of the structure
+			std::vector<float> perResult(results.size(), FLT_MAX);
+			for (size_t p = 0; p < clusters.points.size(); p++)
+			{
+				for (const glm::vec3 &k : known)
+				{
+					float d = glm::length(clusters.points[p] - k);
+					float &nearest = perResult[clusters.resultOf[p]];
+					nearest = std::min(nearest, d);
+				}
+			}
+
+			std::vector<float> seen;
+			for (float d : perResult)
+			{
+				if (d < FLT_MAX)
+				{
+					seen.push_back(d);
+				}
+			}
+
+			float mean, sd;
+			meanAndSd(seen, mean, sd);
+
+			size_t elements = 0;
+			auto at = std::find(order.begin(), order.end(), pl.name);
+			if (at != order.end())
+			{
+				int row = at - order.begin();
+				for (int col = 0; col < data.cols(); col++)
+				{
+					float v = data(row, col);
+					if (col != row && v == v)
+					{
+						elements++;
+					}
+				}
+			}
+
+			stats.freed.push_back({pl.name, best, sd, elements});
 			freedDistances.push_back(best);
 		}
 	}
@@ -201,6 +247,29 @@ void CrossCheckView::setup()
 		y += 0.06 * scale;
 	};
 
+	// a line with a second value in a box of its own, further to the left
+	auto line2 = [this, &y, scale](const std::string &label, 
+	                               const std::string &middle,
+	                               const std::string &value)
+	{
+		Text *l = new Text(label);
+		l->resize(0.6 * scale);
+		l->setLeft(0.15, y);
+		addObject(l);
+
+		Text *m = new Text(middle);
+		m->resize(0.6 * scale);
+		m->setRight(0.62, y);
+		addObject(m);
+
+		Text *v = new Text(value);
+		v->resize(0.6 * scale);
+		v->setRight(0.85, y);
+		addObject(v);
+
+		y += 0.06 * scale;
+	};
+
 	auto gap = [&y, scale]()
 	{
 		y += 0.03 * scale;
@@ -227,7 +296,11 @@ void CrossCheckView::setup()
 
 		for (const auto &entry : _stats.freed)
 		{
-			line("   " + entry.first, withError(entry.second, 0, false));
+			// the distance and its spread over the results, then how much
+			// data there is
+			line2("   " + entry.name, 
+			      withError(entry.distance, entry.sd, _stats.results > 1),
+			      std::to_string(entry.elements) + " entries");
 		}
 	}
 	else

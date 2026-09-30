@@ -20,6 +20,7 @@
 #define __vagabond__PrepWorkView__
 
 #include <vagabond/gui/Display.h>
+#include "PrepResultsView.h"
 
 struct Mab;
 class Antigens;
@@ -35,7 +36,8 @@ private:
 	Mab &_mab;
 
 	std::vector<std::function<void()>> _tidy;
-	std::vector<std::string> _messages;
+	std::vector<PrepMessage> _messages;
+	Scene *_prev{};
 };
 
 #endif

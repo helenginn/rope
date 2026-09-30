@@ -18,6 +18,7 @@
 
 #include "AntibodyOrderingView.h"
 #include "ContactPoint.h"
+#include "AlignmentView.h"
 #include "PrepWorkView.h"
 #include "Mesh.h"
 #include "Mab.h"
@@ -26,7 +27,7 @@
 #include <vagabond/gui/elements/TextButton.h>
 
 PrepWorkView::PrepWorkView(Scene *prev, Mab &mab) 
-: Scene(prev), Display(prev), _mab(mab)
+: Scene(prev), Display(prev), _mab(mab), _prev(prev)
 {
 	_farSlab = 80;
 	_slabbing = true;
@@ -48,30 +49,20 @@ void PrepWorkView::setup()
 			tidy();
 		}
 
-		float top = 0.3;
-		Text *summary = new Text("Completed " + 
-		                         std::to_string(_messages.size()) + " jobs:");
-		summary->setLeft(0.2, top);
-		addObject(summary);
+		// keep what was worked out, so it is there next time
+		_mab.save();
 
-		for (const std::string &msg : _messages)
+		// a scene of its own, a page at a time: the list can be long. It
+		// goes back to where this one did, since the work here is done.
+		Mab *mab = &_mab;
+		auto next = [mab](Scene *scene)
 		{
-			top += 0.06;
-			Text *summary = new Text(msg);
-			summary->setLeft(0.26, top);
-			addObject(summary);
-		}
-		
-		auto show_orders = [this]()
-		{
-			AntibodyOrderingView *aov = new AntibodyOrderingView(this, _mab);
+			AntibodyOrderingView *aov = new AntibodyOrderingView(scene, *mab);
 			aov->show();
 		};
 
-		TextButton *tb = new TextButton("Next", this);
-		tb->setRight(0.8, 0.8);
-		tb->setReturnJob(show_orders);
-		addObject(tb);
+		PrepResultsView *prv = new PrepResultsView(_prev, _messages, next);
+		prv->show();
 	};
 
 	DoJob([this, displayResults, doJob]() 
@@ -94,32 +85,73 @@ void PrepWorkView::prepareAntigens(Antigens &antigens)
 		shiftToCentre(mesh->centroid(), 0);
 
 		mesh->refine();
-		_messages.push_back("Refined mesh for antigen " + antigen.title);
+		_messages.push_back({"Refined mesh for antigen " + antigen.title, false});
 
 		for (Fiducial &fid : _mab.fiducials)
 		{
 			setInformation("Aligning " + fid.name);
 			if (fid.antigen == antigen.title)
 			{
-				fid.model.load();
-				DisplayUnit *unit = new DisplayUnit(this);
-				unit->loadAtoms(fid.model.currentAtoms());
-				addMainThreadJob
-				([this, unit]()
-				 {
-					unit->displayAtoms();
-					unit->startWatch();
-					addDisplayUnit(unit);
-				 });
+				// worked out before, from the same models? then no need to
+				// load them or go through it all again
+				ContactPoint *contact = new ContactPoint(fid, _mab.antigens, 
+				                                         false);
+				bool saved = contact->restore(fid.alignment);
+				DisplayUnit *unit = nullptr;
 
-				ContactPoint *contact = new ContactPoint(fid, _mab.antigens);
-				contact->findMapping();
+				if (!saved)
+				{
+					delete contact;
+
+					fid.model.load();
+					unit = new DisplayUnit(this);
+					unit->loadAtoms(fid.model.currentAtoms());
+					addMainThreadJob
+					([this, unit]()
+					 {
+						unit->displayAtoms();
+						unit->startWatch();
+						addDisplayUnit(unit);
+					 });
+
+					contact = new ContactPoint(fid, _mab.antigens);
+					contact->findMapping();
+					fid.alignment = contact->alignmentJson();
+				}
+
 				fid.contact = contact;
 
 				int total = contact->transforms().size();
-				_messages.push_back("Mapped " + std::to_string(total) + 
+				_messages.push_back({"Mapped " + std::to_string(total) + 
 				" orientation" + (total == 1 ? "" : "s") + 
-				" for antibody " + fid.name);
+				" for antibody " + fid.name + (saved ? " (saved)" : ""), 
+				false});
+
+				// a poor alignment of any of them
+				for (const ContactPoint::Warning &warning : contact->warnings())
+				{
+					PrepMessage message = {warning.text, true};
+					Antigen *ag = &antigen; Fiducial *fd = &fid;
+					glm::mat4x4 tr = warning.transform;
+					std::string text = warning.text;
+					message.show = [ag, fd, tr, text](Scene *scene)
+					{
+						AlignmentView *av = new AlignmentView(scene, *ag, *fd,
+						                                      tr, text);
+						av->show();
+					};
+					_messages.push_back(message);
+				}
+
+				if (saved)
+				{
+					for (const glm::mat4x4 &mat : contact->transforms())
+					{
+						antigen.sym.add_if_new(mat);
+					}
+					continue;
+				}
+
 				std::this_thread::sleep_for(std::chrono::milliseconds(200));
 				
 				for (const glm::mat4x4 &mat : contact->transforms())
@@ -140,9 +172,9 @@ void PrepWorkView::prepareAntigens(Antigens &antigens)
 
 		antigen.sym.recalibrateToFirst();
 		int total = antigen.sym.transforms().size();
-		_messages.push_back("Collected " + std::to_string(total) + 
-		                    " orientation" + (total == 1 ? "" : "s") + 
-		                    " for antigen " + antigen.title);
+		_messages.push_back({"Collected " + std::to_string(total) + 
+		                     " orientation" + (total == 1 ? "" : "s") + 
+		                     " for antigen " + antigen.title, false});
 
 		for (const glm::mat4x4 &mat : antigen.sym.transforms())
 		{

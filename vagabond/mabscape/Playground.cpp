@@ -675,6 +675,7 @@ void Playground::viewResults()
 		                             const std::vector<PosToComp::Result> &results)
 		{
 			CrossCheckView::Stats stats = CrossCheckView::compute(*_positions,
+			                                                      *_mab.competitions.begin(),
 			                                                      key, results);
 			std::string title = name + " - " + (key.length() ? 
 			"fixed abs " + key : "no fixed abs");

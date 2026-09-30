@@ -23,6 +23,7 @@
 #include "PosToComp.h"
 
 class Positions;
+struct Competition;
 
 /** summary statistics of a group of Results, averaged as the Playground
  *  does (see Positions::applyAverage()): how many went into the average, how
@@ -42,7 +43,18 @@ public:
 		// fiducials with structural information which were free in these
 		// results, and the distance of each one's average position from its
 		// structural position (under its best symmetry operator)
-		std::vector<std::pair<std::string, float>> freed;
+		struct Freed
+		{
+			std::string name;
+			float distance{};
+			// the same distance taken result by result: spread over the results
+			float sd{};
+			// how many of the data matrix elements which involve this antibody
+			// have a value (the rest are missing)
+			size_t elements{};
+		};
+
+		std::vector<Freed> freed;
 		float freedMean{};
 		float freedSd{};
 		// what chance would give for that distance: two random mesh vertices,
@@ -52,7 +64,8 @@ public:
 
 	// key: the fixed antibodies of the results' bucket, "X, Y" as in
 	// ResultsView::bucketKey()
-	static Stats compute(const Positions &positions, const std::string &key,
+	static Stats compute(const Positions &positions, Competition &comp,
+	                     const std::string &key,
 	                     const std::vector<PosToComp::Result> &results);
 
 	CrossCheckView(Scene *prev, const std::string &title, const Stats &stats);

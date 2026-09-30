@@ -216,6 +216,9 @@ struct Fiducial
 
 	std::string antigen;
 	ContactPoint *contact{};
+	// the saved result of aligning this onto its antigen (see ContactPoint),
+	// so that it need not be worked out again until its inputs change
+	json alignment{};
 
 	std::string validate(const Antigens &antigens);
 	void housekeeping();
@@ -230,6 +233,11 @@ inline void to_json(json &j, const Fiducial &f)
 	j["model"] = f.model;
 	j["entities"] = f.entities;
 	j["antigen"] = f.antigen;
+
+	if (!f.alignment.is_null())
+	{
+		j["alignment"] = f.alignment;
+	}
 }
 
 inline void from_json(const json &j, Fiducial &f)
@@ -238,6 +246,11 @@ inline void from_json(const json &j, Fiducial &f)
 	f.model = j.at("model");
 	f.entities = j.at("entities");
 	f.antigen = j.at("antigen");
+
+	if (j.count("alignment"))
+	{
+		f.alignment = j.at("alignment");
+	}
 }
 
 class Fiducials : public std::list<Fiducial>

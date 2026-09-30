@@ -20,9 +20,14 @@
 #include "Mab.h"
 #include <vagabond/core/Model.h>
 #include <vagabond/core/GroupBounds.h>
+#include <vagabond/utils/FileReader.h>
 #include <algorithm>
 
-ContactPoint::ContactPoint(Fiducial &fiducial, Antigens &antigens)
+// an orientation which superposes worse than this (Angstroms) is flagged
+static const float MAX_RMSD = 4.f;
+
+ContactPoint::ContactPoint(Fiducial &fiducial, Antigens &antigens,
+                           bool find_instances)
 : _fiducial(fiducial), _antigens(antigens)
 {
 	_transforms.clear();
@@ -36,6 +41,11 @@ ContactPoint::ContactPoint(Fiducial &fiducial, Antigens &antigens)
 	{
 		throw std::runtime_error("Missing antigen for antibody " 
 		                         + fiducial.name);
+	}
+
+	if (!find_instances)
+	{
+		return;
 	}
 
 	OpSet<std::string> antigen_ents = _chosen->entities;
@@ -230,14 +240,29 @@ void ContactPoint::findMapping()
 			std::list<Instance *> ltrunc = leftList;
 			ltrunc.resize(arrangement.size());
 
+			float rmsd = 0;
 			glm::mat4x4 new_mat = 
-			Instance::superposeInstances(ltrunc, arrangement, false);
+			Instance::superposeInstances(ltrunc, arrangement, false, &rmsd);
 
 			bool added = add_if_new(new_mat);
 
 			if (added)
 			{
 				_entries.push_back({new_mat, ltrunc, arrangement});
+				std::cout << "RMSD of orientation " << _entries.size() 
+				<< ": " << rmsd << " A" << std::endl;
+
+				// a poor alignment, or none at all (not a number), means
+				// this orientation cannot be trusted
+				if (rmsd != rmsd || rmsd > MAX_RMSD)
+				{
+					std::string msg = "Orientation " + 
+					std::to_string(_entries.size()) + " of antibody " + 
+					_fiducial.name + " aligns with RMSD " + 
+					(rmsd != rmsd ? std::string("unknown") : 
+					 f_to_str(rmsd, 1) + " A");
+					_warnings.push_back({msg, new_mat, rmsd});
+				}
 			}
 		}
 	}
@@ -322,4 +347,128 @@ void ContactPoint::applyTransform(const glm::mat4x4 &which)
 	};
 
 	Symmetry::applyTransform(which, loop_over_atoms(myAtoms));
+}
+
+static json matrix_to_json(const glm::mat4x4 &mat)
+{
+	json j = json::array();
+	for (int col = 0; col < 4; col++)
+	{
+		for (int row = 0; row < 4; row++)
+		{
+			j.push_back(mat[col][row]);
+		}
+	}
+
+	return j;
+}
+
+static glm::mat4x4 matrix_from_json(const json &j)
+{
+	glm::mat4x4 mat(1.f);
+	for (int col = 0; col < 4; col++)
+	{
+		for (int row = 0; row < 4; row++)
+		{
+			mat[col][row] = j.at(col * 4 + row).get<float>();
+		}
+	}
+
+	return mat;
+}
+
+json ContactPoint::inputs() const
+{
+	json j;
+	j["antigen"] = _fiducial.antigen;
+	j["fiducial_file"] = _fiducial.model.filename();
+	j["fiducial_time"] = (long long)file_mod_time(_fiducial.model.filename());
+	j["antigen_file"] = _chosen->model.filename();
+	j["antigen_time"] = (long long)file_mod_time(_chosen->model.filename());
+
+	std::vector<std::string> fid_ents, antigen_ents;
+	for (const std::string &entity : _fiducial.entities)
+	{
+		fid_ents.push_back(entity);
+	}
+	for (const std::string &entity : _chosen->entities)
+	{
+		antigen_ents.push_back(entity);
+	}
+
+	std::sort(fid_ents.begin(), fid_ents.end());
+	std::sort(antigen_ents.begin(), antigen_ents.end());
+	j["fiducial_entities"] = fid_ents;
+	j["antigen_entities"] = antigen_ents;
+	return j;
+}
+
+json ContactPoint::alignmentJson() const
+{
+	json j;
+	j["inputs"] = inputs();
+	j["reference"] = {_reference.x, _reference.y, _reference.z};
+
+	json transforms = json::array();
+	for (const glm::mat4x4 &transform : _transforms)
+	{
+		transforms.push_back(matrix_to_json(transform));
+	}
+	j["transforms"] = transforms;
+
+	json warnings = json::array();
+	for (const Warning &warning : _warnings)
+	{
+		json w;
+		w["text"] = warning.text;
+		w["transform"] = matrix_to_json(warning.transform);
+		w["rmsd"] = warning.rmsd;
+		warnings.push_back(w);
+	}
+	j["warnings"] = warnings;
+
+	return j;
+}
+
+bool ContactPoint::restore(const json &saved)
+{
+	if (!saved.is_object() || !saved.count("inputs") || 
+	    saved.at("inputs") != inputs())
+	{
+		return false;
+	}
+
+	try
+	{
+		std::vector<glm::mat4x4> transforms;
+		for (const json &t : saved.at("transforms"))
+		{
+			transforms.push_back(matrix_from_json(t));
+		}
+
+		if (transforms.empty())
+		{
+			return false;
+		}
+
+		std::vector<Warning> warnings;
+		for (const json &w : saved.at("warnings"))
+		{
+			warnings.push_back({w.at("text"), matrix_from_json(w.at("transform")),
+			                    w.at("rmsd")});
+		}
+
+		const json &ref = saved.at("reference");
+		_reference = glm::vec3(ref.at(0).get<float>(), ref.at(1).get<float>(),
+		                       ref.at(2).get<float>());
+		_transforms = transforms;
+		_warnings = warnings;
+		_applied = glm::mat4{1.f};
+	}
+	catch (const json::exception &err)
+	{
+		return false;
+	}
+
+	return true;
 }

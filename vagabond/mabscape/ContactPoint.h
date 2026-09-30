@@ -20,6 +20,8 @@
 #define __vagabond__ContactPoint__
 
 #include <list>
+#include <nlohmann/json.hpp>
+#include <string>
 #include <vector>
 #include <vagabond/utils/glm_import.h>
 #include "Symmetry.h"
@@ -32,12 +34,39 @@ struct Antigen;
 class ContactPoint : public Symmetry
 {
 public:
-	ContactPoint(Fiducial &fiducial, Antigens &antigens);
+	// find_instances is false to only make room for the mapping to be put
+	// back from a saved one (restore()), which needs none of the models
+	ContactPoint(Fiducial &fiducial, Antigens &antigens, 
+	             bool find_instances = true);
+
+	/** everything worked out by findMapping(), to be saved */
+	nlohmann::json alignmentJson() const;
+	/** puts back a mapping saved by alignmentJson(). False, and nothing
+	 * changed, if it was made from different models or entities. */
+	bool restore(const nlohmann::json &saved);
 
 	void applyTransform(const glm::mat4x4 &which);
 	void findMapping();
 private:
 	void establishMidpoint();
+	// what the mapping depends on: if these differ, it has to be redone
+	nlohmann::json inputs() const;
+public:
+	// a problem found while mapping: an orientation which aligns poorly
+	struct Warning
+	{
+		std::string text;
+		// the matrix which took the antibody model onto the antigen model,
+		// as it came out of the superposition
+		glm::mat4x4 transform;
+		float rmsd{};
+	};
+
+	const std::vector<Warning> &warnings() const
+	{
+		return _warnings;
+	}
+private:
 
 	Fiducial &_fiducial;
 	Antigens &_antigens;
@@ -60,6 +89,8 @@ private:
 	};
 
 	std::vector<Entry> _entries;
+	std::vector<Warning> _warnings;
+	std::vector<glm::mat4x4> _raw;
 	
 };
 
