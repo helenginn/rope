@@ -297,7 +297,7 @@ void PosToComp::refineEngine()
 		int cycle = 0;
 		while (n < 10000 && !_stop)
 		{
-			float val = score();
+			score();
 
 			std::vector<float> grads = get_all_gradients();
 			momentum *= 0.9;
@@ -308,7 +308,6 @@ void PosToComp::refineEngine()
 			momentum.do_on_each([&sumsq](const float &f) { sumsq += f * f; });
 
 			_setter(values, false);
-			std::cout << "Score: " << val << " sum^2(g) " << sumsq << std::endl;
 			n++;
 			cycle++;
 
