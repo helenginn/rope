@@ -99,7 +99,7 @@ private:
 	
 	float _radius{11.f};
 	float _slope{2.f};
-	int _snapEvery{20};
+	int _snapEvery{200};
 	
 	std::function<void(const std::vector<float> &, bool)> _setter{};
 	std::function<float(int n, int coord)> _gradient_for{};
