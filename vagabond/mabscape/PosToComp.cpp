@@ -287,15 +287,15 @@ void PosToComp::refineEngine()
 	engine->setGetGradientVector(get_all_gradients);
 
 	OpVec<float> values(_positions.paramCount());
-	n = 0;
-	for (int i = 0; i < 5; i++)
+	while (!_stop)
 	{
+		n = 0;
 		_positions.randomise();
 		zeroSetter();
 		values = OpVec<float>(_positions.paramCount());
 		OpVec<float> momentum(_positions.paramCount());
 		int cycle = 0;
-		while (n < 10000)
+		while (n < 10000 && !_stop)
 		{
 			float val = score();
 
@@ -328,34 +328,48 @@ void PosToComp::refineEngine()
 			}
 		}
 
+		if (_stop)
+		{
+			// cancelled: discard this refinement, keep earlier results
+			break;
+		}
+
 		_setter(values, true);
 		zeroSetter();
-		
-		/*
-		SimplexEngine *se = new SimplexEngine
-		(this, [this]() { return _positions.paramCount(); });
-		se->setGetScoreGetTicket
-		([this](int *job_id)
-		 {
-			float result = getResult(job_id, nullptr);
-			return result;
-		});
 
-		se->setSendJobGetTicket
-		([this](const std::vector<float> &all)
-		 {
-			return sendJob(all, nullptr);
-		});
-		se->start();
-		*/
+		Result result;
+		result.score = score();
+		result.placements = _positions.snapshot();
+
+		std::unique_lock<std::mutex> lock(_resultsMutex);
+		_results.push_back(result);
+		std::cout << "Cached result " << _results.size() << " with score "
+		<< result.score << std::endl;
 	}
 
 	fromModel();
-	_setter(values, true);
+	_refining = false;
+}
+
+std::vector<PosToComp::Result> PosToComp::results()
+{
+	std::unique_lock<std::mutex> lock(_resultsMutex);
+	return _results;
+}
+
+void PosToComp::stopRefining()
+{
+	_stop = true;
 }
 
 void PosToComp::refine()
 {
+	if (_refining.exchange(true))
+	{
+		return;
+	}
+
+	_stop = false;
 	DoJob([this]() { refineEngine(); });
 
 }

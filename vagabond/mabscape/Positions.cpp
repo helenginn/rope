@@ -248,6 +248,25 @@ int Positions::paramCount()
 	return total * 3;
 }
 
+std::vector<Positions::Placement> Positions::snapshot() const
+{
+	std::vector<Placement> placements;
+
+	for (const AntibodyPos &ap : _positions)
+	{
+		std::unique_lock<std::mutex> lock(*ap.mut);
+		Placement pl;
+		pl.name = ap.name;
+		pl.fixed = (ap.fid != nullptr);
+		pl.meshIdx = ap.meshIdx;
+		pl.copies.assign(_raw.begin() + ap.start_idx, 
+		                 _raw.begin() + ap.start_idx + ap.num);
+		placements.push_back(pl);
+	}
+
+	return placements;
+}
+
 bool Positions::isFixed(const std::string &name) const
 {
 	return (_lookup.at(name)->fid);

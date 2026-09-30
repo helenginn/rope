@@ -77,7 +77,14 @@ void Playground::setup()
 	{
 		Menu *menu = new Menu(this);
 		menu->addOption("show matrices", [this]() { showMatrices(); });
-		menu->addOption("refine", [this]() { refine(); });
+		if (_model && _model->isRefining())
+		{
+			menu->addOption("stop refining", [this]() { _model->stopRefining(); });
+		}
+		else
+		{
+			menu->addOption("refine", [this]() { refine(); });
+		}
 		menu->setup(tb, 1);
 		setModal(menu);
 	};

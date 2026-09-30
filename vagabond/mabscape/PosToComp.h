@@ -22,10 +22,13 @@
 #include <vagabond/utils/Eigen/Dense>
 #include <vagabond/utils/svd/PCA.h>
 #include <vagabond/core/Engine.h>
+#include "Positions.h"
+#include <atomic>
+#include <mutex>
+#include <vector>
 
 struct Competition;
 
-class Positions;
 class MatrixPlot;
 
 class PosToComp : public RunsEngine
@@ -52,7 +55,24 @@ public:
 		return _dataDisplay;
 	}
 
+	// the outcome of one completed refinement from random starting positions
+	struct Result
+	{
+		std::vector<Positions::Placement> placements;
+		float score{};
+	};
+
+	// starts repeated refinements from random positions, caching each
+	// completed one in results(), until stopRefining() is called.
 	void refine();
+	// cancels the refinement in progress (discarding it) and stops restarting.
+	void stopRefining();
+	bool isRefining() const
+	{
+		return _refining;
+	}
+
+	std::vector<Result> results();
 	float score();
 private:
 	void refineEngine();
@@ -61,6 +81,11 @@ private:
 
 	Competition &_comp;
 	Positions &_positions;
+
+	std::vector<Result> _results;
+	std::mutex _resultsMutex;
+	std::atomic<bool> _refining{false};
+	std::atomic<bool> _stop{false};
 
 	Eigen::MatrixXf _data;
 	Eigen::MatrixXf _model;

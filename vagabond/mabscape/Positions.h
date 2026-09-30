@@ -53,6 +53,17 @@ public:
 	
 	int paramCount();
 	void randomise();
+
+	// where one antibody (and all its symmetry copies) currently sits
+	struct Placement
+	{
+		std::string name;
+		bool fixed{};
+		int meshIdx{-1};
+		std::vector<glm::vec3> copies;
+	};
+
+	std::vector<Placement> snapshot() const;
 private:
 	Antigen &_antigen;
 	Mab &_mab;
