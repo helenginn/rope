@@ -130,8 +130,11 @@ CrossCheckView::compute(const Positions &positions, Competition &comp,
 
 		// its average position (the median vertex, as shown) against the
 		// structure, allowing for the symmetry operator which brings the two
-		// together
-		std::vector<glm::vec3> known = positions.structuralCopies(pl.name);
+		// together. The structure is snapped to the mesh, as the ghost in
+		// the Playground is and as a fixed antibody would be: every position
+		// refined sits on a vertex, so the raw point would add however far
+		// that is from its nearest vertex to a perfect answer.
+		std::vector<glm::vec3> known = positions.structuralCopies(pl.name, true);
 		glm::vec3 median = Positions::medoids(clusters)[0];
 		float best = FLT_MAX;
 		for (const glm::vec3 &k : known)
