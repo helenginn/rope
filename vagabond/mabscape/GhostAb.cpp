@@ -74,7 +74,11 @@ void GhostAb::render(GLView *gl)
 
 	// the near and far sides of the sphere would pile up as they are both
 	// translucent: find the depth of the nearest, then blend only that layer
-	glClear(GL_DEPTH_BUFFER_BIT);
+	if (!_overSolid)
+	{
+		glClear(GL_DEPTH_BUFFER_BIT);
+	}
+
 	glEnable(GL_DEPTH_TEST);
 	glDepthFunc(GL_LESS);
 	glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
@@ -87,7 +91,11 @@ void GhostAb::render(GLView *gl)
 	// the antibodies drawn afterwards should not be hidden by it
 	glDepthFunc(GL_LESS);
 	glDisable(GL_DEPTH_TEST);
-	glClear(GL_DEPTH_BUFFER_BIT);
+
+	if (!_overSolid)
+	{
+		glClear(GL_DEPTH_BUFFER_BIT);
+	}
 }
 
 GhostLine::GhostLine()

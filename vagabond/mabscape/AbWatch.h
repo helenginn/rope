@@ -75,11 +75,28 @@ public:
 		return _copy;
 	}
 
+	// all one colour, as a key to something else, until setFixedStyle()
+	void showColour(const glm::vec4 &colour);
+
 	// free antibodies are blue and selectable; fixed ones keep their own colour
 	void setFixedStyle(bool fixed);
 
 	// highlights this copy without giving it a label
 	void highlightQuietly();
+
+	// The radius of the sphere, as made.
+	float radius() const
+	{
+		return _radius;
+	}
+
+	// where the sphere is shown relative to the position it stands for, which
+	// may depend on where that is (none if this is empty)
+	void setDisplace(const std::function<glm::vec3(const glm::vec3 &)> &fn)
+	{
+		_displace = fn;
+		_started = false;
+	}
 
 	void highlight();
 	virtual void reindex();
@@ -87,6 +104,8 @@ public:
 private:
 	unsigned int _currVersion = 0;
 	bool _started = false;
+	float _radius{};
+	std::function<glm::vec3(const glm::vec3 &)> _displace;
 	Source _source;
 	std::mutex *_mut{};
 	const std::string _name;

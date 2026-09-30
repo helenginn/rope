@@ -680,6 +680,21 @@ void MeshFaces::render(GLView *gl)
 		return;
 	}
 
+	if (_overSolid)
+	{
+		// level with the solid surface, or nearer; the solid has already
+		// hidden the far side, so one pass will do, and its depth stays
+		glEnable(GL_DEPTH_TEST);
+		glDepthFunc(GL_LEQUAL);
+		glEnable(GL_POLYGON_OFFSET_FILL);
+		glPolygonOffset(-1.f, -1.f);
+		Renderable::render(gl);
+		glDisable(GL_POLYGON_OFFSET_FILL);
+		glDepthFunc(GL_LESS);
+		glDisable(GL_DEPTH_TEST);
+		return;
+	}
+
 	glClear(GL_DEPTH_BUFFER_BIT);
 	glEnable(GL_DEPTH_TEST);
 	glDepthFunc(GL_LESS);
@@ -762,8 +777,124 @@ void Mesh::setHeat(const std::map<int, int> &main,
 	if (!_faces)
 	{
 		_faces = new MeshFaces();
+		_faces->setOverSolid(_opaque);
 		addObject(_faces);
 	}
 
 	_faces->show(_vertices, strong, 0.45f, faint, 0.1f);
+}
+
+void MeshSolid::show(const std::vector<Vertex> &base, 
+                     const std::vector<GLuint> &tris)
+{
+	_vertices = base;
+	for (Vertex &v : _vertices)
+	{
+		v.color = glm::vec4(0.5, 0.5, 0.8, 1.0);
+		v.extra = glm::vec4(0.f);
+	}
+
+	_indices = tris;
+	setDisabled(_indices.empty());
+	forceRender(true, true);
+}
+
+void MeshSolid::render(GLView *gl)
+{
+	if (isDisabled())
+	{
+		Renderable::render(gl);
+		return;
+	}
+
+	// it writes the depth that hides the far side of the antigen, and what
+	// comes after keeps it
+	glEnable(GL_DEPTH_TEST);
+	glDepthFunc(GL_LESS);
+	Renderable::render(gl);
+	glDisable(GL_DEPTH_TEST);
+}
+
+void Mesh::setOpaque(bool opaque)
+{
+	_opaque = opaque;
+
+	if (opaque && !_solid)
+	{
+		_solid = new MeshSolid();
+		addObject(_solid);
+	}
+
+	if (opaque)
+	{
+		_solid->show(_vertices, triangles());
+
+		// the solid goes first, the translucent faces over it
+		if (_faces)
+		{
+			removeObject(_faces);
+			addObject(_faces);
+		}
+	}
+	else if (_solid)
+	{
+		_solid->setDisabled(true);
+	}
+
+	if (_faces)
+	{
+		_faces->setOverSolid(opaque);
+	}
+}
+
+void Mesh::render(GLView *gl)
+{
+	if (!_opaque)
+	{
+		SimplePolygon::render(gl);
+		return;
+	}
+
+	// not the lines, just what is laid over the mesh
+	_gl = gl;
+
+	if (isDisabled())
+	{
+		return;
+	}
+
+	for (size_t i = 0; i < objectCount(); i++)
+	{
+		object(i)->render(gl);
+	}
+}
+
+glm::vec3 Mesh::outwardAt(const glm::vec3 &p)
+{
+	if (_vertices.empty())
+	{
+		return glm::vec3(0.f);
+	}
+
+	if (_outward == 0.f)
+	{
+		glm::vec3 middle = centroid();
+		double sum = 0;
+		for (const Vertex &v : _vertices)
+		{
+			sum += glm::dot(v.normal, v.pos - middle);
+		}
+
+		_outward = (sum >= 0 ? 1.f : -1.f);
+	}
+
+	int idx = nearestVertex(p);
+	if (idx < 0 || idx >= (int)_vertices.size())
+	{
+		return glm::vec3(0.f);
+	}
+
+	glm::vec3 normal = _vertices[idx].normal;
+	float length = glm::length(normal);
+	return (length > 1e-6f ? normal * (_outward / length) : glm::vec3(0.f));
 }

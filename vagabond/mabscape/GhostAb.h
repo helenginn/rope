@@ -31,10 +31,18 @@ public:
 	void show(const glm::vec3 &where);
 	void hide();
 
+	// Over a solid antigen the depth it has written is kept, so that the
+	// ghost is hidden where it is behind the antigen
+	void setOverSolid(bool over)
+	{
+		_overSolid = over;
+	}
+
 	virtual void render(GLView *gl);
 private:
 	std::vector<glm::vec3> _offsets; // from the centre, at full size
 	glm::vec3 _centre{};
+	bool _overSolid{false};
 };
 
 /** a line between two points */

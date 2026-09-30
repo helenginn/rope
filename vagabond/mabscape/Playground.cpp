@@ -38,6 +38,7 @@
 #include <vagabond/gui/elements/TextEntry.h>
 #include <vagabond/gui/elements/Window.h>
 #include <vagabond/gui/MatrixPlot.h>
+#include <vagabond/gui/ColourLegend.h>
 
 // a text entry that reports the text after every key
 class SearchEntry : public TextEntry
@@ -113,10 +114,27 @@ void Playground::showFiducials(const Competition &comp)
 		addIndexResponder(aw);
 		aw->setHoverJob([this, aw](const std::string &ab, int copy)
 		{
-			// a clicked antibody stays as it is
+			// A clicked antibody stays as it is, but others can still be hovered
+			// over for their tags: only their labels and highlights, and only
+			// one at a time, without disturbing the pinned antibody's.
 			if (_pinned)
 			{
-				return false;
+				const std::string &pinned = _pinned->antibody();
+				if (ab == pinned)
+				{
+					return false;
+				}
+
+				for (AbWatch *other : _watches)
+				{
+					if (other != aw && other->antibody() != pinned)
+					{
+						other->deleteTemps();
+						unhighlight(other);
+					}
+				}
+
+				return true;
 			}
 
 			// only one antibody at a time: sliding straight from one onto
@@ -148,8 +166,16 @@ void Playground::showFiducials(const Competition &comp)
 		});
 		aw->setClickJob([this](AbWatch *clicked)
 		{
+			// the colouring by a matrix carries over to the next antibody
+			ColourBy keep = _colourBy;
 			clearSelection();
 			pin(clicked);
+
+			if (keep != Nothing)
+			{
+				_colourBy = keep;
+				applyColouring();
+			}
 		});
 	}
 }
@@ -171,19 +197,21 @@ void Playground::setup()
 	_model = new PosToComp(comp, *_positions);
 	showMatrices();
 	
+	// up in the top right corner: Display, then Menu
 	TextButton *tb = new TextButton("Menu");
-	tb->setCentre(0.9, 0.1);
+	tb->setCentre(0.94, 0.04);
 
-	auto show_menu = [this, tb]()
+	TextButton *db = new TextButton("Display");
+	db->setCentre(0.84, 0.04);
+
+	auto show_display = [this, db]()
 	{
 		Menu *menu = new Menu(this);
-		menu->addOption("save", [this]() { saveResults(); });
-		menu->addOption("competition data", [this]() { showCompetitionData(); });
 		if (_positions->viewing())
 		{
 			menu->addOption("watch live positions", [this]() { resumeLive(); });
 		}
-		menu->addOption("toggle fixed", [this]() { showToggleFixed(); });
+
 		if (_matricesVisible)
 		{
 			menu->addOption("hide matrices",
@@ -194,6 +222,30 @@ void Playground::setup()
 			menu->addOption("show matrices",
 			                [this]() { setMatricesVisible(true); });
 		}
+
+		if (_mesh && _mesh->opaque())
+		{
+			menu->addOption("transparent antigen", 
+			                [this]() { setOpaque(false); });
+		}
+		else
+		{
+			menu->addOption("opaque antigen", [this]() { setOpaque(true); });
+		}
+
+		menu->setup(db, 1);
+		setModal(menu);
+	};
+
+	db->setReturnJob(show_display);
+	addObject(db);
+
+	auto show_menu = [this, tb]()
+	{
+		Menu *menu = new Menu(this);
+		menu->addOption("save", [this]() { saveResults(); });
+		menu->addOption("competition data", [this]() { showCompetitionData(); });
+		menu->addOption("toggle fixed", [this]() { showToggleFixed(); });
 		if (_model && _model->isRefining())
 		{
 			menu->addOption("stop refining", [this]() { _model->stopRefining(); });
@@ -205,6 +257,16 @@ void Playground::setup()
 		if (_model && _model->results().size())
 		{
 			menu->addOption("view results", [this]() { viewResults(); });
+			menu->addOption("re-score results", [this]()
+			{
+				size_t n = _model->rescoreResults();
+				std::cout << "Re-scored " << n << " results" << std::endl;
+
+				if (_rv)
+				{
+					_rv->update(_model->results());
+				}
+			});
 		}
 		menu->setup(tb, 1);
 		setModal(menu);
@@ -214,6 +276,49 @@ void Playground::setup()
 	addObject(tb);
 	
 	Display::setup();
+}
+
+// solid faces for the antigen, which hide what is behind them, or the wire
+void Playground::setOpaque(bool opaque)
+{
+	if (!_mesh)
+	{
+		return;
+	}
+
+	_mesh->setOpaque(opaque);
+	_ghost->setOverSolid(opaque);
+
+	// Each antibody stands a quarter of its width out from the surface, so
+	// that it is not so buried in the solid antigen
+	for (AbWatch *aw : _watches)
+	{
+		if (opaque)
+		{
+			Mesh *mesh = _mesh;
+			float lift = 0.25f * 2 * aw->radius();
+			aw->setDisplace([mesh, lift](const glm::vec3 &p)
+			{
+				return mesh->outwardAt(p) * lift;
+			});
+		}
+		else
+		{
+			aw->setDisplace({});
+		}
+	}
+}
+
+// how far the ghost, which stands for a position, is raised like the
+// antibodies are over a solid antigen
+glm::vec3 Playground::surfaceLift(const glm::vec3 &p)
+{
+	if (!_mesh || !_mesh->opaque() || _watches.empty())
+	{
+		return glm::vec3(0.f);
+	}
+
+	return _mesh->outwardAt(p) * (0.25f * 2 * _watches.front()->radius());
 }
 
 void Playground::unhighlight(AbWatch *aw)
@@ -378,6 +483,7 @@ void Playground::showGhost(AbWatch *aw)
 
 	if (nearestSq < FLT_MAX)
 	{
+		target += surfaceLift(target);
 		_ghost->show(target);
 		_ghostLine->show(here, target);
 	}
@@ -389,10 +495,61 @@ void Playground::clearGhost()
 	_ghostLine->hide();
 }
 
+void Playground::colourByMatrix(ColourBy which)
+{
+	if (!_pinned)
+	{
+		return;
+	}
+
+	_colourBy = (_colourBy == which ? Nothing : which);
+
+	if (_colourBy == Nothing)
+	{
+		refreshFixedStyles();
+		return;
+	}
+
+	applyColouring();
+}
+
+void Playground::applyColouring()
+{
+	MatrixPlot *plot = (_colourBy == Data ? _mpData : _mpModel);
+	std::map<std::string, std::pair<float, bool>> row;
+
+	if (!_pinned || _colourBy == Nothing || !plot ||
+	    !_model->rowValues(_pinned->antibody(), _colourBy == Model, row))
+	{
+		return;
+	}
+
+	const glm::vec4 grey = glm::vec4(0.6, 0.6, 0.6, 1.0);
+
+	for (AbWatch *aw : _watches)
+	{
+		if (aw->antibody() == _pinned->antibody())
+		{
+			continue;
+		}
+
+		auto it = row.find(aw->antibody());
+		bool present = (it != row.end() && it->second.second);
+		aw->showColour(present ? plot->legend()->colour(it->second.first) : 
+		               grey);
+	}
+}
+
 void Playground::clearSelection()
 {
 	_pinned = nullptr;
 	clearGhost();
+
+	if (_colourBy != Nothing)
+	{
+		_colourBy = Nothing;
+		refreshFixedStyles();
+	}
 
 	std::vector<AbWatch *> hits = _searchHits;
 	_searchHits.clear();
@@ -417,6 +574,16 @@ void Playground::interactedWithNothing(bool left, bool hover)
 
 	if (_pinned)
 	{
+		// only what was hovered over since goes; the pinned antibody stays
+		for (AbWatch *aw : _watches)
+		{
+			if (aw->antibody() != _pinned->antibody())
+			{
+				unhighlight(aw);
+				aw->deleteTemps();
+			}
+		}
+
 		return;
 	}
 
@@ -477,6 +644,10 @@ void Playground::showMatrices()
 		mp->setCentre(0.9, 0.85);
 		addObject(mp);
 		_mpModel = mp;
+
+		// a press only finds what is selectable (see MatrixBox)
+		mp->setSelectable(true);
+		mp->setClickJob([this]() { colourByMatrix(Model); });
 		label(mp, 0.9, 0.85, "model");
 	}
 
@@ -490,6 +661,9 @@ void Playground::showMatrices()
 		mp->setCentre(0.75, 0.85);
 		addObject(mp);
 		_mpData = mp;
+
+		mp->setSelectable(true);
+		mp->setClickJob([this]() { colourByMatrix(Data); });
 		label(mp, 0.75, 0.85, "data");
 		_model->setDataPlot(mp);
 	}
@@ -561,6 +735,15 @@ void Playground::selectResults(const std::string &key,
 	// refinement can carry on behind this, only the matrix follows it
 	showMatrices();
 	_model->showAverage(results);
+
+	// an antibody already clicked on goes with the new group: its faces came
+	// from the last one, and the average may have moved it
+	if (_pinned)
+	{
+		clearGhost();
+		showGhost(_pinned);
+		showHeat(_pinned);
+	}
 }
 
 void Playground::resumeLive()

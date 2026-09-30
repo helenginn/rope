@@ -18,6 +18,7 @@
 
 #include <vagabond/gui/elements/FloatingText.h>
 #include "AbWatch.h"
+#include <algorithm>
 
 // the label is a child of the AbWatch, which is drawn with depth testing on,
 // and sits inside the antibody: draw it without depth so it isn't hidden.
@@ -46,6 +47,12 @@ AbWatch::AbWatch(const SimplePolygon &other, const Source &source,
 	_vertices = other.vertices();
 	_indices = other.indices();
 	_baseColour = (_vertices.size() ? _vertices[0].color : glm::vec4(1.f));
+
+	glm::vec3 middle = centroid();
+	for (const Vertex &v : _vertices)
+	{
+		_radius = std::max(_radius, glm::length(v.pos - middle));
+	}
 	_hc = {0.5, 0.5, 0.9};
 	_selectionResize = 1.3;
 
@@ -65,6 +72,10 @@ void AbWatch::doThings()
 
 	glm::vec3 where;
 	unsigned int version = _source(where);
+	if (_displace)
+	{
+		where += _displace(where);
+	}
 
 	if (_started && version == _currVersion)
 	{
@@ -89,6 +100,22 @@ void AbWatch::reindex()
 		/* in the case of multiple responders */
 		_vertices[i].extra[0] = i + offset + 1.5;
 	}
+}
+
+void AbWatch::showColour(const glm::vec4 &colour)
+{
+	// a highlighted copy would bring its old colours back when let go
+	if (isSelected())
+	{
+		setHighlighted(false);
+	}
+
+	for (Vertex &v : _vertices)
+	{
+		v.color = colour;
+	}
+
+	forceRender(true, false);
 }
 
 void AbWatch::setFixedStyle(bool fixed)

@@ -64,9 +64,17 @@ private:
 	// on empty space (or another antibody) replaces them
 	void pin(AbWatch *aw);
 	void clearSelection();
+	// With an antibody clicked on, clicking the data or the model matrix
+	// colours all the others by that antibody's row of it (grey where the
+	// data has no entry); the same again takes it off
+	enum ColourBy { Nothing, Data, Model };
+	void colourByMatrix(ColourBy which);
+	void applyColouring();
 	void showGhost(AbWatch *aw);
 	void clearGhost();
 	void showToggleFixed();
+	void setOpaque(bool opaque);
+	glm::vec3 surfaceLift(const glm::vec3 &p);
 	void viewResults();
 	void selectResults(const std::string &key,
 	                   const std::vector<RefinedResult> &results);
@@ -94,6 +102,7 @@ private:
 	std::string _heatAntibody;
 	TextEntry *_search{};
 	AbWatch *_pinned{};
+	ColourBy _colourBy{Nothing};
 	GhostAb *_ghost{};
 	GhostLine *_ghostLine{};
 	std::vector<AbWatch *> _searchHits;

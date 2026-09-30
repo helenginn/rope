@@ -50,6 +50,34 @@ public:
 	          const std::vector<GLuint> &strong, float strongAlpha,
 	          const std::vector<GLuint> &faint, float faintAlpha);
 
+	// Over a solid mesh the faces lie on its surface: they are drawn where they
+	// are level with it or nearer, and its depth is kept, so that the
+	// faces on the far side of the antigen are hidden.
+	void setOverSolid(bool over)
+	{
+		_overSolid = over;
+	}
+
+	virtual void render(GLView *gl);
+private:
+	bool _overSolid{false};
+};
+
+/** the mesh as solid faces, lit like the antibodies are */
+class MeshSolid : public SimplePolygon
+{
+public:
+	MeshSolid()
+	{
+		setUsesProjection(true);
+		setVertexShaderFile("assets/shaders/with_matrix.vsh");
+		setFragmentShaderFile("assets/shaders/lighting.fsh");
+		setDisabled(true);
+	}
+
+	// these triangles (three indices each) of `base`, with its normals
+	void show(const std::vector<Vertex> &base, const std::vector<GLuint> &tris);
+
 	virtual void render(GLView *gl);
 };
 
@@ -69,7 +97,25 @@ public:
 	             const std::map<int, int> &others = {});
 	void clearHeat();
 
+	// Solid faces, lit like the antibodies and hiding what is behind, in place
+	// of the wire of lines (the translucent black faces go on working over
+	// either).
+	void setOpaque(bool opaque);
+
+	bool opaque() const
+	{
+		return _opaque;
+	}
+
+	virtual void render(GLView *gl);
+
 	int nearestVertex(const glm::vec3 &v);
+
+	// the direction away from the inside of the antigen at the point of the
+	// mesh nearest to this one: a unit vector (or nothing, if the mesh has
+	// no normal there). The normals are taken to point outwards if, on the
+	// whole, they point away from the middle of the mesh.
+	glm::vec3 outwardAt(const glm::vec3 &p);
 
 	std::function<void(const glm::vec3 &, glm::vec3 &, int &)> vertexFinder();
 	std::function<glm::vec3()> random();
@@ -99,6 +145,9 @@ private:
 	std::vector<GLuint> triangles() const;
 
 	MeshFaces *_faces{};
+	MeshSolid *_solid{};
+	float _outward{0.f}; // 1 if the normals point outwards, else -1; 0 unknown
+	bool _opaque{false};
 	KdTree *_tree{};
 };
 
