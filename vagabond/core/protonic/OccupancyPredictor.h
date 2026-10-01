@@ -76,10 +76,24 @@ public:
 		return _propagationEnabled;
 	}
 
+	// how much support (total samples) an atom needs before propagation
+	// mostly leaves it alone: each atom's correction is scaled by
+	// n0 / (n + n0), n being its own total sample count. An atom with
+	// thousands of samples is well determined by its own subnetworks and
+	// shouldn't be overridden by what correlated atoms look like globally
+	// (subnetworks are different contexts, not interchangeable draws, so an
+	// atom can legitimately differ from its references' global averages);
+	// an atom with a handful of samples gets almost the full correction.
+	void setPropagationSupport(float n0)
+	{
+		_propagationSupport = n0;
+	}
+
 private:
 	Clique *_clique{};
 	bool _redundancyWeightingEnabled = false;
 	bool _propagationEnabled = false;
+	float _propagationSupport = 1000.f;
 };
 
 #endif

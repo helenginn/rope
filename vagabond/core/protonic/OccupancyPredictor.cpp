@@ -335,6 +335,19 @@ OccupancyPredictor::EstimateMap OccupancyPredictor::estimates()
 			return true;
 		};
 
+		// each atom's own total support: samples summed over every
+		// subnetwork it is in.
+		std::map<ProbeTypePair, float> support;
+		for (auto &pair : occupancies)
+		{
+			float total = 0;
+			for (auto &entry : pair.second)
+			{
+				total += (float)entry.second.samples;
+			}
+			support[pair.first] = total;
+		}
+
 		OccupancyPropagation::Propagator propagator;
 		OccupancyPropagation::Subnetwork in;
 
@@ -377,8 +390,13 @@ OccupancyPredictor::EstimateMap OccupancyPredictor::estimates()
 			{
 				OccupancyEstimate &est = *members[idx][c].est;
 				float mass = state_total(est, 1) + state_total(est, 2);
-				float f = corrected((int)c);
 				float local = mass > 0 ? state_total(est, 2) / mass : 0.f;
+
+				// scale the correction by how little support this atom has
+				// of its own (see setPropagationSupport()).
+				float lambda = _propagationSupport /
+				(support.at(members[idx][c].ptp) + _propagationSupport);
+				float f = local + lambda * (corrected((int)c) - local);
 
 				est.results[2] = mass * f;
 				est.results[1] = mass * (1.f - f);
