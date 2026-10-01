@@ -15,11 +15,11 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
-
 #ifndef __vagabond__PathThermodynamics__
 #define __vagabond__PathThermodynamics__
 
 #include <vagabond/gui/elements/Scene.h>
+#include <vagabond/core/PathEntropy.h>
 
 class Path;
 class Entity;
@@ -38,13 +38,15 @@ public:
 	virtual void refresh();
 	
 	void addTypeButtons();
-    void checkPathNum(int nn);
+    void checkPathNum(int n);
 
 	virtual void buttonPressed(std::string tag, Button *button);
 
 private:
 	Entity *_entity = nullptr;
 	PathEntropy *_pathEntropy = nullptr;
+    
+    std::vector<EntropyResults> _entropyResults;
 	std::vector<Path *> _paths;
 
 	static int _numPaths;

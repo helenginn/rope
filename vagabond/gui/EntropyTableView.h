@@ -14,7 +14,6 @@ public:
 	EntropyTableView(Scene *prev, Entity *entity, const std::vector<EntropyResults> &entropy);
 	~EntropyTableView();
 
-	virtual void sendObject(std::string tag, void *object);
 	virtual void setup();   
 	virtual void buttonPressed(std::string tag, Button *button = nullptr);
 
