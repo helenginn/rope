@@ -23,6 +23,10 @@
 #include <random>
 #include <algorithm>
 #include <bit>
+#include <chrono>
+#include <cstdlib>
+#include <iostream>
+#include <map>
 
 ExhaustiveSearch::ExhaustiveSearch(const OpSet<Probe *> &interesting,
                                    const OpSet<Probe *> &wider)
@@ -38,6 +42,128 @@ ExhaustiveSearch::ExhaustiveSearch(const OpSet<Probe *> &interesting,
 	{
 		return !probe->is_certain();
 	});
+}
+
+namespace
+{
+
+enum class DecreeOrder
+{
+	Connected,
+	Random,
+};
+
+// ROPE_DECREE_ORDER=random restores the old random existence-decree order,
+// for comparing search times and arrangement counts (which must not differ -
+// the search is exhaustive); anything else (or unset) is connectivity order.
+DecreeOrder decree_order()
+{
+	static DecreeOrder order = []()
+	{
+		const char *env = std::getenv("ROPE_DECREE_ORDER");
+		bool random = env && std::string(env) == "random";
+		return random ? DecreeOrder::Random : DecreeOrder::Connected;
+	}();
+
+	return order;
+}
+
+// maximum-cardinality ordering of the probe graph (edges: Probe::others(),
+// restricted to `all`): repeatedly takes the unplaced probe with the most
+// already-placed neighbours, so each probe comes right after the ones it is
+// connected to - the standard way to order variables for a backtracking
+// search over a constraint graph. Ties go to the probe with more neighbours
+// overall, then to desc() order, so the result is the same every run
+// (pointer order is not). Hydrogens - which link the two half-bonds of an
+// H-bond and are not decreed themselves - take part, so atoms either side
+// of one end up adjacent. Returns each probe's position.
+std::map<Probe *, int> connected_rank(const OpSet<Probe *> &all)
+{
+	std::vector<Probe *> nodes(all.begin(), all.end());
+	size_t n = nodes.size();
+
+	std::map<Probe *, size_t> index;
+	std::vector<std::string> descs(n);
+	for (size_t i = 0; i < n; i++)
+	{
+		index[nodes[i]] = i;
+		descs[i] = nodes[i]->desc();
+	}
+
+	// symmetric adjacency, without duplicates or self-edges
+	std::vector<std::vector<size_t>> neighbours(n);
+	for (size_t i = 0; i < n; i++)
+	{
+		for (Probe *other : nodes[i]->others())
+		{
+			auto it = index.find(other);
+			if (it == index.end() || it->second == i)
+			{
+				continue;
+			}
+
+			neighbours[i].push_back(it->second);
+			neighbours[it->second].push_back(i);
+		}
+	}
+
+	for (std::vector<size_t> &list : neighbours)
+	{
+		std::sort(list.begin(), list.end());
+		list.erase(std::unique(list.begin(), list.end()), list.end());
+	}
+
+	std::vector<int> placedNeighbours(n, 0);
+	std::vector<bool> placed(n, false);
+	std::map<Probe *, int> rank;
+
+	for (size_t step = 0; step < n; step++)
+	{
+		size_t best = n;
+		for (size_t i = 0; i < n; i++)
+		{
+			if (placed[i])
+			{
+				continue;
+			}
+
+			if (best == n)
+			{
+				best = i;
+				continue;
+			}
+
+			bool better = false;
+			if (placedNeighbours[i] != placedNeighbours[best])
+			{
+				better = placedNeighbours[i] > placedNeighbours[best];
+			}
+			else if (neighbours[i].size() != neighbours[best].size())
+			{
+				better = neighbours[i].size() > neighbours[best].size();
+			}
+			else
+			{
+				better = descs[i] < descs[best];
+			}
+
+			if (better)
+			{
+				best = i;
+			}
+		}
+
+		placed[best] = true;
+		rank[nodes[best]] = (int)step;
+		for (size_t other : neighbours[best])
+		{
+			placedNeighbours[other]++;
+		}
+	}
+
+	return rank;
+}
+
 }
 
 void ExhaustiveSearch::setup()
@@ -95,6 +221,11 @@ void ExhaustiveSearch::setup()
 		return ip;
 	};
 
+	// each decree remembers which probe it belongs to, so the three groups
+	// below can be put in connectivity order (see connected_rank()).
+	typedef std::pair<Probe *, IteratedProbe *> Decree;
+	std::vector<Decree> existDecrees, kindDecrees, chargeDecrees;
+
 	for (Probe *const &probe : _all)
 	{
 		if (probe->is_bond())
@@ -102,7 +233,7 @@ void ExhaustiveSearch::setup()
 			BondProbe *bp = static_cast<BondProbe *>(probe);
 			{
 				IteratedProbe *ip = make_exist_bond_decree(bp);
-				if (ip) { _iterations.push_back(ip); }
+				if (ip) { existDecrees.push_back({probe, ip}); }
 			}
 		}
 		else if (probe->is_atom())
@@ -110,24 +241,18 @@ void ExhaustiveSearch::setup()
 			AtomProbe *ap = static_cast<AtomProbe *>(probe);
 			{
 				IteratedProbe *ip = make_exist_atom_decree(ap);
-				if (ip) { _iterations.push_back(ip); }
+				if (ip) { existDecrees.push_back({probe, ip}); }
 			}
 		}
 	}
 
-	std::random_device rd;
-    std::mt19937 g(rd());
-	std::vector<IteratedProbe *> copy(_iterations.begin(), _iterations.end());
-    std::shuffle(copy.begin(), copy.end(), g);
-	_iterations = std::list<IteratedProbe *>(copy.begin(), copy.end());
-	
 	for (Probe *const &probe : _all)
 	{
 		if (probe->is_bond())
 		{
 			BondProbe *bp = static_cast<BondProbe *>(probe);
 			IteratedProbe *ip = make_bond_decree(bp);
-			if (ip) { _iterations.push_back(ip); }
+			if (ip) { kindDecrees.push_back({probe, ip}); }
 		}
 	}
 
@@ -139,14 +264,50 @@ void ExhaustiveSearch::setup()
 	// {Three, Zero, Six} vs {Three, mOne, Six} states share the same
 	// geometry/neutral-electron count and only differ in charge, so
 	// nothing else here would ever pin it down without its own decree.
-	int charge_count = 0;
 	for (Probe *const &probe : _all)
 	{
 		if (probe->is_charge())
 		{
 			CountProbe *cp = static_cast<CountProbe *>(probe);
 			IteratedProbe *ip = make_charge_decree(cp);
-			if (ip) { _iterations.push_back(ip); charge_count++; }
+			if (ip) { chargeDecrees.push_back({probe, ip}); }
+		}
+	}
+
+	// the order decrees are assigned in is the order of the backtracking
+	// search: a decree whose neighbours are already settled has its
+	// constraints checked straight away, so a contradiction is found as
+	// soon as it exists rather than after enumerating every combination of
+	// unrelated decrees assigned in between. Existence decrees used to be
+	// shuffled at random, which scattered neighbours far apart.
+	// "random" restores that (ROPE_DECREE_ORDER=random, for comparing).
+	// The groups keep their relative order (existence, then bond kind, then
+	// charge - see above); only the order within each group changes.
+	if (decree_order() == DecreeOrder::Random)
+	{
+		std::random_device rd;
+		std::mt19937 g(rd());
+		std::shuffle(existDecrees.begin(), existDecrees.end(), g);
+	}
+	else
+	{
+		std::map<Probe *, int> rank = connected_rank(_all);
+		auto by_rank = [&rank](const Decree &a, const Decree &b)
+		{
+			return rank.at(a.first) < rank.at(b.first);
+		};
+
+		std::stable_sort(existDecrees.begin(), existDecrees.end(), by_rank);
+		std::stable_sort(kindDecrees.begin(), kindDecrees.end(), by_rank);
+		std::stable_sort(chargeDecrees.begin(), chargeDecrees.end(), by_rank);
+	}
+
+	for (const std::vector<Decree> *group :
+	     {&existDecrees, &kindDecrees, &chargeDecrees})
+	{
+		for (const Decree &decree : *group)
+		{
+			_iterations.push_back(decree.second);
 		}
 	}
 
@@ -168,17 +329,21 @@ void ExhaustiveSearch::cleanup()
 
 void ExhaustiveSearch::search()
 {
+	auto begin = std::chrono::steady_clock::now();
 	setup();
 
+	bool interrupted = false;
 	while (true)
 	{
 		if (_cancel && _cancel->load())
 		{
+			interrupted = true;
 			break;
 		}
 
 		if (_skip && _skip->load())
 		{
+			interrupted = true;
 			break;
 		}
 
@@ -187,6 +352,17 @@ void ExhaustiveSearch::search()
 			break;
 		}
 	}
+
+	// for comparing decree orderings (ROPE_DECREE_ORDER) - the search is
+	// exhaustive, so the arrangement count must be the same either way
+	// unless it was cancelled or skipped part-way.
+	long ms = (long)std::chrono::duration_cast<std::chrono::milliseconds>
+	(std::chrono::steady_clock::now() - begin).count();
+	std::cout << "ExhaustiveSearch: " << _iterations.size() << " decrees, "
+	          << _results.size() << " arrangements, " << ms << " ms ("
+	          << (decree_order() == DecreeOrder::Random ? "random" :
+	              "connected") << " order"
+	          << (interrupted ? ", interrupted" : "") << ")" << std::endl;
 
 	cleanup();
 }
