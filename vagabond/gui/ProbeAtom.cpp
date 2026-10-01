@@ -82,6 +82,10 @@ void ProbeAtom::fullUpdateProbe()
 		_standalone->setPosition(_probe->position());
 		_standalone->setColour(c.x, c.y, c.z);
 		_standalone->setAlpha(_probe->alpha());
+		// setText()/correctBox() rebuild every vertex's extra (including
+		// the GPU-pick id in extra[3]), so re-stamp it or the label can
+		// no longer be clicked/selected.
+		_standalone->reindex();
 		_standalone->forceRender(true, true);
 	}
 	else
