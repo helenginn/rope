@@ -760,8 +760,15 @@ void MatrixBox::draw()
 		glm::mat3x3 rot;
 		rot = glm::mat3x3(glm::rotate(base, (float)deg2rad(-90),
 		                              glm::vec3(0., 0., -1.)));
-		rot[1] *= 0.8;
-		rot[0] /= 0.8;
+		// after the -90 degree rotation rot[0] is the text's reading
+		// direction (now vertical) and rot[1] its thickness (now
+		// horizontal): thinner so neighbouring labels, which sit one
+		// column apart, don't overlap, and taller so the glyphs aren't
+		// squashed by that thinning.
+		const float label_thickness = 0.7f;
+		const float label_length = 1.4f;
+		rot[1] *= label_thickness;
+		rot[0] *= label_length;
 		t->rotateRoundCentre(rot);
 		addObject(t);
 		x += xstep;
