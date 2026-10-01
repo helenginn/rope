@@ -19,6 +19,8 @@
 #ifndef __vagabond__OccupancyPropagation__
 #define __vagabond__OccupancyPropagation__
 
+#include <cstdint>
+#include <unordered_map>
 #include <vector>
 #include <vagabond/utils/Eigen/Dense>
 
@@ -33,10 +35,9 @@
 // occupancy there (its "local" fraction) sits from that atom's pooled
 // "global" occupancy tells us how unrepresentative the subnetwork's states
 // were of the whole network - and, for any atoms correlated with it, how
-// unrepresentative theirs were too. correct() removes that
-// unrepresentativeness using every other atom in the subnetwork at once, as
-// a ridge-regularised multiple regression (see correct()), rather than
-// picking any one of them.
+// unrepresentative theirs were too. Propagator removes that
+// unrepresentativeness using every correlated atom in the subnetwork at
+// once, as a regularised multiple regression, rather than picking any one.
 namespace OccupancyPropagation
 {
 	// one subnetwork's worth of binary (present/absent) atom states.
@@ -56,7 +57,7 @@ namespace OccupancyPropagation
 
 		// this subnetwork's total weight, in any consistent unit across
 		// subnetworks (its total Boltzmann mass, say) - what it counts
-		// for when pooling covariances across subnetworks.
+		// for when pooling correlations across subnetworks.
 		float mass = 1.f;
 
 		// each atom's occupancy in this subnetwork alone: weighted
@@ -66,44 +67,110 @@ namespace OccupancyPropagation
 
 	struct Settings
 	{
-		// ridge penalty, as a fraction of each reference atom's own
-		// variance. Pulls every regression slope towards zero, so that
-		// atoms carrying the same information share the credit between
-		// them (two identical references get about half each) and thin
-		// data produces a small correction rather than a wild one.
+		// ridge penalty, as a fraction of each atom's own variance.
 		float ridge = 0.02f;
 
-		// shrinks each pair's pooled covariance by W / (W + shrinkWeight),
+		// shrinks each pair's pooled correlation by W / (W + shrinkWeight),
 		// where W is the pair's total shared weight across every
-		// subnetwork containing both, in units of an average subnetwork's
+		// subnetwork where both vary, in units of an average subnetwork's
 		// mass. A pair co-sampled in only one or two subnetworks barely
 		// counts; one co-sampled in many counts nearly in full.
 		float shrinkWeight = 1.f;
+
+		// pooled correlations weaker than this are treated as zero. Many
+		// tiny, noisy correlations added together would otherwise add up to
+		// a large spurious correction, and zeroing them also splits each
+		// subnetwork into small independent groups of related atoms, which
+		// is what keeps the cost down.
+		float minCorrelation = 0.1f;
+
+		// the pooled correlation matrix is stitched together pair by pair
+		// from different subsets of subnetworks, so it needn't be a valid
+		// (positive semi-definite) matrix, and inverting a near-singular
+		// one makes the regression wildly overshoot. Its eigenvalues are
+		// raised to at least this (the matrix has a unit diagonal) before
+		// use - the "nearest valid correlation matrix" repair.
+		float eigenFloor = 0.03f;
 	};
 
-	/** @param theta every atom's pooled (global) occupancy, indexed by the
-	 *  global atom index used in Subnetwork::ids.
-	 *  @returns for each subnetwork, the corrected local fraction of each
-	 *  of its atoms (same order as ids), clamped to [0, 1].
+	// what happened to one atom in one subnetwork, to explain a correction
+	// that is small or absent.
+	struct Diagnostic
+	{
+		// strongest pooled correlation with any other atom here (before
+		// minCorrelation is applied).
+		float maxCorrelation = 0;
+
+		// largest |theta_j - f_j| over the atoms it is correlated with
+		// (|correlation| >= minCorrelation): how much those atoms' local
+		// values here disagree with their global ones.
+		float maxDeviation = 0;
+
+		// correlated atoms that disagree noticeably (> 0.02).
+		int usefulReferences = 0;
+
+		// the correction was limited to the largest reference deviation.
+		bool capped = false;
+	};
+
+	/** Two passes over the subnetworks, one at a time, so only one
+	 *  subnetwork's states need exist in memory at any moment:
 	 *
-	 *  The correlation between two atoms is pooled (weighted by subnetwork
-	 *  mass) over the *within-subnetwork* weighted correlation of every
-	 *  subnetwork where both vary - correlations rather than covariances,
-	 *  since an atom's variance differs between subnetworks, and pooling it
-	 *  made the slopes overshoot. Each subnetwork then rebuilds covariances
-	 *  from the pooled correlations and its own local standard deviations
-	 *  (so two identical atoms get a slope of exactly 1), and each atom i is
-	 *  regressed on all of the others at once (slopes beta_ij,
-	 *  ridge-regularised), and corrected by:
+	 *  1. accumulate() every subnetwork - pools the within-subnetwork
+	 *     weighted *correlation* of every pair of atoms over the
+	 *     subnetworks where both vary (correlations, not covariances: an
+	 *     atom's variance differs between subnetworks, and pooling it made
+	 *     the regression slopes overshoot).
+	 *  2. correct() each subnetwork (again, one at a time).
+	 *
+	 *  correct() rebuilds covariances from the pooled correlations and that
+	 *  subnetwork's own local standard deviations (so two identical atoms
+	 *  get a slope of exactly 1), splits the atoms into groups connected by
+	 *  a correlation of at least minCorrelation, repairs each group's
+	 *  correlation matrix (eigenFloor), regresses each atom on all the
+	 *  others in its group at once, and corrects it:
 	 *
 	 *      f'_i = f_i + sum_j beta_ij * (theta_j - f_j)
 	 *
-	 *  - the standard control-variate/regression estimator, each other atom
-	 *  j acting as a control whose true value (theta_j) is known better than
-	 *  this subnetwork's own sample of it (f_j). An atom seen in only one
-	 *  subnetwork has theta_j == f_j, so it contributes nothing. A
-	 *  subnetwork whose atoms already agree with their global values is left
-	 *  unchanged. */
+	 *  - the control-variate/regression estimator, each other atom j acting
+	 *  as a control whose true value (theta_j) is known better than this
+	 *  subnetwork's own sample of it (f_j). An atom seen in only one
+	 *  subnetwork has theta_j == f_j, so it contributes nothing. The
+	 *  correction is never larger than the largest deviation among the
+	 *  atoms it is correlated with, and the result is clamped to [0, 1]. */
+	class Propagator
+	{
+	public:
+		Propagator(const Settings &settings = Settings());
+
+		void accumulate(const Subnetwork &sub);
+
+		/** @param theta every atom's pooled (global) occupancy, indexed by
+		 *  the global atom index used in Subnetwork::ids.
+		 *  @returns the corrected local fraction of each atom, in the order
+		 *  of sub.ids. */
+		Eigen::VectorXf correct(const Subnetwork &sub,
+		                        const Eigen::VectorXf &theta,
+		                        std::vector<Diagnostic> *diagnostics = nullptr)
+		const;
+
+	private:
+		struct PairStats
+		{
+			double corr = 0; // sum of mass * weighted correlation
+			double weight = 0; // sum of mass, where the pair both varied
+		};
+
+		float correlation(int a, int b) const;
+
+		Settings _settings;
+		std::unordered_map<uint64_t, PairStats> _pooled;
+		double _totalMass = 0;
+		size_t _count = 0;
+	};
+
+	/** convenience: both passes over an in-memory list (used by the tests;
+	 *  the predictor streams instead, to avoid holding every subnetwork). */
 	std::vector<Eigen::VectorXf>
 	correct(const std::vector<Subnetwork> &subs, const Eigen::VectorXf &theta,
 	        const Settings &settings = Settings());

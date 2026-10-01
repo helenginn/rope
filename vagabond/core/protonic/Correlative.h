@@ -57,7 +57,20 @@ public:
 	void addStates(const CertainStates &states, float weight = 1.f);
 
 	Eigen::MatrixXf acquireMatrix();
-	
+
+	// frees the three full N x N working matrices (_overall, _written,
+	// _cache) once the finished matrix has been taken - everything a
+	// caller still needs afterwards (insertions(), matrixLookup()) is
+	// small. Without this a kept-alive Correlative pins several times the
+	// finished matrix's own size for as long as it lives. After this,
+	// addStates()/acquireMatrix()/rowsFor() must not be called again.
+	void releaseMatrices()
+	{
+		_overall = Eigen::MatrixXf();
+		_written = Eigen::MatrixXf();
+		_cache = Eigen::MatrixXf();
+	}
+
 	size_t size()
 	{
 		return _size;

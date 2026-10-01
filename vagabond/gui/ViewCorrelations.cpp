@@ -702,8 +702,8 @@ bool ViewCorrelations::matrixCacheValid()
 	}
 
 	_correlative = cache->correlative;
-	_matrix = cache->matrix;
 	_result = cache->result;
+	_matrix = cache->result; // same values once filling has finished
 	_matrixSignature = cache->signature;
 	_matrixComplete = true;
 	return true;
@@ -1011,12 +1011,19 @@ void ViewCorrelations::finishAssembly()
 			std::make_shared<CorrelationCache>();
 			cache->signature = _matrixSignature;
 			cache->correlative = _correlative;
-			{
-				std::unique_lock<std::mutex> lock(_mutex);
-				cache->matrix = _matrix;
-			}
 			cache->result = _result;
+
+			// the view only needs the finished matrix plus the (small)
+			// insertions()/matrixLookup() from here on, not the Correlative's
+			// own full N x N working matrices - freed so the cache doesn't
+			// pin them for as long as the Clique lives.
+			_correlative->releaseMatrices();
 			_clique->setCorrelationCache(cache);
+
+			std::cout << "ViewCorrelations: correlation matrix " << _result.rows()
+			          << " x " << _result.cols() << " ("
+			          << (double)_result.size() * sizeof(float) / 1048576.0
+			          << " MB) cached on the clique" << std::endl;
 
 			makeTopLevelViewToggle();
 			addCommunicationAnalysisButton();

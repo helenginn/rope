@@ -23,6 +23,7 @@
 #include "OccupancyPropagation.h"
 #include <vagabond/utils/Eigen/Dense>
 #include <algorithm>
+#include <chrono>
 #include <functional>
 #include <iostream>
 
@@ -75,6 +76,8 @@ OccupancyPredictor::OccupancyPredictor(Clique *clique) : _clique(clique)
 
 OccupancyPredictor::EstimateMap OccupancyPredictor::estimates()
 {
+	auto timeStart = std::chrono::steady_clock::now();
+
 	struct OccupancyEstimate // one per (ptp, subdivision)
 	{
 		std::map<int, float> results{}; // one per state
@@ -151,7 +154,20 @@ OccupancyPredictor::EstimateMap OccupancyPredictor::estimates()
 
 	// pooled occupancy of each existence ptp before any propagation, kept
 	// only so the summary log at the end can show what propagation changed.
+	auto timeGathered = std::chrono::steady_clock::now();
 	std::map<ProbeTypePair, float> uncorrected;
+
+	// why an atom's occupancy did or didn't move under propagation,
+	// aggregated over every subnetwork it is in - see the log at the end.
+	struct AtomDiagnostic
+	{
+		int subnetworks = 0;
+		float maxCorrelation = 0;
+		float maxDeviation = 0;
+		int usefulReferences = 0;
+		int capped = 0;
+	};
+	std::map<ProbeTypePair, AtomDiagnostic> atomDiagnostics;
 
 	// optional: correct each atom's occupancy within each subnetwork using
 	// every other atom of that subnetwork at once (see OccupancyPropagation)
@@ -219,25 +235,51 @@ OccupancyPredictor::EstimateMap OccupancyPredictor::estimates()
 			}
 		}
 
-		std::vector<OccupancyPropagation::Subnetwork> inputs;
-		std::vector<size_t> inputSub;
-
-		for (size_t idx = 0; idx < subs.size(); idx++)
+		// builds one subnetwork's input on demand. Only ever one of these
+		// exists at a time (it is rebuilt for each of the two passes below):
+		// holding every subnetwork's states x atoms matrix at once is
+		// gigabytes on a big network.
+		//
+		// Only the highest-weight states are kept - those holding 99% of
+		// the subnetwork's Boltzmann weight, at most 512 - since the rest
+		// contribute nothing to a weighted correlation but cost states x
+		// atoms^2 to include.
+		const size_t maxStates = 512;
+		auto build = [&](size_t idx, OccupancyPropagation::Subnetwork &in)
 		{
 			const SubdivisionInfo &info = subs[idx];
 			size_t k = members[idx].size();
-			if (k < 2 || !info.states) continue;
+			if (k < 2 || !info.states) return false;
 
-			size_t count = info.states->state_count();
-			OccupancyPropagation::Subnetwork in;
-			in.X = Eigen::MatrixXf(count, k);
-			in.p = Eigen::VectorXf(count);
-			in.fraction = Eigen::VectorXf(k);
+			std::vector<int> order(info.probs.size());
+			for (size_t s = 0; s < order.size(); s++) order[s] = (int)s;
+			std::sort(order.begin(), order.end(), [&](int a, int b)
+			{
+				return info.probs[a] > info.probs[b];
+			});
+
+			float total = 0;
+			for (float p : info.probs) total += p;
+
+			size_t keep = 0;
+			float covered = 0;
+			while (keep < order.size() && keep < maxStates &&
+			       covered < 0.99f * total)
+			{
+				covered += info.probs[order[keep]];
+				keep++;
+			}
+			if (keep == 0) return false;
+
+			in.ids.clear();
+			in.X = Eigen::MatrixXf((int)keep, (int)k);
+			in.p = Eigen::VectorXf((int)keep);
+			in.fraction = Eigen::VectorXf((int)k);
 			in.mass = members[idx][0].est->sum;
 
-			for (size_t s = 0; s < count; s++)
+			for (size_t s = 0; s < keep; s++)
 			{
-				in.p(s) = info.probs[s];
+				in.p((int)s) = info.probs[order[s]];
 			}
 
 			for (size_t c = 0; c < k; c++)
@@ -248,41 +290,78 @@ OccupancyPredictor::EstimateMap OccupancyPredictor::estimates()
 				float f = t2 / (t1 + t2);
 				int row = (*info.states)(member.ptp);
 
-				for (size_t s = 0; s < count; s++)
+				for (size_t s = 0; s < keep; s++)
 				{
 					// 2 = present, 1 = absent (hnet::Existence); a state
 					// that recorded neither is imputed with this atom's own
 					// fraction, so it adds no variance or covariance.
-					int v = info.states->value((int)s, row);
-					in.X(s, c) = (v == 2) ? 1.f : ((v == 1) ? 0.f : f);
+					int v = info.states->value(order[s], row);
+					in.X((int)s, (int)c) = (v == 2) ? 1.f :
+					((v == 1) ? 0.f : f);
 				}
 
 				in.ids.push_back(member.atom);
-				in.fraction(c) = f;
+				in.fraction((int)c) = f;
 			}
 
-			inputs.push_back(in);
-			inputSub.push_back(idx);
+			return true;
+		};
+
+		OccupancyPropagation::Propagator propagator;
+		OccupancyPropagation::Subnetwork in;
+
+		// pass 1: pool correlations across every subnetwork.
+		for (size_t idx = 0; idx < subs.size(); idx++)
+		{
+			if (build(idx, in))
+			{
+				propagator.accumulate(in);
+			}
+			else
+			{
+				// still counts towards the average subnetwork mass.
+				OccupancyPropagation::Subnetwork empty;
+				empty.mass = members[idx].size() ?
+				members[idx][0].est->sum : 0.f;
+				propagator.accumulate(empty);
+			}
 		}
 
+		// pass 2: correct each subnetwork, writing straight back into its
+		// per-state results (the pooling below then runs unchanged).
 		Eigen::VectorXf theta = Eigen::Map<Eigen::VectorXf>(thetas.data(),
 		                                                    thetas.size());
-		std::vector<Eigen::VectorXf> corrected =
-		OccupancyPropagation::correct(inputs, theta);
+		std::vector<OccupancyPropagation::Diagnostic> diagnostics;
 
-		for (size_t i = 0; i < inputs.size(); i++)
+		for (size_t idx = 0; idx < subs.size(); idx++)
 		{
-			for (size_t c = 0; c < members[inputSub[i]].size(); c++)
+			if (!build(idx, in)) continue;
+
+			Eigen::VectorXf corrected = propagator.correct(in, theta,
+			                                               &diagnostics);
+
+			for (size_t c = 0; c < members[idx].size(); c++)
 			{
-				OccupancyEstimate &est = *members[inputSub[i]][c].est;
+				OccupancyEstimate &est = *members[idx][c].est;
 				float mass = state_total(est, 1) + state_total(est, 2);
-				float f = corrected[i](c);
+				float f = corrected((int)c);
 
 				est.results[2] = mass * f;
 				est.results[1] = mass * (1.f - f);
+
+				AtomDiagnostic &ad = atomDiagnostics[members[idx][c].ptp];
+				ad.subnetworks++;
+				ad.maxCorrelation = std::max(ad.maxCorrelation,
+				                             diagnostics[c].maxCorrelation);
+				ad.maxDeviation = std::max(ad.maxDeviation,
+				                           diagnostics[c].maxDeviation);
+				ad.usefulReferences += diagnostics[c].usefulReferences;
+				ad.capped += diagnostics[c].capped ? 1 : 0;
 			}
 		}
 	}
+
+	auto timePropagated = std::chrono::steady_clock::now();
 
 	// restrict to one atom per mutualExistenceNeighbours() group (their
 	// existence is unambiguously tied together, see its own comment on
@@ -378,7 +457,12 @@ OccupancyPredictor::EstimateMap OccupancyPredictor::estimates()
 	// pairwise overlap between every pair of subdivisions - shared/(shared
 	// + unique) of their certainPtps sets - independent of any one target
 	// ptp, so computed once up front and sliced per ptp below.
-	size_t n = subs.size();
+	//
+	// only built when redundancy weighting is on - it is O(n^2 * atoms) over
+	// the n subnetworks (each pair a set intersection), and nothing reads it
+	// otherwise. It used to be built unconditionally, which made every
+	// estimates() call (57 of them in a pH scan) pay for it regardless.
+	size_t n = _redundancyWeightingEnabled ? subs.size() : 0;
 	Eigen::MatrixXf overlap = Eigen::MatrixXf::Identity((int)n, (int)n);
 
 	for (size_t i = 0; i < n; i++)
@@ -422,17 +506,20 @@ OccupancyPredictor::EstimateMap OccupancyPredictor::estimates()
 		// matrix, then de-weighted by redundancy (see redundancy_weights()'
 		// own comment) - a lone subnetwork keeps its full contribution, a
 		// cluster of near-identical ones shares it between them.
-		Eigen::MatrixXf sub((int)m, (int)m);
-		for (size_t a = 0; a < m; a++)
+		Eigen::VectorXf redundancy = Eigen::VectorXf::Ones((int)m);
+		if (_redundancyWeightingEnabled)
 		{
-			for (size_t b = 0; b < m; b++)
+			Eigen::MatrixXf sub((int)m, (int)m);
+			for (size_t a = 0; a < m; a++)
 			{
-				sub((int)a, (int)b) = overlap((int)estimates[a].first,
-				                              (int)estimates[b].first);
+				for (size_t b = 0; b < m; b++)
+				{
+					sub((int)a, (int)b) = overlap((int)estimates[a].first,
+					                              (int)estimates[b].first);
+				}
 			}
+			redundancy = redundancy_weights(sub);
 		}
-		Eigen::VectorXf redundancy = _redundancyWeightingEnabled ?
-		redundancy_weights(sub) : Eigen::VectorXf::Ones((int)m);
 
 		std::map<int, float> sums;
 		float grand_sum = 0;
@@ -543,6 +630,93 @@ OccupancyPredictor::EstimateMap OccupancyPredictor::estimates()
 			std::cout << "  " << shifts[i].ptp->first->desc() << ": "
 			          << shifts[i].before << " -> " << shifts[i].after
 			          << " (" << shifts[i].samples << ")" << std::endl;
+		}
+
+		// atoms sitting near 50% that propagation left essentially where
+		// they were - and why, from what each of their subnetworks saw:
+		//  alone      - never in a subnetwork with another existence atom
+		//  uncorrel.  - no other atom there correlated with it (>= 0.1)
+		//  agreeing   - correlated atoms there, but all already at their
+		//               global values, so nothing to transfer
+		//  other      - had correlated, disagreeing atoms and still didn't
+		//               move (e.g. regression cancelled out)
+		int stuck = 0, alone = 0, uncorrelated = 0, agreeing = 0, other = 0;
+		std::vector<std::string> examples;
+		for (const Shift &shift : shifts)
+		{
+			if (fabs(shift.after - shift.before) > 0.005f ||
+			    fabs(shift.before - 0.5f) > 0.1f)
+			{
+				continue;
+			}
+
+			stuck++;
+			auto it = atomDiagnostics.find(*shift.ptp);
+			std::string reason;
+
+			if (it == atomDiagnostics.end())
+			{
+				alone++;
+				reason = "alone";
+			}
+			else if (it->second.maxCorrelation < 0.1f)
+			{
+				uncorrelated++;
+				reason = "uncorrel.";
+			}
+			else if (it->second.usefulReferences == 0)
+			{
+				agreeing++;
+				reason = "agreeing";
+			}
+			else
+			{
+				other++;
+				reason = "other";
+			}
+
+			if (examples.size() < 10)
+			{
+				std::string line = "  " + shift.ptp->first->desc() + ": " +
+				reason;
+				if (it != atomDiagnostics.end())
+				{
+					line += " (subnetworks " +
+					std::to_string(it->second.subnetworks) + ", max corr " +
+					std::to_string(it->second.maxCorrelation) +
+					", max reference deviation " +
+					std::to_string(it->second.maxDeviation) + ")";
+				}
+				examples.push_back(line);
+			}
+		}
+
+		std::cout << "OccupancyPredictor: " << stuck << " atoms near 50% "
+		          << "unmoved - alone " << alone << ", uncorrelated "
+		          << uncorrelated << ", correlated atoms agreeing "
+		          << agreeing << ", other " << other << std::endl;
+		for (const std::string &line : examples)
+		{
+			std::cout << line << std::endl;
+		}
+	}
+
+	{
+		auto done = std::chrono::steady_clock::now();
+		auto ms = [](auto a, auto b)
+		{
+			return (long)std::chrono::duration_cast<std::chrono::milliseconds>
+			(b - a).count();
+		};
+
+		if (ms(timeStart, done) > 500)
+		{
+			std::cout << "OccupancyPredictor::estimates(): "
+			          << ms(timeStart, done) << " ms total (gather "
+			          << ms(timeStart, timeGathered) << ", propagation "
+			          << ms(timeGathered, timePropagated) << ", rest "
+			          << ms(timePropagated, done) << "), "
+			          << subs.size() << " subnetworks" << std::endl;
 		}
 	}
 

@@ -43,9 +43,11 @@ struct CorrelationCache
 	Signature signature;
 	std::shared_ptr<Correlative> correlative;
 
-	// the gap-filled matrix as shown by the MatrixPlot, and the one handed
-	// on to CommunicationAnalysis (same values once filling has finished).
-	Eigen::MatrixXf matrix;
+	// the finished, gap-filled matrix - what the MatrixPlot shows and what
+	// CommunicationAnalysis is handed (one copy: the display copy holds the
+	// same values once filling has finished, so it isn't stored twice, and
+	// the Correlative's own working matrices are released - see
+	// Correlative::releaseMatrices()).
 	Eigen::MatrixXf result;
 };
 
