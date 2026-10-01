@@ -911,9 +911,17 @@ void ViewCorrelations::finishAssembly()
 
 	auto fill_gaps = [this, mp]()
 	{
+		// magnitude is the product, so an inferred path is always weaker
+		// than either edge. The sign is negative if EITHER edge is negative
+		// - not the plain product's sign, which would make two depletions
+		// (A depletes B, B depletes C) infer an enrichment between A and C:
+		// that can't be concluded from those edges (and is the wrong sign
+		// within a mutually exclusive set), so depletion is never turned
+		// into enrichment by inference. Untested heuristic.
 		auto combine = [](float x, float y)
 		{
-			return x * y;
+			float mag = fabs(x * y);
+			return (x < 0 || y < 0) ? -mag : mag;
 		};
 
 		setInformation("Deriving intermediate correlations");
