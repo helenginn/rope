@@ -54,6 +54,7 @@ void Parallelepiped::addParallelepiped(glm::vec3 min, glm::vec3 max)
 }
 void Parallelepiped::addTrueParallelepiped(glm::vec3 startPos, glm::vec3 height, float diameter, float offset)
 {
+    glEnable(GL_DEPTH_TEST);
     glm::vec3 helper = (glm::abs(height.x) < 0.9f)
                        ? glm::vec3(1, 0, 0)
                        : glm::vec3(0, 1, 0);
