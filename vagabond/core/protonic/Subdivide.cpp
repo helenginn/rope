@@ -65,6 +65,36 @@ static bool is_symmetry_related(Probe *probe)
 	return false;
 }
 
+// true for the oxygen atom of a water (HOH) - the one thing a subnetwork may
+// only ever contain a single instance of, see may_add() below.
+static bool is_water_oxygen(Probe *probe)
+{
+	return probe->is_atom() && probe->atom()->code() == "HOH" &&
+	probe->atom()->elementSymbol() == "O";
+}
+
+// a subnetwork may contain at most one water oxygen: false if `probe` is a
+// water oxygen and the chunk already holds a different one. Every place a
+// chunk grows (shoot(), finish_ends(), add_leg_member()) goes through this,
+// so the limit holds however the chunk ended up reaching a second water.
+static bool may_add(const OpSet<Probe *> &chunk, Probe *probe)
+{
+	if (!is_water_oxygen(probe))
+	{
+		return true;
+	}
+
+	for (Probe *const &member : chunk)
+	{
+		if (member != probe && is_water_oxygen(member))
+		{
+			return false;
+		}
+	}
+
+	return true;
+}
+
 bool Subdivide::finish_ends(OpSet<Probe *> &chunk)
 {
 	// catches every direct (non-bond-mediated) atom<->atom edge on an
@@ -107,7 +137,7 @@ bool Subdivide::finish_ends(OpSet<Probe *> &chunk)
 			{
 				if (other->is_definitely_not_present() ||
 				    is_symmetry_related(other) ||
-				    probe->isClashPartner(other))
+				    probe->isClashPartner(other) || !may_add(chunk, other))
 				{
 					continue;
 				}
@@ -149,7 +179,7 @@ bool Subdivide::finish_ends(OpSet<Probe *> &chunk)
 static void add_leg_member(OpSet<Probe *> &chunk, Probe *other)
 {
 	if (!other || other->is_definitely_not_present() ||
-	    is_symmetry_related(other))
+	    is_symmetry_related(other) || !may_add(chunk, other))
 	{
 		return;
 	}
@@ -521,7 +551,7 @@ void Subdivide::shoot(OpSet<Probe *> &chunk)
 
 	for (const Candidate &candidate : candidates)
 	{
-		if (candidate.probe == start)
+		if (candidate.probe == start || !may_add(result, candidate.probe))
 		{
 			continue;
 		}
