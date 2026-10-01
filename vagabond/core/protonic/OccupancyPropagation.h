@@ -46,18 +46,30 @@ namespace OccupancyPropagation
 		// global atom index of each column of X.
 		std::vector<int> ids;
 
-		// states x ids.size(); 1 = present, 0 = absent. An atom not
-		// recorded in some state is imputed by the caller with that atom's
-		// own local fraction (so it contributes no variance or covariance).
+		// states x ids.size(); 1 = present, 0 = absent (ignored wherever
+		// `recorded` says the atom has no value in that state).
 		Eigen::MatrixXf X;
+
+		// states x ids.size(); 1 where the atom actually has a value in that
+		// state, 0 where it is unassigned. Correlations use only the states
+		// where BOTH atoms of a pair are recorded - filling the gaps in with
+		// a mean (as an earlier version did) adds no variance but still
+		// counts in the denominator, which scaled the apparent correlation
+		// of a mostly-unassigned atom down by the square root of its
+		// recorded fraction. Left empty, every entry counts as recorded.
+		Eigen::MatrixXf recorded;
 
 		// one non-negative Boltzmann weight per state (any scale - it is
 		// normalised here).
 		Eigen::VectorXf p;
 
-		// this subnetwork's total weight, in any consistent unit across
-		// subnetworks (its total Boltzmann mass, say) - what it counts
-		// for when pooling correlations across subnetworks.
+		// this subnetwork's total weight (its total Boltzmann mass, say).
+		// Not used by Propagator: how much a subnetwork counts towards a
+		// pair's correlation is the effective number of states where both
+		// atoms are recorded, not its mass relative to other subnetworks
+		// (which crushed the evidence of a small subnetwork - a couple of
+		// hundred arrangements is plenty to measure a correlation - because
+		// larger ones dominated the average). Kept for callers' own pooling.
 		float mass = 1.f;
 
 		// each atom's occupancy in this subnetwork alone: weighted
@@ -70,12 +82,19 @@ namespace OccupancyPropagation
 		// ridge penalty, as a fraction of each atom's own variance.
 		float ridge = 0.02f;
 
-		// shrinks each pair's pooled correlation by W / (W + shrinkWeight),
-		// where W is the pair's total shared weight across every
-		// subnetwork where both vary, in units of an average subnetwork's
-		// mass. A pair co-sampled in only one or two subnetworks barely
-		// counts; one co-sampled in many counts nearly in full.
-		float shrinkWeight = 1.f;
+		// shrinks each pair's pooled correlation by N / (N + shrinkStates),
+		// where N is the effective number of states (Kish: (sum w)^2 /
+		// sum w^2 over the Boltzmann weights) in which both atoms were
+		// recorded, summed over every subnetwork containing both. A
+		// correlation measured from a handful of states barely counts; one
+		// from hundreds counts almost in full.
+		float shrinkStates = 10.f;
+
+		// a pooled correlation is only used if it is at least this many
+		// standard errors away from zero (|r| * sqrt(N) >= significance,
+		// N the effective number of states behind it). A correlation from a
+		// few states is noise however perfect it looks.
+		float significance = 3.f;
 
 		// pooled correlations weaker than this are treated as zero. Many
 		// tiny, noisy correlations added together would otherwise add up to
@@ -171,16 +190,14 @@ namespace OccupancyPropagation
 	private:
 		struct PairStats
 		{
-			double corr = 0; // sum of mass * weighted correlation
-			double weight = 0; // sum of mass, where the pair both varied
+			double corr = 0; // sum of (effective states * correlation)
+			double states = 0; // sum of effective states, where both varied
 		};
 
 		float correlation(int a, int b) const;
 
 		Settings _settings;
 		std::unordered_map<uint64_t, PairStats> _pooled;
-		double _totalMass = 0;
-		size_t _count = 0;
 	};
 
 	/** convenience: both passes over an in-memory list (used by the tests;

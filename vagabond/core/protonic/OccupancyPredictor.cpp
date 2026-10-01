@@ -301,6 +301,7 @@ OccupancyPredictor::EstimateMap OccupancyPredictor::estimates()
 
 			in.ids.clear();
 			in.X = Eigen::MatrixXf((int)keep, (int)k);
+			in.recorded = Eigen::MatrixXf::Zero((int)keep, (int)k);
 			in.p = Eigen::VectorXf((int)keep);
 			in.fraction = Eigen::VectorXf((int)k);
 			in.mass = members[idx][0].est->sum;
@@ -321,11 +322,12 @@ OccupancyPredictor::EstimateMap OccupancyPredictor::estimates()
 				for (size_t s = 0; s < keep; s++)
 				{
 					// 2 = present, 1 = absent (hnet::Existence); a state
-					// that recorded neither is imputed with this atom's own
-					// fraction, so it adds no variance or covariance.
+					// that recorded neither leaves this atom unassigned
+					// there, masked out of every correlation involving it.
 					int v = info.states->value(order[s], row);
-					in.X((int)s, (int)c) = (v == 2) ? 1.f :
-					((v == 1) ? 0.f : f);
+					bool known = (v == 1 || v == 2);
+					in.X((int)s, (int)c) = (v == 2) ? 1.f : 0.f;
+					in.recorded((int)s, (int)c) = known ? 1.f : 0.f;
 				}
 
 				in.ids.push_back(member.atom);

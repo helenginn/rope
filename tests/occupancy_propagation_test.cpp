@@ -83,7 +83,7 @@ float run(int shared, bool anti, float &trpGlobal)
 TEST_CASE("propagation: a correlated, better-sampled atom drags a poorly "
           "sampled one towards it, but never past it")
 {
-	for (int shared : {1, 5, 25})
+	for (int shared : {5, 25})
 	{
 		float trp = 0;
 		float his = run(shared, false, trp);
@@ -91,6 +91,18 @@ TEST_CASE("propagation: a correlated, better-sampled atom drags a poorly "
 		CHECK(his > 0.5f);   // moved towards the reference
 		CHECK(his < trp);    // and never beyond its global value
 	}
+}
+
+TEST_CASE("propagation: a correlation from too few states is treated as "
+          "noise")
+{
+	// one subnetwork of four states is perfectly correlated, but that is
+	// only 2 standard errors (|r| * sqrt(4)), under Settings::significance
+	// (3) - a correlation measured from a handful of states is not evidence
+	float trp = 0;
+	float his = run(1, false, trp);
+
+	CHECK(his == doctest::Approx(0.5f));
 }
 
 TEST_CASE("propagation: more shared evidence trusts the correlation more")
@@ -102,7 +114,10 @@ TEST_CASE("propagation: more shared evidence trusts the correlation more")
 	// fraction of the gap between the poorly sampled atom's local 0.5 and
 	// the reference's global value that was closed
 	CHECK((his25 - 0.5f) / (trp25 - 0.5f) > (his1 - 0.5f) / (trp1 - 0.5f));
-	CHECK((his25 - 0.5f) / (trp25 - 0.5f) > 0.9f);
+	// 25 subnetworks x 4 states = 100 effective states, shrunk by
+	// 100 / (100 + 10) (Settings::shrinkStates) and by the correlation-matrix
+	// repair - so close to, but deliberately a little short of, the whole gap
+	CHECK((his25 - 0.5f) / (trp25 - 0.5f) > 0.85f);
 }
 
 TEST_CASE("propagation: anti-correlation mirrors correlation")
@@ -167,6 +182,79 @@ TEST_CASE("propagation: identical references share the credit rather than "
 	float two = correct(doubled, pooled(doubled, 4))[0](0);
 
 	CHECK(two == doctest::Approx(one).epsilon(0.05));
+}
+
+TEST_CASE("propagation: a small subnetwork with a mostly-unassigned "
+          "reference still carries the reference's global value across")
+{
+	// atom 0 (like Met46) is in one subnetwork of 210 arrangements, shared
+	// with atom 1 (like B110), which is only recorded in 76 of them (40
+	// present, 36 absent - 19% and 17% of the arrangements; the rest are
+	// unassigned) and is perfectly correlated with atom 0 wherever it is
+	// recorded. Atom 1 is 8/25 = 32% present in 50 other subnetworks.
+	Subnetwork shared;
+	shared.ids = {0, 1};
+	shared.X = Eigen::MatrixXf::Zero(210, 2);
+	shared.recorded = Eigen::MatrixXf::Zero(210, 2);
+	shared.p = Eigen::VectorXf::Ones(210);
+
+	for (int r = 0; r < 210; r++)
+	{
+		shared.recorded(r, 0) = 1.f;
+		if (r < 40)
+		{
+			shared.X(r, 0) = 1.f;
+			shared.X(r, 1) = 1.f;
+			shared.recorded(r, 1) = 1.f;
+		}
+		else if (r < 76)
+		{
+			shared.recorded(r, 1) = 1.f; // both absent
+		}
+		else
+		{
+			shared.X(r, 0) = (r % 2) ? 1.f : 0.f; // atom 1 unassigned here
+		}
+	}
+	shared.fraction = Eigen::VectorXf(2);
+	shared.fraction(0) = shared.X.col(0).mean();
+	shared.fraction(1) = 40.f / 76.f;
+
+	std::vector<int> b110_global(25, 0);
+	for (int i = 0; i < 8; i++)
+	{
+		b110_global[i] = 1;
+	}
+	std::vector<int> other(25, 0);
+	for (int i = 0; i < 25; i += 2)
+	{
+		other[i] = 1;
+	}
+
+	std::vector<Subnetwork> subs;
+	subs.push_back(shared);
+	for (int i = 0; i < 50; i++)
+	{
+		subs.push_back(make({1, 2}, {b110_global, other}));
+	}
+
+	Eigen::VectorXf theta = pooled(subs, 3);
+	REQUIRE(theta(1) < 0.4f); // the reference's global value is ~0.32
+
+	Propagator propagator;
+	for (const Subnetwork &sub : subs)
+	{
+		propagator.accumulate(sub);
+	}
+
+	float before = shared.fraction(0);
+	float after = propagator.correct(shared, theta)(0);
+
+	// moved well over half of the way from its local value to the
+	// reference's global one - the case where, with the correlation shrunk
+	// by subnetwork mass and diluted by the unassigned states, it did not
+	// move at all
+	CHECK(after < before - 0.5f * (before - theta(1)));
 }
 
 TEST_CASE("propagation: a single-atom subnetwork passes through unchanged")

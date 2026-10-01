@@ -36,21 +36,6 @@ uint64_t pair_key(int a, int b)
 	return ((uint64_t)a << 32) | (uint64_t)b;
 }
 
-// weighted standard deviation of every column of sub.X.
-Eigen::VectorXf local_sd(const Subnetwork &sub, const Eigen::VectorXf &p)
-{
-	Eigen::RowVectorXf mean = p.transpose() * sub.X;
-	Eigen::MatrixXf centred = sub.X.rowwise() - mean;
-	Eigen::VectorXf sd(sub.X.cols());
-
-	for (int i = 0; i < sd.size(); i++)
-	{
-		sd(i) = std::sqrt(std::max(0.f, centred.col(i).cwiseAbs2().dot(p)));
-	}
-
-	return sd;
-}
-
 Eigen::VectorXf normalised_weights(const Subnetwork &sub)
 {
 	Eigen::VectorXf p = sub.p;
@@ -71,34 +56,68 @@ Propagator::Propagator(const Settings &settings) : _settings(settings)
 
 void Propagator::accumulate(const Subnetwork &sub)
 {
-	_totalMass += sub.mass;
-	_count++;
-
 	int k = (int)sub.ids.size();
-	if (k < 2 || sub.X.rows() == 0 || !(sub.p.sum() > 0))
+	int states = (int)sub.X.rows();
+	if (k < 2 || states == 0 || !(sub.p.sum() > 0))
 	{
 		return;
 	}
 
 	Eigen::VectorXf p = normalised_weights(sub);
-	Eigen::RowVectorXf mean = p.transpose() * sub.X;
-	Eigen::MatrixXf centred = sub.X.rowwise() - mean;
-	Eigen::MatrixXf cov = centred.transpose() * p.asDiagonal() * centred;
+
+	Eigen::MatrixXf M = (sub.recorded.rows() == states &&
+	                     sub.recorded.cols() == k) ?
+	sub.recorded : Eigen::MatrixXf::Ones(states, k);
+
+	// pairwise-complete weighted statistics: for a pair (i, j) only the
+	// states where BOTH are recorded count, each with its Boltzmann weight.
+	// With m the recorded mask and x the binary value (x = 0 wherever not
+	// recorded), every per-pair sum is one k x k matrix product:
+	//   N   = sum p m_i m_j        (total weight where both are recorded)
+	//   N2  = sum p^2 m_i m_j      (for the effective number of states)
+	//   A   = sum p m_i m_j x_i x_j
+	//   Bx  = sum p m_i m_j x_i    (row i's own value; column j gives x_j)
+	Eigen::MatrixXf Xm = sub.X.cwiseProduct(M);
+	Eigen::MatrixXf pM = p.asDiagonal() * M;
+	Eigen::MatrixXf N = M.transpose() * pM;
+	Eigen::MatrixXf N2 = M.transpose() * p.cwiseAbs2().asDiagonal() * M;
+	Eigen::MatrixXf A = Xm.transpose() * p.asDiagonal() * Xm;
+	Eigen::MatrixXf Bx = Xm.transpose() * pM;
 
 	for (int i = 0; i < k; i++)
 	{
 		for (int j = i + 1; j < k; j++)
 		{
-			// a correlation is undefined if either atom is constant here
-			float denom = std::sqrt(cov(i, i) * cov(j, j));
-			if (!(denom > 1e-8f))
+			float n = N(i, j);
+			if (!(n > 1e-9f) || !(N2(i, j) > 0))
+			{
+				continue; // never recorded together here
+			}
+
+			float mean_i = Bx(i, j) / n;
+			float mean_j = Bx(j, i) / n;
+
+			// binary values: variance is mean * (1 - mean) exactly. A
+			// correlation is undefined if either atom is constant over the
+			// states where both are recorded.
+			float var_i = mean_i * (1.f - mean_i);
+			float var_j = mean_j * (1.f - mean_j);
+			float denom = std::sqrt(var_i * var_j);
+			if (!(denom > 1e-6f))
 			{
 				continue;
 			}
 
+			float cov = A(i, j) / n - mean_i * mean_j;
+			float corr = std::min(1.f, std::max(-1.f, cov / denom));
+
+			// Kish effective number of states, among those where both are
+			// recorded, weighted by their Boltzmann weights.
+			float effective = n * n / N2(i, j);
+
 			PairStats &stats = _pooled[pair_key(sub.ids[i], sub.ids[j])];
-			stats.corr += sub.mass * (cov(i, j) / denom);
-			stats.weight += sub.mass;
+			stats.corr += effective * corr;
+			stats.states += effective;
 		}
 	}
 }
@@ -111,17 +130,28 @@ float Propagator::correlation(int a, int b) const
 	}
 
 	auto it = _pooled.find(pair_key(a, b));
-	if (it == _pooled.end() || !(it->second.weight > 0))
+	if (it == _pooled.end() || !(it->second.states > 0))
 	{
 		return 0.f;
 	}
 
-	// shrinkWeight is in units of an average subnetwork's mass
-	double mean_mass = (_count > 0 && _totalMass > 0) ?
-	_totalMass / (double)_count : 1.0;
+	double states = it->second.states;
+	double mean = it->second.corr / states;
 
-	return (float)(it->second.corr /
-	               (it->second.weight + _settings.shrinkWeight * mean_mass));
+	// a correlation measured from N effective states has a standard error of
+	// about 1 / sqrt(N): one not clearly bigger than that is indistinguishable
+	// from noise and is dropped outright. Without this, many tiny subnetworks
+	// (a handful of states over dozens of atoms makes nearly every correlation
+	// +-1 by chance) pooled together produced spurious correlations that moved
+	// atoms the wrong way.
+	if (std::fabs(mean) * std::sqrt(states) < _settings.significance)
+	{
+		return 0.f;
+	}
+
+	// the states-weighted mean correlation, shrunk towards zero by
+	// states / (states + shrinkStates)
+	return (float)(it->second.corr / (states + _settings.shrinkStates));
 }
 
 Eigen::VectorXf Propagator::correct(const Subnetwork &sub,
@@ -142,7 +172,15 @@ const
 		return result;
 	}
 
-	Eigen::VectorXf sd = local_sd(sub, normalised_weights(sub));
+	// local spread of each atom in this subnetwork, from its own recorded
+	// fraction (binary: sqrt(f (1 - f)) exactly) - not from states where it
+	// is unassigned.
+	Eigen::VectorXf sd(k);
+	for (int i = 0; i < k; i++)
+	{
+		float f = std::min(1.f, std::max(0.f, result(i)));
+		sd(i) = std::sqrt(f * (1.f - f));
+	}
 
 	Eigen::VectorXf d(k);
 	for (int i = 0; i < k; i++)
