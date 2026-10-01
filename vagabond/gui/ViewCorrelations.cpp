@@ -24,6 +24,7 @@
 #include <fstream>
 #include <vagabond/core/protonic/Clique.h>
 #include <vagabond/core/protonic/Correlative.h>
+#include <vagabond/core/protonic/CorrelationCache.h>
 #include <vagabond/core/protonic/CertainStates.h>
 #include <vagabond/gui/elements/list/LineGroup.h>
 #include <vagabond/gui/elements/AskYesNo.h>
@@ -314,12 +315,13 @@ ViewCorrelations::~ViewCorrelations()
 		pair.first->setSelectJob(pair.second);
 	}
 
-	// _overall/_written inside here are full N x N matrices (N = summed
-	// dim_for_type() over every distinct ProbeTypePair across all
-	// subdivisions) - never freed otherwise, so every visit to this view
-	// on a clique with many subdivisions leaked several hundred MB to
-	// low-GB permanently once the view closed.
-	delete _correlative;
+	// _correlative is a shared_ptr: _overall/_written inside it are full
+	// N x N matrices (N = summed dim_for_type() over every distinct
+	// ProbeTypePair across all subdivisions), which used to leak several
+	// hundred MB to low-GB per visit when never freed. It is now also held
+	// by the Clique's CorrelationCache (see finishAssembly()) so it
+	// survives this view closing - freed only once the cache is replaced or
+	// the Clique itself goes.
 }
 
 void ViewCorrelations::makeList()
@@ -643,28 +645,68 @@ void ViewCorrelations::filterSubdivisions(Clique &clique,
 
 // what the assembled correlation matrix depends on: each subdivision's
 // searched states (a re-run search installs a new CertainStates, and its
-// ptps() size catches one extended in place), and its sample weight. Compared
-// against the one recorded when the cached matrix was built, so the cache is
-// only reused while nothing it was derived from has changed.
-std::vector<std::tuple<const void *, size_t, int>>
-ViewCorrelations::matrixSignature() const
+// ptps() size catches one extended in place), its sample weight, and its
+// average score (a live callback - Correlative::addStates() notes the scores
+// can change if the enabled energy terms change between runs, which alters
+// the matrix without touching any of the former). Compared against the one
+// recorded when the cached matrix was built, so the cache is only reused
+// while nothing it was derived from has changed.
+CorrelationCache::Signature ViewCorrelations::matrixSignature() const
 {
-	std::vector<std::tuple<const void *, size_t, int>> sig;
+	CorrelationCache::Signature sig;
 
 	for (Clique &sub : _clique->subdivisions())
 	{
 		const std::shared_ptr<CertainStates> &states = sub.states();
-		size_t ptps = (states ? states->ptps().size() : 0);
-		sig.push_back({states.get(), ptps, sub.sampleWeight()});
+		size_t ptps = 0;
+		float score = 0;
+
+		if (states)
+		{
+			ptps = states->ptps().size();
+			if (states->state_count())
+			{
+				score = states->average_score();
+			}
+			if (!std::isfinite(score))
+			{
+				score = 0; // NaN would never compare equal to itself
+			}
+		}
+
+		sig.push_back({states.get(), ptps, sub.sampleWeight(), score});
 	}
 
 	return sig;
 }
 
-bool ViewCorrelations::matrixCacheValid() const
+// true if a finished matrix for the Clique's current subdivisions is
+// available - either already held by this view, or (the usual case when
+// re-entering this view) left on the Clique by an earlier ViewCorrelations,
+// in which case it is restored into this view's members first.
+bool ViewCorrelations::matrixCacheValid()
 {
-	return _matrixComplete && _correlative &&
-	matrixSignature() == _matrixSignature;
+	CorrelationCache::Signature current = matrixSignature();
+
+	if (_matrixComplete && _correlative && current == _matrixSignature)
+	{
+		return true;
+	}
+
+	const std::shared_ptr<CorrelationCache> &cache =
+	_clique->correlationCache();
+
+	if (!cache || !cache->correlative || cache->signature != current)
+	{
+		return false;
+	}
+
+	_correlative = cache->correlative;
+	_matrix = cache->matrix;
+	_result = cache->result;
+	_matrixSignature = cache->signature;
+	_matrixComplete = true;
+	return true;
 }
 
 void ViewCorrelations::viewAll()
@@ -808,8 +850,7 @@ void ViewCorrelations::viewAll()
 			// viewAll() can run again on the same open Scene (e.g. the
 			// list entry re-clicked) - free whatever the previous run
 			// left behind rather than leaking its _overall/_written.
-			delete _correlative;
-			_correlative = correl;
+			_correlative.reset(correl);
 			_result = result;
 			_assembling = false;
 			finishAssembly();
@@ -961,6 +1002,22 @@ void ViewCorrelations::finishAssembly()
 			// instantly instead of re-running the whole assembly if the
 			// user switches to subnetwork clustering and back.
 			_matrixComplete = true;
+
+			// kept on the Clique too, so it survives this view being
+			// closed (going back to the H-bond analysis control) - see
+			// matrixCacheValid(), which restores it on re-entry as long
+			// as the subdivisions' signature hasn't changed.
+			std::shared_ptr<CorrelationCache> cache =
+			std::make_shared<CorrelationCache>();
+			cache->signature = _matrixSignature;
+			cache->correlative = _correlative;
+			{
+				std::unique_lock<std::mutex> lock(_mutex);
+				cache->matrix = _matrix;
+			}
+			cache->result = _result;
+			_clique->setCorrelationCache(cache);
+
 			makeTopLevelViewToggle();
 			addCommunicationAnalysisButton();
 

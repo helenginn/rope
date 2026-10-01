@@ -25,6 +25,7 @@
 #include <vagabond/core/Item.h>
 #include <vagabond/core/ResidueRange.h>
 #include <vagabond/core/protonic/hnet.h>
+#include <vagabond/core/protonic/CorrelationCache.h>
 #include <vagabond/utils/Eigen/Dense>
 #include <mutex>
 #include <atomic>
@@ -223,8 +224,11 @@ private:
 	// what the cached _matrix/_correlative were derived from (each
 	// subdivision's states + sample weight), and whether the cache is still
 	// valid - i.e. complete and nothing it depends on has since changed.
-	std::vector<std::tuple<const void *, size_t, int>> matrixSignature() const;
-	bool matrixCacheValid() const;
+	CorrelationCache::Signature matrixSignature() const;
+
+	// also restores a matrix left on the Clique by an earlier view into
+	// this one's members, hence non-const.
+	bool matrixCacheValid();
 
 	// (re)builds the MatrixPlot, and (unless addButton is false) the
 	// "Communication analysis" button, from the current _matrix/
@@ -362,7 +366,8 @@ private:
 	resolveChains(const std::vector<ResidueRangeToken> &tokens);
 
 	Clique *_clique{};
-	Correlative *_correlative{};
+	// shared with the Clique's CorrelationCache so it outlives this view.
+	std::shared_ptr<Correlative> _correlative{};
 
 	// shared with whichever background assembly is currently in flight (if
 	// any), so setBackJob() can flag it to stop early without needing to
@@ -385,7 +390,7 @@ private:
 	bool _matrixComplete = false;
 
 	// see matrixSignature() - what _matrix/_correlative were built from.
-	std::vector<std::tuple<const void *, size_t, int>> _matrixSignature;
+	CorrelationCache::Signature _matrixSignature;
 
 	// owns finishAssembly()'s "fill_gaps" background thread directly
 	// (rather than the fire-and-forget detached DoJob used elsewhere in

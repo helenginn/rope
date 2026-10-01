@@ -34,6 +34,7 @@ class Network;
 class ProbeResult;
 class CertainStates;
 class Clique;
+struct CorrelationCache;
 
 /** one call to Subdivide::subdivide()/one() worth of results, kept
  * alongside any earlier/later runs rather than overwriting them (see
@@ -438,6 +439,20 @@ public:
 		return _correlationOrder;
 	}
 
+	/** transient (never serialised, shared between copies of this Clique):
+	 * the last finished correlation matrix for this Clique's subdivisions,
+	 * so re-entering View Correlations doesn't recompute it - see
+	 * CorrelationCache. Null until one has been computed. */
+	const std::shared_ptr<CorrelationCache> &correlationCache() const
+	{
+		return _correlationCache;
+	}
+
+	void setCorrelationCache(const std::shared_ptr<CorrelationCache> &cache)
+	{
+		_correlationCache = cache;
+	}
+
 	void setCorrelationOrder(const std::vector<std::string> &order)
 	{
 		_correlationOrder = order;
@@ -511,6 +526,7 @@ private:
 	std::string _watchedDesc;
 	std::string _searchText;
 	std::vector<std::string> _correlationOrder;
+	std::shared_ptr<CorrelationCache> _correlationCache;
 };
 
 inline void to_json(json &j, const Clique &cl)
