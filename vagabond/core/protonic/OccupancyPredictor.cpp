@@ -24,6 +24,7 @@
 #include <vagabond/utils/Eigen/Dense>
 #include <algorithm>
 #include <chrono>
+#include <cstdlib>
 #include <functional>
 #include <iostream>
 
@@ -360,6 +361,11 @@ OccupancyPredictor::EstimateMap OccupancyPredictor::estimates()
 		                                                    thetas.size());
 		std::vector<OccupancyPropagation::Diagnostic> diagnostics;
 
+		// ROPE_TRACE_ATOM=<text>: for every atom whose desc() contains this,
+		// print each subnetwork's local value, corrected value and the
+		// references that moved it - to see why an atom's occupancy changed.
+		const char *trace = std::getenv("ROPE_TRACE_ATOM");
+
 		for (size_t idx = 0; idx < subs.size(); idx++)
 		{
 			if (!build(idx, in)) continue;
@@ -372,9 +378,29 @@ OccupancyPredictor::EstimateMap OccupancyPredictor::estimates()
 				OccupancyEstimate &est = *members[idx][c].est;
 				float mass = state_total(est, 1) + state_total(est, 2);
 				float f = corrected((int)c);
+				float local = mass > 0 ? state_total(est, 2) / mass : 0.f;
 
 				est.results[2] = mass * f;
 				est.results[1] = mass * (1.f - f);
+
+				if (trace)
+				{
+					std::string name = members[idx][c].ptp.first->desc();
+					if (name.find(trace) != std::string::npos)
+					{
+						std::cout << "[trace] " << name << " subnetwork " << idx
+						          << " (weight " << est.sum << "): local "
+						          << local << " -> " << f << ";";
+						for (const auto &ref : diagnostics[c].topReferences)
+						{
+							std::cout << " [" << members[idx][ref.index]
+							.ptp.first->desc() << " corr " << ref.correlation
+							          << " slope " << ref.slope << " deviation "
+							          << ref.deviation << "]";
+						}
+						std::cout << std::endl;
+					}
+				}
 
 				AtomDiagnostic &ad = atomDiagnostics[members[idx][c].ptp];
 				ad.subnetworks++;
@@ -667,6 +693,28 @@ OccupancyPredictor::EstimateMap OccupancyPredictor::estimates()
 		//               global values, so nothing to transfer
 		//  other      - had correlated, disagreeing atoms and still didn't
 		//               move (e.g. regression cancelled out)
+		// does propagation push occupancies away from 50% (more extreme) or
+		// towards it, overall? Positive mean = more extreme on average.
+		{
+			int more = 0, less = 0;
+			double change = 0;
+			for (const Shift &shift : shifts)
+			{
+				float delta = fabs(shift.after - 0.5f) -
+				fabs(shift.before - 0.5f);
+				change += delta;
+				if (delta > 0.001f) more++;
+				else if (delta < -0.001f) less++;
+			}
+
+			std::cout << "OccupancyPredictor: " << more << " atoms more "
+			          << "extreme, " << less << " less extreme, "
+			          << (shifts.size() - more - less) << " unchanged; mean "
+			          << "change in distance from 50% = "
+			          << (shifts.size() ? change / shifts.size() : 0.0)
+			          << std::endl;
+		}
+
 		int stuck = 0, alone = 0, uncorrelated = 0, agreeing = 0, other = 0;
 		std::vector<std::string> examples;
 		for (const Shift &shift : shifts)

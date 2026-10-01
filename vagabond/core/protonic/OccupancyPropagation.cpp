@@ -306,9 +306,37 @@ const
 
 			if (diagnostics)
 			{
-				(*diagnostics)[i].maxDeviation = biggest;
-				(*diagnostics)[i].usefulReferences = useful;
-				(*diagnostics)[i].capped = capped;
+				Diagnostic &diag = (*diagnostics)[i];
+				diag.maxDeviation = biggest;
+				diag.usefulReferences = useful;
+				diag.capped = capped;
+
+				for (int b = 0; b < n; b++)
+				{
+					if (b == a || R(i, group[b]) == 0.f)
+					{
+						continue;
+					}
+
+					Diagnostic::Reference ref;
+					ref.index = group[b];
+					ref.correlation = R(i, group[b]);
+					ref.slope = -P(a, b) / P(a, a);
+					ref.deviation = db(b);
+					diag.topReferences.push_back(ref);
+				}
+
+				std::sort(diag.topReferences.begin(), diag.topReferences.end(),
+				          [](const Diagnostic::Reference &x,
+				             const Diagnostic::Reference &y)
+				          {
+					          return std::fabs(x.slope * x.deviation) >
+					          std::fabs(y.slope * y.deviation);
+				          });
+				if (diag.topReferences.size() > 3)
+				{
+					diag.topReferences.resize(3);
+				}
 			}
 		}
 	}

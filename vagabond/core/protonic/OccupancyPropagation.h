@@ -111,6 +111,20 @@ namespace OccupancyPropagation
 
 		// the correction was limited to the largest reference deviation.
 		bool capped = false;
+
+		// the (up to three) other atoms that moved this one most:
+		// `index` is the position in Subnetwork::ids, `correlation` the
+		// pooled correlation, `slope` the regression slope beta, `deviation`
+		// theta_j - f_j; the contribution to the correction is slope *
+		// deviation.
+		struct Reference
+		{
+			int index = 0;
+			float correlation = 0;
+			float slope = 0;
+			float deviation = 0;
+		};
+		std::vector<Reference> topReferences;
 	};
 
 	/** Two passes over the subnetworks, one at a time, so only one
