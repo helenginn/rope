@@ -201,10 +201,40 @@ float CommunicationAnalysis::compare(const std::optional<CanonicalGroup> &m,
 
 void CommunicationAnalysis::svd()
 {
+	// TEMPORARY diagnostic: Eigen's BDCSVD silently returns all-zero
+	// singular values for an input containing NaN/Inf, which would make
+	// every group's significantDim() 0 and every Canonical::run() throw.
+	{
+		int nonFinite = 0, nonZero = 0;
+		float maxAbs = 0;
+		for (int i = 0; i < _mat.rows(); i++)
+		{
+			for (int j = 0; j < _mat.cols(); j++)
+			{
+				float v = _mat(i, j);
+				if (!std::isfinite(v))
+				{
+					nonFinite++;
+					continue;
+				}
+				if (fabs(v) > 1e-6) nonZero++;
+				maxAbs = std::max(maxAbs, fabs(v));
+			}
+		}
+
+		std::cout << "CommunicationAnalysis::svd(): input matrix "
+		          << _mat.rows() << "x" << _mat.cols() << ", " << nonFinite
+		          << " non-finite, " << nonZero << " non-zero, max |v|="
+		          << maxAbs << std::endl;
+	}
+
 	Eigen::BDCSVD<MatrixXf> svd(_mat, Eigen::ComputeFullU | 
 	                            Eigen::ComputeFullV);
 	Eigen::MatrixXf u = svd.matrixU().transpose();
 	Eigen::VectorXf w = svd.singularValues();
+	std::cout << "CommunicationAnalysis::svd(): " << w.size()
+	          << " singular values, largest=" << (w.size() ? w(0) : 0)
+	          << ", SVD info=" << (int)svd.info() << " (0 = ok)" << std::endl;
 	for (float &f : w)
 	{
 		f = sqrt(f);
