@@ -59,9 +59,27 @@ public:
 		_redundancyWeightingEnabled = on;
 	}
 
+	// off by default. When on, each atom's occupancy in each subnetwork is
+	// first corrected using every other atom in that subnetwork at once
+	// (ridge-regularised multiple regression - see OccupancyPropagation),
+	// before the usual pooling across subnetworks: an atom seen in only a
+	// few, unrepresentative subnetworks is pulled towards what correlated,
+	// better-sampled atoms say it should be. Takes effect on the next
+	// estimates() call.
+	void setPropagationEnabled(bool on)
+	{
+		_propagationEnabled = on;
+	}
+
+	bool propagationEnabled() const
+	{
+		return _propagationEnabled;
+	}
+
 private:
 	Clique *_clique{};
 	bool _redundancyWeightingEnabled = false;
+	bool _propagationEnabled = false;
 };
 
 #endif

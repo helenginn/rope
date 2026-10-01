@@ -234,13 +234,23 @@ void OccupanciesView::setup()
 		rebuildGraph();
 	}, _cliqueOnly);
 
+	// unlike the two display filters above, this one DOES change what
+	// estimates() computes - like the energy-source tickboxes below, it only
+	// takes effect on the next "Check occupancies" click, so it doesn't
+	// rebuild the graph here.
+	displayTix->addOption("Propagate occupancies", [this, displayTix]()
+	{
+		_predictor->setPropagationEnabled(
+		displayTix->isTicked("Propagate occupancies"));
+	}, _predictor->propagationEnabled());
+
 	displayTix->setVertical(true);
 	displayTix->setOneOnly(false);
 
 	// same x-range as the energy-source tickboxes below (tix), just
 	// higher up - was top-left (0.02, 0.06) but that overlapped the back
 	// button.
-	displayTix->arrange(0.15, 0.25, 0.32, 0.42);
+	displayTix->arrange(0.15, 0.25, 0.32, 0.47);
 	addObject(displayTix);
 
 	slider("", hnet::Energy::Torsion, 0.52);

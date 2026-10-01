@@ -20,8 +20,11 @@
 #include "Clique.h"
 #include "ProbeResult.h"
 #include "CertainStates.h"
+#include "OccupancyPropagation.h"
 #include <vagabond/utils/Eigen/Dense>
+#include <algorithm>
 #include <functional>
+#include <iostream>
 
 namespace
 {
@@ -93,6 +96,10 @@ OccupancyPredictor::EstimateMap OccupancyPredictor::estimates()
 		// subdivision's own "region", used below to score how much two
 		// subdivisions overlap independently of any one target ptp.
 		OpSet<ProbeTypePair> certainPtps;
+
+		// only used by the optional propagation pass below.
+		const CertainStates *states = nullptr;
+		std::vector<float> probs;
 	};
 
 	// gathered up front (one pass over every subdivision), before any
@@ -117,6 +124,8 @@ OccupancyPredictor::EstimateMap OccupancyPredictor::estimates()
 		// average_score() + probsForAve(ave) pair this used to be.
 		float ave = 0;
 		std::vector<float> probs = states.probsForLocalAve(ave);
+		subs[idx].states = &states;
+		subs[idx].probs = probs;
 
 		for (const ProbeTypePair &ptp : states.ptps())
 		{
@@ -137,6 +146,141 @@ OccupancyPredictor::EstimateMap OccupancyPredictor::estimates()
 
 			occupancies[ptp].push_back({idx, {occs, sum, states.state_count(),
 			                            sampleWeight}});
+		}
+	}
+
+	// pooled occupancy of each existence ptp before any propagation, kept
+	// only so the summary log at the end can show what propagation changed.
+	std::map<ProbeTypePair, float> uncorrected;
+
+	// optional: correct each atom's occupancy within each subnetwork using
+	// every other atom of that subnetwork at once (see OccupancyPropagation)
+	// - an atom sampled in only a few, unrepresentative subnetworks is
+	// pulled towards what correlated, better-sampled atoms say. Done on the
+	// per-subnetwork results themselves, so everything below (union-find,
+	// pooling, redundancy weights) runs unchanged on the corrected values.
+	if (_propagationEnabled)
+	{
+		// each existence ptp's pooled ("global") occupancy, computed exactly
+		// as the pooling further down does for state 2 over states 1+2
+		// (weight est.sum, quantity = that state's total) - so a reference
+		// atom's global value here is the very number it would be reported
+		// with.
+		auto state_total = [](const OccupancyEstimate &est, int state)
+		{
+			auto it = est.results.find(state);
+			return (it == est.results.end()) ? 0.f : it->second;
+		};
+
+		std::map<ProbeTypePair, int> atomIndex;
+		std::vector<float> thetas;
+
+		for (auto &pair : occupancies)
+		{
+			if (pair.first.second != hnet::Types::ExistenceType) continue;
+
+			float num = 0, den = 0;
+			for (auto &entry : pair.second)
+			{
+				const OccupancyEstimate &est = entry.second;
+				float t1 = state_total(est, 1);
+				float t2 = state_total(est, 2);
+				num += est.sum * t2;
+				den += est.sum * (t1 + t2);
+			}
+
+			if (!(den > 0)) continue;
+
+			atomIndex[pair.first] = (int)thetas.size();
+			thetas.push_back(num / den);
+			uncorrected[pair.first] = num / den;
+		}
+
+		struct Member
+		{
+			ProbeTypePair ptp;
+			OccupancyEstimate *est;
+			int atom;
+		};
+
+		std::vector<std::vector<Member>> members(subs.size());
+		for (auto &pair : occupancies)
+		{
+			auto found = atomIndex.find(pair.first);
+			if (found == atomIndex.end()) continue;
+
+			for (auto &entry : pair.second)
+			{
+				OccupancyEstimate &est = entry.second;
+				if (!(state_total(est, 1) + state_total(est, 2) > 0)) continue;
+
+				members[entry.first].push_back({pair.first, &est,
+				                                found->second});
+			}
+		}
+
+		std::vector<OccupancyPropagation::Subnetwork> inputs;
+		std::vector<size_t> inputSub;
+
+		for (size_t idx = 0; idx < subs.size(); idx++)
+		{
+			const SubdivisionInfo &info = subs[idx];
+			size_t k = members[idx].size();
+			if (k < 2 || !info.states) continue;
+
+			size_t count = info.states->state_count();
+			OccupancyPropagation::Subnetwork in;
+			in.X = Eigen::MatrixXf(count, k);
+			in.p = Eigen::VectorXf(count);
+			in.fraction = Eigen::VectorXf(k);
+			in.mass = members[idx][0].est->sum;
+
+			for (size_t s = 0; s < count; s++)
+			{
+				in.p(s) = info.probs[s];
+			}
+
+			for (size_t c = 0; c < k; c++)
+			{
+				const Member &member = members[idx][c];
+				float t1 = state_total(*member.est, 1);
+				float t2 = state_total(*member.est, 2);
+				float f = t2 / (t1 + t2);
+				int row = (*info.states)(member.ptp);
+
+				for (size_t s = 0; s < count; s++)
+				{
+					// 2 = present, 1 = absent (hnet::Existence); a state
+					// that recorded neither is imputed with this atom's own
+					// fraction, so it adds no variance or covariance.
+					int v = info.states->value((int)s, row);
+					in.X(s, c) = (v == 2) ? 1.f : ((v == 1) ? 0.f : f);
+				}
+
+				in.ids.push_back(member.atom);
+				in.fraction(c) = f;
+			}
+
+			inputs.push_back(in);
+			inputSub.push_back(idx);
+		}
+
+		Eigen::VectorXf theta = Eigen::Map<Eigen::VectorXf>(thetas.data(),
+		                                                    thetas.size());
+		std::vector<Eigen::VectorXf> corrected =
+		OccupancyPropagation::correct(inputs, theta);
+
+		for (size_t i = 0; i < inputs.size(); i++)
+		{
+			for (size_t c = 0; c < members[inputSub[i]].size(); c++)
+			{
+				OccupancyEstimate &est = *members[inputSub[i]][c].est;
+				float mass = state_total(est, 1) + state_total(est, 2);
+				float f = corrected[i](c);
+
+				est.results[2] = mass * f;
+				est.results[1] = mass * (1.f - f);
+			}
 		}
 	}
 
@@ -356,6 +500,50 @@ OccupancyPredictor::EstimateMap OccupancyPredictor::estimates()
 		float observed = ptp.first->atomConf().occupancy();
 
 		ret[ptp] = {calculated, observed, grand_sum, sample_count};
+	}
+
+	if (_propagationEnabled)
+	{
+		struct Shift
+		{
+			const ProbeTypePair *ptp;
+			float before;
+			float after;
+			size_t samples;
+		};
+
+		std::vector<Shift> shifts;
+		float total = 0;
+		for (auto &pair : ret)
+		{
+			auto it = uncorrected.find(pair.first);
+			if (it == uncorrected.end()) continue;
+
+			float after = pair.second.calculated;
+			total += fabs(after - it->second);
+			shifts.push_back({&pair.first, it->second, after,
+			                  pair.second.samples});
+		}
+
+		std::sort(shifts.begin(), shifts.end(),
+		          [](const Shift &a, const Shift &b)
+		          {
+			          return fabs(a.after - a.before) >
+			          fabs(b.after - b.before);
+		          });
+
+		std::cout << "OccupancyPredictor: propagation on, " << shifts.size()
+		          << " atoms, mean |shift| = "
+		          << (shifts.size() ? total / shifts.size() : 0.f)
+		          << "; largest shifts (pooled before -> after, samples):"
+		          << std::endl;
+
+		for (size_t i = 0; i < shifts.size() && i < 15; i++)
+		{
+			std::cout << "  " << shifts[i].ptp->first->desc() << ": "
+			          << shifts[i].before << " -> " << shifts[i].after
+			          << " (" << shifts[i].samples << ")" << std::endl;
+		}
 	}
 
 	return ret;
