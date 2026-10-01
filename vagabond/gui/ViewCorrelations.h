@@ -29,6 +29,8 @@
 #include <mutex>
 #include <atomic>
 #include <memory>
+#include <tuple>
+#include <vector>
 #include <thread>
 #include <list>
 #include <vector>
@@ -218,6 +220,12 @@ private:
 	// assembly.
 	void showTopLevelView();
 
+	// what the cached _matrix/_correlative were derived from (each
+	// subdivision's states + sample weight), and whether the cache is still
+	// valid - i.e. complete and nothing it depends on has since changed.
+	std::vector<std::tuple<const void *, size_t, int>> matrixSignature() const;
+	bool matrixCacheValid() const;
+
 	// (re)builds the MatrixPlot, and (unless addButton is false) the
 	// "Communication analysis" button, from the current _matrix/
 	// _correlative/_result - shared by finishAssembly() (first run,
@@ -375,6 +383,9 @@ private:
 	// run, since _result is about to be replaced and won't have been
 	// gap-filled yet.
 	bool _matrixComplete = false;
+
+	// see matrixSignature() - what _matrix/_correlative were built from.
+	std::vector<std::tuple<const void *, size_t, int>> _matrixSignature;
 
 	// owns finishAssembly()'s "fill_gaps" background thread directly
 	// (rather than the fire-and-forget detached DoJob used elsewhere in

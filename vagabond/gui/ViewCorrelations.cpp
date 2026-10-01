@@ -641,13 +641,57 @@ void ViewCorrelations::filterSubdivisions(Clique &clique,
 	}
 }
 
+// what the assembled correlation matrix depends on: each subdivision's
+// searched states (a re-run search installs a new CertainStates, and its
+// ptps() size catches one extended in place), and its sample weight. Compared
+// against the one recorded when the cached matrix was built, so the cache is
+// only reused while nothing it was derived from has changed.
+std::vector<std::tuple<const void *, size_t, int>>
+ViewCorrelations::matrixSignature() const
+{
+	std::vector<std::tuple<const void *, size_t, int>> sig;
+
+	for (Clique &sub : _clique->subdivisions())
+	{
+		const std::shared_ptr<CertainStates> &states = sub.states();
+		size_t ptps = (states ? states->ptps().size() : 0);
+		sig.push_back({states.get(), ptps, sub.sampleWeight()});
+	}
+
+	return sig;
+}
+
+bool ViewCorrelations::matrixCacheValid() const
+{
+	return _matrixComplete && _correlative &&
+	matrixSignature() == _matrixSignature;
+}
+
 void ViewCorrelations::viewAll()
 {
 	if (_assembling)
 	{
 		return;
 	}
+
+	if (matrixCacheValid())
+	{
+		// nothing the matrix was derived from has changed since it was
+		// fully assembled and gap-filled - redisplay it rather than
+		// recalculating.
+		cancelStage2();
+		VagWindow::window()->requestProgressBarRemoval();
+		clearScreen();
+		_correlationMatrixButton = nullptr;
+		_subnetworkClusteringButton = nullptr;
+		_topLevelView = TopLevelView::CorrelationMatrix;
+		makeTopLevelViewToggle();
+		buildCorrelationMatrixUI();
+		return;
+	}
+
 	_assembling = true;
+	_matrixSignature = matrixSignature();
 
 	// wipes whatever the user was looking at before (e.g. a subnetwork's
 	// own view, or a previous "All" screen) and shows the toggle right
@@ -1627,7 +1671,7 @@ void ViewCorrelations::showTopLevelView()
 
 	if (_topLevelView == TopLevelView::CorrelationMatrix)
 	{
-		if (_matrixComplete)
+		if (matrixCacheValid())
 		{
 			// already fully assembled and gap-filled by a previous run -
 			// just rebuild the display from it rather than re-running the
