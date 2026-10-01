@@ -112,6 +112,12 @@ OccupancyPredictor::EstimateMap OccupancyPredictor::estimates()
 	std::map<ProbeTypePair, std::vector<std::pair<size_t, OccupancyEstimate>>>
 	occupancies;
 
+	// split of the gather phase's time, for the log at the end: replaying
+	// each state's stored energy closure (probsForLocalAve()), against
+	// everything else (proportions and bookkeeping).
+	std::chrono::steady_clock::duration scoringTime{};
+	std::chrono::steady_clock::duration proportionsTime{};
+
 	for (Clique &clique : _clique->subdivisions())
 	{
 		if (!clique.states()) continue;
@@ -126,30 +132,51 @@ OccupancyPredictor::EstimateMap OccupancyPredictor::estimates()
 		// calling score(i) a second time just to get ave, unlike the
 		// average_score() + probsForAve(ave) pair this used to be.
 		float ave = 0;
+		auto scoreStart = std::chrono::steady_clock::now();
 		std::vector<float> probs = states.probsForLocalAve(ave);
+		auto scoreEnd = std::chrono::steady_clock::now();
+		scoringTime += scoreEnd - scoreStart;
+
 		subs[idx].states = &states;
 		subs[idx].probs = probs;
 
+		// every probe's proportions in one pass over the states (see
+		// allProportions()'s own comment) - same numbers proportions() gave
+		// one ptp at a time, without a cache miss per access. Their shared
+		// total is just the sum of the state weights, as proportions()'s
+		// own `sum` was.
+		std::vector<std::map<int, float>> allOccs =
+		states.allProportions(probs);
+		float sum = 0;
+		for (const float &prob : probs)
+		{
+			sum += prob;
+		}
+		float sampleWeight = (float)clique.sampleWeight();
+
 		for (const ProbeTypePair &ptp : states.ptps())
 		{
-			if (states(ptp) == -1)
+			int row = states(ptp);
+			if (row == -1)
 			{
 				continue; // not certain in this subdivision
 			}
 
-			subs[idx].certainPtps.insert(ptp);
+			// only the redundancy weighting reads this
+			if (_redundancyWeightingEnabled)
+			{
+				subs[idx].certainPtps.insert(ptp);
+			}
 
 			// the node-sample-count correction (see
 			// CertainStates::sampleCount()) is applied inside proportions()
 			// itself, not here - sampleWeight is the separate, independent
 			// subdivision-merge correction (Clique::sampleWeight()).
-			float sum = 0; // sum of all energy contributions, populated next
-			std::map<int, float> occs = states.proportions(ptp, sum, probs);
-			float sampleWeight = (float)clique.sampleWeight();
-
-			occupancies[ptp].push_back({idx, {occs, sum, states.state_count(),
-			                            sampleWeight}});
+			occupancies[ptp].push_back({idx, {allOccs[row], sum,
+			                            states.state_count(), sampleWeight}});
 		}
+
+		proportionsTime += std::chrono::steady_clock::now() - scoreEnd;
 	}
 
 	// pooled occupancy of each existence ptp before any propagation, kept
@@ -713,7 +740,11 @@ OccupancyPredictor::EstimateMap OccupancyPredictor::estimates()
 		{
 			std::cout << "OccupancyPredictor::estimates(): "
 			          << ms(timeStart, done) << " ms total (gather "
-			          << ms(timeStart, timeGathered) << ", propagation "
+			          << ms(timeStart, timeGathered) << " [scoring "
+			          << std::chrono::duration_cast<std::chrono::milliseconds>
+			          (scoringTime).count() << ", proportions "
+			          << std::chrono::duration_cast<std::chrono::milliseconds>
+			          (proportionsTime).count() << "], propagation "
 			          << ms(timeGathered, timePropagated) << ", rest "
 			          << ms(timePropagated, done) << "), "
 			          << subs.size() << " subnetworks" << std::endl;

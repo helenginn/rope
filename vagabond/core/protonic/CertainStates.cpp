@@ -328,6 +328,67 @@ ProbeCorrelation CertainStates::correlate(const ProbeTypePair &left,
 	return corr;
 }
 
+std::vector<std::map<int, float>>
+CertainStates::allProportions(const std::vector<float> &probs) const
+{
+	size_t rows = probe_count();
+	size_t cols = state_count();
+
+	std::vector<std::map<int, float>> result(rows);
+	if (rows == 0 || cols == 0)
+	{
+		return result;
+	}
+
+	// per row: the handful of distinct values seen so far and their totals
+	// (existence 1/2, bond 1/2/4/8, charge up to 5), found by linear search.
+	std::vector<std::vector<std::pair<int, float>>> acc(rows);
+	for (auto &row : acc)
+	{
+		row.reserve(4);
+	}
+
+	const int *data = _data.data(); // column-major: state i starts at i * rows
+
+	for (size_t i = 0; i < cols; i++)
+	{
+		const int *column = data + i * rows;
+		float contrib = probs[i];
+
+		for (size_t r = 0; r < rows; r++)
+		{
+			std::vector<std::pair<int, float>> &list = acc[r];
+			int value = column[r];
+
+			bool found = false;
+			for (std::pair<int, float> &entry : list)
+			{
+				if (entry.first == value)
+				{
+					entry.second += contrib;
+					found = true;
+					break;
+				}
+			}
+
+			if (!found)
+			{
+				list.push_back({value, contrib});
+			}
+		}
+	}
+
+	for (size_t r = 0; r < rows; r++)
+	{
+		for (const std::pair<int, float> &entry : acc[r])
+		{
+			result[r][entry.first] = entry.second;
+		}
+	}
+
+	return result;
+}
+
 std::map<int, float> CertainStates::proportions(ProbeTypePair ptp,
                                                 float &sum,
                                                 const std::vector<float> &probs) const

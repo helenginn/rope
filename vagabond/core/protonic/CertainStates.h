@@ -112,6 +112,18 @@ public:
 	std::map<int, float> proportions(ProbeTypePair ptp, float &sum,
 	                                 const std::vector<float> &probs) const;
 
+	// proportions() for every probe row at once, indexed by row (see
+	// operator()(ptp)), with identical results - one pass down each state's
+	// column of _data instead of one pass across a row per probe. _data is
+	// column-major (one state per column), so reading one probe's values
+	// across all states strides a whole column length between accesses -
+	// a cache miss each - which dominated gathering estimates for a large
+	// subnetwork (probes x states accesses, each missing). The per-value
+	// totals also use a small flat list rather than a std::map lookup per
+	// access.
+	std::vector<std::map<int, float>>
+	allProportions(const std::vector<float> &probs) const;
+
 	// Clique::sampleCounts(), handed in by SearchAll once this
 	// CertainStates has been built - see its own comment for why it
 	// lives on the parent clique rather than being computed here.

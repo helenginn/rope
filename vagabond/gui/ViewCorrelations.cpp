@@ -645,8 +645,8 @@ void ViewCorrelations::filterSubdivisions(Clique &clique,
 
 // what the assembled correlation matrix depends on: each subdivision's
 // searched states (a re-run search installs a new CertainStates, and its
-// ptps() size catches one extended in place), its sample weight, and its
-// average score (a live callback - Correlative::addStates() notes the scores
+// ptps() size catches one extended in place), its sample weight, and a
+// fingerprint of its live scoring (Correlative::addStates() notes the scores
 // can change if the enabled energy terms change between runs, which alters
 // the matrix without touching any of the former). Compared against the one
 // recorded when the cached matrix was built, so the cache is only reused
@@ -664,9 +664,18 @@ CorrelationCache::Signature ViewCorrelations::matrixSignature() const
 		if (states)
 		{
 			ptps = states->ptps().size();
-			if (states->state_count())
+
+			// a cheap fingerprint of the live scoring, not average_score():
+			// that replays every state's energy closure (for every
+			// subdivision, on every cache check), which made the check as
+			// slow as a good part of what it exists to avoid. Three states'
+			// scores change whenever any enabled energy term, amplifier or
+			// test pH changes - which is all this needs to notice.
+			size_t count = states->state_count();
+			if (count)
 			{
-				score = states->average_score();
+				score = states->score(0) + 2.f * states->score((int)(count / 2))
+				+ 3.f * states->score((int)(count - 1));
 			}
 			if (!std::isfinite(score))
 			{
