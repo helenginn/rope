@@ -248,6 +248,13 @@ public:
     {
         return store.numAtom();
     }
+    std::map<Atom*,glm::vec3> atomPos(int const &rotamer)
+    {
+        ResRot ID {};
+        ID.Id() = store.name().first;
+        ID.second = rotamer;
+        return store.atomPos(ID);
+    }
 protected:
     RotamerStore store {};
     CollisionBox collision {};

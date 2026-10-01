@@ -65,6 +65,17 @@ std::vector<glm::vec3> RotamerStore::getPos()
     return positionArray;
 }
 
+std::map<Atom*,glm::vec3> RotamerStore::atomPos(ResRot const &rotamer)
+{
+    std::map<Atom*,glm::vec3> atomPos {};
+    LookUpInfo lookup = storage[rotamer];
+    for (int x = lookup.start(); x < (lookup.start() + lookup.length()); x++)
+    {
+        atomPos[atoms[x]] = positionArray[x];
+    }
+    return atomPos;
+}
+
 std::vector<glm::vec3> RotamerStore::positionFor(ResRot const &rotamer)
 {
     std::vector<glm::vec3> positions{};

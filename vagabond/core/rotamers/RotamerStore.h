@@ -40,6 +40,7 @@ public:
     RotamerStore store(std::map<ResidueId, std::map<Atom*,  std::vector<glm::vec3>>> &rotamers);
     std::vector<RotamerStore> residueStore();
     std::vector<glm::vec3> getPos();
+    std::map<Atom*,glm::vec3> atomPos(ResRot const &rotamer);
     std::vector<glm::vec3> positionFor(ResRot const &rotamer);
     bool collisionCheck(RotamerStore &self, int const &rotNum, RotamerStore &other, int const &otherRotNum);
     glm::vec3 positionForReporter();
