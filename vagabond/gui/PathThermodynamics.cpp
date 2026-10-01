@@ -24,7 +24,7 @@
 #include <nlohmann/json.hpp>
 #include <vagabond/utils/FileReader.h>
 #include <vagabond/gui/Graph.h>
-#include <vagabond/gui/GraphView.h>
+#include <vagabond/gui/EntropyTableView.h>
 #include <vagabond/gui/elements/TextEntry.h>
 #include <vagabond/gui/elements/TextButton.h>
 #include <vagabond/gui/elements/TickBoxes.h>
@@ -69,28 +69,21 @@ void PathThermodynamics::setup()
 	{
 		Text *t = new Text("Calculate single-structure entropy");
 		t->setLeft(0.2, top);
-		addObject(t);		
+		addTempObject(t);		
 	}
 
 	{
 		TextButton *t = new TextButton("Calculate (no MIST)", this);
 		t->setLeft(0.2, 0.4);
 		t->setReturnTag("calc_indep");
-		addObject(t);
+		addTempObject(t);
 	}	
 
 	{
 		TextButton *t = new TextButton("Calculate (MIST)", this);
 		t->setLeft(0.2, 0.5);
 		t->setReturnTag("calc_mist");
-		addObject(t);
-	}
-
-    {
-		TextButton *t = new TextButton("Table View (no MIST)", this);
-		t->setLeft(0.2, 0.5);
-		t->setReturnTag("calc_indep_table");
-		addObject(t);
+		addTempObject(t);
 	}
 
 }
@@ -129,9 +122,9 @@ void PathThermodynamics::buttonPressed(std::string tag, Button *button)
 			std::vector<TorsRes4NN*> torsRes = _pathEntropy->getAtomsAndResidues(_numPaths, _paths, 15);
 
 			_pathEntropy->calculateEntropyIndependent(_numPaths, flagPar, torsRes,15);
-            const std::vector<EntropyResults>& results = _pathEntropy->result();
+            const std::vector<EntropyResults>& _entropyResults = _pathEntropy->result();
 
-			for (const EntropyResults& result : results)
+			for (const EntropyResults& result : _entropyResults)
 			{
 			    entropyVec.push_back(result.totalEntropy);
 		    }
@@ -175,9 +168,9 @@ void PathThermodynamics::buttonPressed(std::string tag, Button *button)
 
 			_pathEntropy->calculateEntropyMI(_numPaths, flagPar, torsRes);
 
-            const std::vector<EntropyResults>& results = _pathEntropy->result();
+            const std::vector<EntropyResults>& _entropyResults = _pathEntropy->result();
 
-			for (const EntropyResults& result : results)
+			for (const EntropyResults& result : _entropyResults)
 			{
 			    entropyVec.push_back(result.totalEntropy);
 		    }
@@ -192,51 +185,6 @@ void PathThermodynamics::buttonPressed(std::string tag, Button *button)
 		setModal(cr);
 	}
 
-	if (tag == "calc_indep")
-	{
-		try
-		{
-		   checkPathNum(flagPar.n);
-		}
-		catch (const std::runtime_error &err)
-		{
-			BadChoice *bc = new BadChoice(this, err.what());
-            bc->setDismissible(true);
-			this->setModal(bc);
-            return;
-		}
-
-		std::string str = "Choose number of paths (\"frames\") to utilise";
-		
-		ChooseRange *cr = new ChooseRange(this, str, "choose_paths", this);
-		cr->setDefault(flagPar.n, flagPar.n);
-		cr->setRange(flagPar.n, _paths.size(), (_paths.size()-flagPar.n));
-
-		auto respondToVal = [this, flagPar](float min, float max)
-		{
-			_numPaths = lrint(min);
-			
-            std::vector<double> entropyVec;
-			std::vector<TorsRes4NN*> torsRes = _pathEntropy->getAtomsAndResidues(_numPaths, _paths, 15);
-
-			_pathEntropy->calculateEntropyIndependent(_numPaths, flagPar, torsRes,15);
-
-            const std::vector<EntropyResults>& results = _pathEntropy->result();
-
-			for (const EntropyResults& result : results)
-			{
-			    entropyVec.push_back(result.totalEntropy);
-		    }
-
-	        makeGraph(entropyVec);
-		};
-
-		cr->setReturn(respondToVal);
-		setModal(cr);
-
-	}
-
-
 	if (tag == "choose_paths")
 	{
 		ChooseRange *cr = static_cast<ChooseRange *>(button->returnObject());
@@ -250,6 +198,12 @@ void PathThermodynamics::buttonPressed(std::string tag, Button *button)
 		AskForText *aft = new AskForText(this, "How many samples along the paths?", "samples", this, TextEntry::Numeric);
 		setModal(aft);
 	}
+ 
+    if (tag == "per_residue")
+    {
+        EntropyTableView *table = new EntropyTableView(this, _entity, _entropyResults);
+        table->show();
+    }
 
 	Scene::buttonPressed(tag, button);
 }
@@ -296,10 +250,12 @@ void PathThermodynamics::makeGraph(std::vector<double> entropyVec)
  	graph->setup(0.6, 0.5);
 
 	graph->addToGraphPosition(0.5, 0.5);
-   
-    GraphView *graphView = new GraphView(this, graph);
-    graphView->addObject(graph);
-    graphView->show();
+    addObject(graph);
+ 
+    TextButton *tb = new TextButton("Per-residue entropy", this);
+    tb->setRight(0.9, 0.1);
+    tb->setReturnTag("per_residue");
+    addObject(tb);
 }
 
 void PathThermodynamics::refresh()
