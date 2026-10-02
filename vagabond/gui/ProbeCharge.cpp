@@ -35,6 +35,18 @@ ProbeCharge::ProbeCharge(ProtonNetworkView *view, CountProbe *probe)
 		            "assets/images/circle_question.png",
 		            "assets/images/transparency.png"});
 
+	// FloatingImage draws with floating_box.fsh, which writes ValIndex = 0
+	// for every fragment - nothing in the GPU pick buffer to click on. The
+	// pick id this stamps into extra[3] (see reindex()) only reaches the
+	// buffer through indexed_box.fsh, which writes ValIndex = vExtra[3] -
+	// the same shader ProbeAtomStandaloneText (and the atom batch, via its
+	// atlas variant) switch to. floating_box.vsh, shared with those, already
+	// passes extra through as vExtra. Qualified, as everywhere else in this
+	// class, because FloatingImage and IndexResponder both reach Renderable.
+#ifndef __EMSCRIPTEN__
+	FloatingImage::setFragmentShaderFile("assets/shaders/indexed_box.fsh");
+#endif
+
 	_view = view;
 	_probe = probe;
 
