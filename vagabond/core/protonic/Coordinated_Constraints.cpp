@@ -458,9 +458,11 @@ void Coordinated::attachToNeighbours(const OpSet<AtomConf> &searchSet)
 		// candidate) has this atom as its donor. The acceptor's parents
 		// (and so its effective dipole) are identified here, once.
 		b1.addEnergyWrapper(e.energy_wrapper_for_half_hbond
-		                    (&hProbe, b1, pos2, pos1, acceptor_parents(_atomConf)));
+		                    (&hProbe, b1, *other, pos2, *ref, pos1,
+		                     acceptor_parents(_atomConf)));
 		b2.addEnergyWrapper(e.energy_wrapper_for_half_hbond
-		                    (&hProbe, b2, pos1, pos2, acceptor_parents(candidate)));
+		                    (&hProbe, b2, *ref, pos1, *other, pos2,
+		                     acceptor_parents(candidate)));
 
 		hProbe.addEnergyWrapper
 		(e.energy_wrapper_for_hbond_angle(&hProbe, b1, b2, *_probe, *other));

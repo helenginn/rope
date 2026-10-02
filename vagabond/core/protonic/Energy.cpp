@@ -161,6 +161,24 @@ auto evaluate_hbond(BondProbe &bp)
 	};
 }
 
+float Energy::hbond_angle_acceptance(const glm::vec3 &centre,
+                                     const glm::vec3 &hydrogen,
+                                     const glm::vec3 &other)
+{
+	glm::vec3 hl = glm::normalize(hydrogen - centre);
+	glm::vec3 rl = glm::normalize(other - centre);
+
+	// clamped: for two (near) identical directions - exactly the ideal,
+	// collinear geometry - rounding in the normalisation can leave the dot
+	// product a hair over 1, where acos() is NaN, and a NaN energy is
+	// silently dropped by modulate(), i.e. no stabilisation at all at the
+	// best geometries (about one collinear case in five in float).
+	float dot = std::min(1.f, std::max(-1.f, glm::dot(hl, rl)));
+	float angle = acos(dot);
+	float exag = angle * 3;
+	return std::max(cos(exag), 0.f);
+}
+
 hnet::EnergyWrapper
 Energy::energy_wrapper_for_hbond_angle(HydrogenProbe *probe,
                                        BondProbe &left, BondProbe &right,
@@ -208,12 +226,8 @@ Energy::energy_wrapper_for_hbond_angle(HydrogenProbe *probe,
 		glm::vec3 lPos = centre.position();
 		glm::vec3 rPos = other.position();
 		glm::vec3 hPos = probe->_h->initialPosition();
-		glm::vec3 hl = glm::normalize(hPos - lPos);
-		glm::vec3 rl = glm::normalize(rPos - lPos);
-		float dot = glm::dot(hl, rl);
-		float angle = acos(dot);
-		float exag = angle * 3;
-		float damping = std::max(cos(exag), 0.f);
+
+		float damping = hbond_angle_acceptance(lPos, hPos, rPos);
 
 		cache->energy = 1.0f * -damping;
 		cache->seenAt = probe->_lastPositioned;
@@ -231,10 +245,13 @@ Energy::energy_wrapper_for_hbond_angle(HydrogenProbe *probe,
 	return modulate({{hbond_angle, Angle}});
 }
 
-float Energy::hbond_dipole_sum(const glm::vec3 &donor,
-                               const glm::vec3 &hydrogen,
-                               const glm::vec3 &acceptor,
-                               const std::vector<ChargedPosition> &parents)
+float Energy::hbond_electrostatic_sum(const glm::vec3 &donor,
+                                      const glm::vec3 &hydrogen,
+                                      const glm::vec3 &acceptor,
+                                      const std::vector<ChargedPosition>
+                                      &parents, float donorFactor,
+                                      float hydrogenFactor,
+                                      float acceptorFactor)
 {
 	// 1 / distance, with a floor so two coincident points can't blow up the
 	// sum (real contacts are never anywhere near this close).
@@ -251,20 +268,70 @@ float Energy::hbond_dipole_sum(const glm::vec3 &donor,
 	//  hydrogen - acceptor              (+)(-) = -  attraction
 	//  hydrogen - each parent (share w) (+)(+) = +  repulsion
 	//  donor - each parent (share w)    (-)(+) = -  attraction
-	float sum = inverse(donor, acceptor) - inverse(hydrogen, acceptor);
+
+	// the two atoms' own charges are there whether or not there is a
+	// hydrogen between them. The pair appears in both half-bonds (each takes
+	// the other as its donor), so each carries half of it.
+	float sum = 0.5f * donorFactor * acceptorFactor * inverse(donor, acceptor);
 
 	for (const ChargedPosition &parent : parents)
 	{
-		sum += parent.weight * (inverse(hydrogen, parent.pos) -
-		                        inverse(donor, parent.pos));
+		sum -= donorFactor * acceptorFactor * parent.weight *
+		inverse(donor, parent.pos);
+	}
+
+	// the hydrogen's own charge only counts if it is the donor's hydrogen -
+	// nearer the donor than the acceptor. A hydrogen nearer the acceptor is
+	// the acceptor's own (bonded to it: no electrostatic interaction), and
+	// one equidistant from both hasn't been placed on either.
+	bool donors = glm::length(hydrogen - donor) <
+	glm::length(hydrogen - acceptor);
+
+	if (hydrogenFactor > 0 && donors)
+	{
+		sum -= hydrogenFactor * acceptorFactor * inverse(hydrogen, acceptor);
+
+		for (const ChargedPosition &parent : parents)
+		{
+			sum += hydrogenFactor * acceptorFactor * parent.weight *
+			inverse(hydrogen, parent.pos);
+		}
 	}
 
 	return sum;
 }
 
+// how certainly something exists: 1 = present, 0 = absent, in between = not
+// yet settled.
+static float existence_factor(hnet::ExistenceConnector &connector)
+{
+	hnet::Existence::Values value = connector.value();
+	if (value == hnet::Existence::Absent)
+	{
+		return 0.f;
+	}
+	if (value == hnet::Existence::Present)
+	{
+		return 1.f;
+	}
+	return 0.5f;
+}
+
+// a hydrogen is only there if both its protonation state (h) and its
+// existence (hExist) say so - either can settle Absent on its own (see
+// HydrogenProbe::display()).
+static float hydrogen_factor(HydrogenProbe &probe)
+{
+	float protonation = existence_factor(probe._obj);
+	float existence = existence_factor(probe.existence());
+	return std::min(protonation, existence);
+}
+
 hnet::EnergyWrapper
 Energy::energy_wrapper_for_half_hbond(HydrogenProbe *probe, BondProbe &bp,
+                                      AtomProbe &donor,
                                       const glm::vec3 &donorPos,
+                                      AtomProbe &acceptor,
                                       const glm::vec3 &acceptorPos,
                                       const std::vector<ChargedPosition>
                                       &acceptorParents)
@@ -291,30 +358,47 @@ Energy::energy_wrapper_for_half_hbond(HydrogenProbe *probe, BondProbe &bp,
 		return -0.5f;
 	};
 
-	auto hbond_dist = [evaluate, probe, donorPos, acceptorPos, acceptorParents]()
+	// Electrostatics, deliberately NOT gated on this half-bond's own state
+	// (Acceptor / LonePair / Broken ...): unlike hbond_base above and the
+	// angle term, which are the bond's partial covalent character and exist
+	// only where the bond does, charges interact regardless. Only the
+	// existence of the atoms and the hydrogen matters.
+	auto hbond_dist = [probe, &donor, &acceptor, donorPos, acceptorPos,
+	                  acceptorParents]()
 	{
-		if (!evaluate(hnet::Bond::Acceptor, false))
+		float fD = existence_factor(donor.existence());
+		float fA = existence_factor(acceptor.existence());
+		float fH = hydrogen_factor(*probe);
+
+		if (fA == 0.f || (fD == 0.f && fH == 0.f))
 		{
 			return 0.f;
 		}
 
-		glm::vec3 hPos = probe->position();
-		if (hPos.x != hPos.x || hPos.y != hPos.y || hPos.z != hPos.z)
+		// where the hydrogen is depends on the bond pattern around its
+		// donor, which realign() brings up to date (a no-op if nothing has
+		// changed). Nothing else in this energy ever calls it - the angle
+		// term does, but only for a bond settled as Acceptor, and in
+		// whatever order the energy terms happen to be collected - so
+		// without this the hydrogen could be read where an earlier
+		// configuration left it. Either atom may be the one that owns it.
+		glm::vec3 hPos = acceptorPos;
+		if (fH > 0.f)
 		{
-			return 0.f;
+			donor.realign();
+			acceptor.realign();
+			hPos = probe->position();
+
+			if (hPos.x != hPos.x || hPos.y != hPos.y || hPos.z != hPos.z)
+			{
+				return 0.f;
+			}
 		}
 
-		float sum = hbond_dipole_sum(donorPos, hPos, acceptorPos,
-		                             acceptorParents);
+		float sum = hbond_electrostatic_sum(donorPos, hPos, acceptorPos,
+		                                    acceptorParents, fD, fH, fA);
 
-		float contrib = HBondElectrostatic * HBondDeltaCharge *
-		HBondDeltaCharge * sum;
-
-		if (!evaluate(hnet::Bond::Acceptor, true))
-		{
-			contrib /= 2;
-		}
-		return contrib;
+		return HBondElectrostatic * HBondDeltaCharge * HBondDeltaCharge * sum;
 	};
 
 	return modulate({{hbond_base, Acceptor}, {hbond_dist, Distance}});
