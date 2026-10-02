@@ -91,19 +91,11 @@ struct Conditions
 
 	int remove_conditions_with_blame(const GuiltVersion &last)
 	{
-		int count = 0;
-		for (auto it = _conditions.begin(); it != _conditions.end();)
-		{
-			if (it->first >= last)
-			{
-				it = _conditions.erase(it);
-				count++;
-			}
-			else
-			{
-				it++;
-			}
-		}
+		// conditions are ordered by guilt version, so everything to forget
+		// is the tail of the map - no need to visit the rest.
+		auto first = _conditions.lower_bound(last);
+		int count = (int)std::distance(first, _conditions.end());
+		_conditions.erase(first, _conditions.end());
 
 		if (count > 0)
 		{

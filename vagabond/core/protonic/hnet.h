@@ -552,20 +552,9 @@ inline std::string to_string(int val)
 template <typename Type>
 bool certain(const Type &val)
 {
-	int total = 0;
-	for (int j = 31; j >= 0; j--)
-	{
-		unsigned char byte = (val >> j) & 1;
-		total += byte ? 1 : 0;
-		
-		if (total > 1)
-		{
-			return false;
-		}
-	}
-
-	return true;
-
+	// at most one of the 32 bits set - a hardware popcount rather than
+	// walking all 32 bits, as this is read on every is_certain() call.
+	return std::popcount((unsigned int)val) <= 1;
 }
 
 /* universal functions to determine unassigned values 
