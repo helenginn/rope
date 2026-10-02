@@ -68,26 +68,37 @@ void Coordinated::setupRealignment()
 
 	std::map<AtomConf, HBondType> last_align; 
 	
-	auto check_bond = [](const AtomConf &ac, BondConnector *bond, 
-	                     ExistenceConnector *exist,
-	                     std::map<AtomConf, HBondType> &collected) -> void
+	// -1 if this bond is not (or not yet certainly) present, else the
+	// HBondType it counts as.
+	auto state_of = [](BondConnector *bond, ExistenceConnector *exist) -> int
 	{
 		if ((!exist || exist->value() == Existence::Present) && 
 		    (!bond || bond->value() & Bond::NotBroken) &&
 		    (!bond || !(bond->value() & Bond::Broken)))
 		{
-			HBondType type = Other;
-			
 			if (bond && bond->_placeholder)
 			{
-				type = Placeholder;
+				return Placeholder;
 			}
 			else if (bond && (bond->value() == Bond::Donor))
 			{
-				type = Donor;
+				return Donor;
 			}
 
-			collected.insert({ac, type});
+			return Other;
+		}
+
+		return -1;
+	};
+
+	auto check_bond = [state_of](const AtomConf &ac, BondConnector *bond, 
+	                     ExistenceConnector *exist,
+	                     std::map<AtomConf, HBondType> &collected) -> void
+	{
+		int state = state_of(bond, exist);
+		if (state >= 0)
+		{
+			collected.insert({ac, (HBondType)state});
 		}
 	};
 	
@@ -95,9 +106,64 @@ void Coordinated::setupRealignment()
 	// the last call, and what it is now}. The flag matters: "changed to
 	// nothing" and "unchanged" must not look alike, or a donor that has lost
 	// its bond could never be told to let go of the hydrogen it had placed.
-	auto needs_realign = [this, bond2Atom, check_bond, last_align]
+	//
+	// This runs on every energy term of every configuration scored, and
+	// almost always finds nothing changed - so before building the map (whose
+	// AtomConf keys are slow to compare) it reduces each bond to one small
+	// state number, in the same fixed order each time, and only goes on to
+	// build and compare the map when that signature differs from the last
+	// one. The same states in the same order always give the same map, so
+	// this skips only work that would have reported "unchanged" anyway.
+	std::vector<signed char> last_signature;
+	std::vector<ExistenceConnector *> uninvolved_exist;
+	bool have_signature = false;
+
+	auto needs_realign = [this, bond2Atom, check_bond, state_of, last_align,
+	                      last_signature, uninvolved_exist, have_signature]
 	() mutable -> std::pair<bool, std::map<AtomConf, HBondType>>
 	{
+		std::vector<signed char> signature;
+		signature.reserve(_bond2HydrogenProbe.size() + _uninvolved.size());
+
+		for (const auto &pair : _bond2HydrogenProbe)
+		{
+			BondConnector *bond = pair.first;
+			ExistenceConnector *exist = &pair.second->_exist;
+			signature.push_back(state_of(bond, (bond->_placeholder ? nullptr :
+			                                    exist)));
+		}
+
+		// the existence connector of each uninvolved coordinator, looked up
+		// once (existMap() is keyed by AtomConf, slow to search) - redone if
+		// the set has changed size or any was not there yet.
+		bool cached = (uninvolved_exist.size() == _uninvolved.size());
+		for (size_t i = 0; cached && i < uninvolved_exist.size(); i++)
+		{
+			cached = (uninvolved_exist[i] != nullptr);
+		}
+
+		if (!cached)
+		{
+			uninvolved_exist.clear();
+			for (const ACPair &cov : _uninvolved)
+			{
+				uninvolved_exist.push_back(_network.existMap()[cov.first]);
+			}
+		}
+
+		for (ExistenceConnector *e : uninvolved_exist)
+		{
+			signature.push_back(state_of(nullptr, e));
+		}
+
+		if (have_signature && signature == last_signature)
+		{
+			return {false, {}};
+		}
+
+		last_signature = signature;
+		have_signature = true;
+
 		std::map<AtomConf, HBondType> next_align;
 
 		for (const auto &pair : _bond2HydrogenProbe)
