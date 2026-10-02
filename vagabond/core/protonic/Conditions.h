@@ -51,9 +51,15 @@ struct Conditions
 		return val;
 	}
 	
+	// the belief is the AND of every condition, and conditions are only
+	// ever narrowed by apply_condition(), so _cache is kept up to date there
+	// (and rebuilt when conditions are forgotten) rather than re-ANDing the
+	// whole map on every read - value() is read many times per constraint
+	// check. cache_only is kept for callers but no longer changes anything:
+	// the cache is always current once written.
 	Value belief(bool cache_only = false)
 	{
-		if (!cache_only || !_written)
+		if (!_written)
 		{
 			_cache = calculated_belief();
 			_written = true;
@@ -76,6 +82,12 @@ struct Conditions
 			{
 				it++;
 			}
+		}
+
+		if (count > 0)
+		{
+			_cache = calculated_belief();
+			_written = true;
 		}
 		
 		return count;
@@ -108,6 +120,11 @@ struct Conditions
 		{
 			auto before = _conditions[gv];
 			_conditions[gv] = (Value)(before & value);
+		}
+
+		if (_written)
+		{
+			_cache = (Value)(_cache.load() & value);
 		}
 	}
 	

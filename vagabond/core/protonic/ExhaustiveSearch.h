@@ -26,6 +26,7 @@
 #include <condition_variable>
 #include <atomic>
 #include <memory>
+#include <vector>
 #include "Probe.h"
 //#include "Network.h"
 #include "Guilt.h"
@@ -98,7 +99,7 @@ private:
 	int _total = 0;
 	std::vector<ProbeResult> _results;
 	std::shared_ptr<CertainStates> _states{};
-	std::list<IteratedProbe *> _iterations;
+	std::vector<IteratedProbe *> _iterations;
 	OpSet<Probe *> _all;
 	OpSet<Probe *> _wider;
 

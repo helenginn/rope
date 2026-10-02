@@ -417,42 +417,33 @@ bool ExhaustiveSearch::next()
 	// "certain" means every decree in this config has settled on exactly
 	// one option (a single set bit) - std::popcount (a hardware popcount
 	// instruction on any remotely modern CPU) replaces what was a manual
-	// 32-iteration bit-by-bit count, on the single hottest check in this
-	// whole search (run once per call to next(), which runs once per
-	// enumerated configuration).
-	auto check_certainty = [](const Config &c)
-	{
-		for (const unsigned int &i : c)
-		{
-			if (std::popcount(i) != 1)
-			{
-				return false;
-			}
-		}
-		return true;
-	};
-	
-	
-	// read once per decree (it used to be read twice, the first result
-	// discarded) into a buffer that lives across calls, rather than a fresh
-	// vector every time; add_result() copies it only when it is a new
-	// configuration worth keeping.
-	auto as_configuration = [this]() -> const Config &
+	// 32-iteration bit-by-bit count. Most calls to next() are partial
+	// assignments, where this fails, so it reads the decrees from the back
+	// (the latest, least-settled ones, where it almost always fails first)
+	// and gives up at the first uncertain one - no need to read the rest,
+	// and nothing is recorded for a config that is not certain anyway.
+	// Fills a buffer that lives across calls; add_result() copies it only
+	// when it is a new configuration worth keeping.
+	auto as_configuration = [this](bool &all_certain) -> const Config &
 	{
 		_scratchConfig.resize(_iterations.size());
-		size_t i = 0;
-		for (IteratedProbe *ip : _iterations)
+		all_certain = true;
+		for (size_t i = _iterations.size(); i-- > 0; )
 		{
-			_scratchConfig[i] = ip->value_as_int();
-			i++;
+			unsigned int value = _iterations[i]->value_as_int();
+			_scratchConfig[i] = value;
+			if (std::popcount(value) != 1)
+			{
+				all_certain = false;
+				break;
+			}
 		}
 		return _scratchConfig;
 	};
 
-	auto add_result = [this, &check_certainty]
-	(const Config &c)
+	auto add_result = [this]
+	(const Config &c, bool cert)
 	{
-		bool cert = check_certainty(c);
 		if (cert)
 		{
 			_certain++;
@@ -556,24 +547,16 @@ bool ExhaustiveSearch::next()
 		return iterate.done();
 	};
 	
-	auto it = _iterations.begin();
-	for (int i = 0; i < _counter; i++)
+	auto count_down = [this]()
 	{
-		it++;
-	}
-
-	auto count_down = [&it, this]()
-	{
-		while (_counter >= _iterations.size())
+		while (_counter >= (int)_iterations.size())
 		{
-			it--;
 			_counter--;
 		}
 		
-		while ((**it).done())
+		while (_iterations[_counter]->done())
 		{
-			(**it).reset(_cv, _m);
-			it--;
+			_iterations[_counter]->reset(_cv, _m);
 			_counter--;
 			
 			if (_counter == 0)
@@ -582,20 +565,20 @@ bool ExhaustiveSearch::next()
 			}
 		}
 	};
-	auto count_up = [&it, &count_down, this]()
+	auto count_up = [&count_down, this]()
 	{
-		it++;
 		_counter++;
-		if (_counter >= _iterations.size())
+		if (_counter >= (int)_iterations.size())
 		{
 			count_down();
 		}
 	};
 	
-	IteratedProbe &iterate = **it;
+	IteratedProbe &iterate = *_iterations[_counter];
 	bool done = iterate_until_okay_and_done(iterate);
-	const Config &result = as_configuration();
-	add_result(result);
+	bool all_certain = false;
+	const Config &result = as_configuration(all_certain);
+	add_result(result, all_certain);
 	
 	if (iterate.is_certain())
 	{
@@ -606,11 +589,10 @@ bool ExhaustiveSearch::next()
 		count_down();
 	}
 	
-	if (_counter < 0 || (_counter == 0 && (**it).done()))
+	if (_counter < 0 || (_counter == 0 && _iterations[_counter]->done()))
 	{
 		return false;
 	}
 
 	return true;
 }
-
