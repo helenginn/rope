@@ -190,8 +190,19 @@ void Coordinated::setupRealignment()
 		return {false, {}};
 	};
 
-	auto realign = [this, needs_realign, hMap]() mutable
+	unsigned long last_epoch = ~0UL;
+
+	auto realign = [this, needs_realign, hMap, last_epoch]() mutable
 	{
+		// no connector anywhere has changed since this last ran, so the
+		// bonds around this atom cannot have either - nothing to do.
+		unsigned long epoch = ConditionEpoch::now();
+		if (epoch == last_epoch)
+		{
+			return;
+		}
+		last_epoch = epoch;
+
 		auto update = needs_realign();
 		if (!update.first)
 		{

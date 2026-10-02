@@ -24,6 +24,27 @@
 #include <map>
 #include <atomic>
 
+/* counts every real change to any connector's belief (a condition that
+ * narrows it, or forgotten conditions widening it back) - lets something
+ * that only needs to react to connector changes (e.g. Coordinated's
+ * realign(), run by every energy term of every scored configuration) tell
+ * "nothing at all has changed since I last looked" with one comparison. May
+ * over-count, never under-count. */
+struct ConditionEpoch
+{
+	static unsigned long now()
+	{
+		return _epoch.load(std::memory_order_relaxed);
+	}
+
+	static void bump()
+	{
+		_epoch.fetch_add(1, std::memory_order_relaxed);
+	}
+
+	inline static std::atomic<unsigned long> _epoch{0};
+};
+
 template <class Value>
 struct Conditions
 {
@@ -88,6 +109,7 @@ struct Conditions
 		{
 			_cache = calculated_belief();
 			_written = true;
+			ConditionEpoch::bump();
 		}
 		
 		return count;
@@ -124,7 +146,16 @@ struct Conditions
 
 		if (_written)
 		{
-			_cache = (Value)(_cache.load() & value);
+			Value before = _cache;
+			_cache = (Value)(before & value);
+			if (_cache.load() != before)
+			{
+				ConditionEpoch::bump();
+			}
+		}
+		else
+		{
+			ConditionEpoch::bump();
 		}
 	}
 	
