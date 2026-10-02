@@ -63,7 +63,7 @@ private:
 	bool evaluate(make_assign_and_say<BreakMatrix> &assign); 
 	void checks_forgets();
 	bool assertAbsence(make_assign_and_say<BreakMatrix> &assign, 
-	                   BreakEntry &chosen, std::string reason = {});
+	                   BreakEntry &chosen, const std::string &reason = {});
 	Eigen::MatrixXi partialMatrix(const std::vector<BondConnector *> 
 	                              &partial);
 	bool break_others(make_assign_and_say<BreakMatrix> &assign, 
@@ -78,6 +78,12 @@ private:
 	Eigen::MatrixXi _matrix{};
 	
 	std::vector<BreakEntry> _entries;
+
+	// scratch for evaluate(), kept so it does not allocate on every call
+	std::vector<BondConnector *> _inGame;
+	std::vector<int> _inGameIdx;
+	std::vector<int> _rowSums;
+	std::vector<int> _reference;
 };
 };
 

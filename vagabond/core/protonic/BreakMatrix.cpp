@@ -96,7 +96,7 @@ void BreakMatrix::checks_forgets()
 	prep_constraints_and_forgets(this, connectors);
 }
 
-std::string wrap(const std::string &reason)
+std::string wrap(const char *reason)
 {
 	if (ConnectBase::_silent) 
 	{
@@ -196,11 +196,9 @@ bool BreakMatrix::break_others(hnet::make_assign_and_say<BreakMatrix> &assign,
 	BondConnector *bond = definite.bond;
 	int row = _indexing[bond];
 
-	Eigen::VectorXi break_list = _matrix(row, Eigen::all);
-	
-	for (int i = 0; i < break_list.size(); i++)
+	for (int i = 0; i < _matrix.cols(); i++)
 	{
-		if (break_list[i] == 1)
+		if (_matrix(row, i) == 1)
 		{
 			continue; // safe from being broken;
 		}
@@ -230,7 +228,11 @@ bool BreakMatrix::evaluate(hnet::make_assign_and_say<BreakMatrix> &assign)
 {
 	/* stage one: gather bonds of interest, break competing bonds 
 	 * where an unbroken/present bond is identified. */
-	std::vector<BondConnector *> in_game;
+	// reused between calls (evaluate() runs on every propagation pass)
+	std::vector<BondConnector *> &in_game = _inGame;
+	std::vector<int> &game_idx = _inGameIdx; // each one's row in _matrix
+	in_game.clear();
+	game_idx.clear();
 
 	for (BreakEntry &entry : _entries)
 	{
@@ -258,33 +260,49 @@ bool BreakMatrix::evaluate(hnet::make_assign_and_say<BreakMatrix> &assign)
 		if (type == Certain || type == Maybe)
 		{
 			in_game.push_back(entry.bond);
+			game_idx.push_back(_indexing[entry.bond]);
 		}
 	}
 	
 	// acquire lowest allowed broken bonds to analyse gathered bonds.
 	Count::Values unbrokens = _unbrokenCount.value();
-	std::vector<int> options = possible_values(unbrokens);
 	
-	if (options.size() == 0)
+	if (unbrokens == Count::Contradiction)
 	{
 		return false; // we have contradiction anyway, stop calculating
 	}
 	
-	int lower_limit = options[0];
+	// the first of its possible values, i.e. the one on its lowest bit -
+	// the same one possible_values() puts first
+	int lower_limit = count_to_int((Count::Values)(1u << 
+	                               std::countr_zero((unsigned int)unbrokens)));
 	if (!ConnectBase::_silent)
 	{
 //		ConnectBase::out() << "Lower limit for " << _ac.desc() << ": " << lower_limit << std::endl;
 		print_current(in_game);
 	}
 
-	Eigen::MatrixXi tmp = partialMatrix(in_game);
+	// the sub-matrix over in_game, read in place from _matrix rather than
+	// copied out: tmp(i, j) in what follows.
+	auto tmp = [this, &game_idx](int i, int j) -> int
+	{
+		return _matrix(game_idx[i], game_idx[j]);
+	};
+
+	std::vector<int> &row_sum = _rowSums;
+	row_sum.assign(in_game.size(), 0);
 
 	int max_sum = 0;
-	int min_sum = INT_MAX;
 	for (int i = 0; i < in_game.size(); i++)
 	{
-		max_sum = std::max(max_sum, tmp(i, Eigen::all).sum());
-		min_sum = std::min(min_sum, tmp(i, Eigen::all).sum());
+		int sum = 0;
+		for (int j = 0; j < in_game.size(); j++)
+		{
+			sum += tmp(i, j);
+		}
+
+		row_sum[i] = sum;
+		max_sum = std::max(max_sum, sum);
 	}
 
 	/* break rows where the configurations available cannot reach 
@@ -293,11 +311,11 @@ bool BreakMatrix::evaluate(hnet::make_assign_and_say<BreakMatrix> &assign)
 	 *  */
 	for (int i = 0; i < in_game.size(); i++)
 	{
-		int total = tmp(i, Eigen::all).sum();
+		int total = row_sum[i];
 		if (total < lower_limit && lower_limit < in_game.size() &&
 		    max_sum >= lower_limit)
 		{
-			int idx = _indexing[in_game[i]];
+			int idx = game_idx[i];
 			if (assertAbsence(assign, _entries[idx],
 			                  wrap("this configuration has too "\
 			                  "few partners to complete the coordination")))
@@ -314,8 +332,8 @@ bool BreakMatrix::evaluate(hnet::make_assign_and_say<BreakMatrix> &assign)
 	 *  */
 	for (int i = 0; i < in_game.size(); i++)
 	{
-		int total = tmp(i, Eigen::all).sum();
-		int idx = _indexing[in_game[i]];
+		int total = row_sum[i];
+		int idx = game_idx[i];
 		BreakEntry &entry = _entries[idx];
 		Attachment attach(*entry.bond, *entry.exist);
 
@@ -341,11 +359,11 @@ bool BreakMatrix::evaluate(hnet::make_assign_and_say<BreakMatrix> &assign)
 	 *  to be Broken in order to be missing, and there are placeholder 
 	 *  hydrogens which could be missing instead, then get rid of the 
 	 * 	placeholder hydrogens */
+	std::vector<int> &reference = _reference;
 	for (int i = 0; i < in_game.size() && 
 	     _myExist.value() == Existence::Present; i++)
 	{
-//		int total = tmp(i, Eigen::all).sum();
-		int idx = _indexing[in_game[i]];
+		int idx = game_idx[i];
 		BreakEntry &entry = _entries[idx];
 		Attachment attach(*entry.bond, *entry.exist);
 		
@@ -363,7 +381,11 @@ bool BreakMatrix::evaluate(hnet::make_assign_and_say<BreakMatrix> &assign)
 			continue;
 		}
 
-		Eigen::VectorXi reference = tmp(i, Eigen::all);
+		reference.resize(in_game.size());
+		for (int k = 0; k < in_game.size(); k++)
+		{
+			reference[k] = tmp(i, k);
+		}
 
 		// we need to know, for each placeholder hydrogen, if it is
 		// a purely direct swap for the current bond (scrap), or if it is
@@ -371,25 +393,29 @@ bool BreakMatrix::evaluate(hnet::make_assign_and_say<BreakMatrix> &assign)
 
 		for (int j = 0; j < in_game.size(); j++)
 		{
-			int jdx = _indexing[in_game[j]];
+			int jdx = game_idx[j];
 			BreakEntry &candidate = _entries[jdx];
 			// ignore non-placeholder
 			if (!candidate.bond->_placeholder) { continue; }
 
-			Eigen::VectorXi compare = tmp(j, Eigen::all);
-
 			// if the two bonds can co-exist, we are not interested
-			if (compare[i] == 1)
+			if (tmp(j, i) == 1)
 			{
 				continue;
 			}
 			
 			// temporarily set diagonal elements to zero and check the diff.
+			// (reference carries over between candidates of the same i, as
+			// it always has: it is only reloaded per bond above.)
 			reference[i] = 0;
-			compare[j] = 0;
 			
-			reference -= compare;
-			int total = reference.cwiseAbs().sum();
+			int total = 0;
+			for (int k = 0; k < in_game.size(); k++)
+			{
+				int compare = (k == j ? 0 : tmp(j, k));
+				reference[k] -= compare;
+				total += std::abs(reference[k]);
+			}
 			
 			if (total == 0)
 			{
@@ -406,7 +432,7 @@ bool BreakMatrix::evaluate(hnet::make_assign_and_say<BreakMatrix> &assign)
 }
 
 bool BreakMatrix::assertAbsence(make_assign_and_say<BreakMatrix> &assign,
-                                 BreakEntry &chosen, std::string reason)
+                                 BreakEntry &chosen, const std::string &reason)
 {
 	if (_myExist.value() != Existence::Present)
 	{

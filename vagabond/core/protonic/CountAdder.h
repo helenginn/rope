@@ -42,24 +42,6 @@ struct CountAdder : public ConstraintBase
 	}
 
 	
-	template <class Op>
-	std::vector<int> permutations(const std::vector<int> &vs, 
-	                              const std::vector<int> &ws,
-	                              const Op &op)
-	{
-		std::vector<int> options;
-		options.reserve(vs.size() * ws.size());
-
-		for (const int &v : vs)
-		{
-			for (const int &w : ws)
-			{
-				options.push_back(op(v, w));
-			}
-		}
-		return options;
-	}
-	
 	bool check(const GuiltVersion &gv, CheckList &list)
 	{
 		auto assign = make_assign_and_say(this, gv, list);
@@ -68,16 +50,14 @@ struct CountAdder : public ConstraintBase
 		 * of permitted values for each pair, and constrain the latter. */
 		
 		/* first we return to the comfortable world of integers... */
-		std::vector<int> left_options = possible_values(_left.value());
-		std::vector<int> right_options = possible_values(_right.value());
+		CountList left_options = possible_values_list(_left.value());
+		CountList right_options = possible_values_list(_right.value());
 
 		/* impose options on sum */
 		{
-			std::vector<int> options = permutations(left_options, right_options,
-			                                        [](const int &a, const int &b)
-			                                        { return a + b; });
-
-			Count::Values sum_should_be = values_as_count(options);
+			Count::Values sum_should_be =
+			combine_as_count(left_options, right_options,
+			                 [](const int &a, const int &b) { return a + b; });
 
 			// limited: options in existing sum which should be ruled out
 			bool limit = (~sum_should_be & _sum.value());
@@ -90,16 +70,14 @@ struct CountAdder : public ConstraintBase
 		/* impose options on left */
 		// right_options is still valid here - only _sum was assign()-ed
 		// above, so re-deriving it from _right.value() would just repeat
-		// the same possible_values() call (and its allocation) for the
-		// same answer.
-		std::vector<int> sum_options = possible_values(_sum.value());
+		// the same call for the same answer.
+		CountList sum_options = possible_values_list(_sum.value());
 
 		{
-			std::vector<int> options = permutations(sum_options, right_options,
-			                                        [](const int &a, const int &b)
-			                                        { return a - b; });
+			Count::Values left_should_be =
+			combine_as_count(sum_options, right_options,
+			                 [](const int &a, const int &b) { return a - b; });
 
-			Count::Values left_should_be = values_as_count(options);
 			bool limit = (~left_should_be & _left.value());
 			if (limit)
 			{
@@ -108,30 +86,20 @@ struct CountAdder : public ConstraintBase
 		}
 
 		/* impose options on right */
-		sum_options = possible_values(_sum.value());
-		left_options = possible_values(_left.value());
+		sum_options = possible_values_list(_sum.value());
+		left_options = possible_values_list(_left.value());
 
 		{
-			std::vector<int> options = permutations(sum_options, left_options,
-			                                        [](const int &a, const int &b)
-			                                        { return a - b; });
+			Count::Values right_should_be =
+			combine_as_count(sum_options, left_options,
+			                 [](const int &a, const int &b) { return a - b; });
 
-			Count::Values right_should_be = values_as_count(options);
 			bool limit = (~right_should_be & _right.value());
 			if (limit)
 			{
 				assign(_right, right_should_be, "imposition on right");
 			}
 		}
-		
-		auto print = [](const std::vector<int> &options)
-		{
-			for (const int &i : options)
-			{
-				std::cout << i << " ";
-			}
-			std::cout << std::endl;
-		};
 
 		return assign.okay();
 	}

@@ -172,69 +172,55 @@ struct BondAdder : public ConstraintBase
 //		std::cout << std::endl;
 
 		
-		/* firstly we impose the range of certain and maybe bonds to sum */
-		OpSet<int> possibilities;
-
-		for (int i = certain; i <= certain + maybe; i++)
+		/* firstly we impose the range of certain and maybe bonds to sum:
+		 * the totals certain .. certain + maybe, as bits of a Count::Values
+		 * (only 0..15 can be represented, as with values_as_count()). */
+		unsigned int possibilities = 0;
+		for (int i = certain; i <= certain + maybe && i <= 15; i++)
 		{
-			possibilities.insert(i);
+			possibilities |= (1u << i);
 		}
 
-		/*
-		auto print = [](const OpSet<int> &options)
-		{
-			for (const int &o : options)
-			{
-				std::cout << o << " ";
-			}
-			std::cout << std::endl;
-		};
-		*/
-
-		Count::Values count = values_as_count(possibilities);
-		/*
-		assign(_sum, count);
-		if (!assign.okay())
-		{
-			return assign.okay();
-		}
-		*/
+		Count::Values count = (Count::Values)possibilities;
 		
-		/* now we find all the possible values of sum, in integer form. */
-		OpSet<int> sum_options = possible_values(_sum.value());
-		
-		OpSet<int> common = possibilities.common_to_both(sum_options);
+		/* now the totals the sum could take which are also in that range.
+		 * the sum's own non-negative values are its low 16 bits, which is
+		 * all the range above can ever overlap. */
+		unsigned int common = possibilities & (unsigned int)_sum.value() &
+		                      0xFFFFu;
+		int common_size = std::popcount(common);
 		
 		/* if there's only one acceptable value and it's either certain or
 		 * (certain + maybe) then we can assign the remainder */
 
 //		std::cout << "BondAdder: " << _sum << std::endl;
 //		std::cout << "common size: " << common.size() << std::endl;
-		if (common.size() >= 1)
+		if (common_size >= 1)
 		{
 			assign(_sum, count);
 		}
-		if (common.size() == 1)
+		if (common_size == 1)
 		{
-			if (*common.begin() == certain)
+			int only = std::countr_zero(common);
+			if (only == certain)
 			{
 				Bond::Values unrequest =
 				(Bond::Values)(~Request & Bond::Unassigned);
 				tell_maybe_bonds(unrequest, assign, Certain);
 			}
-			else if (*common.begin() == certain + maybe)
+			else if (only == certain + maybe)
 			{
 				tell_maybe_bonds((Bond::Values)Request, assign, Certain);
 			}
 		}
 		/* if we're about to kill off a bond count, but we could set the
 		 * atom existence instead, do that */
-		else if (common.size() == 0 && (_coordExist->value() & Existence::Absent))
+		else if (common_size == 0 && (_coordExist->value() & Existence::Absent))
 		{
 			assign(*_coordExist, Existence::Absent);
 		}
 		/* but if there's no acceptable solution then it's a contradiction */
-		else if (common.size() == 0)
+		else if (common_size == 0)
 		{
 			return false;
 		}

@@ -855,6 +855,59 @@ inline std::vector<int> possible_values(const Count::Values &count)
 	return results;
 };
 
+/* a fixed-size, allocation-free list of the integers a Count::Values can
+ * take, in exactly the order possible_values() gives them (lowest bit first).
+ * For the constraint checks, which ask this several times per call, on every
+ * propagation pass. */
+struct CountList
+{
+	int values[32];
+	int n{0};
+
+	const int *begin() const { return values; }
+	const int *end() const { return values + n; }
+	size_t size() const { return (size_t)n; }
+	const int &operator[](size_t i) const { return values[i]; }
+};
+
+inline CountList possible_values_list(const Count::Values &count)
+{
+	CountList list;
+	unsigned int bits = (unsigned int)count;
+	while (bits)
+	{
+		int i = std::countr_zero(bits);
+		bits &= bits - 1;
+		list.values[list.n++] = count_to_int((Count::Values)(1u << i));
+	}
+
+	return list;
+}
+
+/* the same as values_as_count() over every op(a, b), without building the
+ * intermediate list of results first */
+template <class Op>
+inline Count::Values combine_as_count(const CountList &as, const CountList &bs,
+                                      const Op &op)
+{
+	Count::Values addition = Count::Contradiction;
+	for (const int &a : as)
+	{
+		for (const int &b : bs)
+		{
+			int value = op(a, b);
+			if (value > 15 || value < -15)
+			{
+				continue;
+			}
+
+			addition = (Count::Values)(addition | int_to_count(value));
+		}
+	}
+
+	return addition;
+}
+
 template <typename Type>
 std::vector<Type> split_into_options(const Type &belief)
 {
