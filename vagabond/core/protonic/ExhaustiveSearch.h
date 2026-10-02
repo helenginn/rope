@@ -101,6 +101,16 @@ private:
 	std::list<IteratedProbe *> _iterations;
 	OpSet<Probe *> _all;
 	OpSet<Probe *> _wider;
+
+	// the members of _wider that carry any energy wrapper at all, in the same
+	// order: scoring a configuration only has to visit these. Most probes
+	// (hydrogens' neighbours, covalent bonds...) have none, and an atom's
+	// wrappers are attached while the network is built, before any search.
+	std::vector<Probe *> _energyProbes;
+
+	// reused between calls to next(): the configuration being read off the
+	// decrees (one entry per decree), instead of a fresh allocation each time
+	std::vector<unsigned int> _scratchConfig;
 	int _certain{0};
 	int _counter{0};
 	std::mutex _m;

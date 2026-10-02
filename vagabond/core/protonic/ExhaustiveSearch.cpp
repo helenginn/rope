@@ -19,6 +19,7 @@
 #include "ExhaustiveSearch.h"
 #include "CertainStates.h"
 #include "CountProbe.h"
+#include "Energy.h"
 #include "Network.h"
 #include <random>
 #include <algorithm>
@@ -42,6 +43,14 @@ ExhaustiveSearch::ExhaustiveSearch(const OpSet<Probe *> &interesting,
 	{
 		return !probe->is_certain();
 	});
+
+	for (Probe *const &probe : _wider)
+	{
+		if (!probe->energyWrappers().empty())
+		{
+			_energyProbes.push_back(probe);
+		}
+	}
 }
 
 namespace
@@ -376,28 +385,26 @@ GetScore ExhaustiveSearch::score_wider_clique()
 	// new round, count it again".
 	GuiltVersion gv = Guilt::issueNext();
 
-	// flat, not one GetEnergy-per-probe: each probe used to bundle its own
-	// wrappers into its own summing closure first (Probe::energy()), which
-	// this then summed again one level up - two layers of std::function
-	// indirection (and two heap allocations) per source term instead of
-	// one. collectEnergy() appends every wider probe's jobs straight into
-	// this single vector instead.
-	std::vector<hnet::GetEnergy> jobs;
-	for (Probe *const &probe : _wider)
+	// Every wider probe's energy terms are evaluated now, for this
+	// configuration, and folded into an EnergyTally: the baked terms (all but
+	// protonation) become one running sum per energy source, rather than one
+	// stored function object per term. A configuration used to keep every
+	// term of the whole wider clique - thousands of heap-allocated
+	// std::functions - and replay them all on every score(i) call, which
+	// dominated both the memory of a CertainStates and the time to read its
+	// scores back. The sums are still gated by the live source flags and
+	// amplifiers, so the energy tickboxes and sliders act on them as before.
+	// Only probes that have any wrappers are visited, in _wider's order.
+	hnet::EnergyTally tally;
+	for (Probe *const &probe : _energyProbes)
 	{
-		probe->collectEnergy(gv, jobs);
+		for (const hnet::EnergyWrapper &wrapper : probe->energyWrappers())
+		{
+			tally.add(wrapper(gv));
+		}
 	}
 
-	return [jobs]()
-	{
-		float score = 0;
-		for (const hnet::GetEnergy &job : jobs)
-		{
-			score += job();
-		}
-
-		return score;
-	};
+	return tally.score();
 }
 
 bool ExhaustiveSearch::next()
@@ -426,19 +433,22 @@ bool ExhaustiveSearch::next()
 	};
 	
 	
-	auto as_configuration = [this]()
+	// read once per decree (it used to be read twice, the first result
+	// discarded) into a buffer that lives across calls, rather than a fresh
+	// vector every time; add_result() copies it only when it is a new
+	// configuration worth keeping.
+	auto as_configuration = [this]() -> const Config &
 	{
-		Config results(_iterations.size());
-		int i = 0;
+		_scratchConfig.resize(_iterations.size());
+		size_t i = 0;
 		for (IteratedProbe *ip : _iterations)
 		{
-			float masked = ip->value_as_int();
-			results[i] = ip->value_as_int();
+			_scratchConfig[i] = ip->value_as_int();
 			i++;
 		}
-		return results;
+		return _scratchConfig;
 	};
-	
+
 	auto add_result = [this, &check_certainty]
 	(const Config &c)
 	{
@@ -448,9 +458,9 @@ bool ExhaustiveSearch::next()
 			_certain++;
 		}
 
-		if (cert && _configs.count(c) == 0)
+		// one lookup, not a count() then an insert: true only if c is new
+		if (cert && _configs.insert(c).second)
 		{
-			_configs += c;
 
 			// built here, not in a later deferred pass: by the time any
 			// pass over all of _configs would run, the search has moved
@@ -584,7 +594,7 @@ bool ExhaustiveSearch::next()
 	
 	IteratedProbe &iterate = **it;
 	bool done = iterate_until_okay_and_done(iterate);
-	Config result = as_configuration();
+	const Config &result = as_configuration();
 	add_result(result);
 	
 	if (iterate.is_certain())

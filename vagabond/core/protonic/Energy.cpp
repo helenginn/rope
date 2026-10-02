@@ -580,9 +580,16 @@ Energy::energy_wrapper_for_protonation(CountConnector &charge,
 		// directly rather than folded into the deprotonated comparison
 		// below - reading charge.value() at all while absent is what
 		// broke the pH slider before this fix.
+		//
+		// No term at all (an empty GetEnergy) rather than a stored function
+		// that returns 0: whether this state contributes is settled right
+		// here, once - nothing about it can change later - so a function
+		// object that can only ever say 0 is pure overhead, kept and
+		// replayed for every state that is absent or not deprotonated, which
+		// is most of them.
 		if (existence.value() == hnet::Existence::Absent)
 		{
-			return []() { return 0.f; };
+			return {};
 		}
 		// charge's own value is read HERE, once per GuiltVersion - same
 		// contract modulate() gives every other energy source.
@@ -596,18 +603,21 @@ Energy::energy_wrapper_for_protonation(CountConnector &charge,
 		// probsForAve()'s (ave - score(i)) entirely and silently
 		// producing no effect at all.
 		bool isDeprotonated = (charge.value() == deprotonated);
-		
+
+		// not deprotonated in this state: contributes 0 whatever the pH, so
+		// no term (see above)
+		if (!isDeprotonated)
+		{
+			return {};
+		}
+
 		// getDeltaG()/source_on()/amplification(), unlike charge's own
 		// value above, deliberately do stay live - re-evaluated on every
 		// call to the returned GetEnergy, not just once here - see this
 		// function's own header comment for why (Network::setTestPH()
 		// needs to affect results even from an already-cached GetScore).
-		return [this, isDeprotonated, getDeltaG]() -> float
+		return [this, getDeltaG]() -> float
 		{
-			if (!isDeprotonated)
-			{
-				return 0.f;
-			}
 			if (!source_on(Protonation))
 			{
 				return 0.f;
@@ -626,22 +636,13 @@ Energy::modulate(const std::vector<SourcedEnergy> &sources)
 	// function's result) cares which round it's being called in.
 	return [this, sources](GuiltVersion gv) -> hnet::GetEnergy
 	{
-		struct Cached
-		{
-			bool *ptr;
-			float *expAmp;
-			float energy;
-		};
-
 		// every call site above passes at most 2 sources - a fixed inline
 		// buffer instead of a std::vector avoids a heap alloc/free on
 		// every single evaluation of this closure, which runs once per
 		// accepted config x per wider probe in ExhaustiveSearch (the
 		// dominant source of the "freeing/memsetting" time seen in
 		// profiles of Energy::modulate).
-		constexpr size_t MaxSources = 4;
-		std::array<Cached, MaxSources> cache;
-		size_t count = 0;
+		BakedEnergy baked;
 
 		for (const SourcedEnergy &se : sources)
 		{
@@ -661,26 +662,70 @@ Energy::modulate(const std::vector<SourcedEnergy> &sources)
 			// call, far more often than the amplifier itself ever changes,
 			// so calling exp() on every replay was pure waste.
 			float *exp_amp_ptr = &_expAmplifiers[se.second];
-			if (count < MaxSources)
+			if (baked.count < baked.terms.size())
 			{
-				cache[count++] = {source_ptr, exp_amp_ptr, cached_energy};
+				baked.terms[baked.count++] = {source_ptr, exp_amp_ptr,
+				                              cached_energy, se.second};
 			}
 		}
 
-		if (count == 0) return {};
+		if (baked.count == 0) return {};
 
-		return [this, cache, count]()
-		{
-			float total = 0;
-			for (size_t i = 0; i < count; i++)
-			{
-				if (*cache[i].ptr)
-				{
-					total += cache[i].energy * (*cache[i].expAmp);
-				}
-			}
-
-			return total;
-		};
+		// a BakedEnergy, not a lambda: see its own comment - EnergyTally
+		// recognises it and sums it with the rest instead of keeping it.
+		return GetEnergy(baked);
 	};
+}
+
+void EnergyTally::add(const GetEnergy &job)
+{
+	if (!job)
+	{
+		return;
+	}
+
+	_any = true;
+
+	const Energy::BakedEnergy *baked = job.target<Energy::BakedEnergy>();
+	if (!baked)
+	{
+		_live.push_back(job); // e.g. protonation - evaluated afresh on replay
+		return;
+	}
+
+	for (size_t i = 0; i < baked->count; i++)
+	{
+		const Energy::BakedTerm &term = baked->terms[i];
+		_sum[term.source] += term.energy;
+		_table.on[term.source] = term.on;
+		_table.amp[term.source] = term.amp;
+	}
+}
+
+float EnergyTally::evaluate() const
+{
+	float total = 0;
+	for (size_t s = 0; s < Energy::SourceCount; s++)
+	{
+		if (_table.on[s] && *_table.on[s])
+		{
+			total += _sum[s] * (*_table.amp[s]);
+		}
+	}
+
+	for (const GetEnergy &job : _live)
+	{
+		total += job();
+	}
+
+	return total;
+}
+
+std::function<float()> EnergyTally::score() const
+{
+	// a self-contained copy of what evaluate() reads: the per-source sums, the
+	// pointers to the (still live) flags and amplifiers, and any terms that
+	// had to stay as functions
+	EnergyTally frozen = *this;
+	return [frozen]() { return frozen.evaluate(); };
 }

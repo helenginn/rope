@@ -21,8 +21,10 @@
 
 #include "hnet.h"
 #include "Probe.h"
+#include <array>
 #include <map>
 #include <memory>
+#include <vector>
 
 namespace hnet
 {
@@ -43,6 +45,48 @@ public:
 		Repulsion,
 		Protonation,
 		Unknown,
+	};
+
+	static constexpr size_t SourceCount = Unknown + 1;
+
+	/** What modulate() produces for one evaluated energy term: up to four
+	 *  (source, energy) contributions whose energies were read ONCE, when the
+	 *  term was collected for a configuration, and are now just constants -
+	 *  each still gated at replay time by its source's on/off flag and
+	 *  scaled by its (exponentiated) amplifier, so toggling an energy source
+	 *  or moving a slider changes the score of an already-scored state.
+	 *
+	 *  A concrete, inspectable type rather than an anonymous closure so that
+	 *  EnergyTally can recognise it inside a GetEnergy (std::function::
+	 *  target<BakedEnergy>()) and fold thousands of these into a few
+	 *  numbers per state instead of keeping, and replaying, one
+	 *  heap-allocated function object each. */
+	struct BakedTerm
+	{
+		const bool *on = nullptr;   // the source's on/off flag
+		const float *amp = nullptr; // exp(amplifier) for the source
+		float energy = 0.f;
+		Source source = Unknown;
+	};
+
+	struct BakedEnergy
+	{
+		std::array<BakedTerm, 4> terms{};
+		size_t count = 0;
+
+		float operator()() const
+		{
+			float total = 0;
+			for (size_t i = 0; i < count; i++)
+			{
+				if (*terms[i].on)
+				{
+					total += terms[i].energy * (*terms[i].amp);
+				}
+			}
+
+			return total;
+		}
 	};
 
 	void alter_amplification(const Source &src, float amp)
@@ -266,6 +310,65 @@ private:
 	std::map<Source, float> _amplifiers;
 	std::map<Source, float> _expAmplifiers;
 };
+
+/** Gathers the energy terms of ONE configuration into a compact score.
+ *
+ *  Each configuration the exhaustive search accepts used to keep every energy
+ *  term of its whole wider clique as a separate GetEnergy - a heap-allocated
+ *  std::function each, thousands per configuration - and every later
+ *  score(i) replayed all of them. Terms that modulate() baked (every term
+ *  except pH/protonation) are only ever constants gated by a per-source flag
+ *  and scaled by a per-source amplifier, so they are summed per source here
+ *  once, and a replay is a handful of multiply-adds: the state's sum for each
+ *  of the Energy::SourceCount sources, times its amplifier if its flag is on.
+ *  Same value as replaying the originals (up to the order of the additions),
+ *  and still live: it reads the very same flag/amplifier storage, so an
+ *  energy-source tickbox or slider changes the score of an already-scored
+ *  state exactly as before.
+ *
+ *  Anything else (the protonation term, which deliberately evaluates pH
+ *  afresh) is kept as the original function and replayed alongside. */
+class EnergyTally
+{
+public:
+	/** folds one collected term in. Empty functions are ignored. */
+	void add(const GetEnergy &job);
+
+	bool empty() const
+	{
+		return !_any;
+	}
+
+	/** the score of the terms added so far, as a std::function (the form
+	 *  ProbeResult/CertainStates keep it in). Self-contained: the tally can
+	 *  be discarded afterwards. */
+	std::function<float()> score() const;
+
+	/** the same value, computed directly - without building the function. */
+	float evaluate() const;
+
+	/** how many terms were kept as live functions rather than summed. */
+	size_t liveCount() const
+	{
+		return _live.size();
+	}
+
+private:
+	struct Table
+	{
+		// the flag/amplifier storage of each source, as seen by the terms
+		// folded in - shared by every tally of the same Energy, so a state's
+		// own score only has to carry its sums
+		std::array<const bool *, Energy::SourceCount> on{};
+		std::array<const float *, Energy::SourceCount> amp{};
+	};
+
+	std::array<float, Energy::SourceCount> _sum{};
+	Table _table;
+	std::vector<GetEnergy> _live;
+	bool _any = false;
+};
+
 };
 
 #endif

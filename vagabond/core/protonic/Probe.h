@@ -386,6 +386,14 @@ public:
 		}
 	}
 
+	/** this probe's own energy wrappers, for a caller (ExhaustiveSearch) that
+	 *  evaluates them itself to fold the terms into a compact tally rather
+	 *  than keep one function object per term - see hnet::EnergyTally. */
+	const std::vector<hnet::EnergyWrapper> &energyWrappers() const
+	{
+		return _energy;
+	}
+
 	hnet::GetEnergy energy(GuiltVersion gv)
 	{
 		std::vector<hnet::GetEnergy> jobs;
