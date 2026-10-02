@@ -141,6 +141,23 @@ TEST_CASE("hbond electrostatics: a hydrogen nearer the acceptor is its own "
 	      doctest::Approx(sum(c.donor, midway, c.acceptor, {}, 1.f, 0.f, 1.f)));
 }
 
+TEST_CASE("hbond electrostatics: a hydrogen must be clearly nearer the donor "
+          "to count as its own")
+{
+	Contact c;
+
+	// 0.1 A nearer the donor than midway: nearer, but inside the margin, so
+	// not distinguishable from unplaced (and not at the mercy of rounding)
+	glm::vec3 midway = 0.5f * (c.donor + c.acceptor);
+	glm::vec3 almost = midway + glm::vec3{0.05f, 0.f, 0.f};
+	CHECK(sum(c.donor, almost, c.acceptor, {}, 1.f, 1.f, 1.f) ==
+	      doctest::Approx(sum(c.donor, almost, c.acceptor, {}, 1.f, 0.f, 1.f)));
+
+	// clearly the donor's - about 1 A from it, 1.9 from the acceptor - counts
+	CHECK(sum(c.donor, c.hydrogen, c.acceptor, {}, 1.f, 1.f, 1.f) <
+	      sum(c.donor, c.hydrogen, c.acceptor, {}, 1.f, 0.f, 1.f));
+}
+
 TEST_CASE("hbond electrostatics: absent atoms switch off their own terms")
 {
 	Contact c;

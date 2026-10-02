@@ -778,14 +778,57 @@ public:
 	AtomProbe *_left{};
 	AtomProbe *_right{};
 
-	// stamped with a fresh GuiltVersion (Coordinated_Realign.cpp's
-	// transplant_positions(), the only place a hydrogen's actual position
-	// changes) each time realignment genuinely repositions this hydrogen -
-	// not tied to any particular scoring round, just a marker that changes
-	// exactly when the position does. Lets callers (e.g. Energy.cpp's
-	// hbond angle term) tell "has this hydrogen moved since I last looked"
-	// apart from "did realign() run" (which happens every call regardless).
+	// stamped with a fresh GuiltVersion (by place()/unplace() below, the only
+	// ways a hydrogen's actual position changes after construction) each time
+	// realignment genuinely repositions this hydrogen - not tied to any
+	// particular scoring round, just a marker that changes exactly when the
+	// position does. Lets callers (e.g. Energy.cpp's hbond angle term) tell
+	// "has this hydrogen moved since I last looked" apart from "did realign()
+	// run" (which happens every call regardless).
 	GuiltVersion _lastPositioned = -1;
+
+	/** Whether this hydrogen currently sits where realignment put it on its
+	 *  donor (_placedBy) - as opposed to unplaced, at its construction
+	 *  position (the midpoint of the two heavy atoms), which says nothing
+	 *  about which side it belongs to: that midpoint lies exactly on the
+	 *  donor-acceptor line, so reading it as a real position makes an
+	 *  unplaced hydrogen look like a perfectly linear hydrogen bond. A
+	 *  hydrogen is unplaced when its donor's bond to it is not settled as
+	 *  Donor, or when the donor has too little geometry to place it
+	 *  unambiguously (a water, say, with a single hydrogen bond) - that is
+	 *  accepted, and such a hydrogen gets no angle stabilisation. */
+	bool _placed = false;
+	hnet::AtomConf _placedBy{};
+
+	/** puts the hydrogen on `donor` at `pos`. */
+	void place(const glm::vec3 &pos, const hnet::AtomConf &donor)
+	{
+		setAtomPosition(pos);
+		_placed = true;
+		_placedBy = donor;
+		_lastPositioned = Guilt::guilt().issueNext();
+	}
+
+	/** puts the hydrogen back at the midpoint, unplaced. A no-op if it
+	 *  already is, so repeated calls don't churn the position stamp. */
+	void unplace()
+	{
+		if (!_placed && _pos == _init)
+		{
+			return;
+		}
+
+		setAtomPosition(_init);
+		_placed = false;
+		_placedBy = {};
+		_lastPositioned = Guilt::guilt().issueNext();
+	}
+
+	/** true only if realignment has placed this hydrogen on `donor`. */
+	bool placedOn(const hnet::AtomConf &donor) const
+	{
+		return _placed && _placedBy == donor;
+	}
 };
 
 

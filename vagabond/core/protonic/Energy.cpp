@@ -230,6 +230,19 @@ Energy::energy_wrapper_for_hbond_angle(HydrogenProbe *probe,
 		centre.realign();
 		other.realign();
 
+		// no angle stabilisation unless realignment has actually placed the
+		// hydrogen on the donor (`other`). An unplaced hydrogen sits at the
+		// midpoint, exactly on the donor-acceptor line, which would read as
+		// a perfectly linear hydrogen bond - and a hydrogen the donor
+		// cannot place unambiguously (e.g. a water with a single hydrogen
+		// bond) is deliberately left that way. The cache below is keyed on
+		// _lastPositioned, which place()/unplace() change, so it needs no
+		// help here.
+		if (!probe->placedOn(other.atomConf()))
+		{
+			return 0.f;
+		}
+
 		// probe->_lastPositioned only changes when realignment actually
 		// repositions this hydrogen (Coordinated_Realign.cpp's
 		// transplant_positions()) - realign() above runs every call
@@ -305,7 +318,7 @@ float Energy::hbond_electrostatic_sum(const glm::vec3 &donor,
 	// nearer the donor than the acceptor. A hydrogen nearer the acceptor is
 	// the acceptor's own (bonded to it: no electrostatic interaction), and
 	// one equidistant from both hasn't been placed on either.
-	bool donors = glm::length(hydrogen - donor) <
+	bool donors = glm::length(hydrogen - donor) + HBondHydrogenMargin <
 	glm::length(hydrogen - acceptor);
 
 	if (hydrogenFactor > 0 && donors)
@@ -408,11 +421,23 @@ Energy::energy_wrapper_for_half_hbond(HydrogenProbe *probe, BondProbe &bp,
 		{
 			donor.realign();
 			acceptor.realign();
-			hPos = probe->position();
 
-			if (hPos.x != hPos.x || hPos.y != hPos.y || hPos.z != hPos.z)
+			// only the donor's own, placed hydrogen has a position worth
+			// using: an unplaced one is at the midpoint, which belongs to
+			// neither atom, and one placed on the other atom is that atom's
+			// own hydrogen (bonded to it - no electrostatic interaction)
+			if (!probe->placedOn(donor.atomConf()))
 			{
-				return 0.f;
+				fH = 0.f;
+			}
+			else
+			{
+				hPos = probe->position();
+
+				if (hPos.x != hPos.x || hPos.y != hPos.y || hPos.z != hPos.z)
+				{
+					return 0.f;
+				}
 			}
 		}
 

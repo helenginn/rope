@@ -105,6 +105,14 @@ public:
 	 *  donor-acceptor terms, and is larger than that.) */
 	static constexpr float HBondElectrostatic = 4.5f;
 
+	/** a hydrogen counts as the donor's own only if it is nearer the donor
+	 *  than the acceptor by at least this much (angstroms): without a
+	 *  margin, a hydrogen at the midpoint is an exact tie that rounding
+	 *  could settle either way. (A hydrogen placed by realignment is about
+	 *  1 A from its donor and ~1.8 A or more from the acceptor, so this
+	 *  never excludes a real one.) */
+	static constexpr float HBondHydrogenMargin = 0.2f;
+
 	/** The electrostatic terms of one half of an H-bond (see
 	 *  energy_wrapper_for_half_hbond()), in units of HBondElectrostatic *
 	 *  HBondDeltaCharge^2 - just the geometry: the sum of 1/distance over

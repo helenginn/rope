@@ -91,8 +91,12 @@ void Coordinated::setupRealignment()
 		}
 	};
 	
+	// {whether the set of present bonds around this atom has changed since
+	// the last call, and what it is now}. The flag matters: "changed to
+	// nothing" and "unchanged" must not look alike, or a donor that has lost
+	// its bond could never be told to let go of the hydrogen it had placed.
 	auto needs_realign = [this, bond2Atom, check_bond, last_align]
-	() mutable -> std::map<AtomConf, HBondType>
+	() mutable -> std::pair<bool, std::map<AtomConf, HBondType>>
 	{
 		std::map<AtomConf, HBondType> next_align;
 
@@ -114,21 +118,91 @@ void Coordinated::setupRealignment()
 		if (next_align != last_align)
 		{
 			last_align = next_align;
-			return next_align;
+			return {true, next_align};
 		}
 
-		return {};
+		return {false, {}};
 	};
 
 	auto realign = [this, needs_realign, hMap]() mutable
 	{
-		std::map<AtomConf, HBondType> to_align = needs_realign();
+		auto update = needs_realign();
+		if (!update.first)
+		{
+			// the bonds are as they were: every hydrogen is where it was
+			// last put (or left unplaced).
+			return;
+		}
+
+		std::map<AtomConf, HBondType> to_align = update.second;
+
+		// whatever moves a hydrogen has to tell the bonds drawn to it
+		auto refresh_bonds = [](HydrogenProbe *hp)
+		{
+			for (Probe *const &other : hp->others())
+			{
+				if (!other->is_bond())
+				{
+					continue;
+				}
+				static_cast<BondProbe *>(other)->_obj._update(true);
+			}
+		};
+
+		const AtomConf me = atomConf();
+
+		// Let go first: a hydrogen THIS atom placed, but which is no longer
+		// one of its donor hydrogens (the bond is broken, undecided, or the
+		// hydrogen is now the other atom's), goes back to the midpoint,
+		// unplaced. Once placed, a hydrogen used to stay where it was put for
+		// good, so a stale donor-side position was read as real - and a
+		// hydrogen that never got placed in the first place sat at the
+		// midpoint, which is exactly on the donor-acceptor line and reads as
+		// a perfect hydrogen bond. Only the atom that placed it lets go, so
+		// the two atoms' closures cannot undo each other's placements.
+		for (const auto &pair : hMap)
+		{
+			HydrogenProbe *hp = pair.second;
+			if (!hp->placedOn(me))
+			{
+				continue;
+			}
+
+			auto found = to_align.find(pair.first);
+			if (found != to_align.end() && found->second == Donor)
+			{
+				continue; // still this atom's to place - done below
+			}
+
+			hp->unplace();
+			refresh_bonds(hp);
+		}
 
 		if (to_align.size() == 0)
 		{
 			return;
 		}
-		
+
+		// the hydrogens this atom is the donor of: the ones it is
+		// responsible for placing. When it cannot place them unambiguously
+		// they are left at the midpoint, unplaced - an accepted outcome,
+		// which simply earns them no angle stabilisation (see
+		// Energy::energy_wrapper_for_hbond_angle()).
+		auto leave_unplaced = [&to_align, &hMap, refresh_bonds]()
+		{
+			for (const auto &pair : to_align)
+			{
+				if (pair.second != Donor || hMap.count(pair.first) == 0)
+				{
+					continue;
+				}
+
+				HydrogenProbe *hp = hMap.at(pair.first);
+				hp->unplace();
+				refresh_bonds(hp);
+			}
+		};
+
 		OpSet<AtomConf> align_set;  // for fixed heavy atom locations
 		OpSet<AtomConf> align_free; // for placeholder hydrogens
 		for (const auto &pair : to_align)
@@ -143,11 +217,15 @@ void Coordinated::setupRealignment()
 			}
 		}
 		
+		// not enough geometry to define a frame - a water donating a single
+		// hydrogen, with no covalent neighbours and no other present bond,
+		// has nothing to orient a hydrogen against. Ambiguous: unplaced.
 		if (align_set.size() <= 1)
 		{
+			leave_unplaced();
 			return;
 		}
-		
+
 		std::vector<glm::vec3> geometry(align_set.size());
 		auto it = geometry.begin();
 		for (const AtomConf &ac : align_set)
@@ -171,13 +249,14 @@ void Coordinated::setupRealignment()
 		{
 			std::cout << "Warning! align() returned " << perfect.size() <<
 			" positions for " << to_align.size() << " requested (" <<
-			atomConf() << ") - skipping realignment" << std::endl;
+			atomConf() << ") - leaving its donor hydrogens unplaced" << std::endl;
+			leave_unplaced();
 			return;
 		}
 
 		it = perfect.begin();
 
-		auto transplant_positions = [hMap, &it, &to_align]
+		auto transplant_positions = [hMap, &it, &to_align, refresh_bonds, me]
 		(const OpSet<AtomConf> &set)
 		{
 			for (const AtomConf &ac : set)
@@ -191,17 +270,8 @@ void Coordinated::setupRealignment()
 						continue;
 					}
 					glm::vec3 pos = *it;
-					hp->setAtomPosition(pos);
-					hp->_lastPositioned = Guilt::guilt().issueNext();
-
-					for (Probe *const &other : hp->others())
-					{
-						if (!other->is_bond())
-						{
-							continue;
-						}
-						static_cast<BondProbe *>(other)->_obj._update(true);
-					}
+					hp->place(pos, me);
+					refresh_bonds(hp);
 				}
 				it++;
 			}
