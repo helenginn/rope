@@ -234,15 +234,15 @@ void OccupanciesView::setup()
 		rebuildGraph();
 	}, _cliqueOnly);
 
-	// unlike the two display filters above, this one DOES change what
-	// estimates() computes - like the energy-source tickboxes below, it only
-	// takes effect on the next "Check occupancies" click, so it doesn't
-	// rebuild the graph here.
-	displayTix->addOption("Propagate occupancies", [this, displayTix]()
-	{
-		_predictor->setPropagationEnabled(
-		displayTix->isTicked("Propagate occupancies"));
-	}, _predictor->propagationEnabled());
+	// The "Propagate occupancies" tickbox is switched off for now - the
+	// feature (OccupancyPredictor::setPropagationEnabled(), ridge-regression
+	// propagation between correlated atoms) is still in the predictor, off by
+	// default, but isn't offered here until it is behaving. To bring it back,
+	// add an option here (unlike the two display filters above it changes
+	// what estimates() computes, so it must not rebuild the graph - it takes
+	// effect on the next "Check occupancies" click, like the energy-source
+	// tickboxes below) that calls _predictor->setPropagationEnabled(...), and
+	// extend the arrange() range below by one row (to about 0.47).
 
 	displayTix->setVertical(true);
 	displayTix->setOneOnly(false);
@@ -250,7 +250,7 @@ void OccupanciesView::setup()
 	// same x-range as the energy-source tickboxes below (tix), just
 	// higher up - was top-left (0.02, 0.06) but that overlapped the back
 	// button.
-	displayTix->arrange(0.15, 0.25, 0.32, 0.47);
+	displayTix->arrange(0.15, 0.25, 0.32, 0.42);
 	addObject(displayTix);
 
 	slider("", hnet::Energy::Torsion, 0.52);

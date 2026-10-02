@@ -21,13 +21,20 @@
 
 #include <vagabond/gui/elements/FloatingImage.h>
 #include <vagabond/gui/elements/IndexResponder.h>
+#include <vagabond/gui/elements/ButtonResponder.h>
 #include <vagabond/core/protonic/hnet.h>
 
 class Probe;
 class CountProbe;
 class ProtonNetworkView;
 
-class ProbeCharge : public FloatingImage, virtual public IndexResponder
+/** One charge marker in ProtonNetworkView. Right-clicking it offers the
+ *  charges it can still take (the same way ProbeBond offers bond states and
+ *  ProbeAtom offers presence/absence): choosing one declares it on the
+ *  underlying CountConnector through the network's undo stack, so a
+ *  contradiction can be undone with Ctrl+Z. */
+class ProbeCharge : public FloatingImage, virtual public IndexResponder,
+public ButtonResponder
 {
 public:
 	ProbeCharge(ProtonNetworkView *view, CountProbe *probe);
@@ -51,8 +58,13 @@ public:
 
 	virtual void reindex();
 	void quickUpdate();
+
+	void offerChargeMenu();
+	virtual void interacted(int idx, bool hover, bool left);
+	virtual void buttonPressed(std::string tag, Button *button = nullptr);
 private:
 	void fullUpdate();
+	void declareCharge(hnet::Count::Values value);
 
 	CountProbe *_probe = nullptr;
 	ProtonNetworkView *_view = nullptr;
