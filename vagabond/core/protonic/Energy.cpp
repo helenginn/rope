@@ -161,22 +161,41 @@ auto evaluate_hbond(BondProbe &bp)
 	};
 }
 
-float Energy::hbond_angle_acceptance(const glm::vec3 &centre,
+float Energy::hbond_angle_acceptance(const glm::vec3 &donor,
                                      const glm::vec3 &hydrogen,
-                                     const glm::vec3 &other)
+                                     const glm::vec3 &acceptor)
 {
-	glm::vec3 hl = glm::normalize(hydrogen - centre);
-	glm::vec3 rl = glm::normalize(other - centre);
+	glm::vec3 along = hydrogen - donor;     // donor -> hydrogen
+	glm::vec3 onward = acceptor - hydrogen; // hydrogen -> acceptor
 
+	// the hydrogen sitting on top of either atom leaves no direction
+	if (glm::length(along) < 1e-6f || glm::length(onward) < 1e-6f)
+	{
+		return 0.f;
+	}
+
+	// the angle between those two directions is how far the chain is bent
+	// out of line: 0 when the hydrogen lies on the donor-acceptor line (a
+	// D-H...A angle of 180), 30 when the D-H...A angle is 150.
+	//
 	// clamped: for two (near) identical directions - exactly the ideal,
 	// collinear geometry - rounding in the normalisation can leave the dot
 	// product a hair over 1, where acos() is NaN, and a NaN energy is
 	// silently dropped by modulate(), i.e. no stabilisation at all at the
 	// best geometries (about one collinear case in five in float).
-	float dot = std::min(1.f, std::max(-1.f, glm::dot(hl, rl)));
-	float angle = acos(dot);
-	float exag = angle * 3;
-	return std::max(cos(exag), 0.f);
+	float dot = glm::dot(glm::normalize(along), glm::normalize(onward));
+	dot = std::min(1.f, std::max(-1.f, dot));
+	float bend = rad2deg(acos(dot));
+
+	if (bend >= HBondAngleCutoff)
+	{
+		return 0.f;
+	}
+
+	// cos runs from 1 at no bend down to 0 at the cutoff
+	float quarter_turn = 90.f;
+	float phase = (float)deg2rad(quarter_turn * bend / HBondAngleCutoff);
+	return std::max(std::cos(phase), 0.f);
 }
 
 hnet::EnergyWrapper
@@ -223,11 +242,13 @@ Energy::energy_wrapper_for_hbond_angle(HydrogenProbe *probe,
 			return cache->energy;
 		}
 
-		glm::vec3 lPos = centre.position();
-		glm::vec3 rPos = other.position();
+		// `centre` is the atom whose half-bond is the acceptor, `other` the
+		// donor - and the hydrogen's position is the realigned one (see above)
+		glm::vec3 acceptorPos = centre.position();
+		glm::vec3 donorPos = other.position();
 		glm::vec3 hPos = probe->_h->initialPosition();
 
-		float damping = hbond_angle_acceptance(lPos, hPos, rPos);
+		float damping = hbond_angle_acceptance(donorPos, hPos, acceptorPos);
 
 		cache->energy = 1.0f * -damping;
 		cache->seenAt = probe->_lastPositioned;

@@ -168,15 +168,23 @@ public:
 
 	EnergyWrapper energy_wrapper_for_liberated_bulk(AtomProbe &bulk);
 
+	/** how far out of line (degrees) the donor-hydrogen...acceptor chain may
+	 *  bend before the hydrogen bond's "covalent character" stabilisation is
+	 *  lost completely - see hbond_angle_acceptance(). */
+	static constexpr float HBondAngleCutoff = 30.f;
+
 	/** how fully the hydrogen-bond "covalent character" stabilisation applies,
-	 *  0 to 1: cos(3 * angle) (floored at 0), where angle is the angle AT
-	 *  `centre` between the directions to `hydrogen` and to `other` - so 1
-	 *  when the hydrogen lies on the line from centre to other. Pure function
-	 *  of positions (see energy_wrapper_for_hbond_angle(), which uses it with
-	 *  the acceptor as the centre and the donor as the other atom). */
-	static float hbond_angle_acceptance(const glm::vec3 &centre,
+	 *  0 to 1, for the chain donor - hydrogen ... acceptor. It depends on how
+	 *  far the chain is bent out of a straight line, i.e. 180 degrees minus
+	 *  the D-H...A angle measured AT the hydrogen: 1 when perfectly linear,
+	 *  falling as cos(90 degrees * bend / HBondAngleCutoff) to exactly 0 at a
+	 *  bend of HBondAngleCutoff (30 degrees, a D-H...A angle of 150), and 0
+	 *  beyond that. Pure function of positions (see
+	 *  energy_wrapper_for_hbond_angle()). Returns 0 if the hydrogen coincides
+	 *  with either atom, as there is then no angle to speak of. */
+	static float hbond_angle_acceptance(const glm::vec3 &donor,
 	                                    const glm::vec3 &hydrogen,
-	                                    const glm::vec3 &other);
+	                                    const glm::vec3 &acceptor);
 
 	EnergyWrapper energy_wrapper_for_hbond_angle(HydrogenProbe *probe,
 	                                             BondProbe &left,

@@ -200,10 +200,31 @@ TEST_CASE("hbond electrostatics: forming the H-bond is worth about as much "
 	CHECK(std::fabs(formed - (-0.14f)) < 0.03f);
 }
 
+namespace
+{
+
+// a donor-hydrogen...acceptor chain bent `bend` degrees out of line at the
+// hydrogen: donor at the origin, hydrogen 1 A along +x, acceptor 1.9 A from
+// the hydrogen in a direction turned `bend` degrees from straight on (so the
+// D-H...A angle is 180 - bend)
+float acceptance_at_bend(float bend, bool out_of_plane = false)
+{
+	float t = bend * 3.14159265f / 180.f;
+	glm::vec3 donor{0.f, 0.f, 0.f};
+	glm::vec3 hydrogen{1.f, 0.f, 0.f};
+	glm::vec3 turn = out_of_plane ? glm::vec3{std::cos(t), 0.f, std::sin(t)}
+	                              : glm::vec3{std::cos(t), std::sin(t), 0.f};
+	glm::vec3 acceptor = hydrogen + 1.9f * turn;
+
+	return Energy::hbond_angle_acceptance(donor, hydrogen, acceptor);
+}
+
+}
+
 TEST_CASE("hbond angle acceptance: fully on at a collinear geometry, never "
           "NaN")
 {
-	// hydrogen on the line from the acceptor to the donor, in many
+	// hydrogen on the line from the donor to the acceptor, in many
 	// orientations: rounding used to push the dot product a hair over 1
 	// (acos -> NaN, silently dropped) in roughly one case in five
 	int bad = 0;
@@ -216,7 +237,7 @@ TEST_CASE("hbond angle acceptance: fully on at a collinear geometry, never "
 		                std::cos(s * 0.4f) * 4.f};
 		glm::vec3 hydrogen = 0.5f * (acceptor + donor);
 
-		float a = Energy::hbond_angle_acceptance(acceptor, hydrogen, donor);
+		float a = Energy::hbond_angle_acceptance(donor, hydrogen, acceptor);
 		if (!std::isfinite(a) || std::fabs(a - 1.f) > 1e-3f)
 		{
 			bad++;
@@ -226,20 +247,64 @@ TEST_CASE("hbond angle acceptance: fully on at a collinear geometry, never "
 	CHECK(bad == 0);
 }
 
-TEST_CASE("hbond angle acceptance: stays within 0 to 1")
+TEST_CASE("hbond angle acceptance: all stabilisation is lost at 30 degrees "
+          "out of line")
 {
-	glm::vec3 centre{0.f, 0.f, 0.f};
-	glm::vec3 other{2.9f, 0.f, 0.f};
+	CHECK(acceptance_at_bend(0.f) == doctest::Approx(1.f));
 
-	for (int deg = 0; deg <= 180; deg += 15)
+	// a D-H...A angle of 150 degrees: exactly at the cutoff
+	CHECK(acceptance_at_bend(30.f) == doctest::Approx(0.f).epsilon(1e-3));
+
+	// and nothing beyond it, however far round
+	for (float bend : {31.f, 45.f, 60.f, 90.f, 135.f, 180.f})
 	{
-		float t = deg * 3.14159265f / 180.f;
-		glm::vec3 hydrogen{std::cos(t), std::sin(t), 0.f};
-		float a = Energy::hbond_angle_acceptance(centre, hydrogen, other);
+		CHECK(acceptance_at_bend(bend) == 0.f);
+	}
+}
 
+TEST_CASE("hbond angle acceptance: falls smoothly between linear and the "
+          "cutoff")
+{
+	// cos(90 degrees * bend / 30): a half-way bend of 15 degrees is cos 45
+	CHECK(acceptance_at_bend(15.f) == doctest::Approx(0.7071f).epsilon(1e-3));
+	CHECK(acceptance_at_bend(10.f) == doctest::Approx(0.8660f).epsilon(1e-3));
+
+	// strictly decreasing from 0 to 30 degrees
+	float previous = 2.f;
+	for (float bend = 0.f; bend < 30.f; bend += 2.5f)
+	{
+		float a = acceptance_at_bend(bend);
+		CHECK(a < previous);
 		CHECK(a >= 0.f);
 		CHECK(a <= 1.0001f);
+		previous = a;
 	}
+}
+
+TEST_CASE("hbond angle acceptance: depends only on the size of the bend, "
+          "not its direction")
+{
+	for (float bend : {5.f, 12.f, 20.f, 28.f})
+	{
+		CHECK(acceptance_at_bend(bend, true) ==
+		      doctest::Approx(acceptance_at_bend(bend, false)));
+		CHECK(acceptance_at_bend(-bend) ==
+		      doctest::Approx(acceptance_at_bend(bend)));
+	}
+}
+
+TEST_CASE("hbond angle acceptance: a hydrogen on top of an atom has none")
+{
+	glm::vec3 donor{0.f, 0.f, 0.f};
+	glm::vec3 acceptor{2.9f, 0.f, 0.f};
+
+	float on_donor = Energy::hbond_angle_acceptance(donor, donor, acceptor);
+	float on_acceptor = Energy::hbond_angle_acceptance(donor, acceptor, acceptor);
+
+	CHECK(std::isfinite(on_donor));
+	CHECK(on_donor == 0.f);
+	CHECK(std::isfinite(on_acceptor));
+	CHECK(on_acceptor == 0.f);
 }
 
 TEST_CASE("hbond electrostatics: coincident points cannot blow the sum up")
