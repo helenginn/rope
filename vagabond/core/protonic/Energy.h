@@ -79,8 +79,60 @@ public:
 
 	EnergyWrapper energy_wrapper_for_covalent(BondProbe &bp);
 
-	EnergyWrapper energy_wrapper_for_half_hbond(HydrogenProbe *probe, 
-	                                            BondProbe &bp, glm::vec3 pos);
+	/** a position carrying a share of a charge - see
+	 *  energy_wrapper_for_half_hbond(). */
+	struct ChargedPosition
+	{
+		glm::vec3 pos{};
+		float weight = 1.f; // this position's share of the total charge
+	};
+
+	/** constant partial charge (in units of e) on each end of the two
+	 *  dipoles taking part in an H-bond: -delta on the donor, +delta on its
+	 *  hydrogen, -delta on the acceptor, +delta shared equally among the
+	 *  acceptor's covalent parents. Not fitted to anything - it and the
+	 *  constant below only set the overall size of the distance term (also
+	 *  scaled by the "Distance" slider), calibrated so that at an ideal
+	 *  linear contact (H...A 1.9 A) the four-term sum is about as strong as
+	 *  the plain hydrogen-acceptor attraction it replaced (about -0.14). */
+	static constexpr float HBondDeltaCharge = 0.4f;
+
+	/** Coulomb-like prefactor: energy = HBondElectrostatic * q1 * q2 / d
+	 *  (d in angstroms), in this class's own arbitrary energy units. */
+	static constexpr float HBondElectrostatic = 9.f;
+
+	/** the four Coulomb terms of energy_wrapper_for_half_hbond(), in units of
+	 *  HBondElectrostatic * HBondDeltaCharge^2 (i.e. just the geometry): the
+	 *  sum of 1/distance over each pair weighted by the product of the two
+	 *  charges' signs. Negative means net attraction. Distances are floored
+	 *  at 0.5 A. Pure function of positions, so it can be tested alone. */
+	static float hbond_dipole_sum(const glm::vec3 &donor,
+	                              const glm::vec3 &hydrogen,
+	                              const glm::vec3 &acceptor,
+	                              const std::vector<ChargedPosition> &parents);
+
+	/** distance-dependent electrostatic part of one half of an H-bond
+	 *  (the half whose atom, `bp`, would be the acceptor): four Coulomb
+	 *  terms between the donor/hydrogen dipole and the acceptor/parents
+	 *  dipole, with charges as described at HBondDeltaCharge -
+	 *    donor ... acceptor            repulsion  (-,-)
+	 *    hydrogen ... acceptor         attraction (+,-)
+	 *    hydrogen ... acceptor parents repulsion  (+,+)
+	 *    donor ... acceptor parents    attraction (-,+)
+	 *  The hydrogen's position is read live (it moves on realignment); the
+	 *  heavy atoms' positions are fixed once a Network is built, so the
+	 *  caller identifies the acceptor's parents (its covalently bonded
+	 *  partners, matched per conformer by the network's covalent bonds) when
+	 *  this is made, and passes them in with their shares of the +delta
+	 *  charge (summing to 1).
+	 *  @param donorPos the other heavy atom, whose hydrogen this is.
+	 *  @param acceptorPos this half-bond's own heavy atom. */
+	EnergyWrapper energy_wrapper_for_half_hbond(HydrogenProbe *probe,
+	                                            BondProbe &bp,
+	                                            const glm::vec3 &donorPos,
+	                                            const glm::vec3 &acceptorPos,
+	                                            const std::vector<ChargedPosition>
+	                                            &acceptorParents);
 
 	EnergyWrapper energy_wrapper_for_liberated_bulk(AtomProbe &bulk);
 

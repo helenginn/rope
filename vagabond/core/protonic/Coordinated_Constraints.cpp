@@ -281,8 +281,95 @@ void Coordinated::attachToNeighbours(const OpSet<AtomConf> &searchSet)
 	}
 
 	AtomProbe *ref = atomMap()[_atomConf]->probe();
-	
-	auto create_two_half_hydrogen_bonds = [this, ref]
+
+	// The covalently bonded partners ("parents") of an H-bond acceptor, each
+	// with its share of the +delta charge that balances the acceptor's own
+	// -delta (see Energy::energy_wrapper_for_half_hbond()): the shares sum to
+	// 1, split equally among the acceptor's parent ATOMS. Found through the
+	// network's covalent bonds (Network::covalentsForAtom()) rather than the
+	// raw per-atom topology, because those already pair conformers up
+	// correctly - Atom::connectedAtom() only says which atom is bonded, not
+	// which alt-conf of it, so using it directly would mix up alt confs.
+	// Where one parent atom has several conformers bonded to this one (an
+	// ambiguous bond - Network's MaxOne "maybe" bonds), the conformer tied to
+	// this one by an unambiguous covalent bond (mutual existence) is taken if
+	// there is one; otherwise that atom's share is split among its
+	// conformers. Hydrogens are left out - their existence is a separate,
+	// protonation-dependent question. Resolved once, here, as the positions
+	// of heavy atoms don't move after a Network is built.
+	auto acceptor_parents = [this](const AtomConf &acceptor)
+	{
+		AtomProbe *acceptorProbe = _network.probeForAtom(acceptor);
+
+		// parent atom -> its conformers covalently linked to the acceptor,
+		// in the order they were first met so the result is deterministic.
+		std::vector<std::pair<::Atom *, std::vector<AtomConf>>> parents;
+
+		for (CovalentProbe *cp : _network.covalentsForAtom(acceptor))
+		{
+			AtomConf left = cp->left().atomConf();
+			AtomConf right = cp->right().atomConf();
+			AtomConf other = (left == acceptor) ? right : left;
+
+			if (!other.ptr || other.ptr->elementSymbol() == "H")
+			{
+				continue;
+			}
+
+			auto group = std::find_if(parents.begin(), parents.end(),
+			                          [&other](const auto &entry)
+			                          { return entry.first == other.ptr; });
+			if (group == parents.end())
+			{
+				parents.push_back({other.ptr, {}});
+				group = parents.end() - 1;
+			}
+
+			std::vector<AtomConf> &confs = group->second;
+			if (std::find(confs.begin(), confs.end(), other) == confs.end())
+			{
+				confs.push_back(other);
+			}
+		}
+
+		std::vector<Energy::ChargedPosition> result;
+		for (const auto &entry : parents)
+		{
+			std::vector<AtomConf> picks = entry.second;
+
+			if (picks.size() > 1 && acceptorProbe)
+			{
+				std::vector<AtomConf> matched;
+				for (const AtomConf &candidate : picks)
+				{
+					Probe *candidateProbe = _network.probeForAtom(candidate);
+					const std::vector<Probe *> &tied =
+					acceptorProbe->mutualExistenceNeighbours();
+
+					if (candidateProbe && std::find(tied.begin(), tied.end(),
+					                                candidateProbe) != tied.end())
+					{
+						matched.push_back(candidate);
+					}
+				}
+
+				if (matched.size())
+				{
+					picks = matched;
+				}
+			}
+
+			float share = 1.f / ((float)parents.size() * (float)picks.size());
+			for (const AtomConf &pick : picks)
+			{
+				result.push_back({pick.soft_position(), share});
+			}
+		}
+
+		return result;
+	};
+
+	auto create_two_half_hydrogen_bonds = [this, ref, acceptor_parents]
 	(const AtomConf &candidate, const glm::vec3 &pos1, const glm::vec3 &pos2)
 	{
 		glm::vec3 midpoint = (pos1 + pos2) / 2.f;
@@ -365,8 +452,15 @@ void Coordinated::attachToNeighbours(const OpSet<AtomConf> &searchSet)
 
 		float dist = glm::length(pos1 - pos2);
 		Energy &e = _network.energy();
-		b1.addEnergyWrapper(e.energy_wrapper_for_half_hbond(&hProbe, b1, pos1));
-		b2.addEnergyWrapper(e.energy_wrapper_for_half_hbond(&hProbe, b2, pos2));
+		// each half-bond's atom is the acceptor if its bond ends up
+		// Acceptor, with the atom on the other side donating the hydrogen -
+		// so b1 (this atom) has the candidate as its donor, and b2 (the
+		// candidate) has this atom as its donor. The acceptor's parents
+		// (and so its effective dipole) are identified here, once.
+		b1.addEnergyWrapper(e.energy_wrapper_for_half_hbond
+		                    (&hProbe, b1, pos2, pos1, acceptor_parents(_atomConf)));
+		b2.addEnergyWrapper(e.energy_wrapper_for_half_hbond
+		                    (&hProbe, b2, pos1, pos2, acceptor_parents(candidate)));
 
 		hProbe.addEnergyWrapper
 		(e.energy_wrapper_for_hbond_angle(&hProbe, b1, b2, *_probe, *other));

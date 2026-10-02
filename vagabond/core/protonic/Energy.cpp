@@ -231,9 +231,43 @@ Energy::energy_wrapper_for_hbond_angle(HydrogenProbe *probe,
 	return modulate({{hbond_angle, Angle}});
 }
 
+float Energy::hbond_dipole_sum(const glm::vec3 &donor,
+                               const glm::vec3 &hydrogen,
+                               const glm::vec3 &acceptor,
+                               const std::vector<ChargedPosition> &parents)
+{
+	// 1 / distance, with a floor so two coincident points can't blow up the
+	// sum (real contacts are never anywhere near this close).
+	auto inverse = [](const glm::vec3 &a, const glm::vec3 &b)
+	{
+		float dist = std::max(glm::length(a - b), 0.5f);
+		return 1.f / dist;
+	};
+
+	// charges: donor -d, hydrogen +d, acceptor -d, acceptor parents +d
+	// (shared out by weight) - in units of d^2, so each pair's sign is
+	// simply the product of the two signs:
+	//  donor - acceptor                 (-)(-) = +  repulsion
+	//  hydrogen - acceptor              (+)(-) = -  attraction
+	//  hydrogen - each parent (share w) (+)(+) = +  repulsion
+	//  donor - each parent (share w)    (-)(+) = -  attraction
+	float sum = inverse(donor, acceptor) - inverse(hydrogen, acceptor);
+
+	for (const ChargedPosition &parent : parents)
+	{
+		sum += parent.weight * (inverse(hydrogen, parent.pos) -
+		                        inverse(donor, parent.pos));
+	}
+
+	return sum;
+}
+
 hnet::EnergyWrapper
-Energy::energy_wrapper_for_half_hbond(HydrogenProbe *probe, BondProbe &bp, 
-                                      glm::vec3 pos)
+Energy::energy_wrapper_for_half_hbond(HydrogenProbe *probe, BondProbe &bp,
+                                      const glm::vec3 &donorPos,
+                                      const glm::vec3 &acceptorPos,
+                                      const std::vector<ChargedPosition>
+                                      &acceptorParents)
 {
 	auto evaluate = evaluate_hbond(bp);
 
@@ -257,7 +291,7 @@ Energy::energy_wrapper_for_half_hbond(HydrogenProbe *probe, BondProbe &bp,
 		return -0.5f;
 	};
 
-	auto hbond_dist = [evaluate, probe, pos]()
+	auto hbond_dist = [evaluate, probe, donorPos, acceptorPos, acceptorParents]()
 	{
 		if (!evaluate(hnet::Bond::Acceptor, false))
 		{
@@ -265,15 +299,17 @@ Energy::energy_wrapper_for_half_hbond(HydrogenProbe *probe, BondProbe &bp,
 		}
 
 		glm::vec3 hPos = probe->position();
-		float dist = glm::length(hPos - pos);
-		if (dist != dist)
+		if (hPos.x != hPos.x || hPos.y != hPos.y || hPos.z != hPos.z)
 		{
 			return 0.f;
 		}
 
-		float base = 0.5;
-		float mod = 1 / (dist * dist);
-		float contrib = -base * mod;
+		float sum = hbond_dipole_sum(donorPos, hPos, acceptorPos,
+		                             acceptorParents);
+
+		float contrib = HBondElectrostatic * HBondDeltaCharge *
+		HBondDeltaCharge * sum;
+
 		if (!evaluate(hnet::Bond::Acceptor, true))
 		{
 			contrib /= 2;
