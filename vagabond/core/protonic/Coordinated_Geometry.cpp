@@ -96,15 +96,17 @@ bool Coordinated::acceptablePlane(const glm::vec3 &child)
 	for (const ACPair &unin : uninvolved)
 	{
 		glm::vec3 parent = unin.first.position();
-		glm::vec3 list[] = {grandparent, parent, me, child};
-		float torsion = measure_bond_torsion(list);
-		while (torsion >= 90) torsion -= 180;
-		while (torsion <= -90) torsion += 180;
-		std::cout << "Torsion of " << _atomConf << " with " << unin.first << 
-		" for planar restriction: " 
-		<< torsion << " - ";
 
-		if (fabs(torsion) < PLANAR_TOLERANCE)
+		// the elevation of the candidate out of the plane, not the torsion
+		// around the parent-me bond (see outOfPlaneAngle()): the torsion is
+		// exaggerated for an end-on approach and was throwing out genuine
+		// contacts, e.g. a donor 28 degrees above a carbonyl's plane read as
+		// a 57 degree torsion and failed the 45 degree limit.
+		float elevation = outOfPlaneAngle(grandparent, parent, me, child);
+		std::cout << "Out-of-plane angle of " << _atomConf << " with " <<
+		unin.first << " for planar restriction: " << elevation << " - ";
+
+		if (elevation < PLANAR_TOLERANCE)
 		{
 			std::cout << "Okay" << std::endl;
 			return true;
@@ -113,6 +115,26 @@ bool Coordinated::acceptablePlane(const glm::vec3 &child)
 	}
 
 	return false;
+}
+
+float Coordinated::outOfPlaneAngle(const glm::vec3 &grandparent,
+                                   const glm::vec3 &parent,
+                                   const glm::vec3 &me, const glm::vec3 &child)
+{
+	glm::vec3 normal = glm::cross(parent - grandparent, me - parent);
+	float length = glm::length(normal);
+	glm::vec3 direction = child - me;
+	float reach = glm::length(direction);
+
+	// three collinear points have no plane, and a child sitting on `me` has
+	// no direction
+	if (length < 1e-6f || reach < 1e-6f)
+	{
+		return 0.f;
+	}
+
+	float sine = std::fabs(glm::dot(normal / length, direction / reach));
+	return rad2deg(std::asin(std::min(1.f, sine)));
 }
 
 void Coordinated::comparePairs(OpSet<PairSet> &results,

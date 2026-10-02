@@ -67,6 +67,22 @@ public:
 	void prepareCoordination();
 
 	static OpSet<AtomConf> expandGroupToSet(AtomGroup *group);
+
+	/** how far (in degrees, 0 to 90) `child`, seen from `me`, lies above or
+	 *  below the plane through grandparent, parent and me - the elevation of
+	 *  the direction me->child out of that plane. This is what
+	 *  acceptablePlane() tests, rather than the torsion
+	 *  grandparent-parent-me-child: a torsion is rotation around the
+	 *  parent-me bond, which is badly conditioned when the child is near
+	 *  that bond's axis (an "end-on" approach, e.g. a donor 30 degrees off
+	 *  the C=O axis of a carbonyl) - a 28 degree elevation then reads as a
+	 *  57 degree torsion. The two agree when the child is at right angles to
+	 *  the bond, and elevation never exceeds the (folded) torsion, so this
+	 *  is only ever more permissive, and only for end-on contacts.
+	 *  Returns 0 if the three points are collinear, as no plane exists. */
+	static float outOfPlaneAngle(const glm::vec3 &grandparent,
+	                             const glm::vec3 &parent, const glm::vec3 &me,
+	                             const glm::vec3 &child);
 	OpSet<AtomConf> findNeighbours(const OpSet<AtomConf> &group,
 	                               const glm::vec3 &v, 
 	                               float distance, bool one_sided);
