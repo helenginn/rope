@@ -2,6 +2,7 @@
 #include <vagabond/core/Flexibility.h>
 #include <vagabond/core/Instance.h>
 #include <vagabond/core/AtomGroup.h>
+#include <vagabond/core/Model.h>
 #include <iostream>
 #include <fstream>
 #include <iomanip>
@@ -13,6 +14,16 @@
 #include "AtomGroup.h"
 
 using Eigen::VectorXf;
+struct DisplayScaleGuard
+{
+    Flexibility *f;
+    float prev; 
+    DisplayScaleGuard(Flexibility *f, float s) : f(f), prev(f->displayScale())
+    {
+        f->setDisplayScale(s);
+    }
+    ~DisplayScaleGuard() { f->setDisplayScale(prev); }
+};
 
 
 FlexSample::FlexSample(Flexibility *flex, Instance *instance) 
@@ -27,6 +38,7 @@ FlexSample::FlexSample(Flexibility *flex, Instance *instance)
 
 void FlexSample::saveHierarchySamples(int numSamples, const std::string& baseFileName, float stepSize)
 {
+    DisplayScaleGuard guard(_flex, 1.0f);
     if (!std::isfinite(numSamples) || numSamples <= 0) numSamples = 1;
 
     const Eigen::MatrixXf& V = _flex->getV();
@@ -101,6 +113,7 @@ void FlexSample::saveHierarchySamples(int numSamples, const std::string& baseFil
 
 void FlexSample::saveSampledStructures(int numSamples, const std::string& baseFileName, const std::string& csvDistFile, float petrubationWeight)
 {
+    DisplayScaleGuard guard(_flex, 1.0f);
     const Eigen::MatrixXf& V = _flex->getV();
     const Eigen::MatrixXf& S = _flex->getS(); 
     int rangeOfJac = getMatrixRange();
@@ -110,7 +123,7 @@ void FlexSample::saveSampledStructures(int numSamples, const std::string& baseFi
     std::vector<int> candidateIndices = sampleColumnIndices(N, numSamples);
 
     // prepare collision detection
-    const AtomVector &atoms = _instance->currentAtoms()->atomVector();
+    const AtomVector &atoms = _instance->model()->currentAtoms()->atomVector();
     OpSet<Atom*> atom_set(atoms);
     std::vector<Atom*> orderedAtoms = atom_set.toVector();
     std::vector<float> radii = _flex->makeRadiiVec(orderedAtoms);
@@ -157,6 +170,23 @@ void FlexSample::saveSampledStructures(int numSamples, const std::string& baseFi
         }
 
         _flex->setColIdx(pickIdx);
+        // debugging 
+        {
+        const std::vector<float> &t = _flex->getAllTorsions()[pickIdx];
+        float maxAbs = 0.0f; 
+        int nonZero = 0;
+        for (float v : t)
+        {
+            if (v != 0.0f) nonZero++;
+            if (std::abs(v) > maxAbs) maxAbs = std::abs(v);
+        }
+        std::cout << "[sample] mode " << pickIdx
+                  << " nonzero=" << nonZero
+                  << " maxAbs=" << maxAbs
+                  << " weight=" << petrubationWeight
+                  << " -> max rotation " << (maxAbs * petrubationWeight) << " rad"
+                  << std::endl;
+    } // end debugging
         _flex->submitJob(petrubationWeight);
         Result *r = _flex->getResult();
         r->transplantPositions(false);
@@ -181,7 +211,8 @@ void FlexSample::saveSampledStructures(int numSamples, const std::string& baseFi
         std::string chain = _flex->getChain();
         oss << baseFileName << "_mode_" << pickIdx << "_weight" << "_" << chain << "_" << petrubationWeight << ".pdb"; 
         
-        _instance->currentAtoms()->writeToFile(oss.str()); 
+        // _instance->currentAtoms()->writeToFile(oss.str()); 
+        _flex->studyInstance()->currentAtoms()->writeToFile(oss.str());
         std::cout << "[FlexSample] Saved " << oss.str() 
                   << " (Mode: " << pickIdx << ", Weight: " << petrubationWeight << ")\n";
 
@@ -346,7 +377,27 @@ std::vector<int> FlexSample::sampleColumnIndices(int N, int sampleCount)
 
 void FlexSample::computeOneSample(int pickIdx, double weight)
 {
+    DisplayScaleGuard guard(_flex, 1.0f);
     _flex->setColIdx(pickIdx);
+
+    // debugging 
+    {
+        const std::vector<float> &t = _flex->getAllTorsions()[pickIdx];
+        float maxAbs = 0.0f; 
+        int nonZero = 0;
+        for (float v : t)
+        {
+            if (v != 0.0f) nonZero++;
+            if (std::abs(v) > maxAbs) maxAbs = std::abs(v);
+        }
+        std::cout << "[sample] mode " << pickIdx
+                  << " nonzero=" << nonZero
+                  << " maxAbs=" << maxAbs
+                  << " weight=" << weight
+                  << " -> max rotation " << (maxAbs * weight) << " rad"
+                  << std::endl;
+    } // end debugging
+
     _flex->submitJob(static_cast<float>(0));
     {
         Result *r = _flex->getResult(); // FIX: clean up the results in the end 
@@ -406,6 +457,7 @@ int FlexSample::getMatrixRange()
 
     return range;
 }
+
 
 
 

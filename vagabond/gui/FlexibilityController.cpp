@@ -123,12 +123,39 @@ void FlexibilityController::handleSelectedHBonds(Button *button)
     {
         _hBondPairs = pairs;
         callAddHBonds(_hBondPairs);
-        // _flex->buildJacobianMatrix();
+        // == NEW: set the target coordinate before selecDoFmap ==> if that works, to be moved as a selcetion in the gui
+        AtomGroup *atoms = _instance->currentAtoms();
+
+        // bebug: finfing cys18
+        for (Atom *a : atoms->atomVector())
+        {
+        	if (a->atomName() == "SG")
+        		std::cout << "[SG atom] " << a->desc() <<std::endl;
+        }
+
+        Atom *cys18 = atoms->atomByDesc("X-CYS18:SG");
+        Atom *cys78 = atoms->atomByDesc("X-CYS78:SG");
+        // if (cys18 && cys78)
+        // {
+        // 	_flex->setTargetCoordinate(cys18, cys78);
+        // }
+        // else
+        // {
+        // 	std::cerr << "[ERROR] target atoms not found: "
+        // 			  << (cys18 ? "" : "X-CYS18:SG")
+        // 			  << (cys78 ? "" : "X-CYS78:SG") << std::endl;
+        // }
+        // == end NEW ==
         _flex->selectDoFMap();
         _flex->newJacobian();
+        _flex->setRunLabel("baseline");
+        _flex->sensitivityVector();
+	    _flex->checkGammaSanity();
+	    _flex->computeInfluenceCoef();
         _flex->calculateFlexWeights();
         _flex->calculateTorsionFlexibility();
-    });
+	    
+	    });
 
     _view->selectMode(hbmenu, true);
     hbmenu->show();
@@ -229,7 +256,8 @@ void FlexibilityController::handleNumSamples(Button* button)
 	int numSample = atoi(te->scratch().c_str());
 	FlexSample sampler(_flex, _instance);
 	sampler.saveSampledStructures(numSample, "sample_structure", "structure_deviation.csv", _currentWeight);
-	float stepSize = 0.5f; 
+	// sampler.saveSampledStructures(numSample, "sample_structure", "structure_deviation.csv", 0.5f);
+	// float stepSize = 0.5f; 
     // sampler.saveHierarchySamples(numSample, "hierarchy_sample", stepSize);
 }
 
@@ -263,7 +291,7 @@ void FlexibilityController::handleColumnIdx(Button* button)
     }
 
 	FlexSample sampler(_flex, _instance);
-    sampler.computeOneSample(idx, _currentWeight); // _currentWeight is the slider value
+    sampler.computeOneSample(idx, _currentWeight); // _currentWeight is the slider ue
     _view->openAtom2AtomExplorer();
 }
 

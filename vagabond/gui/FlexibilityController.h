@@ -40,6 +40,10 @@ public:
     void reset();
     // void checkHBondSelection();
     void callAddHBonds(const std::vector<HBondManager::HBondPair> &donorAcceptorPairs); 
+    Instance *studyInstance() 
+    { 
+        return _flex->studyInstance(); 
+    }
     void callPrepareResources()
     {
         _flex->prepareResources();
@@ -47,6 +51,7 @@ public:
     void callSubmitJobAndRetrieve(float weight)
     {
         _flex->submitJobAndRetrieve(weight);
+        _flex->setDisplayScale(1000.0f);
     }
     virtual void finishedDragging(std::string tag, double x, double y);
     const std::vector<HBondEntity>& handleHBondTicks()

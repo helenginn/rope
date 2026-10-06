@@ -29,6 +29,8 @@ FlexibilityView::FlexibilityView(Scene *prev, Instance *inst, Flexibility *flex)
 	_instance->load();
 	_controller = new FlexibilityController(this, _instance, flex);
 	setPingPong(true);
+	std::cout << "[FlexibilityView] instance " << inst->id()
+          << " chain " << inst->currentAtoms()->atomVector()[0]->chain() << std::endl;
 }
 
 FlexibilityView::~FlexibilityView()

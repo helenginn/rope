@@ -94,7 +94,46 @@ struct BondConstraint
     AtomGroup* donorGroup = nullptr;
     AtomGroup* acceptorGroup = nullptr; 
     int col_idx = 1;
+    bool isVdW = false;
 
+};
+
+struct TorsionSystem
+{
+    Eigen::MatrixXd J;
+    Eigen::VectorXd gamma; 
+    std::vector<int> keepCols;
+    bool valid = false; 
+};
+
+struct InfluenceResult
+{
+    struct BondScore
+    {
+        Atom *donor = nullptr;
+        Atom *acceptor = nullptr;
+        double magnitude = 0.0;
+        bool sideChain = false;
+    };
+
+    std::string label; // set by the caller, e.g. "baseline"
+    std::vector<double> lambda; // per constraint column
+    std::vector<double> rowNorm; // per constraint column 
+    std::vector<int> keepCols;
+    std::vector<BondScore> ranked; // per bond, sorted descending
+
+    std::vector<double> singularValues;
+    std::vector<double> gammaProjection; // |u_i^T gamma|
+
+    int rank = -1;
+    double cutoff = -1.0;
+    double mu = -1.0;
+    double gammaFreeRatio = -1.0;
+    double gammaNorm = 0.0;
+    int nTorsionDoF = 0;
+    int nConstraints = 0;
+    bool truncated = true; 
+    bool valid = false;  
 };
 
 

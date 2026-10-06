@@ -38,7 +38,7 @@ public:
     const Eigen::VectorXf& getS() const { return _S; }
 
     void prepareResources();
-    void setReferenceMolecule(const std::vector<AtomGroup *> subsets);
+    void setFixedChain(const std::vector<AtomGroup *> subsets);
     Result* getResult()
     {
         return _resources.calculator->acquireObject();
@@ -65,43 +65,39 @@ public:
     void printHBonds() const;
     void clearHBonds();
     bool validateHBondPair(const HBondManager::HBondPair &hbondPair);
-    bool isExternalHBond(const HBondManager::HBondPair &hbondPair)
-    {
-        return (hbondPair.hydrogenChain == _targetChain) != 
-               (hbondPair.acceptorChain == _targetChain);
-    }
     void addInternalHBond(const HBondManager::HBondPair &hbondPair);
     void addExternalHbond(const HBondManager::HBondPair &hbondPair);
-    AtomGroup* currentChainAtoms();
     bool checkAndGetAtom(AtomGroup* atomGroup, const std::string& atomDesc, Atom*& atom);
-
 
     // === FLEXIBILITY CALCULATION ===
     void submitJob(float weight);
     void calculateFlexWeights();
-    void checkModeRBvsTorsionBudget(int colIdx);
-    void checkModeMaxTorsion(int colIdx);
-    void describeTorsionLeverage(int row, int colIdx);
     std::vector<int> getGlobalTorsionVector() const 
     {
         return std::vector<int>(_globalTorsionSet.begin(), _globalTorsionSet.end());
     }
     void calculateTorsionFlexibility();
-    void buildJacobianMatrix();
     void buildDoFMap();
     void selectDoFMap();
     template<class BondType>
     void addConstraintsForBonds(std::vector<BondType> &entities, 
                                          const std::vector<ConstraintType> &ctypes,
-                                         const std::vector<AtomGroup*> &subsets,
-                                         int &col_counter);
+                                         int &col_counter, bool isVdW);
     void buildConstraintMap();
     void writeConstraintMapToCSV(const std::string &filename);
     void newJacobian();
-
+    void sensitivityVector();
+    enum SolveMethod { Truncated, Damped };
+    InfluenceResult computeInfluenceCoef(SolveMethod method = Truncated, 
+                                                    double cutoff = 1e-2, 
+                                                    double muScale = 1e-6);
+    void clearInfluenceResults() { _influenceResults.clear(); }
     SVDResult calculateSVD() const;
     std::vector<float> assignWeightsToTorsions(const std::vector<float>& v_i);
     std::vector<float> extractVColumn(const Eigen::MatrixXf &V, int colIdx) const;
+
+    void setTargetCoordinate(Atom *atomA, Atom *atomB);
+
     std::vector<std::pair<int,bool>> TorsionVec; // (torsionIdx, isHSide)
 
     // === OUTPUT & ANALYSIS ===
@@ -115,7 +111,6 @@ public:
     std::set<std::pair<int,int>> makeExcList(OpSet<Atom*> &atom_set);
     std::set<std::pair<int,int>> makeExcHBonds(std::vector<Atom*> orderedAtoms, std::map<Atom*, int> indexing);
     void submitJobRandom(int colIdx);
-    void writeAllTorsionsToCSV(const std::string& filename);
     void setColIdx(int chosenColIdx)
     {
         _colIdx = chosenColIdx;
@@ -125,7 +120,15 @@ public:
     void writeVMatrixToCSV(const std::string &filename);
     void writeSingularValuesToCSV(const std::string &filename);
     void printRigidBodyWeights(const std::vector<float> &v_i);
+    void checkGammaSanity();
+    std::string summariseInfuence(const InfluenceResult &r, int topN) const;
+    void writeInfluenceCSVs(const InfluenceResult &r, const std::string &prefix) const;
 
+
+    // === FOR SETTING UP THE CHAIN ===
+    void setStudyInstance(Instance *i) { _studyInstance = i; }
+    Instance *studyInstance() const { return _studyInstance ? _studyInstance : _instance;}
+    std::string getChain() const;
 
     // === UTILITY ===
     const std::vector<HBondEntity>& getHBonds() const 
@@ -136,44 +139,15 @@ public:
     { 
         return _VdWBonds; 
     }
-    
+    std::vector<std::vector<float>> &getAllTorsions() { return _allTorsions; }
     int accessAtomBlock(Atom* atom);
     float calculateDistance(const glm::vec3& vector1, const glm::vec3& vector2)
     {
         return glm::length(vector1 - vector2);  
     }
     float calculateAngle(const glm::vec3& vector1, const glm::vec3& vector2);
-    float calculateAngleDistance(const glm::vec3 &vector1, const glm::vec3 &vector2, const glm::vec3 &vector3);
     std::vector<std::pair<int,bool>> lastCommonAncestorIdx(int donorBlock_idx, int donorAcceptor_idx);
-    std::vector<std::pair<int, bool>> oneSidedTorsionVector(int chainBlock_idx);
     int rewindBlock(int &block_idx, std::vector<std::pair<int,bool>> &torsionVector, bool isHSide);
-    // static float alphaGradientHSide(const glm::vec3 &axisA, const glm::vec3 &axisB,
-    //                       const glm::vec3 &D, const glm::vec3 &H, const glm::vec3 &A, bool isDHBond);
-    // static float alphaGradientASide(const glm::vec3 &axisA, const glm::vec3 &axisB,
-    //                       const glm::vec3 &D, const glm::vec3 &H, const glm::vec3 &A);
-    // static float betaGradientASide(const glm::vec3 &axisA, const glm::vec3 &axisB,
-    //                                   const glm::vec3 &H, const glm::vec3 &A,
-    //                                   const glm::vec3 &AA, bool isAABond);
-    // static float betaGradientHSide(const glm::vec3 &axisA, const glm::vec3 &axisB,
-    //                                   const glm::vec3 &H, const glm::vec3 &A,
-    //                                   const glm::vec3 &AA);
-    // static float dihedral1GradientHSide(const glm::vec3 &axisA, const glm::vec3 &axisB,
-    //                                        const glm::vec3 &C, const glm::vec3 &D,
-    //                                        const glm::vec3 &H, const glm::vec3 &A, bool isDHBond);
-    // static float dihedral1GradientASide(const glm::vec3 &axisA, const glm::vec3 &axisB,
-    //                                        const glm::vec3 &C, const glm::vec3 &D,
-    //                                        const glm::vec3 &H, const glm::vec3 &A);
-    // static float dihedral2GradientHSide(const glm::vec3 &axisA, const glm::vec3 &axisB,
-    //                                        const glm::vec3 &D, const glm::vec3 &H,
-    //                                        const glm::vec3 &A, const glm::vec3 &AA);
-    // static float dihedral2GradientASide(const glm::vec3 &axisA, const glm::vec3 &axisB,
-    //                                        const glm::vec3 &D, const glm::vec3 &H,
-    //                                        const glm::vec3 &A, const glm::vec3 &AA, bool isAABond);
-    std::string getChain()
-    {
-        return _targetChain;
-    }
-
 
     // === DEBUGGING ===
     void listClashes(const std::string &filename,
@@ -190,26 +164,42 @@ public:
         }
     }
 
+    void setRunLabel(const std::string &label) { _runLabel = label; }
+    void setDisplayScale(float s) { _displayScale = s; }
+    float displayScale() const { return _displayScale; }
+
+    // to delete
+    void checkZeroRows();
+
 private:
+
     bool _gui = false;
     std::mutex _mutex;
     Model *_model = nullptr;
     bool _setup = false;
     bool _displayTargets = false;
+    Instance *_studyInstance = nullptr;
     std::map<Atom*, int> _atom2Block;
-    std::string _referenceChain = "";
+    std::string _fixedChain = "";
     std::map<int, DoF> _dofMap;
     std::map<int, DoF> _activeDoFMap;
     std::map<int, BondConstraint> _constraintMap; 
+    std::map<Atom*, AtomGroup*> _atom2Group;
+    Eigen::VectorXf _gamma;
+    Eigen::VectorXf _lambda;
+    BondEntity _targetCoordinate; 
+    bool _hasTarget = false;
 
 
     std::vector<HBondEntity> _hbonds;
     std::vector<VdWBondEntity> _VdWBonds;
     std::set<int> _globalTorsionSet;
     std::vector<std::vector<float>> _allTorsions;
-    std::vector<float> _modesScales;
+    // std::vector<float> _modesScales;
+    std::vector<float> _modeNorm; // per mode: 1/maxAbs of that mode
+    float _displayScale = 1.0f; // viewing exaggeration, set by the GUI 
+
     std::string _flexTag;
-    AtomGroup *_chainAtoms = nullptr;
 
     Eigen::MatrixXf _jacobMtx;
     Eigen::MatrixXf _V;
@@ -220,7 +210,20 @@ private:
 
     int _colIdx = 0;
     int _vSize = 0;
-    std::string _targetChain = "";
+
+    // filled in by computeInfuenceCoef, read by writeRunSummary
+    std::vector<InfluenceResult> _influenceResults;
+    int   _lastRank = -1;
+    float _lastGammaFreeRatio = -1.0f;
+    float _lastCutoff = -1.0f;
+    std::string _runLabel = "baseline";
+
+
+    TorsionSystem extractTorsionSystem(bool excludeVdW) const;
+    void rankBonds(const Eigen::VectorXd &lambdaD, InfluenceResult &r) const;
+
+
+
 };
 
 #endif

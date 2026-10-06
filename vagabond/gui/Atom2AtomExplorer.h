@@ -27,7 +27,9 @@
 #include "RAMovement.h"
 
 struct prepare_atom_list;
+struct atompos;
 struct Posular;
+template <typename T> struct fillable;
 
 class Slider;
 class Instance;
@@ -57,6 +59,10 @@ public:
 	void placeMarker(int x_idx, int y_idx, MarkerType type);
 	void markerSlider();
 	void updateMarkerSizes();
+	void makeMenu();
+	void saveCurrentMatrix(const std::string &filename);
+	virtual void buttonPressed(std::string tag, Button *button);
+	void saveMatrix(const PCA::Matrix &m, fillable<atompos> &positions, const std::string &filename);
 	
 private:
 	void sampleFromPlot(double x, double y);

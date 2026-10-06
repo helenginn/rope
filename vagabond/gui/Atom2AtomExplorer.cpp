@@ -21,6 +21,9 @@
 #include <vagabond/gui/elements/Image.h>
 #include <vagabond/core/FlexibilityCache.h>
 #include <vagabond/core/Flexibility.h>
+#include <vagabond/gui/elements/TextButton.h>
+#include <vagabond/gui/elements/Menu.h>
+#include <vagabond/gui/elements/AskForText.h>
 #include "Atom2AtomExplorer.h"
 #include "Atom3DPosition.h"
 #include "RAMovement.h"
@@ -31,6 +34,9 @@
 #include "Residue.h"
 #include "HBondSelectorView.h"
 #include "VdWSelectorView.h"
+
+#include <fstream>
+#include <iomanip>
 
 
 template <typename Obj>
@@ -145,6 +151,39 @@ struct prepare_atom_list
 	Instance *const _instance;
 };
 
+void Atom2AtomExplorer::saveMatrix(const PCA::Matrix &m, fillable<atompos> &positions, const std::string &filename)
+{
+	if ((int)positions.size() != m.rows)
+	{
+		std::cerr << "[saveMatrix] size mismatch: " << positions.size()
+				  << " atoms vs " << m.rows << " rows - not saved" << std::endl;
+		return; 
+	}
+	std::ofstream f(filename);
+
+	f << "residue";
+	for (size_t i = 0; i < positions.size(); i++)
+	{
+		f << "," << positions[i]._atom->desc();
+	}
+	f << "\n";
+
+	for (int i = 0; i < m.rows; i++)
+	{
+		f << positions[i]._atom->desc();
+		for (int j = 0; j < m.cols; j++)
+		{
+			f << "," << std::setprecision(8) << m[i][j];
+		}
+		f << "\n";
+	}
+
+	std::cout << "[saveMatrix] wrote " << filename << " (" << m.rows
+		      << " x " << m.cols << ")" << std::endl;
+}
+
+
+
 Atom2AtomExplorer::Atom2AtomExplorer(Scene *scene, Instance *instance,
                                      const RAMovement &movements, std::string polymerTitle, bool bondFlag)
 : Scene(scene), _movement(movements), _cd(false), _bondFlag(bondFlag)
@@ -167,6 +206,61 @@ Atom2AtomExplorer::Atom2AtomExplorer(Scene *scene, Instance *instance,
 
 }
 
+void Atom2AtomExplorer::makeMenu()
+{
+	TextButton *text = new TextButton("Menu", this);
+	text->setReturnTag("menu");
+	text->setRight(0.95, 0.1);
+	addObject(text);
+	auto make_menu = [this, text]()
+	{
+
+		auto save_matrix = [this]()
+		{
+			AskForText *aft = new AskForText(this, "Choose a CSV name:", "save_matrix", this);
+			setModal(aft);
+		};
+
+		Menu *m = new Menu(this);
+		m->addOption("Save distance matrix", save_matrix);
+		m->setup(text);
+		setModal(m);
+	};
+
+	text->setReturnJob(make_menu);
+
+}
+
+void Atom2AtomExplorer::buttonPressed(std::string tag, Button *button)
+{
+	if (tag == "save_matrix")
+	{
+		TextEntry *te = static_cast<TextEntry *>(button);
+		saveCurrentMatrix(te->scratch());
+		return;
+	}
+
+	Scene::buttonPressed(tag, button);
+}
+
+void Atom2AtomExplorer::saveCurrentMatrix(const std::string &filename)
+{
+	if (!_atom2Vec)
+	{
+		std::cerr << "[saveCurrentMatrix] no atom list - nothing to save" << std::endl;
+		return;
+	}
+	if (filename.empty())
+	{
+		std::cerr << "[saveCurrentMatrix] no file name given - not saved" << std::endl;
+		return; 
+	}
+
+	PCA::Matrix raw = _cd.matrix(); 
+	fillable<atompos> positions = (*_atom2Vec)();
+	saveMatrix(raw, positions, filename);
+	PCA::freeMatrix(&raw);
+}
 
 void Atom2AtomExplorer::update()
 {
@@ -210,6 +304,7 @@ void Atom2AtomExplorer::addPlot()
 
 void Atom2AtomExplorer::setup()
 {
+	makeMenu();
 	if (!_plot)
 	{
 		addPlot();
@@ -238,6 +333,7 @@ void Atom2AtomExplorer::setup()
                       << "in cache for this instance" << std::endl;
         }
     }
+
 }
 
 void Atom2AtomExplorer::slider()
