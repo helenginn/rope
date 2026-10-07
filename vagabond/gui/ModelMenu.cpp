@@ -28,6 +28,7 @@
 #include <vagabond/gui/elements/TextButton.h>
 #include <vagabond/gui/elements/BadChoice.h>
 #include <vagabond/core/Environment.h>
+
 #include "elements/Line.h"
 #include "elements/Parallelepiped.h"
 
@@ -130,6 +131,7 @@ void ModelMenu::refineModel(std::string name)
 		
 		Display *d = new Display(this);
 		DisplayUnit *unit = new DisplayUnit(d);
+		glEnable(GL_DEPTH_TEST);
 		unit->setOwnsAtoms();
 		unit->loadModel(model);
 		d->tieButton();
@@ -151,7 +153,26 @@ void ModelMenu::refineModel(std::string name)
 					float minVal = {FLT_MAX};
 					float maxVal = {-FLT_MAX};
 					std::string chain {};
-					getline(file, chain);
+					std::string chainSec {};
+					getline(file, chain, ',');
+					std::vector<float> coordinates;
+					std::string numStr {};
+					glm::vec3 axis1 {};
+					glm::vec3 axis2 {};
+					for (int x = 0; x < 6; x++)
+					{
+						getline(file,numStr, ',');
+						coordinates.push_back(std::stof(numStr));
+					}
+					axis1.x = coordinates[0];
+					axis1.y = coordinates[1];
+					axis1.z = coordinates[2];
+					axis2.x = coordinates[3];
+					axis2.y = coordinates[4];
+					axis2.z = coordinates[5];
+					getline(file, chainSec, ',');
+					getline(file,numStr, '\n');
+
 					while (getline(file, line))
 					{
 						std::istringstream iss(line);
@@ -159,7 +180,7 @@ void ModelMenu::refineModel(std::string name)
 						std::vector<float> xyz {};
 						while (getline(iss, lineStream, ','))
 						{
-							xyz.push_back(std::stof(lineStream)); // convert to double
+							xyz.push_back(std::stof(lineStream)); // convert to float
 						}
 						readPos.x = xyz[0];
 						readPos.y = xyz[1];
@@ -179,10 +200,13 @@ void ModelMenu::refineModel(std::string name)
 					int counter {0};
 					glm::vec3 axisStart {};
 					glm::vec3 axisEnd {};
+					glm::vec3 axisSecStart {};
+					glm::vec3 axisSecEnd {};
 					Atom *endAtom {};
+					bool firstSecChain {true};
 					for (auto atoms : model->currentAtoms()->atomVector())
 					{
-						if (atoms->chain()[0] == chain[0])
+						if (atoms->chain()[0] == chain[0] && atoms->isMainChain())
 						{
 							if (counter == 0)
 								axisStart = atoms->derivedPosition();
@@ -203,24 +227,34 @@ void ModelMenu::refineModel(std::string name)
 							axisEnd = atoms->derivedPosition();
 							endAtom = atoms;
 						}
+						if (atoms->chain()[0] == chainSec[0] && atoms->isMainChain())
+						{
+							if (firstSecChain)
+							{
+								axisSecStart = atoms->derivedPosition();
+								firstSecChain = false;
+							}
+							axisSecEnd = atoms->derivedPosition();
+						}
 					}
 					std::cout << "End Atom chain == " << endAtom->chain() << std::endl;
 
 					if (memoryPos == glm::vec3(0.f))
 					{
-						startPos = axisStart;
+						startPos = glm::length(axisEnd-axisSecStart) < glm::length(axisEnd-axisSecEnd) ? axisEnd-(axisEnd-axisSecStart)/glm::vec3(4) : axisEnd-(axisEnd-axisSecEnd)/glm::vec3(4);
 						memoryPos = startPos;
 					}
 					else if (glm::length(axisStart-memoryPos) < glm::length(axisEnd-memoryPos))
 					{
-						startPos = axisStart;
+						startPos = glm::length(axisStart-axisSecStart) < glm::length(axisStart-axisSecEnd) ? axisStart-(axisStart-axisSecStart)/glm::vec3(4) : axisStart-(axisStart-axisSecEnd)/glm::vec3(4);
 						memoryPos = startPos;
 					}
 					else
 					{
-						startPos = axisEnd;
+						startPos = glm::length(axisEnd-axisSecStart) < glm::length(axisEnd-axisSecEnd) ? axisEnd-(axisEnd-axisSecStart)/glm::vec3(4) : axisEnd-(axisEnd-axisSecEnd)/glm::vec3(4);
 						memoryPos = startPos;
 					}
+					startPos = axis1+(axis2-axis1) / glm::vec3(2)+average/glm::vec3(1.5);
 					if (std::regex_match(entry.path().filename().string(), std::regex("iter2.*")))
 						startPos.x+=10;
 					if (std::regex_match(entry.path().filename().string(), std::regex("iter3.*")))
@@ -229,8 +263,8 @@ void ModelMenu::refineModel(std::string name)
 					{
 						Line *axis = new Line;
 						d->addObject(axis);
-						axis->addPoint(axisStart);
-						axis->addPoint(axisEnd);
+						axis->addPoint(axis1);
+						axis->addPoint(axis2);
 						axis->forceRender();
 					}
 					glm::vec3 max (1.f,0.f,0.f);
@@ -240,7 +274,7 @@ void ModelMenu::refineModel(std::string name)
 					{
 						Parallelepiped *para1 = new Parallelepiped(true ,true);
 						d->addObject(para1);
-						para1->addTrueParallelepiped(startPos, glm::vec3(vectors/glm::vec4(2)), 1, 0.9);
+						para1->addTrueParallelepiped(startPos, glm::vec3(vectors/glm::vec4(4)), 0.4, 0.9);
 						{
 							float pos = vectors.w - minVal;
 							glm::vec3 colour{};
