@@ -147,7 +147,7 @@ glm::vec3 RotamerModifier::analysisTest(int timePoints, std::vector<glm::vec3> s
         std::map<Atom*,glm::vec3> initialAtomPos {bouquet->atomPos(0)};
         std::vector<int> vectorRot {};
         vectorRot.resize(bouquet->storeSize());
-        float minDist{MAXFLOAT};
+        float minDist{FLT_MAX};
         int rotamer {};
         for (int x = 1; x <= bouquet->storeSize()-1; x++)
         {
@@ -213,7 +213,7 @@ glm::vec3 RotamerModifier::analysisTest(int timePoints, std::vector<glm::vec3> s
     {
         std::cout << bouquet->name().first.as_string() << std::endl;
         std::map<Atom*,glm::vec3> initialAtomPos {bouquet->atomPos(0)};
-        float minDist{MAXFLOAT};
+        float minDist{FLT_MAX};
         int rotamer {};
         for (int x = 1; x <= bouquet->storeSize()-1; x++)
         {

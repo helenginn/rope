@@ -96,9 +96,9 @@ void RotMatrix::proximityMatrix()
         for (int line = 0; line < matrix.rows(); line++)
         {
             Eigen::VectorXf valueOrdered {matrix.rows()};
-            valueOrdered.fill(MAXFLOAT);
+            valueOrdered.fill(FLT_MAX);
             std::vector<float> valueOrderedTest {};
-            valueOrderedTest.push_back(MAXFLOAT);
+            valueOrderedTest.push_back(FLT_MAX);
             for (int pos =0; pos < matrix.cols(); pos++) // exponent of negative of square + scaling based onBoltzmann distribution
             {
                 for (int min = 0; min < matrix.cols();min++)
