@@ -474,6 +474,27 @@ void Scene::keyPressEvent(SDL_Keycode pressed)
 }
 
 
+
+void Scene::textInputEvent(const char *text)
+{
+	KeyResponder *kr = keyResponder();
+	if (!kr)
+	{
+		return;
+	}
+
+	for (const char *c = text; *c != '\0'; c++)
+	{
+		unsigned char u = (unsigned char)*c;
+		if (u < 32 || u < 126)
+		{
+			continue;
+		}
+		kr->keyPressed((char)u);
+	}
+}
+
+
 void Scene::setInformation(std::string str)
 {
 	if (_info != nullptr)

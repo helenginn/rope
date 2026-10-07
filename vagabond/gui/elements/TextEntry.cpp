@@ -106,70 +106,55 @@ float TextEntry::as_num() const
 	return f;
 }
 
-void TextEntry::shiftKey(char &key)
-{
-	if (!_capitals || (_gl && !_gl->shiftPressed()))
-	{
-		return;
-	}
+// void TextEntry::shiftKey(char &key)
+// {
+// 	if (!_capitals || (_gl && !_gl->shiftPressed()))
+// 	{
+// 		return;
+// 	}
 	
-	if (key == '=') { key = '+'; }
+// 	if (key == '=') { key = '+'; }
 	
-	if (key == '0') { key = ')'; };
-	if (key == '1') { key = '!'; };
-	if (key == '2') { key = '@'; };
-	if (key == '3') { key = '#'; };
-	if (key == '4') { key = '$'; };
-	if (key == '5') { key = '%'; };
-	if (key == '6') { key = '^'; };
-	if (key == '7') { key = '&'; };
-	if (key == '8') { key = '*'; };
-	if (key == '9') { key = '('; };
-	if (key == ';') { key = ':'; };
-	if (key == '\'') { key = '"'; };
+// 	if (key == '0') { key = ')'; };
+// 	if (key == '1') { key = '!'; };
+// 	if (key == '2') { key = '@'; };
+// 	if (key == '3') { key = '#'; };
+// 	if (key == '4') { key = '$'; };
+// 	if (key == '5') { key = '%'; };
+// 	if (key == '6') { key = '^'; };
+// 	if (key == '7') { key = '&'; };
+// 	if (key == '8') { key = '*'; };
+// 	if (key == '9') { key = '('; };
+// 	if (key == ';') { key = ':'; };
+// 	if (key == '\'') { key = '"'; };
 
-	if ((key >= 'a' && key <= 'z'))
-	{
-		key -= 32;
-	}
+// 	if ((key >= 'a' && key <= 'z'))
+// 	{
+// 		key -= 32;
+// 	}
 
-	if (key == '.') { key = '>'; };
-	if (key == ',') { key = '<'; };
-	if (key == '/') { key = '?'; };
-}
+// 	if (key == '.') { key = '>'; };
+// 	if (key == ',') { key = '<'; };
+// 	if (key == '/') { key = '?'; };
+// }
 
 void TextEntry::keyPressed(char key)
 {
-	if (_active)
+	if (_active && !_gl->controlPressed())
 	{
-		if (!_gl->controlPressed())
+		if (!_capitals && key >= 'A' && key <='Z')
 		{
-			shiftKey(key);
-		}
-		else if (_gl->controlPressed() && key == 'v')
-		{
-			const char *ch = SDL_GetClipboardText();
-			std::string str(ch);
-			_scratch += str;
+			key += 32;
 		}
 
-		if (!_gl->controlPressed() && validateKey(key))
+		if (validateKey(key))
 		{
 			_scratch += key;
 		}
+		showInsert();
 	}
-
-	showInsert();
 }
 
-void TextEntry::finish()
-{
-	_scene->unsetKeyResponder(this);
-	_active = false;
-	showInsert();
-	Button::click();
-	HasResponder<Responder<TextEntry>>::triggerResponse();
-}
 
 void TextEntry::keyPressed(SDL_Keycode other)
 {
@@ -185,8 +170,44 @@ void TextEntry::keyPressed(SDL_Keycode other)
 	{
 		finish();
 	}
-	else if ((other & 1<<30) == false)
+	else if (_active && other == SDLK_v && _gl && _gl->controlPressed())
 	{
-		keyPressed((char)other);
+		char *clip = SDL_GetClipboardText(); 
+		if (clip)
+		{
+			_scratch += clip;
+			SDL_free(clip);
+		}
+		showInsert();
 	}
+	
 }
+
+void TextEntry::finish()
+{
+	_scene->unsetKeyResponder(this);
+	_active = false;
+	showInsert();
+	Button::click();
+	HasResponder<Responder<TextEntry>>::triggerResponse();
+}
+
+// void TextEntry::keyPressed(SDL_Keycode other)
+// {
+// 	if (other == SDLK_BACKSPACE)
+// 	{
+// 		if (_scratch.length() > 0)
+// 		{
+// 			_scratch.pop_back();
+// 			showInsert();
+// 		}
+// 	}
+// 	else if (other == SDLK_RETURN)
+// 	{
+// 		finish();
+// 	}
+// 	else if ((other & 1<<30) == false)
+// 	{
+// 		keyPressed((char)other);
+// 	}
+// }

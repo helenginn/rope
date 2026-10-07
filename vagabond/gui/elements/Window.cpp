@@ -76,6 +76,7 @@ void Window::instateWindow()
 	_window = SDL_CreateWindow("vRoPE", 0, 0, _rect.w * _ratio,
 	                           _rect.h * _ratio, windowFlags);
 	_context = SDL_GL_CreateContext(_window);
+	SDL_StartTextInput();
 	
 }
 
@@ -329,6 +330,10 @@ bool Window::tick()
 
 			case SDL_KEYDOWN:
 			_current->keyPressEvent(event.key.keysym.sym);
+			break;
+
+			case SDL_TEXTINPUT:
+			_current->textInputEvent(event.text.text); 
 			break;
 
 			case SDL_KEYUP:

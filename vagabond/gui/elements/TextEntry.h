@@ -61,7 +61,7 @@ public:
 	float as_num() const;
 private:
 	void showInsert();
-	void shiftKey(char &key);
+	// void shiftKey(char &key);
 
 	std::string _scratch;
 	bool _active = false;

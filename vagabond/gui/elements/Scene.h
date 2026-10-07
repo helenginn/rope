@@ -71,6 +71,10 @@ public:
 
 	virtual void keyReleaseEvent(SDL_Keycode pressed);
 	virtual void keyPressEvent(SDL_Keycode pressed);
+	// NEW
+	virtual void textInputEvent(const char *text);
+
+
 
 	virtual void back(int num = 0);
 	void setBackJob(const std::function<void()> &backJob)

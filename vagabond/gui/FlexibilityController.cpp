@@ -87,8 +87,8 @@ bool FlexibilityController::handleButton(const std::string &tag, Button *button)
     if (tag == "num_samples")  { handleNumSamples(button); return true; }
     if (tag == "options_dist_matrix") { handleDistMatrix(); return true; }
     if (tag == "options_target_atoms") { handleTargetAtoms(); return true; }
-    if (tag == "target_A")   { handleTargetA(button); return true; }
-    if (tag == "target_B")   { handleTargetB(button); return true; }
+    if (tag == "enter_atomA")   { handleTargetA(button); return true; }
+    if (tag == "enter_atomB")   { handleTargetB(button); return true; }
     if (tag == "enter_colIdx")   { handleColumnIdx(button); return true; }
 
 
@@ -137,24 +137,24 @@ void FlexibilityController::handleSelectedHBonds(Button *button)
         AtomGroup *atoms = _instance->currentAtoms();
 
         // bebug: finfing cys18
-        for (Atom *a : atoms->atomVector())
-        {
-        	if (a->atomName() == "SG")
-        		std::cout << "[SG atom] " << a->desc() <<std::endl;
-        }
+        // for (Atom *a : atoms->atomVector())
+        // {
+        // 	if (a->atomName() == "SG")
+        // 		std::cout << "[SG atom] " << a->desc() <<std::endl;
+        // }
 
-        Atom *cys18 = atoms->atomByDesc("X-CYS18:SG");
-        Atom *cys78 = atoms->atomByDesc("X-CYS78:SG");
-        if (cys18 && cys78)
-        {
-        	_flex->setTargetCoordinate(cys18, cys78);
-        }
-        else
-        {
-        	std::cerr << "[ERROR] target atoms not found: "
-        			  << (cys18 ? "" : "X-CYS18:SG")
-        			  << (cys78 ? "" : "X-CYS78:SG") << std::endl;
-        }
+        // Atom *cys18 = atoms->atomByDesc("X-CYS18:SG");
+        // Atom *cys78 = atoms->atomByDesc("X-CYS78:SG");
+        // if (cys18 && cys78)
+        // {
+        // 	_flex->setTargetCoordinate(cys18, cys78);
+        // }
+        // else
+        // {
+        // 	std::cerr << "[ERROR] target atoms not found: "
+        // 			  << (cys18 ? "" : "X-CYS18:SG")
+        // 			  << (cys78 ? "" : "X-CYS78:SG") << std::endl;
+        // }
         // == end NEW ==
         _flex->selectDoFMap();
         _flex->newJacobian();
