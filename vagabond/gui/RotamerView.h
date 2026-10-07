@@ -9,6 +9,7 @@
 
 #include "elements/Line.h"
 #include <vagabond/gui/elements/Parallelepiped.h>
+#include "MatrixPlot.h"
 
 
 class Model;
@@ -52,7 +53,8 @@ private:
     Line *_line5 = nullptr;
     Line *_line6 = nullptr;
     Line *_line7 = nullptr;
-    bool _collision {true};
+    bool _collision {false};
+    MatrixPlot *_plot {};
 
 };
 #endif

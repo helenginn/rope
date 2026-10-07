@@ -11,8 +11,9 @@
 #include <vagabond/gui/elements/TextButton.h>
 #include <vagabond/core/files/CsvFile.h>
 #include <fstream>
+#include <regex>
 
-
+#include "MatrixPlot.h"
 
 RotamerView::RotamerView(Scene *prev, Instance *instMain, Instance *instSec, std::string mainChain, std::string secChain)
 :  Scene(prev), Display(prev), _instMain(instMain), _instSec(instSec)
@@ -44,15 +45,27 @@ void RotamerView::setup()
         t->setReturnTag("analysis");
         addObject(t);
     }
-    auto crash = [this]()
+    auto viewMod = [this]()
     {
-        std::cout << "STOP";
-        std::cout << std::endl;
+        viewModel();
     };
     {
-        TextButton *t = new TextButton("CRASH", this);
+        TextButton *t = new TextButton("ViewModel", this);
         t->setRight(0.2, 0.7);
-        t->setReturnJob(crash);
+        t->setReturnJob(viewMod);
+        addObject(t);
+    }
+    auto libTest = [this]()
+    {
+        std::map<std::string,Eigen::MatrixXf> matArray = _modifier->proximityMatrix();
+    	_plot = new MatrixPlot(matArray["ARG"]);
+    	addObject(_plot);
+
+    };
+    {
+        TextButton *t = new TextButton("libTest", this);
+        t->setRight(0.2, 0.9);
+        t->setReturnJob(libTest);
         addObject(t);
     }
     {
@@ -76,6 +89,7 @@ void RotamerView::setup()
         drawAxis();
     }
     viewModel();
+    setupSlider();
 }
 void RotamerView::drawAxis()
 {
@@ -166,9 +180,172 @@ void RotamerView::buttonPressed(std::string tag, Button *button)
         else
         {
             _collision = true;
-            setupCollision();
+            drawChainAxis();
+            // setupCollision();
+        	/*
+            std::ifstream file;
+			std::vector<std::string> filenames{};
+			glm::vec3 memoryPos{0.f};
+	        {
+		        for (auto const &entry: std::filesystem::directory_iterator("."))
+		        {
+		        	if (std::regex_match(entry.path().filename().string(), std::regex(".*_hedgehog\\.csv")))
+		        	{
+		        		file.open(entry.path().filename().string());
+		        		if (file.is_open())
+		        		{
+		        			std::string line{};
+		        			std::vector<glm::vec4> tests{};
+		        			glm::vec4 readPos{};
+		        			glm::vec3 average{};
+		        			float vecNum{0};
+		        			float minVal = {FLT_MAX};
+		        			float maxVal = {-FLT_MAX};
+		        			std::string chain{};
+		        			std::string chainSec{};
+		        			getline(file, chain, ',');
+		        			if (chain == _instMain->currentAtoms()->chosenAnchor()->chain())
+		        			{
+		        				std::vector<float> coordinates;
+		        				std::string numStr{};
+		        				glm::vec3 axis1{};
+		        				glm::vec3 axis2{};
+		        				for (int x = 0; x < 6; x++)
+		        				{
+		        					getline(file, numStr, ',');
+		        					coordinates.push_back(std::stof(numStr));
+		        				}
+		        				axis1.x = coordinates[0];
+		        				axis1.y = coordinates[1];
+		        				axis1.z = coordinates[2];
+		        				axis2.x = coordinates[3];
+		        				axis2.y = coordinates[4];
+		        				axis2.z = coordinates[5];
+		        				getline(file, chainSec, ',');
+		        				getline(file, numStr, '\n');
+
+		        				while (getline(file, line))
+		        				{
+		        					std::istringstream iss(line);
+		        					std::string lineStream;
+		        					std::vector<float> xyz{};
+		        					while (getline(iss, lineStream, ','))
+		        					{
+		        						xyz.push_back(std::stof(lineStream)); // convert to float
+		        					}
+		        					readPos.x = xyz[0];
+		        					readPos.y = xyz[1];
+		        					readPos.z = xyz[2];
+		        					readPos.w = xyz[3];
+		        					if (xyz[3] < minVal)
+		        						minVal = xyz[3];
+		        					else if (xyz[3] > maxVal)
+		        						maxVal = xyz[3];
+		        					tests.push_back(readPos);
+		        					average += glm::vec3(readPos);
+		        					vecNum += 1;
+		        				}
+		        				average /= glm::vec3(vecNum);
+		        				glm::vec3 startPos{};
+		        				std::cout << '\t' << chain[0] << std::endl;
+		        				int counter{0};
+		        				glm::vec3 axisStart{};
+		        				glm::vec3 axisEnd{};
+		        				glm::vec3 axisSecStart{};
+		        				glm::vec3 axisSecEnd{};
+		        				Atom *endAtom{};
+		        				bool firstSecChain{true};
+		        				std::cout << "INSIDE" << std::endl;
+		        				for (auto atoms: _instMain->currentAtoms()->atomVector())
+		        				{
+		        					if (atoms->chain()[0] == chain[0] && atoms->isMainChain())
+		        					{
+		        						if (counter == 0)
+		        							axisStart = atoms->derivedPosition();
+		        						counter++;
+		        						if (counter == 3)
+		        						{
+		        							std::cout << entry.path().filename().string() << std::endl;
+		        							startPos = atoms->derivedPosition();
+		        							std::cout << "start Atom chain == " << atoms->chain() << std::endl;
+
+		        							if (std::regex_match(entry.path().filename().string(), std::regex("iter2.*")))
+		        								startPos.x += 10;
+		        							if (std::regex_match(entry.path().filename().string(), std::regex("iter3.*")))
+		        								startPos.x += 20;
+		        							// std::cout << atoms->atomName() << std::endl;
+		        						}
+		        						axisEnd = atoms->derivedPosition();
+		        						endAtom = atoms;
+		        					}
+		        					if (atoms->chain()[0] == chainSec[0] && atoms->isMainChain())
+		        					{
+		        						if (firstSecChain)
+		        						{
+		        							axisSecStart = atoms->derivedPosition();
+		        							firstSecChain = false;
+		        						}
+		        						axisSecEnd = atoms->derivedPosition();
+		        					}
+		        				}
+		        				std::cout << "End Atom chain == " << endAtom->chain() << std::endl;
+
+		        				// if (memoryPos == glm::vec3(0.f))
+		        				// {
+		        				// 	startPos = glm::length(axisEnd-axisSecStart) < glm::length(axisEnd-axisSecEnd) ? axisEnd-(axisEnd-axisSecStart)/glm::vec3(4) : axisEnd-(axisEnd-axisSecEnd)/glm::vec3(4);
+		        				// 	memoryPos = startPos;
+		        				// }
+		        				// else if (glm::length(axisStart-memoryPos) < glm::length(axisEnd-memoryPos))
+		        				// {
+		        				// 	startPos = glm::length(axisStart-axisSecStart) < glm::length(axisStart-axisSecEnd) ? axisStart-(axisStart-axisSecStart)/glm::vec3(4) : axisStart-(axisStart-axisSecEnd)/glm::vec3(4);
+		        				// 	memoryPos = startPos;
+		        				// }
+		        				// else
+		        				// {
+		        				// 	startPos = glm::length(axisEnd-axisSecStart) < glm::length(axisEnd-axisSecEnd) ? axisEnd-(axisEnd-axisSecStart)/glm::vec3(4) : axisEnd-(axisEnd-axisSecEnd)/glm::vec3(4);
+		        				// 	memoryPos = startPos;
+		        				// }
+		        				startPos = glm::vec3(_modifier->_transform*glm::vec4((axis1 + (axis2 - axis1) / glm::vec3(2) + average / glm::vec3(1.5)),1.f));
+		        				if (std::regex_match(entry.path().filename().string(), std::regex("iter2.*")))
+		        					startPos.x += 10;
+		        				if (std::regex_match(entry.path().filename().string(), std::regex("iter3.*")))
+		        					startPos.x += 20;
+		        				//if (endAtom->chain()[0] == 'A')
+		        				// {
+		        				// 	Line *axis = new Line;
+		        				// 	d->addObject(axis);
+		        				// 	axis->addPoint(axis1);
+		        				// 	axis->addPoint(axis2);
+		        				// 	axis->forceRender();
+		        				// }
+		        				glm::vec3 max(1.f, 0.f, 0.f);
+		        				glm::vec3 min(0.f, 0.f, 1.f);
+		        				float capped = minVal + (maxVal - minVal) / 16;
+		        				for (auto const &vectors: tests)
+		        				{
+		        					Parallelepiped *para1 = new Parallelepiped(true, true);
+		        					addObject(para1);
+		        					para1->addTrueParallelepiped(startPos, glm::vec3(_modifier->_transform*(vectors / glm::vec4(4))), 0.4, 0.9);
+		        					{
+		        						float pos = vectors.w - minVal;
+		        						glm::vec3 colour{};
+		        						if (pos <= capped - minVal)
+		        							colour = (pos / capped) * max + (1 - pos / capped) * min;
+		        						else
+		        							colour = max;
+		        						para1->setColour(colour.x, colour.y, colour.z);
+		        					}
+		        					para1->setAlpha(0.6f);
+		        					para1->forceRender();
+		        				}
+		        			}
+		        			file.close();
+		        		}
+		        	}
+		        }
+	        }*/
         }
-        drawChainAxis();
+
         drawAxis();
     }
     Scene::buttonPressed(tag, button);
@@ -221,32 +398,32 @@ void RotamerView::finishedDragging(std::string tag, double x, double y)
 
 void RotamerView::setupSlider()
 {
-    // removeObject(_rangeSlider);
-    // delete _rangeSlider;
-    // Slider *s = new Slider();
-    //
-    // s->setDragResponder(this);
-    // s->resize(0.5);
-    // s->setup("Rotamer selection", _min, _max, _step);
-    // s->setStart(0.5, 0);
-    // s->setCentre(0.5, 0.85);
-    // s->setReturnTag("X");
-    // _rangeSlider = s;
-    // addObject(s);
-    //
-    // removeObject(_rangeSlider2);
-    // delete _rangeSlider2;
-    // Slider *s2 = new Slider();
-    // s2->setVertical(true);
-    // s2->setDragResponder(this);
-    // s2->resize(0.5);
-    // s2->setup("", _min, _max, _step);
-    // s2->setStart(0, 0.5);
-    // s2->setCentre(0.2, 0.6);
-    // s2->setReturnTag("Y");
-    //
-    // _rangeSlider2 = s2;
-    // addObject(s2);
+    removeObject(_rangeSlider);
+    delete _rangeSlider;
+    Slider *s = new Slider();
+
+    s->setDragResponder(this);
+    s->resize(0.5);
+    s->setup("Rotamer selection", _min, _max, _step);
+    s->setStart(0.5, 0);
+    s->setCentre(0.5, 0.85);
+    s->setReturnTag("X");
+    _rangeSlider = s;
+    addObject(s);
+
+    removeObject(_rangeSlider2);
+    delete _rangeSlider2;
+    Slider *s2 = new Slider();
+    s2->setVertical(true);
+    s2->setDragResponder(this);
+    s2->resize(0.5);
+    s2->setup("", _min, _max, _step);
+    s2->setStart(0, 0.5);
+    s2->setCentre(0.2, 0.6);
+    s2->setReturnTag("Y");
+
+    _rangeSlider2 = s2;
+    addObject(s2);
 }
 
 void RotamerView::setupCollision()
