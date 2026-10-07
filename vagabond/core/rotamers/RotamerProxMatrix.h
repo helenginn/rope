@@ -22,6 +22,7 @@ public:
     void unifiedTorsionFetcher();
 
     void submitJob(float weight);
+    std::map<std::string,Eigen::MatrixXf> getPossibleRotamers();
 
 private:
     std::map<std::string,std::vector<Rotamer>> _allRotamers;

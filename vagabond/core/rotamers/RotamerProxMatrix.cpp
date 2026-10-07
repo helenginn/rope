@@ -88,10 +88,65 @@ void RotMatrix::proximityMatrix()
         }
         _proxMatrices.push_back(std::pair(residue.first, actualMatrix));
     }
+    for (auto [name, matrix] : _proxMatrices)
+    {
+        Eigen::MatrixXi top5 {matrix.rows(),matrix.cols()};
+        top5.fill(0);
+        std::string csvContent {};
+        for (int line = 0; line < matrix.rows(); line++)
+        {
+            Eigen::VectorXf valueOrdered {matrix.rows()};
+            valueOrdered.fill(MAXFLOAT);
+            std::vector<float> valueOrderedTest {};
+            valueOrderedTest.push_back(MAXFLOAT);
+            for (int pos =0; pos < matrix.cols(); pos++) // exponent of negative of square + scaling based onBoltzmann distribution
+            {
+                for (int min = 0; min < matrix.cols();min++)
+                {
+                    if (matrix(line,pos) < valueOrderedTest[min])
+                    {
+                        top5.row(line).array() = (top5.row(line).array() > min).select(top5.row(line).array() + 1, top5.row(line).array());
+                        top5(line,pos) = min+1;
+                        valueOrderedTest.emplace( valueOrderedTest.begin()+min, matrix(line, pos));
+                        std::cout << " test" << std::endl;
+                        break;
+                    }
+                }
+            }
+        }
+        std::string fileName {name +"top5.csv"};
+        for (int lines = 0; lines < top5.rows(); lines++)
+        {
+            for (int cols = 0; cols < top5.cols(); cols++)
+            {
+                csvContent+= std::to_string(top5(lines,cols)) + ',';
+            }
+            csvContent = csvContent.substr(0, csvContent.length()-1);
+            csvContent += '\n';
+        }
+        std::ofstream file;
+        file.open(fileName);
+        file << csvContent;
+        file.close();
+    }
     std::cout << "terminado?" << std::endl;
 
 }
-
+std::map<std::string,Eigen::MatrixXf> RotMatrix::getPossibleRotamers()
+{
+    std::map<std::string,Eigen::MatrixXf> availRot {};
+    if (_proxMatrices.empty())
+        proximityMatrix();
+    for (auto [name, matrix] : _proxMatrices)
+    {
+        Eigen::MatrixXf mat {};
+        //mat = matrix.cast<int>();
+        mat.array() = (matrix.array() < 10).cast<float>();
+        availRot[name] = mat;
+        std::cout << name << " matrix done" << std::endl;
+    }
+    return availRot;
+}
 
 
 void RotMatrix::prepareResources()

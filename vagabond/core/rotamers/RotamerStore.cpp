@@ -41,10 +41,10 @@ std::vector<RotamerStore> RotamerStore::residueStore()
     for (auto &restore: tempStorage)
     {
         RotamerStore sto = RotamerStore();
+        int globalPos = 0;
         for (auto [object, lookup]: restore.second)
         {
             int counter = 0;
-            int globalPos = 0;
             for (int x = lookup.start(); x < (lookup.start()+lookup.length()); x++)
             {
                 sto.atoms.emplace_back(atoms[x]);
@@ -54,6 +54,7 @@ std::vector<RotamerStore> RotamerStore::residueStore()
             }
             sto.storage[object].first = globalPos;
             sto.storage[object].second = counter;
+            globalPos += counter;
         }
         residueStore.emplace_back(sto);
     }

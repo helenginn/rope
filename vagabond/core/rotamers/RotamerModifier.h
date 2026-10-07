@@ -40,7 +40,7 @@ public:
     static int RandGen(int min, int max);
 
     void move(float weight, parameter xy);
-    glm::vec3 analysisTest(int timePoints, std::vector<glm::vec3> startPos, int willIterate = 0);
+    glm::vec3 analysisTest(int timePoints, std::vector<glm::vec3> startPos, int willIterate = 0, bool path = false);
     glm::vec3 minimumClashes(std::vector<glm::vec4> vectorsWeighted);
     void analysisPipeline(int timePoints, std::vector<glm::vec3> startPos, int iterations = 1);
     std::vector<glm::vec3> newStartPos(int numOfPos, glm::vec3 norm, int runNum);
@@ -49,6 +49,9 @@ public:
     {
         return _bouquet->getVertices();
     };
+    std::map<std::string,Eigen::MatrixXf> proximityMatrix();
+    glm::mat4x4 _transform {};
+
 private:
     Instance *_instMain {};
     Instance *_instSec {};
@@ -60,7 +63,7 @@ private:
     RotamerLibrary *_lib;
     RotamerMap *Rot;
     std::map<int, RotamerMap> _RotMem;
-
+    std::map<std::string,Eigen::MatrixXf> _proximityMatrices {};
     Bouquet *_bouquet;
     parameter _mode;
     glm::vec3 _axisMain {};
@@ -68,7 +71,6 @@ private:
     glm::vec3 _y {};
     glm::vec3 _z {};
     glm::vec3 _normal {};
-    glm::mat4x4 _transform {};
     float _memoryY {0};
     float _memoryX {0};
     bool _referential {false};
