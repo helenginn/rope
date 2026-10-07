@@ -88,6 +88,10 @@ protected:
     void handleNumSamples(Button* button);
     void handleDistMatrix();
     void handleColumnIdx(Button* button);
+    void handleTargetAtoms();
+    void handleTargetA(Button* button);
+    void handleTargetB(Button* button);
+
 
 
 
@@ -103,6 +107,9 @@ private:
     float _minRange  = 0.0f;
     float _maxRange  = 0.0f;
     float _currentWeight = 0.0f;
+
+    std::string _targetAtomA = "";
+    std::string _targetAtomB = "";
 
     std::vector<HBondManager::HBondPair> _hBondPairs;
 

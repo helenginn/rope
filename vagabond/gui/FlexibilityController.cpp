@@ -27,6 +27,7 @@
 #include <vagabond/gui/elements/AskForText.h>
 #include <vagabond/gui/elements/TextButton.h>
 #include <vagabond/gui/elements/BadChoice.h>
+#include <vagabond/utils/FileReader.h>
 
 
 
@@ -50,6 +51,8 @@ void FlexibilityController::reset()
     }
 }
 
+
+
 void FlexibilityController::showMenu(Button *button)
 {
 	glm::vec2 c = button->xy();
@@ -60,10 +63,14 @@ void FlexibilityController::showMenu(Button *button)
     m->addOption("Clear hydrogen bonds",   "clear_hbonds");
     m->addOption("Save sampled structures","save_samples");
     m->addOption("Explore distance matrix","dist_matrix");
+    m->addOption("Select two atoms as targets", "target_atoms");
 
     m->setup(c.x, c.y);
     _view->setModal(m);
 }
+
+
+
 
 bool FlexibilityController::handleButton(const std::string &tag, Button *button)
 {
@@ -79,6 +86,9 @@ bool FlexibilityController::handleButton(const std::string &tag, Button *button)
     if (tag == "options_save_samples") { handleSaveSamples(); return true; }
     if (tag == "num_samples")  { handleNumSamples(button); return true; }
     if (tag == "options_dist_matrix") { handleDistMatrix(); return true; }
+    if (tag == "options_target_atoms") { handleTargetAtoms(); return true; }
+    if (tag == "target_A")   { handleTargetA(button); return true; }
+    if (tag == "target_B")   { handleTargetB(button); return true; }
     if (tag == "enter_colIdx")   { handleColumnIdx(button); return true; }
 
 
@@ -135,16 +145,16 @@ void FlexibilityController::handleSelectedHBonds(Button *button)
 
         Atom *cys18 = atoms->atomByDesc("X-CYS18:SG");
         Atom *cys78 = atoms->atomByDesc("X-CYS78:SG");
-        // if (cys18 && cys78)
-        // {
-        // 	_flex->setTargetCoordinate(cys18, cys78);
-        // }
-        // else
-        // {
-        // 	std::cerr << "[ERROR] target atoms not found: "
-        // 			  << (cys18 ? "" : "X-CYS18:SG")
-        // 			  << (cys78 ? "" : "X-CYS78:SG") << std::endl;
-        // }
+        if (cys18 && cys78)
+        {
+        	_flex->setTargetCoordinate(cys18, cys78);
+        }
+        else
+        {
+        	std::cerr << "[ERROR] target atoms not found: "
+        			  << (cys18 ? "" : "X-CYS18:SG")
+        			  << (cys78 ? "" : "X-CYS78:SG") << std::endl;
+        }
         // == end NEW ==
         _flex->selectDoFMap();
         _flex->newJacobian();
@@ -270,6 +280,50 @@ void FlexibilityController::handleDistMatrix()
 	_view->setModal(aft);
 }
 
+
+void FlexibilityController::handleTargetAtoms()
+{
+    // if (!_selectFlag)
+	// {
+	// 	BadChoice *bch = new BadChoice(_view, "Please select hbonds first and then come back for the B-factors");
+	// 	_view->setModal(bch);
+	// }
+	// else
+	{
+		AskForText *aft = new AskForText(_view, "First target atom (e.g. X-CYS18:SG):",
+	                                 "enter_atomA", _view);
+		_view->setModal(aft);
+	}
+
+}
+
+void FlexibilityController::handleTargetA(Button* button)
+{ 
+	TextEntry *te = static_cast<TextEntry *>(button);
+	_targetAtomA = te->scratch();
+	trim(_targetAtomA);
+	AskForText *aft = new AskForText(_view, "Second target atom (e.g. X-CYS78:SG):",
+	                                 "enter_atomB", _view);
+	_view->setModal(aft);	
+
+}
+
+void FlexibilityController::handleTargetB(Button* button)
+{ 
+	TextEntry *te = static_cast<TextEntry *>(button);
+	_targetAtomB = te->scratch();
+	trim(_targetAtomB);
+	AtomGroup *atoms = studyInstance()->currentAtoms();
+	Atom *targetA = atoms->atomByDesc(_targetAtomA);
+	Atom *targetB = atoms->atomByDesc(_targetAtomB);
+	if (!targetA || !targetB)
+	{
+		std::string missing = !targetA ? _targetAtomA : _targetAtomB;
+		_view->setModal(new BadChoice(_view, "Atom not found in the structure: " + missing));
+		return;
+	}
+	_flex->setTargetCoordinate(targetA, targetB);
+}
 
 void FlexibilityController::handleColumnIdx(Button* button)
 {
