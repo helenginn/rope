@@ -15,7 +15,7 @@ HeatMapView::HeatMapView(Scene *prev, const std::vector<PathGroup> &paths, struc
 {
     _entropy = new Entropy(paths, flagPar);
     _flagPar = flagPar;
-
+    _paths = paths;
     _entropyData = new Entropy::EntropyForHeatMap;
 
     int rows, cols;
@@ -35,12 +35,26 @@ void HeatMapView::setup()
 	{
 		if (_flagPar.timeDivisions > 1)
 		{   
-			setupSlider(_flagPar.timeDivisions);
+			setupSlider();
 		}
+		
+        {
+			TextButton *t = new TextButton("Whole model view", this);
+			t->setRight(0.9, 0.1);
+			t->setReturnTag("whole");
+			addObject(t);
+		}  
+
+	    {
+			TextButton *t = new TextButton("Per residue", this);
+			t->setRight(0.9, 0.15);
+			t->setReturnTag("perres");
+			addObject(t);
+		}  
 
 		{
 			TextButton *t = new TextButton("Sum entropy", this);
-			t->setRight(0.9, 0.1);
+			t->setRight(0.9, 0.2);
 			t->setReturnTag("sum");
 			addObject(t);
 		}  
@@ -69,24 +83,54 @@ void HeatMapView::redrawHeatMap(double num)
 {
     deleteTemps();
 
+    if(_mode == HeatMapMode::WholeModel)
+    {
+        _timepoint = (int) num;
+    }
+    else
+    {
+        _residue = (int) num;
+    }
+
     int t = (int) num;
 
     int rows = _entropy->rows();
     int cols = _entropy->cols();
 
-    Eigen::MatrixXf matrix = _entropyData->dataMatrix[t];
+    Eigen::MatrixXf matrix;
+    std::vector<float> entropyVals;
     
-    std::cout << "Matrix loaded from entropyData..." << std::endl;   
+    if (_mode == HeatMapMode::WholeModel)
+    {
+        matrix = _entropyData->dataMatrix[t];
+
+        entropyVals.resize(_entropyData->total.size());
+
+        for (int i = 0; i < _entropyData->total.size(); i++)
+        {
+            entropyVals[i] = _entropyData->total[i][t];
+        }
+    }
+    else
+    {
+        matrix = Eigen::MatrixXf::Constant(rows,cols,NAN);
+
+        entropyVals.resize(_entropyData->perRes.size());
+
+        for (int p = 0; p < _paths.size(); p++)
+        {
+            const PathGroup &group = _paths[p];
+
+            std::pair<int, int> idx = _entropy->index(group[0]->startInstance(),group[0]->endInstance());
+
+            matrix(idx.first, idx.second) = _entropyData->perRes[p][_timepoint][_residue];
+            entropyVals[p] = _entropyData->perRes[p][_timepoint][_residue];
+        }
+    }
+
     _displayMatrix = PCA::Matrix(matrix);
 	printMatrix(&_displayMatrix);
-
-    std::vector<float> entropyVals(_entropyData->total.size());
-
-    for (int i = 0; i < _entropyData->total.size(); i++)
-    {
-        entropyVals[i] += _entropyData->total[i][t];
-    }
-   
+  
     scaleMatrix(matrix, entropyVals);
    
     std::cout << "Matrix after scaling..." << std::endl;   
@@ -148,7 +192,7 @@ void HeatMapView::scaleMatrix(Eigen::MatrixXf &matrix, std::vector<float> entrop
     {
         for (int j = 0; j < _entropy->cols(); j++)
         {
-            if(!(isnan(_entropyData->dataMatrix[0](i,j))))
+            if(!(isnan(matrix(i,j))))
             {
 			    matrix(i, j) = matrix(i, j) - meanEntropy;
                 matrix(i, j) = matrix(i, j)/(stdEntropy);
@@ -191,12 +235,24 @@ void HeatMapView::showMatBox(Eigen::MatrixXf matrix)
     addTempObject(legend);
 }
 
-void HeatMapView::setupSlider(int timeDivisions)
+void HeatMapView::setupSlider()
 {
+
     Slider *s = new Slider();
     s->setDragResponder(this);
     s->resize(0.5);
-    s->setup("Route point number", 1, timeDivisions, 1);
+
+    if(_mode == HeatMapMode::WholeModel)
+    {
+        s->setup("Route point number", 1, _entropyData->numDivisions, 1);
+    }
+    else
+    {
+        int numResidues = _entropyData->perRes[0][0].size();
+
+        s->setup("Residue", 1, numResidues, 1);
+    }
+
     s->setCentre(0.5, 0.85);
     _rangeSlider = s;
     addObject(s);
@@ -216,6 +272,37 @@ void HeatMapView::buttonPressed(std::string tag, Button *button)
         sumHeatMap(); 
     }
 
+    if (tag == "perres")
+    {
+        _mode = HeatMapMode::PerResidue;
+
+        if(_rangeSlider)
+        {
+            removeObject(_rangeSlider);
+            _rangeSlider = nullptr;
+        }
+
+        setupSlider();
+    
+        redrawHeatMap(_residue);
+    }
+
+    if (tag == "whole")
+    {
+        _mode = HeatMapMode::WholeModel;
+
+        if(_rangeSlider)
+        {
+            removeObject(_rangeSlider);
+            _rangeSlider = nullptr;
+        }
+
+        setupSlider();
+    
+        redrawHeatMap(_timepoint);
+    }
+
+   
     Scene::buttonPressed(tag, button);
 }
 

@@ -20,7 +20,7 @@ public:
 
     virtual void setup();
     
-    void setupSlider(int timeDivisions);
+    void setupSlider();
 
     void redrawHeatMap(double num);
     void showMatBox(Eigen::MatrixXf matrix);
@@ -33,6 +33,19 @@ public:
     virtual void buttonPressed(std::string tag, Button *button = nullptr);
     virtual void mousePressEvent(double x, double y, SDL_MouseButtonEvent button);
 private:
+    enum class HeatMapMode
+    {
+        WholeModel,
+        PerResidue
+    };
+
+    std::vector<PathGroup> _paths;
+
+    HeatMapMode _mode = HeatMapMode::WholeModel;
+
+    int _timepoint = 0;
+    int _residue = 0;
+
     struct FlagParameters _flagPar{};
     struct Entropy::EntropyForHeatMap *_entropyData{};   
 

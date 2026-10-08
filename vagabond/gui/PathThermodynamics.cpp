@@ -122,14 +122,14 @@ void PathThermodynamics::buttonPressed(std::string tag, Button *button)
 			std::vector<TorsRes4NN*> torsRes = _pathEntropy->getAtomsAndResidues(_numPaths, _paths, 15);
 
 			_pathEntropy->calculateEntropyIndependent(_numPaths, flagPar, torsRes,15);
-            const std::vector<EntropyResults>& _entropyResults = _pathEntropy->result();
+            _entropyResults = _pathEntropy->result();
 
 			for (const EntropyResults& result : _entropyResults)
 			{
 			    entropyVec.push_back(result.totalEntropy);
 		    }
 
-	        makeGraph(entropyVec);
+	        makeGraph(entropyVec, _entropyResults);
 		};
 
 		cr->setReturn(respondToVal);
@@ -168,7 +168,7 @@ void PathThermodynamics::buttonPressed(std::string tag, Button *button)
 
 			_pathEntropy->calculateEntropyMI(_numPaths, flagPar, torsRes);
 
-            const std::vector<EntropyResults>& _entropyResults = _pathEntropy->result();
+            _entropyResults = _pathEntropy->result();
 
 			for (const EntropyResults& result : _entropyResults)
 			{
@@ -201,6 +201,8 @@ void PathThermodynamics::buttonPressed(std::string tag, Button *button)
  
     if (tag == "per_residue")
     {
+        std::cout << "Entropy vector length: " << _entropyResults.size() << std::endl;
+
         EntropyTableView *table = new EntropyTableView(this, _entity, _entropyResults);
         table->show();
     }
@@ -225,7 +227,7 @@ void PathThermodynamics::checkPathNum(int nearestNeighbours)
 }
 
 
-void PathThermodynamics::makeGraph(std::vector<double> entropyVec)
+void PathThermodynamics::makeGraph(std::vector<double> entropyVec, const std::vector<EntropyResults>& results)
 {
     Graph *graph = new Graph();
 
@@ -253,7 +255,7 @@ void PathThermodynamics::makeGraph(std::vector<double> entropyVec)
     addObject(graph);
  
     TextButton *tb = new TextButton("Per-residue entropy", this);
-    tb->setRight(0.9, 0.1);
+    tb->setRight(0.9, 0.2);
     tb->setReturnTag("per_residue");
     addObject(tb);
 }
