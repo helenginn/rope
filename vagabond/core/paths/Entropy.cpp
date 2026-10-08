@@ -42,13 +42,13 @@ void Entropy::populateHeatMap(struct EntropyForHeatMap *entropyData)
 
     for(int t = 0; t < _flagPar.timeDivisions; t++)
     {
-        entropyData->dataMatrix.push_back(Eigen::MatrixXf::Constant(_starts.size(), _ends.size(), NAN));
+        entropyData->dataMatrix[t] = Eigen::MatrixXf::Constant(_starts.size(), _ends.size(), NAN);
     }
+
+    int p = 0;
 
     for (const PathGroup &group : _paths)
     {
-        int p = 0;
-
         std::pair<int, int> idx = index(group[0]->startInstance(), group[0]->endInstance());
 	
 		std::unique_lock<std::mutex> lock(mutex());
