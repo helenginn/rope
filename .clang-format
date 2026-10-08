@@ -7,7 +7,28 @@ UseTab: ForIndentation
 ContinuationIndentWidth: 4
 ColumnLimit: 80
 
-BreakBeforeBraces: Allman
+BreakBeforeBraces: Custom
+AllowShortRecordOnASingleLine: Empty
+BraceWrapping:
+  AfterCaseLabel: true
+  AfterClass: true
+  AfterControlStatement: Always
+  AfterEnum: true
+  AfterExternBlock: true
+  AfterFunction: true
+  AfterNamespace: true
+  AfterObjCDeclaration: true
+  AfterStruct: true
+  AfterUnion: true
+  BeforeCatch: true
+  BeforeElse: true
+  BeforeLambdaBody: true
+  BeforeWhile: false
+  IndentBraces: false
+  SplitEmptyFunction: true
+  SplitEmptyRecord: false
+  SplitEmptyNamespace: true
+
 AllowShortBlocksOnASingleLine: Never
 AllowShortFunctionsOnASingleLine: Empty
 AllowShortIfStatementsOnASingleLine: Never
