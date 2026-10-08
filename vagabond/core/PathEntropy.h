@@ -51,6 +51,7 @@ struct EntropyResults
     std::vector<double> sigmaTotal{};
     std::vector<double> meanDistTotal{};
     std::vector<double> entResidue{};
+    std::vector<std::string> resName{};
 };
 
 class PathEntropy
@@ -112,7 +113,8 @@ private:
         double totalEntropy{};
 		double sigmaTotalEntropy{};
 		double meanDistTotalEntropy{};
-		
+
+        std::vector<std::string> resName{};		
         std::vector<double> entResidue{};
 	};
 

@@ -621,7 +621,9 @@ void PathEntropy::kNearestNeighbours(std::vector<TorsRes4NN*> torsRes, EntropyKL
 			//	entropy->h1lm[m] = a[0];
 				entropy.sd1lm[m] = sd[0];
 				//entropy->dm1lm[m] = meanDist[1]/sqrt((double) torsRes[m]->nAng);
-				entropy.totalEntropy += a[0];
+				entropy.entResidue[m] = a[0];
+				entropy.resName[m] = torsRes[m]->resName;
+                entropy.totalEntropy += a[0];
 
                 outputLR << "Average unweighted ent[k]: " << entropy.h1lm[m]/(double) (K-1) << std::endl;
                 outputLR << torsRes[m]->resName << torsRes[m]->resID+1 << " difference" <<  a[0] - entropy.h1lm[m]/(double)(K-1) << std::endl << std::endl;
@@ -795,6 +797,7 @@ EntropyResults PathEntropy::getResults(const EntropyKL& entropy) const
     result.sigmaTotal = entropy.sigmaTotal;
     result.meanDistTotal = entropy.meanDistTotal;
     result.entResidue = entropy.entResidue;
+    result.resName = entropy.resName;
 
     return result;
 }
@@ -807,6 +810,8 @@ void PathEntropy::allocEntropy(EntropyKL& entropy, int nSingle, int nPairs, int 
 	entropy.pathTotal.resize(nNearestNeighbours);
 	entropy.sigmaTotal.resize(nNearestNeighbours);
 	entropy.meanDistTotal.resize(nNearestNeighbours);
+    entropy.entResidue.resize(nSingle);
+    entropy.resName.resize(nSingle);
 	entropy.h1lm.resize(nSingle);
 	entropy.sd1lm.resize(nSingle);
 	entropy.h1.resize(nSingle);

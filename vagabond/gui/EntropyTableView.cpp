@@ -16,6 +16,9 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
+#include <fstream>
+#include <iostream>
+
 #include "EntropyTableView.h"
 #include "TableView.h"
 
@@ -41,37 +44,48 @@ void EntropyTableView::setup()
 	addTitle("Entropy - Residue Contributions");
 	{
 		Text *t = new Text("Number of residues");
-		t->setLeft(0.2, 0.3);
+		t->setLeft(0.2, 0.2);
 		addObject(t);
 	}
 	{
-		std::string num = i_to_str(_entity->sequence()->size());
+		std::string num = i_to_str(lineCount());
 		Text *t = new Text(num);
-		t->setLeft(0.8, 0.3);
+		t->setLeft(0.8, 0.2);
 		addObject(t);
 	}
+
+    {
+        TextButton *tb = new TextButton("Export CSV", this);
+        tb->setLeft(0.9, 0.1);
+        tb->setReturnTag("export");
+        addObject(tb);
+    }
 
     ListView::setup();
 }
 
 size_t EntropyTableView::lineCount()
 {
-    return _entity->sequence()->size();
+    return _entropy[3].entResidue.size();
 }
 
 Renderable *EntropyTableView::getLine(int i)
 {
     Box *b = new Box();
 
-    const std::string desc = _entity->sequence()->residue(i)->code();
+    const std::string desc = _entropy[0].resName[i];
+    double entRes = 0.0;
 
-    double entRes = _entropy[i].entResidue.front();
+	for (size_t t = 0; t < _entropy.size(); t++)
+    {
+		entRes += _entropy[t].entResidue[i];
+	}
 
     Text *res = new Text(desc);
     res->setLeft(0.0, 0.);
     b->addObject(res);
 
-    Text *ent = new Text(std::to_string(entRes));
+    Text *ent = new Text(std::to_string(entRes/_entropy.size()));
     ent->setRight(0.6,0.);
     b->addObject(ent);
 
@@ -80,6 +94,17 @@ Renderable *EntropyTableView::getLine(int i)
 
 void EntropyTableView::buttonPressed(std::string tag, Button *button)
 {
-    Scene::buttonPressed(tag, button);
+    if(tag == "export")
+    {
+       std::ofstream outputPerRes("per_residue.csv");
+
+       for (int i = 0; i < _entity->sequence()->size(); i++)
+       {
+           outputPerRes << _entity->sequence()->residue(i)->code() << "\t" << _entropy[i].entResidue.front() << std::endl;
+
+       } 
+    }
+
+    ListView::buttonPressed(tag, button);
 }
 
