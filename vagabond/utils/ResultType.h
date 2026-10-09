@@ -22,6 +22,7 @@
 #include <optional>
 #include <stdexcept>
 #include <string>
+#include <string_view>
 #include <type_traits>
 #include <utility>
 #include <variant>
@@ -32,9 +33,47 @@ namespace rust_type
 	namespace details
 	{
 		template <typename T>
-		concept HasToString = requires(T obj) {
-			{ obj.toString() } -> std::convertible_to<std::string>;
+		concept HasToString = requires(const T &value) {
+			std::string{value.toString()};
 		};
+
+		// Keep the evaluated text in its own constexpr call for compiler traces.
+		constexpr void require(bool ok, std::string_view context,
+		                       std::string_view detail)
+		{
+			if (!ok)
+			{
+				throw std::runtime_error(std::string{context} + ": " +
+				                         std::string{detail});
+			}
+		}
+
+		template <typename T>
+		constexpr void check_access(bool ok, std::string_view context,
+		                            const T &value)
+		{
+			if (ok)
+			{
+				return;
+			}
+			if constexpr (requires { std::string_view{value.toString()}; })
+			{
+				require(false, context, std::string_view{value.toString()});
+			}
+			else if constexpr (HasToString<T>)
+			{
+				require(false, context, std::string{value.toString()});
+			}
+			else if constexpr (
+			    std::convertible_to<const T &, std::string_view>)
+			{
+				require(false, context, std::string_view{value});
+			}
+			else
+			{
+				throw std::runtime_error(std::string{context});
+			}
+		}
 	} // namespace details
 
 	template <typename T> struct Ok
@@ -90,42 +129,48 @@ namespace rust_type
 		constexpr T &unwrap() &
 		{
 			if (is_err())
-				throw std::runtime_error("Called unwrap on an Err value!");
+				details::check_access(false, "Called unwrap on an Err value!",
+				                      std::get<1>(data_));
 			return std::get<0>(data_);
 		}
 
 		constexpr T unwrap() &&
 		{
 			if (is_err())
-				throw std::runtime_error("Called unwrap on an Err value!");
+				details::check_access(false, "Called unwrap on an Err value!",
+				                      std::get<1>(data_));
 			return std::get<0>(std::move(data_));
 		}
 
 		constexpr const T &unwrap() const &
 		{
 			if (is_err())
-				throw std::runtime_error("Called unwrap on an Err value!");
+				details::check_access(false, "Called unwrap on an Err value!",
+				                      std::get<1>(data_));
 			return std::get<0>(data_);
 		}
 
 		constexpr E &unwrap_err() &
 		{
 			if (is_ok())
-				throw std::runtime_error("Called unwrap_err on an Ok value!");
+				details::check_access(false, "Called unwrap_err on an Ok value!",
+				                      std::get<0>(data_));
 			return std::get<1>(data_);
 		}
 
 		constexpr E unwrap_err() &&
 		{
 			if (is_ok())
-				throw std::runtime_error("Called unwrap_err on an Ok value!");
+				details::check_access(false, "Called unwrap_err on an Ok value!",
+				                      std::get<0>(data_));
 			return std::get<1>(std::move(data_));
 		}
 
 		constexpr const E &unwrap_err() const &
 		{
 			if (is_ok())
-				throw std::runtime_error("Called unwrap_err on an Ok value!");
+				details::check_access(false, "Called unwrap_err on an Ok value!",
+				                      std::get<0>(data_));
 			return std::get<1>(data_);
 		}
 
@@ -159,42 +204,19 @@ namespace rust_type
 		}
 
 		T expect(const std::string &msg) &&
-		    requires details::HasToString<E>
 		{
 			if (is_err())
 			{
-				throw std::runtime_error(msg + ": " + error().toString());
-			}
-			return std::get<0>(std::move(data_));
-		}
-
-		T expect(const std::string &msg) &&
-		    requires(!details::HasToString<E>)
-		{
-			if (is_err())
-			{
-				throw std::runtime_error(msg);
+				details::check_access(false, msg, std::get<1>(data_));
 			}
 			return std::get<0>(std::move(data_));
 		}
 
 		E expect_err(const std::string &msg) &&
-		    requires details::HasToString<T>
 		{
 			if (is_ok())
 			{
-				throw std::runtime_error(msg + ": " +
-				                         std::get<0>(data_).toString());
-			}
-			return std::get<1>(std::move(data_));
-		}
-
-		E expect_err(const std::string &msg) &&
-		    requires(!details::HasToString<T>)
-		{
-			if (is_ok())
-			{
-				throw std::runtime_error(msg);
+				details::check_access(false, msg, std::get<0>(data_));
 			}
 			return std::get<1>(std::move(data_));
 		}
@@ -326,7 +348,8 @@ namespace rust_type
 		constexpr void unwrap() const
 		{
 			if (is_err())
-				throw std::runtime_error("Called unwrap on an Err value!");
+				details::check_access(false, "Called unwrap on an Err value!",
+				                      std::get<1>(data_));
 		}
 
 		constexpr E &unwrap_err() &
@@ -351,20 +374,10 @@ namespace rust_type
 		}
 
 		void expect(const std::string &msg) &&
-		    requires details::HasToString<E>
 		{
 			if (is_err())
 			{
-				throw std::runtime_error(msg + ": " + error().toString());
-			}
-		}
-
-		void expect(const std::string &msg) &&
-		    requires(!details::HasToString<E>)
-		{
-			if (is_err())
-			{
-				throw std::runtime_error(msg);
+				details::check_access(false, msg, std::get<1>(data_));
 			}
 		}
 

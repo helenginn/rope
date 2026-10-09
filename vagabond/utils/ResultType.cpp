@@ -21,6 +21,7 @@
 #include <optional>
 #include <stdexcept>
 #include <string>
+#include <string_view>
 #include <utility>
 
 #ifdef ROPE_INLINE_TESTS
@@ -35,6 +36,14 @@ struct CustomTestError
 	std::string toString() const
 	{
 		return msg;
+	}
+};
+
+struct ViewTestError
+{
+	constexpr std::string_view toString() const
+	{
+		return "inner > outer";
 	}
 };
 
@@ -86,8 +95,12 @@ TEST_CASE("Result - Throws on invalid access")
 	Result<int, std::string> err_res = Err(std::string("Error"));
 	Result<int, std::string> ok_res = Ok(10);
 
-	CHECK_THROWS_AS(err_res.unwrap(), std::runtime_error);
-	CHECK_THROWS_AS(ok_res.unwrap_err(), std::runtime_error);
+	CHECK_THROWS_WITH_AS(err_res.unwrap(),
+	                     "Called unwrap on an Err value!: Error",
+	                     std::runtime_error);
+	CHECK_THROWS_WITH_AS(ok_res.unwrap_err(),
+	                     "Called unwrap_err on an Ok value!",
+	                     std::runtime_error);
 }
 
 TEST_CASE("Result - Move-only types")
@@ -105,13 +118,15 @@ TEST_CASE("Result - Concept expect() checks")
 	{
 		Result<int, CustomTestError> res =
 		    Err(CustomTestError{"Error details"});
-		CHECK_THROWS_AS(std::move(res).expect("Error"), std::runtime_error);
+		CHECK_THROWS_WITH_AS(std::move(res).expect("Error"),
+		                     "Error: Error details", std::runtime_error);
 	}
 
 	SUBCASE("Without .toString()")
 	{
 		Result<int, PlainTestError> res = Err(PlainTestError{});
-		CHECK_THROWS_AS(std::move(res).expect("Error"), std::runtime_error);
+		CHECK_THROWS_WITH_AS(std::move(res).expect("Error"), "Error",
+		                     std::runtime_error);
 	}
 }
 
@@ -121,15 +136,98 @@ TEST_CASE("Result - expect_err() concept checks")
 	{
 		Result<CustomTestError, int> res =
 		    Ok(CustomTestError{"unexpected value"});
-		CHECK_THROWS_AS(std::move(res).expect_err("Expected error"),
-		                std::runtime_error);
+		CHECK_THROWS_WITH_AS(std::move(res).expect_err("Expected error"),
+		                     "Expected error: unexpected value",
+		                     std::runtime_error);
 	}
 	SUBCASE("Without .toString() on T")
 	{
 		Result<PlainTestError, int> res = Ok(PlainTestError{});
-		CHECK_THROWS_AS(std::move(res).expect_err("Expected error"),
-		                std::runtime_error);
+		CHECK_THROWS_WITH_AS(std::move(res).expect_err("Expected error"),
+		                     "Expected error", std::runtime_error);
 	}
+}
+
+TEST_CASE("Result - custom diagnostics across ref-qualified accessors")
+{
+	Result<int, CustomTestError> err = Err(CustomTestError{"details"});
+	const auto &const_err = err;
+	CHECK_THROWS_WITH_AS(err.unwrap(),
+	                     "Called unwrap on an Err value!: details",
+	                     std::runtime_error);
+	CHECK_THROWS_WITH_AS(const_err.unwrap(),
+	                     "Called unwrap on an Err value!: details",
+	                     std::runtime_error);
+	CHECK_THROWS_WITH_AS(std::move(err).unwrap(),
+	                     "Called unwrap on an Err value!: details",
+	                     std::runtime_error);
+
+	Result<CustomTestError, int> ok = Ok(CustomTestError{"unexpected"});
+	const auto &const_ok = ok;
+	CHECK_THROWS_WITH_AS(ok.unwrap_err(),
+	                     "Called unwrap_err on an Ok value!: unexpected",
+	                     std::runtime_error);
+	CHECK_THROWS_WITH_AS(const_ok.unwrap_err(),
+	                     "Called unwrap_err on an Ok value!: unexpected",
+	                     std::runtime_error);
+	CHECK_THROWS_WITH_AS(std::move(ok).unwrap_err(),
+	                     "Called unwrap_err on an Ok value!: unexpected",
+	                     std::runtime_error);
+}
+
+TEST_CASE("Result - string and string_view diagnostics")
+{
+	SUBCASE("String error")
+	{
+		Result<int, std::string> res = Err(std::string{"details"});
+		CHECK_THROWS_WITH_AS(std::move(res).expect("Context"),
+		                     "Context: details", std::runtime_error);
+	}
+	SUBCASE("String_view error")
+	{
+		Result<int, std::string_view> res = Err(std::string_view{"details"});
+		CHECK_THROWS_WITH_AS(res.unwrap(),
+		                     "Called unwrap on an Err value!: details",
+		                     std::runtime_error);
+		CHECK_THROWS_WITH_AS(std::move(res).expect("Context"),
+		                     "Context: details", std::runtime_error);
+	}
+	SUBCASE("toString returns string_view")
+	{
+		Result<int, ViewTestError> res = Err(ViewTestError{});
+		CHECK_THROWS_WITH_AS(res.unwrap(),
+		                     "Called unwrap on an Err value!: inner > outer",
+		                     std::runtime_error);
+		CHECK_THROWS_WITH_AS(std::move(res).expect("Invalid radii"),
+		                     "Invalid radii: inner > outer", std::runtime_error);
+	}
+	SUBCASE("Unexpected string value")
+	{
+		Result<std::string, int> res = Ok(std::string{"unexpected"});
+		CHECK_THROWS_WITH_AS(res.unwrap_err(),
+		                     "Called unwrap_err on an Ok value!: unexpected",
+		                     std::runtime_error);
+		CHECK_THROWS_WITH_AS(std::move(res).expect_err("Context"),
+		                     "Context: unexpected", std::runtime_error);
+	}
+}
+
+TEST_CASE("Result - errors without descriptions retain generic diagnostics")
+{
+	Result<int, PlainTestError> err = Err(PlainTestError{});
+	CHECK_THROWS_WITH_AS(err.unwrap(), "Called unwrap on an Err value!",
+	                     std::runtime_error);
+	Result<void, PlainTestError> void_err = Err(PlainTestError{});
+	CHECK_THROWS_WITH_AS(void_err.unwrap(), "Called unwrap on an Err value!",
+	                     std::runtime_error);
+}
+
+TEST_CASE("Result - owned diagnostic strings survive formatting")
+{
+	const std::string detail(128, 'x');
+	Result<int, CustomTestError> res = Err(CustomTestError{detail});
+	CHECK_THROWS_WITH_AS(std::move(res).expect("Context"),
+	                     "Context: " + detail, std::runtime_error);
 }
 
 TEST_CASE("Result - Monadic map operations")
@@ -188,8 +286,12 @@ TEST_CASE("Result<void,E> - Throws on invalid access")
 {
 	Result<void, std::string> ok_res = Ok();
 	Result<void, std::string> err_res = Err(std::string("Error"));
-	CHECK_THROWS_AS(err_res.unwrap(), std::runtime_error);
-	CHECK_THROWS_AS(ok_res.unwrap_err(), std::runtime_error);
+	CHECK_THROWS_WITH_AS(err_res.unwrap(),
+	                     "Called unwrap on an Err value!: Error",
+	                     std::runtime_error);
+	CHECK_THROWS_WITH_AS(ok_res.unwrap_err(),
+	                     "Called unwrap_err on an Ok value!",
+	                     std::runtime_error);
 }
 
 TEST_CASE("Result<void,E> - expect()/expect_err()")
@@ -197,21 +299,35 @@ TEST_CASE("Result<void,E> - expect()/expect_err()")
 	SUBCASE("expect on Err with HasToString")
 	{
 		Result<void, CustomTestError> res = Err(CustomTestError{"boom"});
-		CHECK_THROWS_AS(std::move(res).expect("Expected success"),
-		                std::runtime_error);
+		CHECK_THROWS_WITH_AS(res.unwrap(),
+		                     "Called unwrap on an Err value!: boom",
+		                     std::runtime_error);
+		CHECK_THROWS_WITH_AS(std::move(res).expect("Expected success"),
+		                     "Expected success: boom", std::runtime_error);
 	}
 	SUBCASE("expect on Err without HasToString")
 	{
 		Result<void, PlainTestError> res = Err(PlainTestError{});
-		CHECK_THROWS_AS(std::move(res).expect("Expected success"),
-		                std::runtime_error);
+		CHECK_THROWS_WITH_AS(std::move(res).expect("Expected success"),
+		                     "Expected success", std::runtime_error);
 	}
 	SUBCASE("expect_err on Ok")
 	{
 		Result<void, std::string> res = Ok();
-		CHECK_THROWS_AS(std::move(res).expect_err("Expected failure"),
-		                std::runtime_error);
+		CHECK_THROWS_WITH_AS(std::move(res).expect_err("Expected failure"),
+		                     "Expected failure", std::runtime_error);
 	}
+}
+
+TEST_CASE("Result - expect success paths preserve move-only values")
+{
+	Result<std::unique_ptr<int>, PlainTestError> ok =
+	    Ok(std::make_unique<int>(42));
+	CHECK(*std::move(ok).expect("Expected value") == 42);
+	Result<int, std::unique_ptr<int>> err = Err(std::make_unique<int>(7));
+	CHECK(*std::move(err).expect_err("Expected error") == 7);
+	Result<void, PlainTestError> void_ok = Ok();
+	CHECK_NOTHROW(std::move(void_ok).expect("Expected success"));
 }
 
 TEST_CASE("Result<void,E> - map/map_err")
@@ -588,6 +704,10 @@ TEST_CASE("Result - constexpr usability")
 {
 	static_assert(Result<int, int>(Ok(5)).unwrap() == 5);
 	static_assert(Result<int, int>(Err(-1)).unwrap_err() == -1);
+	static_assert([] {
+		Result<void, int>(Ok()).unwrap();
+		return true;
+	}());
 	static_assert(
 	    Result<int, int>(Ok(2)).map([](int x) { return x * 3; }).unwrap() == 6);
 	static_assert(
