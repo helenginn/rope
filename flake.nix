@@ -4,6 +4,11 @@
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
     flake-utils.url = "github:numtide/flake-utils";
+
+    au-src = {
+      url = "github:aurora-opensource/au/0.5.1";
+      flake = false;
+      };
     };
 
   outputs =
@@ -11,6 +16,7 @@
       self,
       nixpkgs,
       flake-utils,
+      au-src,
     }:
     flake-utils.lib.eachDefaultSystem (
       system:
@@ -18,6 +24,17 @@
 
         pkgs = import nixpkgs { inherit system; };
         inherit (pkgs) lib;
+
+        au = pkgs.stdenv.mkDerivation {
+          pname = "au";
+          version = "0.5.1";
+          src = au-src;
+
+          nativeBuildInputs = [ pkgs.cmake ];
+          cmakeFlags = [
+            "-DAU_EXCLUDE_GTEST_DEPENDENCY=ON"
+          ];
+        };
 
         version = "dev";
 
@@ -36,6 +53,7 @@
           openssl
           curl
           cli11
+          au
         ];
 
         nativeBuildInputs = with pkgs; [

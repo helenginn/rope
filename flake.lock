@@ -1,5 +1,22 @@
 {
   "nodes": {
+    "au-src": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1766254288,
+        "narHash": "sha256-tHPcXS0T6aa7IlECMnwgRZRUGNCGekb0oHs1VCwi0SQ=",
+        "owner": "aurora-opensource",
+        "repo": "au",
+        "rev": "a4cd560f20d3dfb71334a47c4de0e7086f28c6a5",
+        "type": "github"
+      },
+      "original": {
+        "owner": "aurora-opensource",
+        "ref": "0.5.1",
+        "repo": "au",
+        "type": "github"
+      }
+    },
     "flake-utils": {
       "inputs": {
         "systems": "systems"
@@ -36,6 +53,7 @@
     },
     "root": {
       "inputs": {
+        "au-src": "au-src",
         "flake-utils": "flake-utils",
         "nixpkgs": "nixpkgs"
       }
