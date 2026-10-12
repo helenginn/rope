@@ -112,6 +112,17 @@ public:
 		float ave_weight = 1;
 		float weight_variance = 0;
 
+		// 1 if the right atom is in contact with the left side at the 
+		// start / end of the route, else 0. Importance of this constraint
+		// slides linearly between the two as the route progresses.
+		float start_importance = 1;
+		float end_importance = 1;
+
+		float importance(float frac) const
+		{
+			return (1 - frac) * start_importance + frac * end_importance;
+		}
+
 		//std::vector<float> fiducial_variances;
 		OpVec<float> start_weight_cache;
 
@@ -143,7 +154,14 @@ public:
 			void reindex();
 		};
 
+		struct Contact
+		{
+			bool start = false; // in contact at the start of the route
+			bool end = false; // in contact at the end of the route
+		};
+
 		Side lefts, rights;
+		std::map<Atom *, Contact> right_contacts;
 		std::vector<AtomPair> atom_pairs;
 		std::vector<WeightedSum> sums;
 	};

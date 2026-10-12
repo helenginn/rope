@@ -198,6 +198,9 @@ NonCovalents::Interface NonCovalents::findInterface(Segment first,
 		return true;
 	};
 
+	// a pair counts if it is in contact at the start and/or the end. 
+	// Contacts at both ends are fully important throughout, whereas
+	// contacts at one end only fade in or out along the route.
 	for (Atom *atom : grp->atomVector())
 	{
 		if (atom->elementSymbol() == "H")
@@ -205,14 +208,27 @@ NonCovalents::Interface NonCovalents::findInterface(Segment first,
 			continue;
 		}
 		glm::vec3 p1 = atom->otherPosition("target");
+		bool has_end1 = atom->hasOtherPosition("end");
+		glm::vec3 e1 = has_end1 ? atom->otherPosition("end") : p1;
+
 		for (Atom *other : compare->atomVector())
 		{
-			glm::vec3 p2 = other->otherPosition("target");
 			if (other->elementSymbol() == "H")
 			{
 				continue;
 			}
-			if (!valid_distance(p1, p2))
+
+			glm::vec3 p2 = other->otherPosition("target");
+			bool at_start = valid_distance(p1, p2);
+			bool at_end = false;
+
+			if (has_end1 && other->hasOtherPosition("end"))
+			{
+				glm::vec3 e2 = other->otherPosition("end");
+				at_end = valid_distance(e1, e2);
+			}
+
+			if (!at_start && !at_end)
 			{
 				continue;
 			}
@@ -220,6 +236,10 @@ NonCovalents::Interface NonCovalents::findInterface(Segment first,
 			interface.atom_pairs.push_back({atom, other});
 			interface.lefts.atoms.insert(atom);
 			interface.rights.atoms.insert(other);
+
+			Interface::Contact &contact = interface.right_contacts[other];
+			contact.start |= at_start;
+			contact.end |= at_end;
 		}
 	}
 	
@@ -245,6 +265,14 @@ auto closest_atoms(OpSet<Atom *> &atoms, float bond_len, size_t max_atoms = 0)
 			                 other->otherPosition("target"));
 
 			float dsq = glm::dot(vec, vec);
+
+			// contacts may only exist at the end of the route
+			if (atom->hasOtherPosition("end") && other->hasOtherPosition("end"))
+			{
+				glm::vec3 evec = (atom->otherPosition("end") - 
+				                  other->otherPosition("end"));
+				dsq = std::min(dsq, glm::dot(evec, evec));
+			}
 			
             if (dsq <= min_dsq)
             {
@@ -928,6 +956,14 @@ void weighted_sums_for_side(NonCovalents::Interface &face,
 	for (auto &s : active_scores)
 	{
 		s.candidate.ave_weight = 1;
+
+		auto contact = face.right_contacts.find(s.candidate.atom);
+		if (contact != face.right_contacts.end())
+		{
+			s.candidate.start_importance = contact->second.start ? 1.f : 0.f;
+			s.candidate.end_importance = contact->second.end ? 1.f : 0.f;
+		}
+
 		face.sums.push_back(s.candidate);
 	}
 
@@ -999,7 +1035,7 @@ void NonCovalents::prepareBarycentricWeights()
 				// subtract calculated atom's position to aim for zero
 				int col = col_idx_for_atom(sum.atom);
 				vec[col] = -1;
-				vec *= sum.ave_weight;
+				vec *= sum.ave_weight * sum.importance(frac);
 
 				return vec;
 			};
