@@ -610,9 +610,18 @@ void weighted_sums_for_side(NonCovalents::Interface &face,
 	{
 		return a->otherPosition("target");
 	};
-	auto derived_pos = [](Atom *a)
+	auto end_pos = [](Atom *a)
 	{
-		return a->derivedPosition();
+		return a->hasOtherPosition("end") ? a->otherPosition("end") 
+		                                  : a->otherPosition("target");
+	};
+
+	// a set of atoms must be non-coplanar at both the start and the end
+	auto coplanar_at_either_end = [&](const std::vector<Atom *> &atoms,
+	                                  float threshold)
+	{
+		return (is_coplanar(atoms, target_pos, threshold) ||
+		        is_coplanar(atoms, end_pos, threshold));
 	};
 
     struct AtomScore
@@ -658,7 +667,7 @@ void weighted_sums_for_side(NonCovalents::Interface &face,
 		}
 
 		std::vector<Atom *> atoms = right_atoms_from_scores(active_scores);
-		return !is_coplanar(atoms, target_pos, right_coplanar_threshold);
+		return !coplanar_at_either_end(atoms, right_coplanar_threshold);
 	};
 
 	auto print_candidate = [](const NonCovalents::WeightedSum &candidate)
@@ -737,7 +746,7 @@ void weighted_sums_for_side(NonCovalents::Interface &face,
 				return true;
 			}
 
-			if (is_coplanar(subset, derived_pos, fiducial_coplanar_threshold))
+			if (coplanar_at_either_end(subset, fiducial_coplanar_threshold))
 			{
 				return true;
 			}
@@ -877,8 +886,8 @@ void weighted_sums_for_side(NonCovalents::Interface &face,
 					}
 				}
 
-				bool coplanar_choice = is_coplanar(test_pool, target_pos,
-				                                  right_coplanar_threshold);
+				bool coplanar_choice = coplanar_at_either_end(test_pool,
+				                                              right_coplanar_threshold);
 
 				if (!coplanar_choice)
 				{
