@@ -415,7 +415,18 @@ void PathManager::makePathBetween(const std::string &start,
 		}
   
         std::cout << "Saving..." << std::endl;
+		start = ::time(NULL);
         Environment::env().save();
+    
+        end = ::time(NULL);
+    	duration = end - start;
+		seconds = duration % 60;
+		minutes = (duration - seconds + 1) / 60;
+		if (seconds > 0 || minutes > 0)
+		{
+			std::cout << "Time to save: " << minutes << "m " << seconds 
+			<< "s." << std::endl;
+		}
     }
 	
 	delete grp;
