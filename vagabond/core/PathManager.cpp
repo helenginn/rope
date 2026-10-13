@@ -436,6 +436,22 @@ std::vector<Instance *> instances_for_ids(const std::vector<std::string> &insts)
 	return instances;
 }
 
+std::vector<std::pair<int, int>> PathManager::allPairs(size_t n)
+{
+	std::vector<std::pair<int, int>> pairs;
+	pairs.reserve(n * n);
+
+	for (int i = 0; i < n; i++)
+	{
+		for (int j = 0; j < n; j++)
+		{
+			pairs.push_back({i, j});
+		}
+	}
+
+	return pairs;
+}
+
 template <typename Job>
 void do_on_each_pair_of_paths(const Job &job,
                               const std::vector<std::string> &insts)
@@ -446,27 +462,19 @@ void do_on_each_pair_of_paths(const Job &job,
 	if (instances.size() == 0) { return; };
 	
 	int jobs = 0;
-	for (int i = 0; i < instances.size(); i++)
+	for (const std::pair<int, int> &pair : PathManager::allPairs(instances.size()))
 	{
-		Instance *const &first = instances.at(i);
+		Instance *const &first = instances.at(pair.first);
+		Instance *const &second = instances.at(pair.second);
 
-		int window = 10;
-		int start = std::max(i - window, 0);
-		int end = std::min(i, (int)instances.size());
-		start = 0;
-		end = instances.size();
-		for (int j = start + 1; j < end; j++)
+		bool success = job(first, second);
+		jobs += success ? 1 : 0;
+
+		if (jobs % 5 == 4)
 		{
-			Instance *const &second = instances.at(j);
-			bool success = job(first, second);
-			jobs += success ? 1 : 0;
-
-			if (jobs % 5 == 4)
-			{
-				std::cout << "Saving..." << std::endl;
-				Environment::env().save();
-				jobs = 0;
-			}
+			std::cout << "Saving..." << std::endl;
+			Environment::env().save();
+			jobs = 0;
 		}
 	}
 };

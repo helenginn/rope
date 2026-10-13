@@ -38,6 +38,11 @@ public:
 	void purgePath(Path *path);
 	void purgeEntity(Entity *ent);
 
+	/** every ordered pair (first, second) of n instances, including each
+	 *  instance with itself (the reference for path-matrix) - the whole
+	 *  square, not a triangle. Row-major, so by first then second. */
+	static std::vector<std::pair<int, int>> allPairs(size_t n);
+
 	void makePathsWithinGroup(const std::vector<std::string> &insts,
 	                          int cycles);
 
