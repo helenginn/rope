@@ -27,6 +27,7 @@
 #include <iostream>
 #include <fstream>
 #include <nlohmann/json.hpp>
+#include <filesystem>
 
 #ifdef __EMSCRIPTEN__
 #include <emscripten.h>
@@ -59,6 +60,11 @@ size_t Environment::entityCount()
 
 void Environment::save()
 {
+#ifndef __EMSCRIPTEN__
+	// paths go in their own files; only changed groups are rewritten
+	_pathManager->savePathGroups("paths");
+#endif
+
 	json data;
 	data["file_manager"] = *_fileManager;
 	data["model_manager"] = *_modelManager;
@@ -123,6 +129,13 @@ void Environment::load(std::string file)
 	loadEntitiesBackwardsCompatible(data);
 	*_metadata = data["metadata"];
 	*_pathManager = data["path_manager"];
+
+	if (!data["path_manager"].count("paths"))
+	{
+		std::filesystem::path dir = std::filesystem::path(file).parent_path();
+		size_t num = _pathManager->loadPathGroups((dir / "paths").string());
+		std::cout << "Loaded " << num << " paths." << std::endl;
+	}
 
 	_metadata->housekeeping();
 	_entityManager->housekeeping();

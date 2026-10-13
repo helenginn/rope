@@ -100,6 +100,7 @@ void Path::housekeeping()
 
 void Path::acquireSingleProperties(Route *route)
 {
+	_dirty = true;
 	route->setHash();
 	_momentum = route->momentumScore();
 	_activationEnergy = route->activationEnergy();

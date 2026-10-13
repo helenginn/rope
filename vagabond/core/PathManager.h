@@ -49,6 +49,15 @@ public:
 
 	void housekeeping();
 
+	/** write each group of paths (same start and end instance) that has
+	 *  changed since the last save to its own file in directory.
+	 *  Unchanged groups are not touched. */
+	void savePathGroups(const std::string &directory = "paths");
+
+	/** load every path group file from directory, appending to the
+	 *  existing paths. Returns the number of paths loaded. */
+	size_t loadPathGroups(const std::string &directory);
+
 	void pathMatrix(const std::string &filename,
 	                const std::vector<std::string> &insts);
 	void makePathBetween(const std::string &start, const std::string &end,
@@ -63,17 +72,37 @@ public:
 	friend void to_json(json &j, const PathManager &value);
 	friend void from_json(const json &j, PathManager &value);
 private:
+	typedef std::pair<std::string, std::string> GroupKey;
+
 	std::mutex *_addMutex = nullptr;
+
+	/** file name (within the paths directory) last written or loaded for
+	 *  each group, and how many paths it contained */
+	std::map<GroupKey, std::pair<std::string, size_t>> _groupFiles;
 
 };
 
+/* the paths themselves live in the paths directory (see savePathGroups),
+ * which keeps this file small and quick to save. */
 inline void to_json(json &j, const PathManager &value)
 {
+	j["paths_directory"] = "paths";
+#ifdef __EMSCRIPTEN__
+	// no persistent directory to rely on: keep everything in one file
 	j["paths"] = value._objects;
+#endif
 }
 
+/* files from before the paths directory existed contain the paths here
+ * directly. These stay marked as changed, so the next save moves them
+ * into the directory. */
 inline void from_json(const json &j, PathManager &value)
 {
+	if (!j.count("paths"))
+	{
+		return;
+	}
+
 	std::list<Path> paths = j.at("paths");
 	value._objects = paths;
 

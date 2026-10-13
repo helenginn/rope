@@ -21,6 +21,7 @@
 #include "Environment.h"
 #include "paths/NewPath.h"
 #include <fstream>
+#include <filesystem>
 
 PathManager::PathManager()
 {
@@ -68,6 +69,177 @@ void PathManager::housekeeping()
 	{
 		p.housekeeping();
 	}
+}
+
+static std::string sanitised_id(const std::string &id)
+{
+	std::string result;
+
+	for (const char &c : id)
+	{
+		bool ok = std::isalnum((unsigned char)c) || c == '.' || c == '-';
+		result += ok ? c : '_';
+	}
+
+	return result.substr(0, 60);
+}
+
+static std::string file_for_group(const std::string &start,
+                                  const std::string &end)
+{
+	// readable, but with a hash of the true ids so that ids which only
+	// differ in unusual characters cannot share a file
+	size_t hash = std::hash<std::string>{}(start + "\n" + end);
+	char suffix[32];
+	snprintf(suffix, sizeof(suffix), "%08zx", hash & 0xffffffff);
+
+	return sanitised_id(start) + "--" + sanitised_id(end) + "-" + suffix +
+	".json";
+}
+
+void PathManager::savePathGroups(const std::string &directory)
+{
+	namespace fs = std::filesystem;
+
+	std::map<GroupKey, std::vector<Path *>> groups;
+
+	for (Path &p : _objects)
+	{
+		groups[{p.startId(), p.endId()}].push_back(&p);
+	}
+
+	std::error_code ec;
+	fs::create_directories(directory, ec);
+
+	for (auto &[key, paths] : groups)
+	{
+		auto found = _groupFiles.find(key);
+		bool changed = (found == _groupFiles.end() ||
+		                found->second.second != paths.size());
+
+		for (Path *const &p : paths)
+		{
+			changed |= p->isDirty();
+		}
+
+		if (!changed) { continue; }
+
+		std::string name = (found == _groupFiles.end() ?
+		                    file_for_group(key.first, key.second) :
+		                    found->second.first);
+
+		json data;
+		data["start"] = key.first;
+		data["end"] = key.second;
+		data["paths"] = json::array();
+
+		for (Path *const &p : paths)
+		{
+			data["paths"].push_back(*p);
+		}
+
+		// write then rename so a crash cannot leave half a group behind
+		fs::path final_path = fs::path(directory) / name;
+		fs::path temp_path = final_path;
+		temp_path += ".tmp";
+
+		std::ofstream file(temp_path);
+		file << data.dump(1) << std::endl;
+		bool ok = file.good();
+		file.close();
+
+		if (ok)
+		{
+			fs::rename(temp_path, final_path, ec);
+			ok = !ec;
+		}
+
+		if (!ok)
+		{
+			std::cout << "Warning: could not write " << final_path
+			<< "; will retry on next save" << std::endl;
+			continue;
+		}
+
+		for (Path *const &p : paths)
+		{
+			p->setDirty(false);
+		}
+
+		_groupFiles[key] = {name, paths.size()};
+	}
+
+	// groups which no longer have any paths
+	for (auto it = _groupFiles.begin(); it != _groupFiles.end();)
+	{
+		if (groups.count(it->first))
+		{
+			it++;
+			continue;
+		}
+
+		fs::remove(fs::path(directory) / it->second.first, ec);
+		it = _groupFiles.erase(it);
+	}
+}
+
+size_t PathManager::loadPathGroups(const std::string &directory)
+{
+	namespace fs = std::filesystem;
+
+	std::error_code ec;
+	if (!fs::is_directory(directory, ec))
+	{
+		return 0;
+	}
+
+	// a stable order, since directory iteration order is arbitrary
+	std::vector<fs::path> files;
+
+	for (const fs::directory_entry &entry : fs::directory_iterator(directory))
+	{
+		if (entry.path().extension() == ".json")
+		{
+			files.push_back(entry.path());
+		}
+	}
+
+	std::sort(files.begin(), files.end());
+
+	size_t count = 0;
+
+	for (const fs::path &file : files)
+	{
+		try
+		{
+			json data;
+			std::ifstream f(file);
+			f >> data;
+			f.close();
+
+			for (const json &entry : data.at("paths"))
+			{
+				Path path = entry;
+				path.setDirty(false);
+				_objects.push_back(path);
+
+				Path &stored = _objects.back();
+				stored.housekeeping();
+
+				auto &info = _groupFiles[{stored.startId(), stored.endId()}];
+				info.first = file.filename().string();
+				info.second++;
+				count++;
+			}
+		}
+		catch (const json::exception &err)
+		{
+			std::cout << "Warning: could not read " << file << ": "
+			<< err.what() << std::endl;
+		}
+	}
+
+	return count;
 }
 
 PathManager::GroupedMap PathManager::groupedPathsForEntity(Entity *ent)

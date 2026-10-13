@@ -52,6 +52,28 @@ public:
 	
 	bool sameRouteAsPath(Path *other);
 
+	const std::string &startId() const
+	{
+		return _startInstance;
+	}
+
+	const std::string &endId() const
+	{
+		return _endInstance;
+	}
+
+	/** true if the path has changed (or been created) since it was last
+	 *  written to its file in the paths directory */
+	bool isDirty() const
+	{
+		return _dirty;
+	}
+
+	void setDirty(bool dirty)
+	{
+		_dirty = dirty;
+	}
+
 	friend void to_json(json &j, const Path &value);
 	friend void from_json(const json &j, Path &value);
 	
@@ -152,6 +174,7 @@ private:
 	
 	bool _contributeSVD = false;
 	bool _visible = true;
+	bool _dirty = true;
 	
 	float _activationEnergy = FLT_MAX;
 	float _torsionEnergy = FLT_MAX;
