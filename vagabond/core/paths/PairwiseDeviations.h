@@ -82,7 +82,11 @@ public:
 		return _pairs;
 	}
 
-	std::vector<int> &pairsForBlockIdx(const int &bidx);
+	/** The pairs of atoms whose distance changes when the block bidx is
+	 *  moved: those with bidx on the bond path between them (neither end
+	 *  itself), each once. Worked out on first request, using sep unless
+	 *  this was made with its own Separation. */
+	const std::vector<int> &pairsForBlockIdx(const int &bidx, Separation *sep);
 
 	const std::set<ScoreBucket> &residues() const
 	{
@@ -161,7 +165,7 @@ public:
 	}
 private:
 	void prepare(BondSequence *seq);
-	void buildNeighbours();
+	void buildNeighbours(Separation *sep);
 
 	PairFilter _filter{};
 	float _limit = 8.f;
@@ -173,14 +177,10 @@ private:
 	glm::vec3 *_reference = nullptr;
 	std::map<ScoreBucket, std::vector<int>> _perResidue;
 
-	// for every pair (m, n), has an entry for each m, n
-	std::map<int, std::vector<int>> _perIdx;
-
-	// for every m near n, all m's pairs gets given to n
-	// built on first use by pairsForBlockIdx()
+	// for every block, the pairs of atoms with it on the bond path between
+	// them; built on first use by pairsForBlockIdx()
 	std::map<int, std::vector<int>> _neighbouring;
 	std::once_flag _neighbourFlag;
-	std::vector<int> _gaps;
 
 	std::set<ScoreBucket> _residues;
 	std::map<AtomAtom, int> _atoms2Info;

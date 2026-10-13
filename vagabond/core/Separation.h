@@ -89,6 +89,15 @@ public:
 			return (*_matrix)(i - _first, j - _first);
 		}
 
+		/** The separations to covered i from every block j in the segment:
+		 *  column(i)[j - first()] is the matrix entry for (j, i), which is
+		 *  between(i, j) as the matrix is symmetric. Contiguous, so a loop
+		 *  over j is cheap. */
+		const int *column(int i) const
+		{
+			return _matrix->data() + (size_t)(i - _first) * _matrix->rows();
+		}
+
 		/** result[j - first()] = between(i, j) for every j in the segment */
 		std::vector<int> from(int i) const;
 
