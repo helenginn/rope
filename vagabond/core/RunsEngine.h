@@ -25,6 +25,7 @@
 #include <cstddef>
 #include <cfloat>
 #include <functional>
+#include <mutex>
 
 typedef std::function<void(std::vector<float> &values)> Getter;
 typedef std::function<void(const std::vector<float> &values)> Setter;
@@ -38,6 +39,8 @@ public:
 
 	virtual float getResult(int *job_id, Engine *sender)
 	{
+		std::unique_lock<std::mutex> lock(_lock.mutex);
+
 		if (_scores.size() == 0)
 		{
 			*job_id = -1;
@@ -53,6 +56,7 @@ public:
 
 	void resetTickets()
 	{
+		std::unique_lock<std::mutex> lock(_lock.mutex);
 		_ticket = 0;
 		_scores.clear();
 	}
@@ -60,29 +64,73 @@ public:
 protected:
 	int getNextTicket()
 	{
+		std::unique_lock<std::mutex> lock(_lock.mutex);
 		return ++_ticket;
 	}
 	
 	const int getLastTicket() const
 	{
+		std::unique_lock<std::mutex> lock(_lock.mutex);
 		return _ticket;
 	}
 	
 	float scoreForTicket(int ticket)
 	{
-		if (_scores.count(ticket) == 0)
+		std::unique_lock<std::mutex> lock(_lock.mutex);
+		std::map<int, double>::const_iterator it = _scores.find(ticket);
+
+		if (it == _scores.end())
 		{
+			lock.unlock();
 			std::cout << "missing ticket " << ticket << std::endl;
 			return FLT_MAX;
 		}
-		return _scores[ticket];
+
+		return it->second;
+	}
+
+	/** as scoreForTicket, but forgets the score once it has been collected
+	 *  (for callers which collect each ticket exactly once) */
+	float takeScoreForTicket(int ticket)
+	{
+		std::unique_lock<std::mutex> lock(_lock.mutex);
+		std::map<int, double>::iterator it = _scores.find(ticket);
+
+		if (it == _scores.end())
+		{
+			lock.unlock();
+			std::cout << "missing ticket " << ticket << std::endl;
+			return FLT_MAX;
+		}
+
+		float score = it->second;
+		_scores.erase(it);
+		return score;
 	}
 	
 	void setScoreForTicket(int ticket, double score)
 	{
+		std::unique_lock<std::mutex> lock(_lock.mutex);
 		_scores[ticket] = score;
 	}
 private:
+	/* Tickets are handed out and scores filed by whichever thread finishes a
+	 * batch, while the engines collecting them run on other threads which
+	 * hold no lock in common with it (MultiEngine only locks per key). An
+	 * unguarded map being looked up during an insert can report a ticket
+	 * as missing. This mutex guards _ticket and _scores only, and nothing
+	 * else is called while it is held. */
+	struct TicketLock
+	{
+		TicketLock() {}
+		// copies of an engine get their own mutex
+		TicketLock(const TicketLock &) {}
+		TicketLock &operator=(const TicketLock &) { return *this; }
+
+		mutable std::mutex mutex;
+	};
+
+	TicketLock _lock;
 	int _ticket = 0;
 	std::map<int, double> _scores;
 };

@@ -288,7 +288,7 @@ public:
 		std::unique_lock<std::mutex> lock(info.expected.mutex());
 		int ticket = info.for_collection.front();
 		info.for_collection.pop();
-		float score = scoreForTicket(ticket);
+		float score = takeScoreForTicket(ticket);
 		*job_id = ticket;
 		
 		return score;
