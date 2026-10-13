@@ -1,4 +1,5 @@
 #include <doctest/doctest.h>
+#include "glm_printing.h"
 #include <vagabond/core/protonic/Probe.h>
 
 namespace

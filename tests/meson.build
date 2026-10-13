@@ -6,7 +6,7 @@ tests_exe = executable(
    'hbond_electrostatics_test.cpp', 'planar_acceptance_test.cpp',
    'hydrogen_placement_test.cpp', 'energy_tally_test.cpp',
    'count_helpers_test.cpp', 'path_groups_test.cpp', 'runs_engine_test.cpp',
-   'path_matrix_test.cpp', 'path_pairs_test.cpp'],
+   'path_matrix_test.cpp', 'path_pairs_test.cpp', 'glm_printing_test.cpp'],
   link_whole: [core, vagutils, cluster4x],
   dependencies: [doctest_dep, cli_deps],
   # core's own headers (e.g. protonic/hnet.h) include siblings by bare name,
