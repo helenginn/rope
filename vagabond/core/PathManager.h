@@ -21,6 +21,9 @@
 
 #include "Path.h"
 #include "Manager.h"
+#include <map>
+#include <string>
+#include <utility>
 
 class PathManager : public Manager<Path>
 {

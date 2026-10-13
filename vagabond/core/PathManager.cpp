@@ -20,8 +20,12 @@
 #include "ModelManager.h"
 #include "Environment.h"
 #include "paths/NewPath.h"
-#include <fstream>
+#include <algorithm>
+#include <cctype>
+#include <cstdio>
 #include <filesystem>
+#include <fstream>
+#include <functional>
 
 PathManager::PathManager()
 {
