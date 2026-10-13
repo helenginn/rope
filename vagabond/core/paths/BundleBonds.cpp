@@ -93,6 +93,16 @@ void BundleBonds::findCoefficients()
 	glm::mat3 mat = {{-1, +1, -1}, {1, 1, 1}, {8, 4, 2}};
 	glm::mat3 inv = glm::transpose(glm::inverse(mat));
 
+	// a protein only has a handful of different elements, so look each one
+	// up once rather than for every atom
+	struct ElementParams
+	{
+		std::string symbol;
+		float radius;
+		float epsilon;
+	};
+	std::vector<ElementParams> elements;
+
 	for (FourPos &ps : _positions)
 	{
 		ps.get_controls(_received);
@@ -119,18 +129,37 @@ void BundleBonds::findCoefficients()
 
 		if (ps.atom)
 		{
-			gemmi::Element ele = gemmi::Element(ps.atom->elementSymbol());
-			float vdwRadius = ele.vdw_r();
-			ps.radius = vdwRadius;
-			ps.epsilon = 0.07;
-			switch (ele.atomic_number())
+			const std::string &symbol = ps.atom->elementSymbol();
+			const ElementParams *params = nullptr;
+
+			for (const ElementParams &known : elements)
 			{
-				case 1: ps.epsilon = 0.0037; break;
-				case 6: ps.epsilon = 0.0205; break;
-				case 7: ps.epsilon = 0.0407; break;
-				case 8: ps.epsilon = 0.0502; break;
-				case 16: ps.epsilon = 0.0600; break;
+				if (known.symbol == symbol)
+				{
+					params = &known;
+					break;
+				}
 			}
+
+			if (!params)
+			{
+				gemmi::Element ele = gemmi::Element(symbol);
+				float epsilon = 0.07;
+				switch (ele.atomic_number())
+				{
+					case 1: epsilon = 0.0037; break;
+					case 6: epsilon = 0.0205; break;
+					case 7: epsilon = 0.0407; break;
+					case 8: epsilon = 0.0502; break;
+					case 16: epsilon = 0.0600; break;
+				}
+
+				elements.push_back({symbol, ele.vdw_r(), epsilon});
+				params = &elements.back();
+			}
+
+			ps.radius = params->radius;
+			ps.epsilon = params->epsilon;
 		}
 	}
 }
@@ -153,7 +182,10 @@ long double vdw_energy(const float &difflengthsq,
 
 std::function<long double(int p, int q, float dist)> BundleBonds::lookup()
 {
-	findCoefficients();
+	// The clash tasks which call this only run once every position has been
+	// added, and there is one task per residue, so work these out just once
+	// (other callers wait for the first to finish rather than racing it).
+	std::call_once(_coefficientsFlag, [this]() { findCoefficients(); });
 
 	auto job = [this](int p, int q, float dist) -> long double
 	{

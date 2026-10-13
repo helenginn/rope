@@ -20,6 +20,7 @@
 #define __vagabond__BundleBonds__
 
 #include <functional>
+#include <mutex>
 #include <vector>
 #include <array>
 #include <set>
@@ -108,6 +109,9 @@ private:
 
 	bool _recordContacts = false;
 	float _frac = 0;
+	// every residue's clash task asks for lookup() on the same bundle, but
+	// the coefficients only need to be worked out once all positions are in
+	std::once_flag _coefficientsFlag;
 	std::vector<FourPos> _positions;
 	std::array<bool, 4> _received;
 };
