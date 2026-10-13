@@ -15,6 +15,7 @@ HeatMapView::HeatMapView(Scene *prev, const std::vector<PathGroup> &paths, struc
 {
     _entropy = new Entropy(paths, flagPar);
     _flagPar = flagPar;
+    _timeDivisions = _flagPar.timeDivisions;
     _paths = paths;
     _entropyData = new Entropy::EntropyForHeatMap;
 
@@ -73,14 +74,38 @@ void HeatMapView::setup()
         VagWindow::window()->requestProgressBar(_entropy->ticks(), "Generating heatmap");
 
 		_entropy->populateHeatMap(_entropyData);
+		_wholeModelEntropyVals.resize(_entropyData->numDivisions);
+
+		for (int i = 0; i < _entropyData->total.size(); i++)
+		{
+			for (int t = 0; t < _entropyData->total[i].size(); t++)
+			{
+				_wholeModelEntropyVals[t].push_back(_entropyData->total[i][t]);
+			}
+		}
+
+		// Per-residue reference distribution across all paths, timepoints and residues.
+		for (int p = 0; p < _entropyData->perRes.size(); p++)
+		{
+			for (int t = 0; t < _entropyData->perRes[p].size(); t++)
+			{
+				const auto &residueValues = _entropyData->perRes[p][t];
+
+				for (double value : residueValues)
+				{
+					_perResEntropyVals.push_back(value);
+				}
+			}
+		}
+
 		std::cout << "Now preparing to set up GUI elements" << std::endl;
 		addMainThreadJob(gui_setup);
 	};
 
 	addMainThreadJob([this, do_heat_map]()
-			{
-				DoJob job(do_heat_map);
-			});
+	{
+		DoJob job(do_heat_map);
+	});
 }
 
 void HeatMapView::redrawHeatMap(double num)
@@ -274,36 +299,33 @@ void HeatMapView::redrawHeatMap(double num)
     
     if (_mode == HeatMapMode::WholeModel)
     {
-        matrix = _entropyData->dataMatrix[t];
+        matrix = _entropyData->dataMatrix[_timepoint];
 
-        entropyVals.resize(_entropyData->total.size());
-
-        for (int i = 0; i < _entropyData->total.size(); i++)
-        {
-            entropyVals[i] = _entropyData->total[i][t];
-        }
+        scaleMatrix(matrix, _wholeModelEntropyVals[_timepoint]);
     }
     else
     {
         matrix = Eigen::MatrixXf::Constant(rows,cols,NAN);
 
-        entropyVals.resize(_entropyData->perRes.size());
+		for (int p = 0; p < _paths.size(); p++)
+		{
+			const PathGroup &group = _paths[p];
+            const auto &timepoints = _entropyData->perRes[p];
 
-        for (int p = 0; p < _paths.size(); p++)
-        {
-            const PathGroup &group = _paths[p];
+			std::pair<int, int> idx = _entropy->index(group[0]->startInstance(),group[0]->endInstance());
+            
+            double sum = 0.0;   
 
-            std::pair<int, int> idx = _entropy->index(group[0]->startInstance(),group[0]->endInstance());
+            for(const auto &residueValues : timepoints)
+            {
+                sum += residueValues[_residue];
+            }
 
-            matrix(idx.first, idx.second) = _entropyData->perRes[p][_timepoint][_residue];
-            entropyVals[p] = _entropyData->perRes[p][_timepoint][_residue];
-        }
+			matrix(idx.first, idx.second) =	sum / _timeDivisions;
+		}
+
+        scaleMatrix(matrix, _perResEntropyVals);
     }
-
-    _displayMatrix = PCA::Matrix(matrix);
-	printMatrix(&_displayMatrix);
-  
-    scaleMatrix(matrix, entropyVals);
    
     std::cout << "Matrix after scaling..." << std::endl;   
     _displayMatrix = PCA::Matrix(matrix);

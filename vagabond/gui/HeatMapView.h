@@ -46,8 +46,13 @@ private:
     int _timepoint = 0;
     int _residue = 0;
 
+    int _timeDivisions;
+
     struct FlagParameters _flagPar{};
     struct Entropy::EntropyForHeatMap *_entropyData{};   
+
+    std::vector<std::vector<float>> _wholeModelEntropyVals;
+    std::vector<float> _perResEntropyVals;
 
     std::vector<std::string> _squareNames;
 	std::vector<std::string> _rowNames;
