@@ -7,7 +7,8 @@ endif
 
 tests_exe = executable(
   'rope_doctest',
-  ['doctest_main.cpp', 'smoke_test.cpp', 'export_superposed_test.cpp'],
+  ['doctest_main.cpp', 'smoke_test.cpp', 'export_superposed_test.cpp',
+   'capsid_path_endpoint_test.cpp'],
   link_whole: [core, vagutils, cluster4x],
   dependencies: [doctest_dep, cli_deps],
   include_directories: include_directories('..')
