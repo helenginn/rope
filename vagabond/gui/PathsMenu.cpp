@@ -36,6 +36,7 @@
 #include "PathManager.h"
 #include "PathsDetail.h"
 #include "MakeNewPaths.h"
+#include "PathMatrixView.h"
 #include <vagabond/gui/elements/TickBoxes.h>
 
 PathsMenu::PathsMenu(Scene *prev, Entity *entity,
@@ -306,18 +307,32 @@ void PathsMenu::buttonPressed(std::string tag, Button *button)
 		
 		if (_selected.size() > 0)
 		{
-			auto func = [this]()
+			auto selected_groups = [this]()
 			{
 				std::vector<PathGroup> groups;
 				for (const int &idx : _selected)
 				{
 					groups.push_back(_paths[idx]);
 				}
-				
-				BlameView *view = new BlameView(this, _entity, groups);
+
+				return groups;
+			};
+
+			auto func = [this, selected_groups]()
+			{
+				BlameView *view = new BlameView(this, _entity, 
+				                                selected_groups());
 				view->show();
 			};
 			m->addOption("Residue blame", func);
+
+			auto matrix_func = [this, selected_groups]()
+			{
+				PathMatrixView *view = new PathMatrixView(this, 
+				                                          selected_groups());
+				view->show();
+			};
+			m->addOption("View all vdw results", matrix_func);
 		}
 
 		m->setup(button);

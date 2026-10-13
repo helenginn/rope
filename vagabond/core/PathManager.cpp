@@ -25,7 +25,10 @@
 #include <cstdio>
 #include <filesystem>
 #include <fstream>
+#include <cmath>
 #include <functional>
+#include <map>
+#include <set>
 
 PathManager::PathManager()
 {
@@ -544,59 +547,49 @@ void PathManager::obstacles(const std::vector<std::string> &insts)
 	std::cout << std::endl;
 }
 
-void PathManager::pathMatrix(const std::string &filename,
-                             const std::vector<std::string> &insts)
+bool PathManager::meanEnergies(Instance *first, Instance *second,
+                               PathEnergies &result, bool verbose)
 {
-	std::ofstream file;
-	file.open(filename);
+	std::vector<Path *> pairPaths = pathsBetweenInstances(first, second);
 
-	file << "left,right,vdw,torsion" << std::endl;
-	
-	struct Result
+	if (pairPaths.size() == 0) { return false; }
+
+	if (verbose)
 	{
-		float vdw = 0;
-		float torsion = 0;
-	};
-
-	std::map<std::string, std::map<std::string, Result>> results;
-
-	int tally = 0;
-	auto report_paths = [this, &results, &tally]
-	(Instance *first, Instance *second)
-	{
-		std::cout << first->id() << " vs " << second->id() << std::endl;
-		std::vector<Path *> pairPaths = pathsBetweenInstances(first, second);
-		
-		if (pairPaths.size() == 0) { return false; }
-		
 		std::cout << "\t\t!!" << std::endl;
-		float all_vdw = 0;
-		float all_torsion = 0;
-		float count = 0;
+	}
 
-		for (Path *const &path : pairPaths)
+	float all_vdw = 0;
+	float all_torsion = 0;
+	float count = 0;
+
+	for (Path *const &path : pairPaths)
+	{
+		if (verbose)
 		{
 			std::cout << path->desc() << std::endl;
-			float vdw_energy = path->activationEnergy();
-			float torsion = path->torsionEnergy();
-			
-			all_vdw += vdw_energy;
-			all_torsion += torsion;
-			count++;
-			tally++;
 		}
-		
-		all_vdw /= count;
-		all_torsion /= count;
-		
-		results[first->id()][second->id()].vdw = all_vdw;
-		results[first->id()][second->id()].torsion = all_torsion;
-		return false;
-	};
 
-	do_on_each_pair_of_paths(report_paths, insts);
-	std::cout << "Total paths: " << objectCount() << std::endl;
-	std::cout << "Paths examined: " << tally << std::endl;
+		float vdw_energy = path->activationEnergy();
+		float torsion = path->torsionEnergy();
+
+		all_vdw += vdw_energy;
+		all_torsion += torsion;
+		count++;
+	}
+
+	all_vdw /= count;
+	all_torsion /= count;
+
+	result.vdw = all_vdw;
+	result.torsion = all_torsion;
+	result.paths = (int)count;
+	return true;
+}
+
+PathManager::EnergyMatrix PathManager::relativeEnergies(EnergyMatrix results)
+{
+	EnergyMatrix relative;
 
 	for (auto it = results.begin(); it != results.end(); it++)
 	{
@@ -608,12 +601,148 @@ void PathManager::pathMatrix(const std::string &filename,
 		{
 			const std::string &second = jt->first;
 
-			file << first << "," << second << ",";
-			file << jt->second.vdw - ref_vdw << ",";
-			file << jt->second.torsion - ref_torsion << std::endl;
+			PathEnergies &entry = relative[first][second];
+			entry.vdw = jt->second.vdw - ref_vdw;
+			entry.torsion = jt->second.torsion - ref_torsion;
+			entry.paths = jt->second.paths;
 		}
 	};
-	
+
+	return relative;
+}
+
+Eigen::MatrixXf PathManager::boltzmannMatrix(const EnergyMatrix &energies,
+                                             std::vector<std::string> &names,
+                                             float kT, float *lowest,
+                                             float *highest)
+{
+	// the same names down the side and along the top
+	std::set<std::string> ids;
+	for (auto it = energies.begin(); it != energies.end(); it++)
+	{
+		ids.insert(it->first);
+
+		for (auto jt = it->second.begin(); jt != it->second.end(); jt++)
+		{
+			ids.insert(jt->first);
+		}
+	}
+
+	names = std::vector<std::string>(ids.begin(), ids.end());
+	std::map<std::string, int> index;
+	for (size_t i = 0; i < names.size(); i++)
+	{
+		index[names[i]] = i;
+	}
+
+	int n = names.size();
+	Eigen::MatrixXf values = Eigen::MatrixXf::Constant(n, n, NAN);
+	float min = 0;
+	float max = 0;
+	bool any = false;
+
+	for (auto it = energies.begin(); it != energies.end(); it++)
+	{
+		for (auto jt = it->second.begin(); jt != it->second.end(); jt++)
+		{
+			float vdw = jt->second.vdw;
+			if (!std::isfinite(vdw)) { continue; }
+
+			values(index.at(it->first), index.at(jt->first)) = vdw;
+
+			if (!any || vdw < min) { min = vdw; }
+			if (!any || vdw > max) { max = vdw; }
+			any = true;
+		}
+	}
+
+	Eigen::MatrixXf probabilities = values;
+
+	for (int i = 0; i < n; i++)
+	{
+		for (int j = 0; j < n; j++)
+		{
+			if (!std::isfinite(values(i, j))) { continue; }
+
+			probabilities(i, j) = exp(-(values(i, j) - min) / kT);
+		}
+	}
+
+	if (lowest) { *lowest = min; }
+	if (highest) { *highest = max; }
+
+	return probabilities;
+}
+
+PathManager::EnergyMatrix PathManager::pathMatrixFor
+(const std::vector<std::pair<Instance *, Instance *>> &pairs)
+{
+	EnergyMatrix results;
+	std::set<Instance *> firsts;
+
+	for (const std::pair<Instance *, Instance *> &pair : pairs)
+	{
+		firsts.insert(pair.first);
+
+		PathEnergies energies;
+		if (meanEnergies(pair.first, pair.second, energies))
+		{
+			results[pair.first->id()][pair.second->id()] = energies;
+		}
+	}
+
+	// the reference for each first instance
+	for (Instance *const &first : firsts)
+	{
+		PathEnergies energies;
+		if (meanEnergies(first, first, energies))
+		{
+			results[first->id()][first->id()] = energies;
+		}
+	}
+
+	return relativeEnergies(results);
+}
+
+void PathManager::pathMatrix(const std::string &filename,
+                             const std::vector<std::string> &insts)
+{
+	std::ofstream file;
+	file.open(filename);
+
+	file << "left,right,vdw,torsion" << std::endl;
+
+	EnergyMatrix results;
+
+	int tally = 0;
+	auto report_paths = [this, &results, &tally]
+	(Instance *first, Instance *second)
+	{
+		std::cout << first->id() << " vs " << second->id() << std::endl;
+
+		PathEnergies energies;
+		if (!meanEnergies(first, second, energies, true)) { return false; }
+
+		tally += energies.paths;
+		results[first->id()][second->id()] = energies;
+		return false;
+	};
+
+	do_on_each_pair_of_paths(report_paths, insts);
+	std::cout << "Total paths: " << objectCount() << std::endl;
+	std::cout << "Paths examined: " << tally << std::endl;
+
+	EnergyMatrix relative = relativeEnergies(results);
+
+	for (auto it = relative.begin(); it != relative.end(); it++)
+	{
+		for (auto jt = it->second.begin(); jt != it->second.end(); jt++)
+		{
+			file << it->first << "," << jt->first << ",";
+			file << jt->second.vdw << ",";
+			file << jt->second.torsion << std::endl;
+		}
+	};
+
 	file.close();
-	
 }

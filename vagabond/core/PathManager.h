@@ -21,6 +21,7 @@
 
 #include "Path.h"
 #include "Manager.h"
+#include <vagabond/utils/Eigen/Dense>
 #include <map>
 #include <string>
 #include <utility>
@@ -60,6 +61,44 @@ public:
 	/** load every path group file from directory, appending to the
 	 *  existing paths. Returns the number of paths loaded. */
 	size_t loadPathGroups(const std::string &directory);
+
+	/** energies of the paths between two instances, averaged */
+	struct PathEnergies
+	{
+		float vdw = 0;
+		float torsion = 0;
+		int paths = 0;
+	};
+
+	typedef std::map<std::string, std::map<std::string, PathEnergies>>
+	EnergyMatrix;
+
+	/** mean energies over all paths from first to second. Returns false
+	 *  (leaving result alone) if there are no such paths. */
+	bool meanEnergies(Instance *first, Instance *second,
+	                  PathEnergies &result, bool verbose = false);
+
+	/** each pair's energies minus those of its first instance's path to
+	 *  itself (nothing is subtracted if there is none). The reference
+	 *  entries are included in the result. */
+	static EnergyMatrix relativeEnergies(EnergyMatrix absolute);
+
+	/** The vdw energies of an EnergyMatrix as relative probabilities from the
+	 *  Boltzmann distribution, exp(-(E - lowest) / kT): 1 for the lowest
+	 *  energy and tending to 0 for higher ones. Square, with names giving
+	 *  the instance for each row and column. NaN where there are no
+	 *  (finite) energies. lowest and highest, if given, are the energies
+	 *  at either end. kT defaults to the 2.57 kJ/mol used in obstacles. */
+	static Eigen::MatrixXf boltzmannMatrix(const EnergyMatrix &energies,
+	                                       std::vector<std::string> &names,
+	                                       float kT = 2.57,
+	                                       float *lowest = nullptr,
+	                                       float *highest = nullptr);
+
+	/** what path-matrix calculates, for the given instance pairs (and the
+	 *  self pairs of their first instances, which it is relative to). */
+	EnergyMatrix pathMatrixFor(const std::vector<std::pair<Instance *,
+	                                                       Instance *>> &pairs);
 
 	void pathMatrix(const std::string &filename,
 	                const std::vector<std::string> &insts);

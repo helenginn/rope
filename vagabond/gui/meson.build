@@ -119,6 +119,8 @@ guifiles = [
 'PathFinding.cpp',
 'PathParamEditor.cpp',
 'PathParamEditor.h',
+'PathMatrixView.cpp',
+'PathMatrixView.h',
 'PathsMenu.cpp',
 'PerResidueView.cpp',
 'PerResidueView.h',
