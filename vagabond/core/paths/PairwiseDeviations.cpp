@@ -54,6 +54,38 @@ bool worth_checking_distance(const glm::vec3 &rest_i, const glm::vec3 &rest_j,
 	return true;
 }
 
+template <typename Job>
+static void for_each_atom(const std::vector<Atom *> &atoms, int n0, int n1,
+                          Job job)
+{
+	for (int i = n0; i < n1 - 2; i += 2)
+	{
+		Atom *left = atoms[i / 2];
+		if (!left) continue;
+
+		job(left, i);
+	}
+}
+
+template <typename Job>
+static void for_each_atom_pair(const std::vector<Atom *> &atoms, int n0,
+                               int n1, Job job)
+{
+	for (int i = n0; i < n1 - 2; i += 2)
+	{
+		Atom *left = atoms[i / 2];
+		if (!left) continue;
+
+		for (int j = i + 2; j < n1; j += 2)
+		{
+			Atom *right = atoms[j / 2];
+			if (!right) continue;
+
+			job(left, right, i, j);
+		}
+	}
+}
+
 void PairwiseDeviations::prepare(BondSequence *seq)
 {
 	std::cout << "Preparing pairwise deviations" << std::endl;
@@ -101,99 +133,11 @@ void PairwiseDeviations::prepare(BondSequence *seq)
 	
 	std::vector<int> pairs;
 
-	auto loop_over_atoms = [this](int n0, int n1, auto job)
-	{
-		for (int i = n0; i < n1 - 2; i += 2)
-		{
-			int m = i / 2;
-			Atom *left = _atoms[m];
-			if (!left) continue;
-
-			job(left, i);
-		}
-	};
-	
 	auto loop_over_atom_pairs = [this](int n0, int n1, auto job)
 	{
-		for (int i = n0; i < n1 - 2; i += 2)
-		{
-			int m = i / 2;
-			Atom *left = _atoms[m];
-			if (!left) continue;
-
-			for (int j = i + 2; j < n1; j += 2)
-			{
-				int n = j / 2;
-				Atom *right = _atoms[n];
-				if (!right) continue;
-				
-				job(left, right, i, j);
-
-			}
-		}
-	};
-	
-	auto reserve_sizes = [this](Atom *const &atom, const int &i)
-	{
-		int p = i / 2;
-		_neighbouring[p].reserve(10000);
+		for_each_atom_pair(_atoms, n0, n1, job);
 	};
 
-	auto shrink_sizes = [this](Atom *const &atom, const int &i)
-	{
-		int p = i / 2;
-		_neighbouring[p].shrink_to_fit();
-	};
-
-	auto populate_neighbours = 
-	[this, scratch]
-	(const Separation::BlockRegion &br)
-	{
-		return [this, &br]
-		(Atom *left, Atom *right, int i, int j)
-		{
-			int p = i / 2; int q = j / 2;
-
-			auto check_pair = [&p, &q, &br, this] (int b)
-			{
-				// sensitive distance between q and b
-				if (_sep)
-				{
-					int lr = _sep->separationBetween(br, b, q);
-					if (lr < 0) { return false; }
-					int lc = _sep->separationBetween(br, b, p);
-					if (lc < 0 || lc > lr) { return false; }
-					int cr = _sep->separationBetween(br, p, q);
-					if (cr < 0) { return false; }
-					bool reject = (lc + cr - lr > 0);
-					if (reject) { return false; }
-				}
-
-				return true;
-			};
-
-			auto add_pairs = [this, &check_pair](int p, int q)
-			{
-				std::vector<int> &qPairs = _perIdx[q];
-				_neighbouring[p].reserve(_neighbouring[p].size());
-
-				for (const int &pair : qPairs)
-				{
-					TargetInfo &pInfo = info(pair);
-					int m = pInfo.p; int n = pInfo.q;
-					int chosen = (m == q) ? n : m;
-					if (check_pair(chosen))
-					{
-						_neighbouring[p].push_back(pair);
-					}
-				}
-			};
-
-			add_pairs(p, q);
-			add_pairs(q, p);
-		};
-	};
-	
 	auto add_if_acceptable = 
 	                          [this, &scratch, 
 	                          &distance_between_atoms]
@@ -276,26 +220,99 @@ void PairwiseDeviations::prepare(BondSequence *seq)
 	std::cout << "Segments: " << gaps.size() - 1 << std::endl;
 	for (int i = 0; i < gaps.size() - 1; i++)
 	{
-		int n0 = gaps[i];
-		int n1 = gaps[i + 1];
+		std::cout << "." << std::flush;
+		loop_over_atom_pairs(gaps[i], gaps[i + 1], add_if_acceptable);
+	}
+	std::cout << std::endl;
+
+	// the neighbour lists are only needed for gradients, and are by far the
+	// most expensive part to calculate: see buildNeighbours()
+	_gaps = gaps;
+	_reference = scratch;
+}
+
+
+/* For every atom p, the pairs of atoms whose distance can be altered by
+ * moving p. This is quadratic in the number of atoms (times the pairs per
+ * atom), so it is only calculated on first request. Nothing which only
+ * scores a route needs it. */
+void PairwiseDeviations::buildNeighbours()
+{
+	auto reserve_sizes = [this](Atom *const &atom, const int &i)
+	{
+		int p = i / 2;
+		_neighbouring[p].reserve(10000);
+	};
+
+	auto shrink_sizes = [this](Atom *const &atom, const int &i)
+	{
+		int p = i / 2;
+		_neighbouring[p].shrink_to_fit();
+	};
+
+	auto populate_neighbours = [this](const Separation::BlockRegion &br)
+	{
+		return [this, &br]
+		(Atom *left, Atom *right, int i, int j)
+		{
+			int p = i / 2; int q = j / 2;
+
+			auto check_pair = [&p, &q, &br, this] (int b)
+			{
+				// sensitive distance between q and b
+				if (_sep)
+				{
+					int lr = _sep->separationBetween(br, b, q);
+					if (lr < 0) { return false; }
+					int lc = _sep->separationBetween(br, b, p);
+					if (lc < 0 || lc > lr) { return false; }
+					int cr = _sep->separationBetween(br, p, q);
+					if (cr < 0) { return false; }
+					bool reject = (lc + cr - lr > 0);
+					if (reject) { return false; }
+				}
+
+				return true;
+			};
+
+			auto add_pairs = [this, &check_pair](int p, int q)
+			{
+				std::vector<int> &qPairs = _perIdx[q];
+				_neighbouring[p].reserve(_neighbouring[p].size());
+
+				for (const int &pair : qPairs)
+				{
+					TargetInfo &pInfo = info(pair);
+					int m = pInfo.p; int n = pInfo.q;
+					int chosen = (m == q) ? n : m;
+					if (check_pair(chosen))
+					{
+						_neighbouring[p].push_back(pair);
+					}
+				}
+			};
+
+			add_pairs(p, q);
+			add_pairs(q, p);
+		};
+	};
+
+	for (int i = 0; i + 1 < _gaps.size(); i++)
+	{
+		int n0 = _gaps[i];
+		int n1 = _gaps[i + 1];
 		int p = n0 / 2 + 1;
 		Separation::BlockRegion br = {n0/2, n1/2};
 		if (_sep)
 		{
 			br = _sep->group_for_idx(p);
 		}
-		std::cout << "." << std::flush;
 
-		loop_over_atom_pairs(n0, n1, add_if_acceptable);
-		loop_over_atoms(n0, n1, reserve_sizes);
-		loop_over_atom_pairs(n0, n1, populate_neighbours(br));
-		loop_over_atoms(n0, n1, shrink_sizes);
+		for_each_atom(_atoms, n0, n1, reserve_sizes);
+		for_each_atom_pair(_atoms, n0, n1, populate_neighbours(br));
+		for_each_atom(_atoms, n0, n1, shrink_sizes);
 	}
-	std::cout << std::endl;
-	
-	_reference = scratch;
 }
-
 
 auto simple(PairwiseDeviations *dev, float frac, std::set<ScoreBucket> forResidues)
 {
@@ -484,5 +501,6 @@ PairwiseDeviations::contact_map(const std::set<ScoreBucket> &forResidues)
 std::vector<int> &PairwiseDeviations::pairsForBlockIdx
 (const int &bidx)
 {
+	std::call_once(_neighbourFlag, [this]() { buildNeighbours(); });
 	return _neighbouring[bidx];
 }

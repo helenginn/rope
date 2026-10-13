@@ -25,6 +25,7 @@
 #include <map>
 #include <vector>
 #include <set>
+#include <mutex>
 #include <cstddef>
 #include "function_typedefs.h"
 #include "paths/Contacts.h"
@@ -160,6 +161,7 @@ public:
 	}
 private:
 	void prepare(BondSequence *seq);
+	void buildNeighbours();
 
 	PairFilter _filter{};
 	float _limit = 8.f;
@@ -175,7 +177,10 @@ private:
 	std::map<int, std::vector<int>> _perIdx;
 
 	// for every m near n, all m's pairs gets given to n
+	// built on first use by pairsForBlockIdx()
 	std::map<int, std::vector<int>> _neighbouring;
+	std::once_flag _neighbourFlag;
+	std::vector<int> _gaps;
 
 	std::set<ScoreBucket> _residues;
 	std::map<AtomAtom, int> _atoms2Info;
