@@ -23,6 +23,7 @@
 #include <vagabond/utils/Eigen/Dense>
 #include <vagabond/utils/OpSet.h>
 #include <map>
+#include <vector>
 
 class Atom;
 class BondSequence;
@@ -52,6 +53,56 @@ public:
 	bool partOfSameMolecule(int m, int n);
 
 	BlockRegion &group_for_idx(int i);
+
+	/** Read-only view of the segment that separationBetween(i, j) searches
+	 *  for each time it is called with a first index i. Made once, it lets a
+	 *  loop over many pairs give the same answers without that search. It
+	 *  only covers indices for which the answer is a plain matrix lookup
+	 *  (strictly after the segment start, as group_for_idx behaves); callers
+	 *  must use separationBetween for anything else. */
+	class Segment
+	{
+	public:
+		bool covers(int i) const
+		{
+			return _matrix && i > _first && i <= _last;
+		}
+
+		int first() const
+		{
+			return _first;
+		}
+
+		int last() const
+		{
+			return _last;
+		}
+
+		/** same as separationBetween(i, j) for covered i */
+		int between(int i, int j) const
+		{
+			if (j > _last || j < _first)
+			{
+				return -1;
+			}
+
+			return (*_matrix)(i - _first, j - _first);
+		}
+
+		/** result[j - first()] = between(i, j) for every j in the segment */
+		std::vector<int> from(int i) const;
+
+		/** result[j - first()] = between(j, i) for every j in the segment */
+		std::vector<int> to(int i) const;
+	private:
+		friend class Separation;
+
+		const Eigen::MatrixXi *_matrix = nullptr;
+		int _first = 0;
+		int _last = -1;
+	};
+
+	Segment segment_for_idx(int i) const;
 	
 	Eigen::MatrixXi::Scalar &operator()(Atom *const &a, Atom *const &b);
 private:

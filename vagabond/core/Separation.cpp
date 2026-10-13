@@ -204,6 +204,49 @@ Separation::BlockRegion &Separation::group_for_idx(int i)
 	return group;
 }
 
+Separation::Segment Separation::segment_for_idx(int i) const
+{
+	Segment segment;
+
+	GroupStarts::const_iterator it = _starts.lower_bound(i);
+	if (it == _starts.begin())
+	{
+		return segment;
+	}
+
+	it--;
+	const BlockRegion &group = _idxGroups.at(*it);
+	segment._matrix = &_matrices.at(group);
+	segment._first = group.first;
+	segment._last = group.second;
+
+	return segment;
+}
+
+std::vector<int> Separation::Segment::from(int i) const
+{
+	std::vector<int> result(_last - _first + 1);
+
+	for (int j = _first; j <= _last; j++)
+	{
+		result[j - _first] = between(i, j);
+	}
+
+	return result;
+}
+
+std::vector<int> Separation::Segment::to(int i) const
+{
+	std::vector<int> result(_last - _first + 1);
+
+	for (int j = _first; j <= _last; j++)
+	{
+		result[j - _first] = (*_matrix)(j - _first, i - _first);
+	}
+
+	return result;
+}
+
 bool Separation::partOfSameMolecule(int m, int n)
 {
 	BlockRegion &aGroup = _idxGroups[m];

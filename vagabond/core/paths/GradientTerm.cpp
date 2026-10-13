@@ -56,9 +56,27 @@ void GradientTerm::momentum(BondSequence *seq,
 	int c_idx = sep->index_of(param->atom(2));
 	// if block index is second of bond, choose first of bond
 	int pre = (b_idx == c_idx ? a_idx : c_idx);
+
+	// every pair below asks for separations from this block (and from pre),
+	// so look the segment up once rather than for each pair. The values are
+	// the same as separationBetween() gives.
+	const Separation::Segment segment = sep->segment_for_idx(b_idx);
+	const bool in_segment = segment.covers(b_idx);
+	const int seg_first = segment.first();
+	std::vector<int> from_b, to_b, from_pre;
+	if (in_segment)
+	{
+		from_b = segment.from(b_idx);
+		to_b = segment.to(b_idx);
+		if (segment.covers(pre))
+		{
+			from_pre = segment.from(pre);
+		}
+	}
 	
 	auto check_momentum = [this, &pre, &blocks, lookup, 
-	                       sep, sines, &count, dev]
+	                       sep, sines, &count, dev, &segment, in_segment,
+	                       seg_first, &from_b, &to_b, &from_pre]
 	(const std::vector<int> &pairs)
 	{
 		AtomBlock &block = blocks[b_idx];
@@ -81,18 +99,26 @@ void GradientTerm::momentum(BondSequence *seq,
 				continue;
 			}
 			
-			int lr = sep->separationBetween(p, q);
+			// p and b_idx are both in the segment on the fast path
+			bool fast = (in_segment && segment.covers(p));
+			
+			int lr = (fast ? segment.between(p, q) :
+			          sep->separationBetween(p, q));
 			if (lr < 0) { continue; }
-			int lc = sep->separationBetween(p, b_idx);
+			int lc = (fast ? to_b[p - seg_first] :
+			          sep->separationBetween(p, b_idx));
 			if (lc < 0 || lc > lr) { continue; }
-			int cr = sep->separationBetween(b_idx, q);
+			int cr = ((in_segment && q >= seg_first && q <= segment.last()) ?
+			          from_b[q - seg_first] :
+			          sep->separationBetween(b_idx, q));
 			if (cr < 0) { continue; }
 
 			// atom is not in between the pair
 			bool reject = (lc + cr - lr > 0);
 			if (reject) { continue; }
 			
-			int lp = sep->separationBetween(pre, p);
+			int lp = ((fast && from_pre.size()) ? from_pre[p - seg_first] :
+			          sep->separationBetween(pre, p));
 			float dir = (lp > lc ? +1 : -1);
 
 			float targdist = info.target(frac);
