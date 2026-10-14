@@ -113,7 +113,9 @@ TEST_CASE("BondAdder totals as bitmasks match the set version")
 				}
 				unsigned int newCommon = bits & (unsigned int)sum & 0xFFFFu;
 
-				REQUIRE((Count::Values)bits == oldCount);
+				// as numbers: doctest printing an unscoped enum through
+				// operator<< is ambiguous on MSVC
+				REQUIRE(bits == (unsigned int)oldCount);
 				REQUIRE((size_t)std::popcount(newCommon) == common.size());
 				if (common.size() == 1)
 				{
