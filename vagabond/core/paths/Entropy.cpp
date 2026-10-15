@@ -66,17 +66,7 @@ void Entropy::populateHeatMap(struct EntropyForHeatMap *entropyData)
 			entropyData->dataMatrix[n](idx.first,idx.second) = results[n].totalEntropy;
 		}
         
-        {
-            std::unique_lock<std::mutex> lock(mutex());
-            std::vector<double> entropy = pathEntropyInstancePair(_flagPar.nf, group, _flagPar.timeDivisions, _flagPar.mist);
-			entropyData->total.push_back(entropy);
-
-			for (int t = 0; t < _flagPar.timeDivisions; t++)
-			{
-			   entropyData->dataMatrix[t](idxs.first, idxs.second) = entropy[t];
-				//entropyData.dataMatrix[t](idxs.second, idxs.first) = entropy[t];
-			}
-        }
+        p++;
 
         clickTicker();     
     }
@@ -96,19 +86,6 @@ void Entropy::pathEntropyInstancePair(int numPaths, std::vector<Path*> paths, in
     {
         _pathEntropy.calculateEntropyMI(numPaths, _flagPar, torsRes,numDivisions);
     }
-}
-
-void Entropy::sortPathGroupsByInstance(std::vector<PathGroup> &paths)
-{
-    auto compareNames = [](const PathGroup& a, const PathGroup& b)
-    {
-        std::string aName = a[0]->startInstance()->model_id() + " to " + a[0]->endInstance()->model_id();
-        std::string bName = b[0]->startInstance()->model_id() + " to " + b[0]->endInstance()->model_id();
-    
-        return aName < bName;
-    };
-
-    std::sort(paths.begin(), paths.end(), compareNames);
 }
 
 void Entropy::sortPathGroupsByInstance(std::vector<PathGroup> &paths)
@@ -176,24 +153,3 @@ std::pair<std::string, std::string> Entropy::names(int l, int r)
 	return {st_name, end_name};
 }
 
-    auto fix_value = [](const Entropy::InstanceSet &insts, Instance *inst, int &idx)
-    {
-        idx = -1;
-        int n = 0;
-
-        for(Instance *const &check : insts)
-        {
-            if(inst == check)
-            {
-                idx = n;
-                break;
-            }
-            n++;
-        }
-    };
-
-    fix_value(_starts, start, stIdx);
-    fix_value(_ends, end, endIdx);
-
-    return {stIdx, endIdx};
-}

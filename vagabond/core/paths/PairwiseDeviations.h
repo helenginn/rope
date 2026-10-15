@@ -82,7 +82,7 @@ public:
 		return _pairs;
 	}
 
-	std::vector<int> &pairsForBlockIdx(const int &bidx);
+	const std::vector<int> &pairsForBlockIdx(const int &bidx, Separation *sep);
 
 	const std::set<ScoreBucket> &residues() const
 	{
@@ -161,7 +161,7 @@ public:
 	}
 private:
 	void prepare(BondSequence *seq);
-	void buildNeighbours();
+	void buildNeighbours(Separation *sep);
 
 	PairFilter _filter{};
 	float _limit = 8.f;

@@ -70,47 +70,6 @@ void HeatMapOptions::loadOptions()
     }
    
     {
-        Text *t = new Text("Use MIST algorithm?");
-        t->setLeft(0.15, 0.22);
-        addObject(t);
-    }
- 
-    {
-        Text *t = new Text("Number of paths:");
-        t->setLeft(0.15, 0.35);
-        addObject(t);
-    }
- 
-    {
-        Text *t = new Text("Number of nearest neighbours:");
-        t->setLeft(0.15, 0.5);
-        addObject(t);
-    }
-
-    float bottom = 0.9;
-
-    {
-	    TextButton *t = new TextButton("Generate heat map", this);
-	    t->setRight(0.9, bottom);
-	    t->setReturnTag("heatmap");
-	    addTempObject(t);
-    }
-
-    loadOptions();
-}
-
-void HeatMapOptions::loadOptions()
-{
-    deleteTemps();
-
-    {
-        TickBoxes *tb = new TickBoxes(this, this);
-        tb->addOption("Yes", "mist");
-        tb->arrange(0.8, 0.22, 0.9, 0.8);
-        addTempObject(tb);
-    }
-   
-    {
         Slider *sPaths = new Slider();
         sPaths->setDragResponder(this);
         sPaths->resize(0.5);
@@ -204,7 +163,3 @@ void HeatMapOptions::refresh()
     loadOptions();
 }
 
-void HeatMapOptions::refresh()
-{
-    loadOptions();
-}

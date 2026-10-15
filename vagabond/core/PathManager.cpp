@@ -660,6 +660,10 @@ void PathManager::pathMatrix(const std::string &filename,
 std::vector<double> PathManager::pathEntropyInstancePair(int numPaths, std::vector<Path *> paths, int numDivisions, bool mist)
 {
     PathEntropy *pE = new PathEntropy();
+
+    struct FlagParameters flagPar = pE->initFlagPar();
+    flagPar.mist = mist;
+
     std::vector<double> entropy;
 
     std::vector<TorsRes4NN*> torsRes = pE->getAtomsAndResidues(numPaths, paths, numDivisions);

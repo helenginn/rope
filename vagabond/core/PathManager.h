@@ -68,11 +68,6 @@ public:
         return _callback;
     };
 
-    const std::function<void(struct EntropyForHeatMap &)> &callback() const
-    {
-        return _callback;
-    };
-
 	void pathMatrix(const std::string &filename,
 	                const std::vector<std::string> &insts);
     void pathEntropyHeatMap(const std::vector<std::string> &args);

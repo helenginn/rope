@@ -53,7 +53,7 @@ void ColourScheme::setupScheme()
 		addFixedPoint(0.7, glm::vec4(1.0, 1.0, 0.05, 1.0), 2.1);
 		addFixedPoint(1.0, glm::vec4(1.0, 1.0, 1.0, 1.0), 3.0);
 	}
-	else if (scheme == BlackYellow)
+	else if (_scheme == BlackYellow)
 	{
 		addFixedPoint(0.0, glm::vec4(0.0, 0.0, 0.0, 1.0));
 		addFixedPoint(1.0, glm::vec4(1.0, 1.0, 0.0, 1.0));

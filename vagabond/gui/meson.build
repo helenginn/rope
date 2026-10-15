@@ -129,6 +129,8 @@ guifiles = [
 'PathsMenu.cpp',
 'PathThermodynamics.cpp',
 'PathThermodynamics.h',
+'PerResidueView.cpp',
+'PerResidueView.h',
 'PickAtomFromSequence.h',
 'PickAtomFromSequence.cpp',
 'PointyView.cpp',

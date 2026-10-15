@@ -37,7 +37,7 @@ int PathThermodynamics::_numPaths = 0;
 PathThermodynamics::PathThermodynamics(Scene *prev, Entity *entity, const std::vector<Path*> paths) : Scene(prev)
 {
 	_entity = entity;
-        _paths = paths;
+    _paths = paths;
 
 	_pathEntropy = new PathEntropy();
 }
@@ -117,6 +117,8 @@ void PathThermodynamics::buttonPressed(std::string tag, Button *button)
 		{
 			_numPaths = lrint(min);
 
+            std::vector<double> entropyVec;
+ 
 			std::vector<TorsRes4NN*> torsRes = _pathEntropy->getAtomsAndResidues(_numPaths, _paths, 15);
 
 			_pathEntropy->calculateEntropyIndependent(_numPaths, flagPar, torsRes,15);
@@ -183,19 +185,6 @@ void PathThermodynamics::buttonPressed(std::string tag, Button *button)
 		setModal(cr);
 	}
 
-	if (tag == "choose_paths")
-	{
-		ChooseRange *cr = static_cast<ChooseRange *>(button->returnObject());
-		float num = cr->max();
-		_numPaths = lrint(num);
-		refresh();
-	}
-
-	if (tag == "divisions")
-	{
-		AskForText *aft = new AskForText(this, "How many samples along the paths?", "samples", this, TextEntry::Numeric);
-		setModal(aft);
-	}
  
     if (tag == "per_residue")
     {
@@ -204,20 +193,6 @@ void PathThermodynamics::buttonPressed(std::string tag, Button *button)
         EntropyTableView *table = new EntropyTableView(this, _entity, _entropyResults);
         table->show();
     }
-
-	if (tag == "choose_paths")
-	{
-		ChooseRange *cr = static_cast<ChooseRange *>(button->returnObject());
-		float num = cr->max();
-		_numPaths = lrint(num);
-		refresh();
-	}
-
-	if (tag == "divisions")
-	{
-		AskForText *aft = new AskForText(this, "How many samples along the paths?", "samples", this, TextEntry::Numeric);
-		setModal(aft);
-	}
 
 	Scene::buttonPressed(tag, button);
 }

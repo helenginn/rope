@@ -23,10 +23,6 @@
 
 class Path;
 class Entity;
-class PathEntropy;
-class PathGroup;
-class Entity;
-class PathEntropy;
 
 class PathThermodynamics : public Scene
 {

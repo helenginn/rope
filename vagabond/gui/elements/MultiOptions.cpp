@@ -33,10 +33,3 @@ void MultiOptions::buttonPressed(std::string tag, Button *button)
     _sender->buttonPressed(_tag + "_" + tag);
 }
 
-void MultiOptions::buttonPressed(std::string tag, Button *button)
-{
-    hide();
-    _sender->buttonPressed(_tag + "_" + tag);
-}
-
-

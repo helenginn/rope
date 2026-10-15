@@ -76,7 +76,6 @@ private:
 
     std::mutex _mutex;
 
-    Slider *_rangeSlider;
     ColourLegend *_legend = nullptr;
 };
 

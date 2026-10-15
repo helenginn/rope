@@ -497,42 +497,6 @@ void PathsMenu::buttonPressed(std::string tag, Button *button)
         HeatMapView *hmv = new HeatMapView(this, entropyData);*/
 
     }
-	{
-		PathThermodynamics *pt = new PathThermodynamics(this, _entity, _paths);
-		pt->show();
-		return;
-	}
-
-    if (tag == "menu_map_entropy")
-    {
-	HeatMapOptions *hmo = new HeatMapOptions(this, _entity);
-
-	    hmo->show();
-	    return;
-
-        /* std::cout << "path entropy data calculated" << std::endl;
-        std::ifstream dataFile(_entity->name() + "_10");
-        std::string line, tempStart, tempEnd, tempEnt, tempEPR;
-        std::getline(dataFile, line);
-       
-        while(std::getline(dataFile, line))
-        {
-           std::istringstream iss(line);
- 
-           getline(iss, tempStart, ',');
-           getline(iss, tempEnd, ',');
-           getline(iss, tempEnt, ',');
-           getline(iss, tempEPR, '\n');
-
-           entropyData.start.push_back(tempStart);
-           entropyData.end.push_back(tempEnd);
-           entropyData.total.push_back(stod(tempEnt));
-           entropyData.perRes.push_back(stod(tempEPR));
-        }
- 
-        HeatMapView *hmv = new HeatMapView(this, entropyData);*/
-
-    }
 
     if (tag == "menu_map_path_values")
     {

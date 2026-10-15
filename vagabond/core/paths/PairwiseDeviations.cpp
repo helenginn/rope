@@ -227,90 +227,64 @@ void PairwiseDeviations::prepare(BondSequence *seq)
 
 	// the neighbour lists are only needed for gradients, and are by far the
 	// most expensive part to calculate: see buildNeighbours()
-	_gaps = gaps;
 	_reference = scratch;
 }
 
-
-/* For every atom p, the pairs of atoms whose distance can be altered by
- * moving p. This is quadratic in the number of atoms (times the pairs per
- * atom), so it is only calculated on first request. Nothing which only
- * scores a route needs it. */
-void PairwiseDeviations::buildNeighbours()
+void PairwiseDeviations::buildNeighbours(Separation *sep)
 {
-	auto reserve_sizes = [this](Atom *const &atom, const int &i)
+	// every block has an entry, so that looking one up never inserts
+	for (size_t i = 0; i < _atoms.size(); i++)
 	{
-		int p = i / 2;
-		_neighbouring[p].reserve(10000);
-	};
+		_neighbouring[i];
+	}
 
-	auto shrink_sizes = [this](Atom *const &atom, const int &i)
+	for (int k = 0; k < (int)_infoPairs.size(); k++)
 	{
-		int p = i / 2;
-		_neighbouring[p].shrink_to_fit();
-	};
+		const int p = _infoPairs[k].p;
+		const int q = _infoPairs[k].q;
 
-	auto populate_neighbours = [this](const Separation::BlockRegion &br)
-	{
-		return [this, &br]
-		(Atom *left, Atom *right, int i, int j)
+		int lr = sep->separationBetween(p, q);
+		if (lr < 0) { continue; }
+
+		const Separation::Segment segment = sep->segment_for_idx(p);
+
+		if (segment.covers(p) && segment.covers(q))
 		{
-			int p = i / 2; int q = j / 2;
+			// the separation from every block in the segment to p, and to q
+			const int *from_p = segment.column(p);
+			const int *from_q = segment.column(q);
+			const int first = segment.first();
 
-			auto check_pair = [&p, &q, &br, this] (int b)
+			for (int b = first + 1; b <= segment.last(); b++)
 			{
-				// sensitive distance between q and b
-				if (_sep)
-				{
-					int lr = _sep->separationBetween(br, b, q);
-					if (lr < 0) { return false; }
-					int lc = _sep->separationBetween(br, b, p);
-					if (lc < 0 || lc > lr) { return false; }
-					int cr = _sep->separationBetween(br, p, q);
-					if (cr < 0) { return false; }
-					bool reject = (lc + cr - lr > 0);
-					if (reject) { return false; }
-				}
+				if (b == p || b == q) { continue; }
 
-				return true;
-			};
+				int lc = from_p[b - first];
+				if (lc < 0 || lc > lr) { continue; }
+				int cr = from_q[b - first];
+				if (cr < 0) { continue; }
 
-			auto add_pairs = [this, &check_pair](int p, int q)
-			{
-				std::vector<int> &qPairs = _perIdx[q];
-				_neighbouring[p].reserve(_neighbouring[p].size());
+				// block is on the path between the pair
+				if (lc + cr - lr > 0) { continue; }
 
-				for (const int &pair : qPairs)
-				{
-					TargetInfo &pInfo = info(pair);
-					int m = pInfo.p; int n = pInfo.q;
-					int chosen = (m == q) ? n : m;
-					if (check_pair(chosen))
-					{
-						_neighbouring[p].push_back(pair);
-					}
-				}
-			};
-
-			add_pairs(p, q);
-			add_pairs(q, p);
-		};
-	};
-
-	for (int i = 0; i + 1 < _gaps.size(); i++)
-	{
-		int n0 = _gaps[i];
-		int n1 = _gaps[i + 1];
-		int p = n0 / 2 + 1;
-		Separation::BlockRegion br = {n0/2, n1/2};
-		if (_sep)
-		{
-			br = _sep->group_for_idx(p);
+				_neighbouring[b].push_back(k);
+			}
 		}
+		else
+		{
+			for (int b = 0; b < (int)_atoms.size(); b++)
+			{
+				if (!_atoms[b] || b == p || b == q) { continue; }
 
-		for_each_atom(_atoms, n0, n1, reserve_sizes);
-		for_each_atom_pair(_atoms, n0, n1, populate_neighbours(br));
-		for_each_atom(_atoms, n0, n1, shrink_sizes);
+				int lc = sep->separationBetween(p, b);
+				if (lc < 0 || lc > lr) { continue; }
+				int cr = sep->separationBetween(b, q);
+				if (cr < 0) { continue; }
+				if (lc + cr - lr > 0) { continue; }
+
+				_neighbouring[b].push_back(k);
+			}
+		}
 	}
 }
 
@@ -498,9 +472,14 @@ PairwiseDeviations::contact_map(const std::set<ScoreBucket> &forResidues)
 }
 
 
-std::vector<int> &PairwiseDeviations::pairsForBlockIdx
-(const int &bidx)
+const std::vector<int> &PairwiseDeviations::pairsForBlockIdx
+(const int &bidx, Separation *sep)
 {
-	std::call_once(_neighbourFlag, [this]() { buildNeighbours(); });
-	return _neighbouring[bidx];
+	std::call_once(_neighbourFlag, [this, sep]() { buildNeighbours(_sep ? _sep : sep ); });
+	
+    static const std::vector<int> none;
+	std::map<int, std::vector<int>>::const_iterator it;
+	it = _neighbouring.find(bidx);
+
+	return (it == _neighbouring.end() ? none : it->second);
 }

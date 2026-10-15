@@ -26,8 +26,7 @@ void GradientTerm::momentum(BondSequence *seq,
                             PairwiseDeviations *dev,
                             Separation *sep)
 {
-	const std::vector<int> &pairs = dev->pairsForBlockIdx(b_idx);
-//	const std::vector<int> &pairs = dev->pairs();
+	const std::vector<int> &pairs = dev->pairsForBlockIdx(b_idx, sep);
 	auto loop = [pairs](const JobOnPair &job)
 	{
 		job(pairs);
