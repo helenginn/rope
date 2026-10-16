@@ -193,7 +193,7 @@ void FlexibilityView::setupSlider()
 
 // add button text to slider that gets you to atom2artoExpolorer
 // fo rthis i will need: scene (this), _instance, RAMovent
-void FlexibilityView::openAtom2AtomExplorer()
+void FlexibilityView::openAtom2AtomExplorer(const std::string &title)
 {
 	// _controller->callSubmitJobAndRetrieve(0.5f);
 	std::vector<Atom3DPosition> list; 
@@ -232,7 +232,8 @@ void FlexibilityView::openAtom2AtomExplorer()
 	}
 
 	RAMovement movement = RAMovement::movements_from(list, disVec);
-	Atom2AtomExplorer *a2a = new Atom2AtomExplorer(this, _instance, movement, polymer_name, false);
+	std::string shown = title.length() ? title : polymer_name;
+	Atom2AtomExplorer *a2a = new Atom2AtomExplorer(this, _instance, movement, shown, false);
 	a2a->show();
 }
 
