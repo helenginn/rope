@@ -293,3 +293,35 @@ void Flexibility::printRigidBodyWeights(const std::vector<float> &v_i)
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
