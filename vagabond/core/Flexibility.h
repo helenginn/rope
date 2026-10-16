@@ -115,6 +115,7 @@ public:
     {
         _colIdx = chosenColIdx;
     }
+    int colIdx() const { return _colIdx; }
     void writeJacobianStatsToCSV(const std::string &filename);
     void writeJacobianToCSV(const std::string &filename);
     void writeVMatrixToCSV(const std::string &filename);
@@ -186,6 +187,12 @@ private:
     std::map<int, BondConstraint> _constraintMap; 
     std::map<Atom*, AtomGroup*> _atom2Group;
     Eigen::VectorXf _gamma;
+    
+    // NEW
+    double _gammaTargetOnlySq = 0.0;
+    int _nTargetOnly = 0;
+    // end NEW
+
     Eigen::VectorXf _lambda;
     BondEntity _targetCoordinate; 
     bool _hasTarget = false;

@@ -208,37 +208,36 @@ void Flexibility::selectDoFMap()
         usedGroups.insert(c.acceptorGroup);
     }
 
-    // == NEW: guarantee the target coordinate's own DoF are covered ==
-    int targetOnlyTorsions = 0;
-    if (_hasTarget)
-    {
-        for (auto &[torsionIdx, isHSide] : _targetCoordinate.TorsionVec)
-        {
-            if (usedTorsions.count(torsionIdx) == 0) targetOnlyTorsions++;
-            usedTorsions.insert(torsionIdx); 
-        }
+    // ==== NEW: guarantee the target coordinate's own DoF are covered ====
+    // int targetOnlyTorsions = 0;
+    // if (_hasTarget)
+    // {
+    //     for (auto &[torsionIdx, isHSide] : _targetCoordinate.TorsionVec)
+    //     {
+    //         if (usedTorsions.count(torsionIdx) == 0) targetOnlyTorsions++;
+    //         usedTorsions.insert(torsionIdx);
+    //     }
 
-        AtomGroup *group = _model->currentAtoms();
-        std::vector<AtomGroup*> subsets =group->connectedGroups();
-        AtomGroup *donorGroup = nullptr;
-        AtomGroup *acceptorGroup = nullptr;
-        for (AtomGroup *subset : subsets)
-        {
-            if (!donorGroup && subset->hasAtom(_targetCoordinate.Donor))
-                donorGroup = subset; 
-            if (!acceptorGroup && subset->hasAtom(_targetCoordinate.Acceptor))
-                acceptorGroup = subset;
-            if (donorGroup && acceptorGroup) break;
-        }
+    //     AtomGroup *group = _model->currentAtoms();
+    //     std::vector<AtomGroup*> subsets = group->connectedGroups();
+    //     AtomGroup *donorGroup = nullptr;
+    //     AtomGroup *acceptorGroup = nullptr;
+    //     for (AtomGroup *subset : subsets)
+    //     {
+    //         if (!donorGroup && subset->hasAtom(_targetCoordinate.Donor))
+    //             donorGroup = subset; 
+    //         if (!acceptorGroup && subset->hasAtom(_targetCoordinate.Acceptor))
+    //             acceptorGroup = subset; 
+    //         if (donorGroup && acceptorGroup) break;
+    //     }
+    //      if (donorGroup) usedGroups.insert(donorGroup);
+    //      if (acceptorGroup) usedGroups.insert(acceptorGroup);
 
-        if (donorGroup) usedGroups.insert(donorGroup);
-        if (acceptorGroup) usedGroups.insert(acceptorGroup);
+    //     std::cout << "[DEBUG selectDoFMap] target contributed "
+    //               << targetOnlyTorsions << " torsions not already used by any constraint"
+    //               << std::endl;
 
-        std::cout << "[DEBUG selectDoFMap] target contributed "
-                  << targetOnlyTorsions << " torsions not already used by any constraint"
-                  << std::endl;
-    }
-    // == END NEW == 
+    // }
 
     int row_counter = 0;
     for (auto &[unusedOldRow, dof] : _dofMap) // key not needed — only dof matters here
@@ -259,6 +258,7 @@ void Flexibility::selectDoFMap()
 
 
 }
+
 
 
 template<class BondType>
@@ -356,9 +356,9 @@ void Flexibility::calculateTorsionFlexibility()
             return 0.0f;
         }
         // float scale = 1000.0f;
-        float val = _allTorsions[_colIdx][idx] * jobWeight;
+        float val = _allTorsions[_colIdx][idx] * jobWeight *  _modeNorm[_colIdx];
         return val;
-        // return _allTorsions[_colIdx][idx] * jobWeight * _modeNorm[_colIdx] * _displayScale;
+        // return _allTorsions[_colIdx][idx] * jobWeight;
     };
 
     coord_manager->setTorsionFetcher(calculateFlexibility);
@@ -1392,7 +1392,7 @@ void Flexibility::newJacobian()
         std::cout << "  group chain: " << g->atomVector()[0]->chain()
                    << " size: " << g->size() << std::endl;
 
-    checkZeroRows();
+    // checkZeroRows();
     writeJacobianStatsToCSV("jacobian_stats.csv");
     writeJacobianToCSV("jacobian_new.csv");
 }
@@ -1465,8 +1465,7 @@ void Flexibility::sensitivityVector()
     _gamma = Eigen::VectorXf::Zero(numRow);
 
     const std::vector<AtomBlock> &blocks = _resources.sequences->sequence()->blocks();
-
-    for (auto &[row, dof] : _activeDoFMap)
+    for (auto &[row, dof] : _activeDoFMap) // looping over _activDoFMap so that the indexing is exactly like the rows of J
     {
         if (dof.type == Torsion)
         {
@@ -1476,18 +1475,43 @@ void Flexibility::sensitivityVector()
             {
                 _gamma(row) = _targetCoordinate.getDerivative(Distance, dof, pivotBlockIdx, blocks);
             }
-        } 
-        else // rigid body - no pivot block 
+        }
+        else // rigid boby - no pivot block
         {
-            _gamma(row) = _targetCoordinate.getDerivative(Distance, dof, -1, blocks);
-
+            _gamma(row) = _targetCoordinate.getDerivative(Distance,dof, -1, blocks);
         }
     }
 
+    // NEW: target torsions that are not rows: kept out of J, accounted for here
+    std::set<int> activeTorsions;
+    for (auto &[row, dof] : _activeDoFMap)
+        if (dof.type == Torsion) activeTorsions.insert(dof.idx);
+
+    _gammaTargetOnlySq = 0.0;
+    _nTargetOnly = 0; 
+    for (auto &[torsionIdx, isHSide] : _targetCoordinate.TorsionVec)
+    {
+        if (activeTorsions.count(torsionIdx)) continue; 
+        for (auto &[row, dof] : _dofMap)
+        {
+            if (dof.type != Torsion || dof.idx != torsionIdx) continue;
+            OpSet<int> pivotSet = _resources.sequences->sequence()->blocksForTorsionIdx(torsionIdx);
+            std::vector<int> pivotIndices = pivotSet.toVector();
+            double g = 0.0;
+            for (int pivotBlockIdx : pivotIndices)
+            {
+                g = _targetCoordinate.getDerivative(Distance, dof, pivotBlockIdx, blocks);
+            }
+            _gammaTargetOnlySq += g * g;
+            _nTargetOnly++;
+            break;
+        }
+    }
     int nonZero = (_gamma.array() != 0.0f).count();
     std::cout << "[DEBUG computeGamma] size = " << _gamma.size()
               << " | non-zero entries = " << nonZero
               << " | norm = " << _gamma.norm() << std::endl;
+    std::cout << "[DEBUG computeGamma] target torsions outside the rows: " << _nTargetOnly << std::endl;
 }
 
 
@@ -1550,6 +1574,7 @@ void Flexibility::checkGammaSanity()
     std::cout << "  on target path, but zero:            " << unexpectedZero << std::endl;
     std::cout << "  OFF target path, non-zero (BAD):     " << violationNonZero << std::endl;
     std::cout << "  rigid-body rows non-zero (BAD):      " << rbNonZero << std::endl;
+    std::cout << "  on target path, outside the rows:    " << _nTargetOnly << std::endl;
 
 
 }
@@ -1642,7 +1667,10 @@ InfluenceResult Flexibility::computeInfluenceCoef(SolveMethod method,
     int nCons = (int)ts.J.cols();
     r.nTorsionDoF = nTors;
     r.nConstraints = nCons;
-    r.gammaNorm = ts.gamma.norm();
+//    r.gammaNorm = ts.gamma.norm();
+    r.gammaNorm = std::sqrt(ts.gamma.squaredNorm() + _gammaTargetOnlySq); // NEW
+
+
 
     Eigen::BDCSVD<Eigen::MatrixXd> svd(ts.J, Eigen::ComputeThinU | Eigen::ComputeThinV);
     Eigen::VectorXd s = svd.singularValues();
@@ -1698,7 +1726,8 @@ InfluenceResult Flexibility::computeInfluenceCoef(SolveMethod method,
 
     _lambda = lambdaD.cast<float>();
     Eigen::VectorXd gammaFree = ts.gamma - ts.J * lambdaD;
-    r.gammaFreeRatio = gammaFree.norm() / ts.gamma.norm();
+    // r.gammaFreeRatio = gammaFree.norm() / ts.gamma.norm();
+    r.gammaFreeRatio = std::sqrt(gammaFree.squaredNorm() + _gammaTargetOnlySq) / r.gammaNorm; // NEW
 
     Eigen::VectorXd rowNorm = (svd.matrixV() * sInv.asDiagonal()).rowwise().norm();
     Eigen::VectorXd utg = svd.matrixU().transpose() * ts.gamma; 
@@ -1802,7 +1831,7 @@ void Flexibility::writeInfluenceCSVs(const InfluenceResult &r,
 {
     if (!r.valid)
     {
-        std::cerr << "[influence] nothing to write - result not vlaid" << std::endl;
+        std::cerr << "[influence] nothing to write - result not valid" << std::endl;
         return; 
     }
 
