@@ -486,7 +486,7 @@ void Scene::textInputEvent(const char *text)
 	for (const char *c = text; *c != '\0'; c++)
 	{
 		unsigned char u = (unsigned char)*c;
-		if (u < 32 || u < 126)
+		if (u < 32 || u > 126)
 		{
 			continue;
 		}
