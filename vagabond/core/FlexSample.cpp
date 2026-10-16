@@ -37,16 +37,13 @@ FlexSample::FlexSample(Flexibility *flex, Instance *instance)
 
 
 
-void FlexSample::saveSampledStructures(int numSamples, const std::string& baseFileName, const std::string& csvDistFile, float petrubationWeight)
+void FlexSample::saveSampledStructures(int numSamples, const std::string& baseFileName, 
+                        const std::string& csvDistFile, float petrubationWeight)
 {
     DisplayScaleGuard guard(_flex, 1.0f);
     const Eigen::MatrixXf& V = _flex->getV();
-    const Eigen::MatrixXf& S = _flex->getS(); 
     int rangeOfJac = getMatrixRange();
-
-    int totalModes = std::max(0, (int)V.cols());
     int N = V.cols();
-    std::vector<int> candidateIndices = sampleColumnIndices(N, numSamples);
 
     // prepare collision detection
     const AtomVector &atoms = _instance->model()->currentAtoms()->atomVector();
@@ -57,29 +54,24 @@ void FlexSample::saveSampledStructures(int numSamples, const std::string& baseFi
     // We use the exclude list to ignore bonded atoms (they don't clash)
     std::set<std::pair<int,int>> exclude = _flex->makeExcList(atom_set);
 
-    // Prepare for Deviation Calculation
+    // Prepare for deviation calculation
     std::vector<DeviationData> collectedData;
-    const auto& hbonds = _flex->getHBonds(); // Requires getter in Flexibility.h
 
-    int saved = 0;
-    int attempts = 0;
-    int maxAttempts = numSamples * 50; // safeguard: don't loop forever
+    int saved = 0; // strucutres written
+    int attempts = 0; // modes tried, kept or rejected
+    int modeIdx = N - 1; // next mode to try, move on after every attempt
 
     // Reset to base position
     _flex->submitJob(0);
     Result *rInitial = _flex->getResult();
     rInitial->transplantPositions(false, true);
+    rInitial->destroy();
 
     // backwards iteration
-    while (saved < numSamples && attempts < maxAttempts)
+    while (saved < numSamples && modeIdx >= rangeOfJac)
     {
         ++attempts;
-        // ---------------------------------------------------------
-        // DEBUGGING: Force sampling from the last columns of Matrix V
-        // ---------------------------------------------------------
-        // Instead of using 'candidateIndices', we force the index.
-        // Sample 0 -> Last Column (N-1)
-        // Sample 1 -> Second to Last (N-2)
+        int pickIdx = modeIdx--;
 
         // restore to base position at start of every iteration
         _flex->submitJob(0);
@@ -87,38 +79,32 @@ void FlexSample::saveSampledStructures(int numSamples, const std::string& baseFi
         rReset->transplantPositions(false, true);
         rReset->destroy();
 
-        // iterate from floppiest (N-1) toward rigid
-        int pickIdx = N - 1 - saved;
-        if (pickIdx < rangeOfJac)
-        {
-            std::cerr << "[FlexSample] Ran out of null space modes.\n";
-            break;
-        }
-
         _flex->setColIdx(pickIdx);
         // debugging 
         {
-        const std::vector<float> &t = _flex->getAllTorsions()[pickIdx];
-        float maxAbs = 0.0f; 
-        int nonZero = 0;
-        for (float v : t)
-        {
-            if (v != 0.0f) nonZero++;
-            if (std::abs(v) > maxAbs) maxAbs = std::abs(v);
-        }
-        std::cout << "[sample] mode " << pickIdx
-                  << " nonzero=" << nonZero
-                  << " maxAbs=" << maxAbs
-                  << " weight=" << petrubationWeight
-                  << " -> max rotation " << (maxAbs * petrubationWeight) << " rad"
-                  << std::endl;
-    } // end debugging
+            const std::vector<float> &t = _flex->getAllTorsions()[pickIdx];
+            float maxAbs = 0.0f; 
+            int nonZero = 0;
+            for (float v : t)
+            {
+                if (v != 0.0f) nonZero++;
+                if (std::abs(v) > maxAbs) maxAbs = std::abs(v);
+            }
+            std::cout << "[sample] mode " << pickIdx
+                      << " nonzero=" << nonZero
+                      << " maxAbs=" << maxAbs
+                      << " weight=" << petrubationWeight
+                      << " -> max rotation " << (maxAbs * petrubationWeight) << " rad"
+                      << std::endl;
+        } // end debugging
+
         _flex->submitJob(petrubationWeight);
         Result *r = _flex->getResult();
         r->transplantPositions(false);
 
         float tol = 0.25f;
-        bool clashOK = _flex->checkClashes(orderedAtoms, saved, radii, exclude, tol);
+        // attempts, not saved: each rejected attempt gets its own number in list_clashes.csv
+        bool clashOK = _flex->checkClashes(orderedAtoms, attempts, radii, exclude, tol);
         if (!clashOK)
         {
             std::cerr << "[FlexSample] Sample rejected (clash) at attempt " << attempts
@@ -152,9 +138,9 @@ void FlexSample::saveSampledStructures(int numSamples, const std::string& baseFi
 
     if (saved < numSamples) 
     { 
-        std::cerr << "[FlexSample] Warning: Could not generate all samples. "
-                  << "Saved " << saved << "/" << numSamples 
-                  << " (Max attempts reached).\n"; 
+        std::cerr << "[FlexSample] Warning: Could not generate all samples "
+                  << " after trying " 
+                  << attempts << " null space modes (ran out of modes).\n"; 
     }
 
 }
