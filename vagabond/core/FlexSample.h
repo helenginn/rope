@@ -26,9 +26,7 @@ public:
 	FlexSample(Flexibility *flex, Instance *instance);
 	void saveSampledStructures(int numSamples, const std::string& baseFileName, const std::string& csvDistFile, float petrubationWeight);
 	std::vector<int> sampleColumnIndices(int N, int sampleCount);
-	std::vector<int> sampleColumnIndicesExp(int N, int sampleCount, double lambda);
 	int getMatrixRange();
-	void saveHierarchySamples(int numSamples, const std::string& baseFileName, float stepSize = 1.0f);
 	void computeOneSample(int pickIdx, double weight);
     int pickIndex(const std::vector<int>& cumulativeWeights)
 	{
