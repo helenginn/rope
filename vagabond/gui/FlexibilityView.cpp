@@ -182,7 +182,8 @@ void FlexibilityView::setupSlider()
 	Slider *s = new Slider();
 	s->setDragResponder(_controller);
 	s->resize(0.5);
-	s->setup("Flexibility amplifier", _min*10, _max*10, _step);
+	// s->setup("Flexibility amplifier", _min*10, _max*10, _step);
+	s->setup("Largest torsion change (deg)", -30, 30, 0.1);
 	s->setStart(0.5, 0.);
 	s->setCentre(0.5, 0.85);
 	_rangeSlider = s;

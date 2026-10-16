@@ -107,6 +107,8 @@ private:
     float _minRange  = 0.0f;
     float _maxRange  = 0.0f;
     float _currentWeight = 0.0f;
+    float _sampleWeight = 0.0f; // NEW: weight the last saved smpled used
+    bool _hasSampleWeight = false; // NEW
 
     std::string _targetAtomA = "";
     std::string _targetAtomB = "";

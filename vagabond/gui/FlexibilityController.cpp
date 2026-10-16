@@ -49,6 +49,7 @@ void FlexibilityController::reset()
     {
         _flex->clearHBonds();
     }
+    _hasSampleWeight = false;
 }
 
 
@@ -59,7 +60,7 @@ void FlexibilityController::showMenu(Button *button)
 	Menu *m = new Menu(_view, _view, "options");
 	m->addOption("Save state as PDB",      "save_state");
     m->addOption("Select h-bonds from file", "selected_hbonds");
-    m->addOption("Create B-factor cloud",  "bfactor_cloud");
+    // m->addOption("Create B-factor cloud",  "bfactor_cloud");
     m->addOption("Clear hydrogen bonds",   "clear_hbonds");
     m->addOption("Save sampled structures","save_samples");
     m->addOption("Explore distance matrix","dist_matrix");
@@ -80,7 +81,7 @@ bool FlexibilityController::handleButton(const std::string &tag, Button *button)
     if (tag == "options_save_state")   { handleSaveState();   return true; }
     if (tag == "export_pdb") { handleExportPDB(button); return true; }
     if (tag == "options_selected_hbonds") { handleSelectedHBonds(button); return true; }
-    if (tag == "options_bfactor_cloud")   { handleBFactorCloud(); return true; }
+    // if (tag == "options_bfactor_cloud")   { handleBFactorCloud(); return true; }
     if (tag == "range_min")   { handleRangeMin(button); return true; }
     if (tag == "range_max")   { handleRangeMax(button); return true; }
     if (tag == "options_save_samples") { handleSaveSamples(); return true; }
@@ -135,36 +136,12 @@ void FlexibilityController::handleSelectedHBonds(Button *button)
         callAddHBonds(_hBondPairs);
         // == NEW: set the target coordinate before selecDoFmap ==> if that works, to be moved as a selcetion in the gui
         AtomGroup *atoms = _instance->currentAtoms();
-
-        // bebug: finfing cys18
-        // for (Atom *a : atoms->atomVector())
-        // {
-        // 	if (a->atomName() == "SG")
-        // 		std::cout << "[SG atom] " << a->desc() <<std::endl;
-        // }
-
-        // Atom *cys18 = atoms->atomByDesc("X-CYS18:SG");
-        // Atom *cys78 = atoms->atomByDesc("X-CYS78:SG");
-        // if (cys18 && cys78)
-        // {
-        // 	_flex->setTargetCoordinate(cys18, cys78);
-        // }
-        // else
-        // {
-        // 	std::cerr << "[ERROR] target atoms not found: "
-        // 			  << (cys18 ? "" : "X-CYS18:SG")
-        // 			  << (cys78 ? "" : "X-CYS78:SG") << std::endl;
-        // }
-        // == end NEW ==
         _flex->selectDoFMap();
         _flex->newJacobian();
-        _flex->setRunLabel("baseline");
-        _flex->sensitivityVector();
-	    _flex->checkGammaSanity();
-	    _flex->computeInfluenceCoef();
         _flex->calculateFlexWeights();
         _flex->calculateTorsionFlexibility();
-	    
+	    _hasSampleWeight = false;
+	    _flex->submitJobAndRetrieve(_currentWeight);
 	    });
 
     _view->selectMode(hbmenu, true);
@@ -243,20 +220,27 @@ void FlexibilityController::handleRangeMax(Button* button)
 	_view->showCloud(unitCloud, grp);
 }
 
-
 void FlexibilityController::handleSaveSamples()
 {
-	if (!_selectFlag)
+	// H-bonds actually chosen (the old _selectFlag was set as soon as the menu opened)
+	if (_flex->getHBonds().empty())
 	{
-		BadChoice *bch = new BadChoice(_view, "Please select hbonds first and then come back for the B-factors");
+		BadChoice *bch = new BadChoice(_view, "Please select hbonds first and then come back to save samples");
 		_view->setModal(bch);
+		return;
 	}
-	else
+
+	// at weight 0 every "sample" would be the unmoved structure
+	if (std::fabs(_currentWeight) < 1e-6f)
 	{
-		AskForText *aft = new AskForText(_view, "How many sampled structures you want to save?:",
-		                                 "num_samples", _view, TextEntry::Numeric);
-		_view->setModal(aft);
-	}	
+		BadChoice *bch = new BadChoice(_view, "The amplitude slider is at 0. Move it before sampling");
+		_view->setModal(bch);
+		return;
+	}
+
+	AskForText *aft = new AskForText(_view, "How many sampled structures you want to save?:",
+	                                 "num_samples", _view, TextEntry::Numeric);
+	_view->setModal(aft);
 }
 
 
@@ -264,11 +248,20 @@ void FlexibilityController::handleNumSamples(Button* button)
 {
 	TextEntry *te = static_cast<TextEntry *>(button);
 	int numSample = atoi(te->scratch().c_str());
+
+	if (numSample <= 0)
+	{
+		return;
+	}
+	
+	_sampleWeight = _currentWeight; // freeze the weight used for these samples
+	_hasSampleWeight = true;
+
+	int previousMode = _flex->colIdx(); 
 	FlexSample sampler(_flex, _instance);
-	sampler.saveSampledStructures(numSample, "sample_structure", "structure_deviation.csv", _currentWeight);
-	// sampler.saveSampledStructures(numSample, "sample_structure", "structure_deviation.csv", 0.5f);
-	// float stepSize = 0.5f; 
-    // sampler.saveHierarchySamples(numSample, "hierarchy_sample", stepSize);
+	sampler.saveSampledStructures(numSample, "sample_structure", "structure_deviation.csv", _sampleWeight);
+	_flex->setColIdx(previousMode);
+	_flex->submitJobAndRetrieve(_currentWeight); // back to what the slider shows
 }
 
 
@@ -292,6 +285,7 @@ void FlexibilityController::handleTargetAtoms()
 	{
 		AskForText *aft = new AskForText(_view, "First target atom (e.g. X-CYS18:SG):",
 	                                 "enter_atomA", _view);
+		aft->allowCapitals(true);
 		_view->setModal(aft);
 	}
 
@@ -304,6 +298,7 @@ void FlexibilityController::handleTargetA(Button* button)
 	trim(_targetAtomA);
 	AskForText *aft = new AskForText(_view, "Second target atom (e.g. X-CYS78:SG):",
 	                                 "enter_atomB", _view);
+	aft->allowCapitals(true);
 	_view->setModal(aft);	
 
 }
@@ -323,6 +318,10 @@ void FlexibilityController::handleTargetB(Button* button)
 		return;
 	}
 	_flex->setTargetCoordinate(targetA, targetB);
+	_flex->setRunLabel("baseline");
+    _flex->sensitivityVector();
+    _flex->checkGammaSanity();
+    _flex->computeInfluenceCoef();
 }
 
 void FlexibilityController::handleColumnIdx(Button* button)
@@ -343,10 +342,19 @@ void FlexibilityController::handleColumnIdx(Button* button)
                   << " out of range [0, " << totalCols - 1 << "]" << std::endl;
         return;
     }
+	// NEW
+	float weight = _hasSampleWeight ? _sampleWeight : _currentWeight;
+	std::cout << "[explorer] column " << idx << ", weight " << weight 
+			  << (_hasSampleWeight ? " (from last saved samples)" : " (from slider)") 
+		      << std::endl;
+	// end NEW
 
 	FlexSample sampler(_flex, _instance);
-    sampler.computeOneSample(idx, _currentWeight); // _currentWeight is the slider ue
-    _view->openAtom2AtomExplorer();
+	sampler.computeOneSample(idx, weight);
+	std::ostringstream title;
+	title << "Column " << idx << ", weight " << weight;
+	_view->openAtom2AtomExplorer(title.str());
+
 }
 
 void FlexibilityController::callAddHBonds(const std::vector<HBondManager::HBondPair> &donorAcceptorPairs) 
@@ -378,9 +386,13 @@ void FlexibilityController::callAddHBonds(const std::vector<HBondManager::HBondP
 
 void FlexibilityController::finishedDragging(std::string tag, double x, double y)
 {
-	float num = x / 1.;
-	_currentWeight = num;
-	float test_retrival = _flex->submitJobAndRetrieve(num);
+	// float num = x / 1.;
+	// _currentWeight = num;
+	// float test_retrival = _flex->submitJobAndRetrieve(num);
+	// _first = false;
+	_currentWeight = x;
+	_hasSampleWeight = false; // the slider is now the altest choice
+	_flex->submitJobAndRetrieve(_currentWeight);
 	_first = false;
 } 
 
