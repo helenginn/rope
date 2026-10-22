@@ -10,4 +10,25 @@ tests_exe = executable(
   include_directories: include_directories('..'),
 )
 
-test('rope_doctest', tests_exe)
+test('rope_doctest', tests_exe, args: ['--test-suite-exclude=force-e2e'])
+
+test(
+  'force-e2e',
+  tests_exe,
+  args: ['--test-suite=force-e2e'],
+  suite: 'local',
+  workdir: meson.current_build_dir(),
+  env: {
+    'ROPE_FORCES_FIXTURES': join_paths(
+      meson.project_source_root(),
+      'external',
+      'reference_geometry',
+      ),
+    },
+  )
+
+add_test_setup(
+  'normal',
+  is_default: true,
+  exclude_suites: ['local'],
+)

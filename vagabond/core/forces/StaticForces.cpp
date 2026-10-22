@@ -190,10 +190,17 @@ CalcReport StaticForces::solve(const std::map<ForceCoordinate, int>
 	{
 		if (rod->hasHydrogen() == false)
 		{
-			rod->calculatedAsTension(file, &data);
+      auto row = rod->calculatedAsTension();
+
+      file << row.stress << " " << row.strain << " " << row.desc << std::endl;
+
+      add_to_CD(&data, row.stress, row.strain);
+      report.stress_strain.push_back(row);
 		}
 	}
 	float eval = evaluate_CD(data);
+  report.stress_strain_correlation = eval;
+
 	std::cout << std::endl;
 	std::cout << "Correlation of bond lengths: " << eval << std::endl;
 	std::cout << "Rod stress-strains written to file." << std::endl;

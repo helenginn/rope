@@ -6,8 +6,6 @@
 #include <limits>
 #include <utility>
 
-auto radius_pair = rope::force_calc::scope::RadiusPair::from_constants(2, 3);
-
 namespace
 {
 	using rope::force_calc::scope::RadiusError;

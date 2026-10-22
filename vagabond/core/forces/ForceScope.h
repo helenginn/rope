@@ -1,10 +1,10 @@
 #pragma once
 
-#include "Atom.h"
 #include "vagabond/utils/ResultType.h"
 #include <cstdint>
 #include <limits>
 #include <string_view>
+#include "vagabond/utils/glm_import.h" // IWYU pragma: keep
 // #include "Units.h" // IWYU pragma: keep //TODO: at some point, add the units back in...
 
 namespace rope::force_calc::scope
@@ -115,7 +115,7 @@ namespace rope::force_calc::scope
 
 	struct Sphere
 	{
-		const Atom &center;
+    glm::vec3 center;
 		RadiusPair radii;
 	};
 

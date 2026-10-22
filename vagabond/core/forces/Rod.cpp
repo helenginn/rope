@@ -20,6 +20,7 @@
 #include "Force.h"
 #include "Torque.h"
 #include "Particle.h"
+#include "forces/ForceCalcReports.h"
 #include "forces/ForceSource.h"
 #include <vagabond/utils/maths.h>
 #include <iostream>
@@ -40,7 +41,7 @@ std::string Rod::desc()
 	return _left->desc() + "---" + _right->desc();
 }
 
-void Rod::calculatedAsTension(std::ostream &ss, CorrelData *data)
+rope::force_calc::StressStrainRow Rod::calculatedAsTension()
 {
 
 	glm::vec3 sum{};
@@ -89,8 +90,8 @@ void Rod::calculatedAsTension(std::ostream &ss, CorrelData *data)
 
 	float unknown_dot = glm::dot(sum, bond_dir());
 	float length_dot = glm::dot(length, bond_dir());
-	ss << unknown_dot << " " << length_dot << " " << desc() << std::endl;
-	add_to_CD(data, unknown_dot, length_dot);
+
+  return {desc(), unknown_dot, length_dot};
 }
 
 glm::vec3 Rod::all_known_forces()

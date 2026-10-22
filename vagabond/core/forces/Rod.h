@@ -22,6 +22,7 @@
 #include <vagabond/utils/glm_import.h>
 #include <map>
 #include "AbstractForce.h"
+#include "forces/ForceCalcReports.h"
 
 class Particle;
 class Torque;
@@ -62,7 +63,7 @@ public:
 	glm::vec3 all_known_forces();
 	glm::vec3 all_known_torques();
 
-	void calculatedAsTension(std::ostream &ss, CorrelData *data);
+	rope::force_calc::StressStrainRow calculatedAsTension();
 
 	void insertTorquesInto(const std::map<ForceCoordinate, int> 
 	                       &indexing_map, int coord, 
