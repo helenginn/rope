@@ -218,6 +218,7 @@ CalcReport StaticForces::solve(const std::map<ForceCoordinate, int>
 		                           true, found);
 		if (found)
 		{
+      report.torsion_electromagnetic.push_back({dot, p->desc()});
 			dfile << dot << " " << p->desc() << std::endl;
 		}
 	}

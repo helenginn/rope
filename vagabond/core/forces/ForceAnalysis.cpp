@@ -34,6 +34,7 @@
 #include "Particle.h"
 #include "Rod.h"
 #include "ForceSource.h"
+#include "ForceCalcReports.h"
 
 ForceAnalysis::ForceAnalysis(AtomContent *group) : _group(group)
 {
@@ -635,7 +636,7 @@ void ForceAnalysis::resetUnknowns()
 
 }
 
-void ForceAnalysis::calculate(bool calcWithUnits)
+rope::force_calc::ForceCalcResultReport ForceAnalysis::calculate(bool calcWithUnits)
 {
 	_calcWithUnits = calcWithUnits;
 	resetUnknowns();
@@ -673,5 +674,5 @@ void ForceAnalysis::calculate(bool calcWithUnits)
 		
 	}
 
-	_forces.solve(index_map, calcWithUnits);
+	return _forces.solve(index_map, calcWithUnits);
 }

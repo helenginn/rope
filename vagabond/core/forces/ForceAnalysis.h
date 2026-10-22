@@ -23,6 +23,7 @@
 #include <vagabond/utils/OpSet.h>
 #include "StaticForces.h"
 #include "AbstractForce.h"
+#include "ForceCalcReports.h"
 
 class AbstractForce;
 class BondLength;
@@ -59,7 +60,7 @@ public:
 
 	void convert(bool calcWithUnits = false);
 	
-	void calculate(bool = false);
+  rope::force_calc::ForceCalcResultReport calculate(bool = false);
 	void resetUnknowns();
 
 private:
