@@ -17,7 +17,10 @@
 // Please email: vagabond @ hginn.co.uk for more details.
 
 #include <vagabond/gui/elements/Slider.h>
+#include <vagabond/gui/elements/TextButton.h>
+#include <vagabond/gui/elements/Menu.h>
 #include <vagabond/gui/ColourLegend.h>
+#include "CompareMatrixOptions.h"
 #include "Atom2AtomExplorer.h"
 #include "Atom3DPosition.h"
 #include "RAMovement.h"
@@ -26,6 +29,8 @@
 #include "Sequence.h"
 #include "Polymer.h"
 #include "Residue.h"
+
+
 
 template <typename Obj>
 struct multiply_by
@@ -207,6 +212,7 @@ void Atom2AtomExplorer::setup()
 	{
 		addPlot();
 		slider();
+		makeMenu();
 	}
 	
 	update();
@@ -267,5 +273,44 @@ void Atom2AtomExplorer::sampleFromPlot(double x, double y)
 	Atom *b = positions[y_idx]().atom;
 	
 	setInformation(a->desc() + ", " + b->desc());
+}
+
+void Atom2AtomExplorer::makeMenu()
+{
+	TextButton *text = new TextButton("Menu", this);
+	text->setRight(0.95, 0.1);
+	addObject(text);
+
+	text->setReturnJob([this, text]()
+	{
+		Menu *m = new Menu(this);
+		addCompareOptions(m, this, [this]() { return currentMatrixForComparison(); });
+		m->setup(text);
+		setModal(m);
+	});
+}
+
+SlotMatrix Atom2AtomExplorer::currentMatrixForComparison()
+{
+	SlotMatrix matrix;
+	matrix.label = _titleText ? _titleText->text() : "distance matrix";
+
+	if (!_atom2Vec)
+	{
+		return matrix;   
+	}
+
+
+	fillable<atompos> positions = (*_atom2Vec)();
+	for (atompos &pos : positions)
+	{
+		matrix.ids.push_back(pos._atom->residueId());
+	}
+
+	PCA::Matrix raw = _cd.matrix();
+	matrix.vals.assign(raw.vals, raw.vals + raw.rows * raw.cols);
+	PCA::freeMatrix(&raw);
+
+	return matrix;
 }
 

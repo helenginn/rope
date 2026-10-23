@@ -22,6 +22,7 @@
 #include <vagabond/gui/elements/Scene.h>
 #include "CompareDistances.h"
 #include <vagabond/utils/svd/PCA.h>
+#include <vagabond/core/MatrixCache.h>
 #include "AtomGroup.h"
 #include "RAMovement.h"
 
@@ -44,6 +45,9 @@ public:
 
 	virtual void finishedDragging(std::string tag, double x, double y);
 	virtual void mousePressEvent(double x, double y, SDL_MouseButtonEvent button);
+
+	void makeMenu();
+	SlotMatrix currentMatrixForComparison();
 private:
 	void sampleFromPlot(double x, double y);
 
