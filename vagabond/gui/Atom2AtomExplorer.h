@@ -23,6 +23,7 @@
 #include "CompareDistances.h"
 #include <vagabond/utils/svd/PCA.h>
 #include <vagabond/gui/FlexibilityView.h>
+#include <vagabond/core/MatrixCache.h>
 #include "AtomGroup.h"
 #include "RAMovement.h"
 
@@ -62,7 +63,9 @@ public:
 	void makeMenu();
 	void saveCurrentMatrix(const std::string &filename);
 	virtual void buttonPressed(std::string tag, Button *button);
+	SlotMatrix currentMatrixForComparison();
 	void saveMatrix(const PCA::Matrix &m, fillable<atompos> &positions, const std::string &filename);
+
 	
 private:
 	void sampleFromPlot(double x, double y);

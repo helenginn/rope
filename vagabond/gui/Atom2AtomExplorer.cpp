@@ -34,6 +34,7 @@
 #include "Residue.h"
 #include "HBondSelectorView.h"
 #include "VdWSelectorView.h"
+#include "CompareMatrixOptions.h"
 
 #include <fstream>
 #include <iomanip>
@@ -223,6 +224,7 @@ void Atom2AtomExplorer::makeMenu()
 
 		Menu *m = new Menu(this);
 		m->addOption("Save distance matrix", save_matrix);
+		addCompareOptions(m, this, [this]() { return currentMatrixForComparison(); });
 		m->setup(text);
 		setModal(m);
 	};
@@ -610,4 +612,46 @@ void Atom2AtomExplorer::showVdWSelector()
 	});
     selector->show();
 }
+
+
+SlotMatrix Atom2AtomExplorer::currentMatrixForComparison()
+{
+	SlotMatrix matrix;
+	matrix.label = _titleText ? _titleText->text() : "distance matrix";
+
+	if (!_atom2Vec)
+	{
+		return matrix; 
+	}
+
+	fillable<atompos> positions = (*_atom2Vec)();
+	for (atompos &pos : positions)
+	{
+		matrix.ids.push_back(pos._atom->residueId());
+	}
+
+	PCA::Matrix raw = _cd.matrix();
+	matrix.vals.assign(raw.vals, raw.vals + raw.rows * raw.cols);
+	PCA::freeMatrix(&raw);
+
+	return matrix;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
