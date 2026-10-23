@@ -151,7 +151,6 @@ void FlexibilityController::handleSelectedHBonds(Button *button)
 
 
 
-
 void FlexibilityController::handleBFactorCloud()
 {
 	// _view->openAtom2AtomExplorer();
