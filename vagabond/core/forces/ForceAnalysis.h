@@ -20,10 +20,12 @@
 #define __vagabond__ForceAnalysis__
 
 #include <map>
+#include <variant>
 #include <vagabond/utils/OpSet.h>
 #include "StaticForces.h"
 #include "AbstractForce.h"
 #include "ForceCalcReports.h"
+#include "ForceScope.h"
 
 class AbstractForce;
 class BondLength;
@@ -42,9 +44,13 @@ HandleForce;
 
 class ForceAnalysis
 {
+   using Scope = std::variant<
+        rope::force_calc::scope::All,
+        rope::force_calc::scope::Sphere>;
+
 public:
 
-	ForceAnalysis(AtomContent *group);
+	ForceAnalysis(AtomContent *group, Scope scope = rope::force_calc::scope::All{});
 
 	void setHandleForce(const HandleForce &func)
 	{
@@ -90,6 +96,7 @@ private:
 	HandleTorque _handleTorque{};
 	HandleForce _handleForce{};
 	bool _calcWithUnits = false;
+  Scope _scope;
 	
 	OpSet<AbstractForce *> _allForces;
 };

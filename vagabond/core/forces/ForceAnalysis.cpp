@@ -16,7 +16,6 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#include <fstream>
 #include <gemmi/elem.hpp>
 
 #include <iostream>
@@ -33,10 +32,12 @@
 
 #include "Particle.h"
 #include "Rod.h"
+#include "ForceScope.h"
 #include "ForceSource.h"
 #include "ForceCalcReports.h"
 
-ForceAnalysis::ForceAnalysis(AtomContent *group) : _group(group)
+ForceAnalysis::ForceAnalysis(AtomContent *group, Scope scope)
+    : _group(group), _scope(scope)
 {
 }
 

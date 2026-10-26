@@ -19,6 +19,7 @@ test(
   suite: 'local',
   workdir: meson.current_build_dir(),
   env: {
+    'ROPE_DATA_DIR': meson.project_source_root(),
     'ROPE_FORCES_FIXTURES': join_paths(
       meson.project_source_root(),
       'external',

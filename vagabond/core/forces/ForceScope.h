@@ -68,6 +68,7 @@ namespace rope::force_calc::scope
 	};
 
 	constexpr rust_type::Result<void, RadiusError>
+
 	RadiusPair::validate_radii(double inner, double outer)
 	{
 		// using max, because std::isfinite as constexpr is cpp23
