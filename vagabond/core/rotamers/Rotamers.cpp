@@ -14,11 +14,11 @@ RotamerLibrary::RotamerLibrary()
     std::cout << "All rotamers: " << _allRotamers.size() << '\n';
 }
 
-std::map<std::string,std::vector<Rotamer>> RotamerLibrary::loadRotamersFromJson(std::string const &filepath)
+std::map<std::string, std::vector<Rotamer>> RotamerLibrary::loadRotamersFromJson(std::string const &filepath)
 {
     std::ifstream f;
     std::cout << std::string(DATA_DIRECTORY) + "/" + filepath << " test " << std::endl;
-    f.open( std::string(DATA_DIRECTORY) + "/" + filepath);
+    f.open(std::string(DATA_DIRECTORY) + "/" + filepath);
     if (!f.is_open())
     {
         throw std::runtime_error("Could not open rotamer JSON: " + filepath);
@@ -29,7 +29,7 @@ std::map<std::string,std::vector<Rotamer>> RotamerLibrary::loadRotamersFromJson(
     f.close();
 
     std::vector<Rotamer> rotamers;
-    std::map<std::string,std::vector<Rotamer>> allRotamers;
+    std::map<std::string, std::vector<Rotamer>> allRotamers;
 
     for (auto &[resname, entries] : j.items())
     {
@@ -49,9 +49,9 @@ std::map<std::string,std::vector<Rotamer>> RotamerLibrary::loadRotamersFromJson(
                 if (entry.contains(chiKey))
                 {
                     r.chi.push_back(entry[chiKey].is_null() ? 0.0f // 0 == no chi value
-                                                               : entry[chiKey].get<float>());
+                                                            : entry[chiKey].get<float>());
                     r.chi_width.push_back(entry[widthKey].is_null() ? -1.0f //
-                                                               : entry[widthKey].get<float>());
+                                                                    : entry[widthKey].get<float>());
                 }
             }
             rotamers.push_back(r);

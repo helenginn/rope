@@ -1,5 +1,58 @@
-BasedOnStyle: LLVM        # or Google, Chromium, Mozilla, WebKit, Microsoft, GNU
-BreakBeforeBraces: Allman # brace on its own line (your original style)
-SortIncludes: Never       # stop reordering #includes
+BasedOnStyle: LLVM
+Language: Cpp
+
 IndentWidth: 4
+TabWidth: 4
+ContinuationIndentWidth: 4
 ColumnLimit: 0
+
+BreakBeforeBraces: Custom
+AllowShortRecordOnASingleLine: Empty
+BraceWrapping:
+  AfterCaseLabel: true
+  AfterClass: true
+  AfterControlStatement: Always
+  AfterEnum: true
+  AfterExternBlock: true
+  AfterFunction: true
+  AfterNamespace: true
+  AfterObjCDeclaration: true
+  AfterStruct: true
+  AfterUnion: true
+  BeforeCatch: true
+  BeforeElse: true
+  BeforeLambdaBody: true
+  BeforeWhile: false
+  IndentBraces: false
+  SplitEmptyFunction: true
+  SplitEmptyRecord: false
+  SplitEmptyNamespace: true
+
+AllowShortBlocksOnASingleLine: Never
+AllowShortFunctionsOnASingleLine: Empty
+AllowShortIfStatementsOnASingleLine: Never
+AllowShortLoopsOnASingleLine: false
+AllowShortLambdasOnASingleLine: All
+AllowShortEnumsOnASingleLine: false
+
+PointerAlignment: Right
+ReferenceAlignment: Pointer
+DerivePointerAlignment: false
+
+AlignAfterOpenBracket: Align
+BinPackArguments: true
+BinPackParameters: BinPack
+BreakBeforeBinaryOperators: None
+
+NamespaceIndentation: All
+AccessModifierOffset: -4
+IndentCaseLabels: true
+FixNamespaceComments: false
+
+BreakConstructorInitializers: BeforeColon
+ConstructorInitializerIndentWidth: 0
+PackConstructorInitializers: BinPack
+
+SortIncludes: Never
+IncludeBlocks: Preserve
+ReflowComments: false

@@ -12,7 +12,7 @@
 class Bouquet
 {
 public:
-    void storeRotamers(std::map<ResidueId, std::map<Atom*,  std::vector<glm::vec3>>> &rotamers)
+    void storeRotamers(std::map<ResidueId, std::map<Atom *, std::vector<glm::vec3>>> &rotamers)
     {
         store = store.store(rotamers);
         storeRotRes();
@@ -25,7 +25,7 @@ public:
 
     void storeRotRes()
     {
-        std::vector<RotamerStore> residueStore {};
+        std::vector<RotamerStore> residueStore{};
         residueStore = store.residueStore();
         for (auto &positions : residueStore)
         {
@@ -64,7 +64,7 @@ public:
         }
     }
 
-    std::pair<ResidueId,std::string> name()
+    std::pair<ResidueId, std::string> name()
     {
         return store.name();
     }
@@ -73,9 +73,9 @@ public:
     {
         return store.size();
     }
-    std::vector<Bouquet *> bouquetsForChain(const std::string& Name)
+    std::vector<Bouquet *> bouquetsForChain(const std::string &Name)
     {
-        std::vector<Bouquet *> bouquetsChain {};
+        std::vector<Bouquet *> bouquetsChain{};
         for (auto bouquets : residueBouquets)
         {
             if (bouquets->name().first.insert == Name)
@@ -89,33 +89,33 @@ public:
         return store.extractForGUI();
     }
 
-    std::vector<std::pair<glm::vec3,glm::vec3>> getVertices() const
+    std::vector<std::pair<glm::vec3, glm::vec3>> getVertices() const
     {
-        std::vector<std::pair<glm::vec3,glm::vec3>> vert;
+        std::vector<std::pair<glm::vec3, glm::vec3>> vert;
         for (auto const &bouquets : residueBouquets)
             if (bouquets->collision.colliding())
                 vert.emplace_back(bouquets->collision.collisionCube());
         return vert;
     }
 
-    std::vector<std::pair<ResidueId,ResidueId>> collisionUpdate()
+    std::vector<std::pair<ResidueId, ResidueId>> collisionUpdate()
     {
         for (auto &residues : residueBouquets)
             residues->collision.clearCollision();
-        std::vector<std::pair<ResidueId, ResidueId>> collisions {};
+        std::vector<std::pair<ResidueId, ResidueId>> collisions{};
         for (int x = 0; x < residueBouquets.size(); x++)
         {
             for (int y = 0; y < residueBouquets.size(); y++)
-            if (x != y  && residueBouquets[x]->name().second != residueBouquets[y]->name().second)
-            {
-                residueBouquets[x]->collision.collidesWith(residueBouquets[y]->collision);
-            }
+                if (x != y && residueBouquets[x]->name().second != residueBouquets[y]->name().second)
+                {
+                    residueBouquets[x]->collision.collidesWith(residueBouquets[y]->collision);
+                }
         }
         return collisions;
     }
     std::vector<std::pair<ResidueId, std::string>> collisionList()
     {
-        std::vector<std::pair<ResidueId, std::string>> list {};
+        std::vector<std::pair<ResidueId, std::string>> list{};
         for (auto bouquet : residueBouquets)
         {
             if (bouquet->collision.colliding())
@@ -128,34 +128,34 @@ public:
 
     Eigen::Matrix<int, Eigen::Dynamic, Eigen::Dynamic> fullCollisionChecks(std::vector<Bouquet *> const &resChainA, std::vector<Bouquet *> const &resChainB, int const sizeA, int const sizeB)
     {
-        Eigen::MatrixXi collisionMatrix(sizeA,sizeB);
+        Eigen::MatrixXi collisionMatrix(sizeA, sizeB);
         collisionMatrix.fill(0);
-        int AchainNum {0};
+        int AchainNum{0};
         for (auto const &resA : resChainA)
         {
             if (!resA->collision.colliding())
             {
-                for (int x = 0; x < resA->store.size();x++)
+                for (int x = 0; x < resA->store.size(); x++)
                 {
                     AchainNum++;
                 }
                 continue;
             }
-            for (int x = 0; x < resA->store.size();x++)
+            for (int x = 0; x < resA->store.size(); x++)
             {
-                int BchainNum {0};
+                int BchainNum{0};
                 for (auto const &resB : resChainB)
                 {
                     if (!resB->collision.colliding())
                     {
-                        BchainNum+= resB->store.size();
+                        BchainNum += resB->store.size();
                         continue;
                     }
                     for (int y = 0; y < resB->store.size(); y++)
                     {
                         if (store.collisionCheck(resA->store, x, resB->store, y))
                         {
-                            collisionMatrix(AchainNum,BchainNum) = 1;
+                            collisionMatrix(AchainNum, BchainNum) = 1;
                         }
                         BchainNum++;
                     }
@@ -166,34 +166,34 @@ public:
         return collisionMatrix;
     }
 
-    glm::vec3 positionReporter(Bouquet* bouquet)
+    glm::vec3 positionReporter(Bouquet *bouquet)
     {
         return bouquet->store.positionForReporter();
     }
-    
+
     std::vector<glm::vec3> axis(const std::string &chainName, bool trueAxis = false)
     {
-        glm::vec3 firstPoint {};
-        glm::vec3 endPoint {};
-        int min {};
-        int max {};
-        const std::vector<Bouquet*> bouquetsList {bouquetsForChain(chainName)};
+        glm::vec3 firstPoint{};
+        glm::vec3 endPoint{};
+        int min{};
+        int max{};
+        const std::vector<Bouquet *> bouquetsList{bouquetsForChain(chainName)};
 
         if (trueAxis)
         {
-            float y {0};
-            float z {0};
-            int counter {0};
-            glm::vec3 currentPos {};
-        //     std::vector<glm::vec3> positionsArray {}; //WIP working on more precise axis
-        //     glm::vec3 centroid {0};
-        //     for (auto const &bouquets : bouquetsList)
-        //     {
-        //         currentPos = bouquets->store.positionForReporter();
-        //         positionsArray.push_back(currentPos);
-        //         centroid += currentPos;
-        //     }
-        //     centroid /= positionsArray.size();
+            float y{0};
+            float z{0};
+            int counter{0};
+            glm::vec3 currentPos{};
+            //     std::vector<glm::vec3> positionsArray {}; //WIP working on more precise axis
+            //     glm::vec3 centroid {0};
+            //     for (auto const &bouquets : bouquetsList)
+            //     {
+            //         currentPos = bouquets->store.positionForReporter();
+            //         positionsArray.push_back(currentPos);
+            //         centroid += currentPos;
+            //     }
+            //     centroid /= positionsArray.size();
             for (auto const &bouquets : bouquetsList)
             {
                 currentPos = bouquets->store.positionForReporter();
@@ -210,19 +210,19 @@ public:
                 {
                     endPoint.x = currentPos.x;
                 }
-                y = y+currentPos.y;
-                z = z+currentPos.z;
-                counter ++;
+                y = y + currentPos.y;
+                z = z + currentPos.z;
+                counter++;
             }
-            y = y/counter;
-            z = z/counter;
+            y = y / counter;
+            z = z / counter;
             firstPoint.y = y;
             firstPoint.z = z;
             endPoint.y = y;
             endPoint.z = z;
             return {firstPoint, endPoint};
         }
-        for ( auto const &bouquets : bouquetsList)
+        for (auto const &bouquets : bouquetsList)
         {
             if (!firstPoint.x)
             {
@@ -248,16 +248,17 @@ public:
     {
         return store.numAtom();
     }
-    std::map<Atom*,glm::vec3> atomPos(int const &rotamer)
+    std::map<Atom *, glm::vec3> atomPos(int const &rotamer)
     {
-        ResRot ID {};
+        ResRot ID{};
         ID.Id() = store.name().first;
         ID.second = rotamer;
         return store.atomPos(ID);
     }
+
 protected:
-    RotamerStore store {};
-    CollisionBox collision {};
-    std::vector<Bouquet*> residueBouquets;
+    RotamerStore store{};
+    CollisionBox collision{};
+    std::vector<Bouquet *> residueBouquets;
 };
 #endif

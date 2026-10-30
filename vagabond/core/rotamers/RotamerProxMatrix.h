@@ -12,22 +12,23 @@ class RotMatrix : public StructureModification
 {
 protected:
     void prepareResources();
+
 public:
-    RotMatrix(std::map<std::string,std::vector<Rotamer>> Rotamers);
+    RotMatrix(std::map<std::string, std::vector<Rotamer>> Rotamers);
     void proximityMatrix();
-    std::vector<std::pair<std::string,Eigen::MatrixXf>> returnMatrices()
+    std::vector<std::pair<std::string, Eigen::MatrixXf>> returnMatrices()
     {
         return _proxMatrices;
     }
     void unifiedTorsionFetcher();
 
     void submitJob(float weight);
-    std::map<std::string,Eigen::MatrixXf> getPossibleRotamers();
+    std::map<std::string, Eigen::MatrixXf> getPossibleRotamers();
 
 private:
-    std::map<std::string,std::vector<Rotamer>> _allRotamers;
-    AtomGroup *_group {};
+    std::map<std::string, std::vector<Rotamer>> _allRotamers;
+    AtomGroup *_group{};
     std::vector<Parameter *> _params;
-    std::vector<std::pair<std::string,Eigen::MatrixXf>> _proxMatrices {};
+    std::vector<std::pair<std::string, Eigen::MatrixXf>> _proxMatrices{};
 };
 #endif

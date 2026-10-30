@@ -8,26 +8,23 @@
 #include <string>
 #include <vector>
 
-
 class CollisionBox
 {
-    std::vector<glm::vec3> vertices {};
-    std::string name {};
-    bool collision {false};
-    float xMin {}; //Goal might be to remove these variable (but can be useful for Collisions checks?)
-    float xMax {};
+    std::vector<glm::vec3> vertices{};
+    std::string name{};
+    bool collision{false};
+    float xMin{}; //Goal might be to remove these variable (but can be useful for Collisions checks?)
+    float xMax{};
 
-    float yMin {};
-    float yMax {};
+    float yMin{};
+    float yMax{};
 
-    float zMin {};
-    float zMax {};
+    float zMin{};
+    float zMax{};
 
 public:
-
     CollisionBox()
     {
-
     }
     CollisionBox(std::vector<glm::vec3> const &positions)
     {
@@ -36,24 +33,26 @@ public:
     void updateVert(std::vector<glm::vec3> const &positions)
     {
         vertices.clear();
-        float xMint {};
-        float xMaxt {};
+        float xMint{};
+        float xMaxt{};
 
-        float yMint {};
-        float yMaxt {};
+        float yMint{};
+        float yMaxt{};
 
-        float zMint {};
-        float zMaxt {};
-        for (auto const pos: positions)
+        float zMint{};
+        float zMaxt{};
+        for (auto const pos : positions)
         {
             if (!xMint)
             {
                 xMint = pos.x;
                 xMaxt = pos.x;
-            } else if (pos.x < xMint)
+            }
+            else if (pos.x < xMint)
             {
                 xMint = pos.x;
-            } else if (pos.x > xMaxt)
+            }
+            else if (pos.x > xMaxt)
             {
                 xMaxt = pos.x;
             }
@@ -61,10 +60,12 @@ public:
             {
                 yMint = pos.y;
                 yMaxt = pos.y;
-            } else if (pos.y < yMint)
+            }
+            else if (pos.y < yMint)
             {
                 yMint = pos.y;
-            } else if (pos.y > yMaxt)
+            }
+            else if (pos.y > yMaxt)
             {
                 yMaxt = pos.y;
             }
@@ -77,7 +78,8 @@ public:
             else if (pos.z < zMint)
             {
                 zMint = pos.z;
-            } else if (pos.z > zMaxt)
+            }
+            else if (pos.z > zMaxt)
             {
                 zMaxt = pos.z;
             }
@@ -90,22 +92,21 @@ public:
         zMin = zMint;
     }
 
-    std::pair<glm::vec3,glm::vec3> collisionCube() const
+    std::pair<glm::vec3, glm::vec3> collisionCube() const
     {
-        glm::vec3 min {xMin,yMin,zMin};
-        glm::vec3 max {xMax,yMax,zMax};
-        return std::pair<glm::vec3,glm::vec3> {min,max};
+        glm::vec3 min{xMin, yMin, zMin};
+        glm::vec3 max{xMax, yMax, zMax};
+        return std::pair<glm::vec3, glm::vec3>{min, max};
     }
     bool collidesWith(CollisionBox &other)
     {
         if (
-        xMin <= other.xMax &&
-        xMax >= other.xMin &&
-        yMin <= other.yMax &&
-        yMax >= other.yMin &&
-        zMin <= other.zMax &&
-        zMax >= other.zMin
-        )
+            xMin <= other.xMax &&
+            xMax >= other.xMin &&
+            yMin <= other.yMax &&
+            yMax >= other.yMin &&
+            zMin <= other.zMax &&
+            zMax >= other.zMin)
         {
             this->collision = true;
             other.collision = true;
@@ -118,6 +119,8 @@ public:
         this->collision = false;
     }
     bool colliding() const
-    {return collision;}
+    {
+        return collision;
+    }
 };
 #endif

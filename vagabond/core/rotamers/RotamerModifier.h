@@ -14,13 +14,30 @@ class RotamerModifier : public StructureModification
 {
 protected:
     void prepareResources();
+
 public:
     RotamerModifier(Instance *instMain, Instance *instSec, std::string &mainChain, std::string &secChain);
     void setup();
     ~RotamerModifier();
-    enum points{Start, End};
-    enum axis{X, Y};
-    enum parameter {Default, Slider, Reset, Map, MoveX, MoveY};
+    enum points
+    {
+        Start,
+        End
+    };
+    enum axis
+    {
+        X,
+        Y
+    };
+    enum parameter
+    {
+        Default,
+        Slider,
+        Reset,
+        Map,
+        MoveX,
+        MoveY
+    };
     float submitJobAndRetrieve(float weight, parameter a = Default);
     void submitJob(float weight);
     void prepareMemory();
@@ -28,7 +45,7 @@ public:
     void unifiedTorsionFetcher();
     void generateRotamerMapPosition();
 
-    static void updatingAtomGroupPositions(glm::mat4x4 const &transformationMat,Atom* atom = nullptr);
+    static void updatingAtomGroupPositions(glm::mat4x4 const &transformationMat, Atom *atom = nullptr);
 
     std::vector<glm::vec3> axisForChain(std::string const &chainName);
 
@@ -45,35 +62,35 @@ public:
     void analysisPipeline(int timePoints, std::vector<glm::vec3> startPos, int iterations = 1);
     std::vector<glm::vec3> newStartPos(int numOfPos, glm::vec3 norm, int runNum);
 
-    std::vector<std::pair<glm::vec3,glm::vec3> > getVertices() const
+    std::vector<std::pair<glm::vec3, glm::vec3>> getVertices() const
     {
         return _bouquet->getVertices();
     };
-    std::map<std::string,Eigen::MatrixXf> proximityMatrix();
-    glm::mat4x4 _transform {};
+    std::map<std::string, Eigen::MatrixXf> proximityMatrix();
+    glm::mat4x4 _transform{};
 
 private:
-    Instance *_instMain {};
-    Instance *_instSec {};
-    std::string _mainChain {};
-    std::string _secChain {};
-    std::map<ResidueId, std::map<Atom*,  std::vector<glm::vec3>>> _resBouquet {};
+    Instance *_instMain{};
+    Instance *_instSec{};
+    std::string _mainChain{};
+    std::string _secChain{};
+    std::map<ResidueId, std::map<Atom *, std::vector<glm::vec3>>> _resBouquet{};
     AtomGroup *_group;
     std::vector<Parameter *> _params;
     RotamerLibrary *_lib;
     RotamerMap *Rot;
     std::map<int, RotamerMap> _RotMem;
-    std::map<std::string,Eigen::MatrixXf> _proximityMatrices {};
+    std::map<std::string, Eigen::MatrixXf> _proximityMatrices{};
     Bouquet *_bouquet;
     parameter _mode;
-    glm::vec3 _axisMain {};
-    glm::vec3 _axisSecondary {};
-    glm::vec3 _y {};
-    glm::vec3 _z {};
-    glm::vec3 _normal {};
-    float _memoryY {0};
-    float _memoryX {0};
-    bool _referential {false};
-    bool _map {false};
+    glm::vec3 _axisMain{};
+    glm::vec3 _axisSecondary{};
+    glm::vec3 _y{};
+    glm::vec3 _z{};
+    glm::vec3 _normal{};
+    float _memoryY{0};
+    float _memoryX{0};
+    bool _referential{false};
+    bool _map{false};
 };
 #endif

@@ -37,24 +37,24 @@ struct LookUpInfo : std::pair<int, int>
 class RotamerStore
 {
 public:
-    RotamerStore store(std::map<ResidueId, std::map<Atom*,  std::vector<glm::vec3>>> &rotamers);
+    RotamerStore store(std::map<ResidueId, std::map<Atom *, std::vector<glm::vec3>>> &rotamers);
     std::vector<RotamerStore> residueStore();
     std::vector<glm::vec3> getPos();
-    std::map<Atom*,glm::vec3> atomPos(ResRot const &rotamer);
+    std::map<Atom *, glm::vec3> atomPos(ResRot const &rotamer);
     std::vector<glm::vec3> positionFor(ResRot const &rotamer);
     bool collisionCheck(RotamerStore &self, int const &rotNum, RotamerStore &other, int const &otherRotNum);
     glm::vec3 positionForReporter();
-    void move(glm::mat4x4 parameters,std::string const &chain = "");
+    void move(glm::mat4x4 parameters, std::string const &chain = "");
     AtomPosMap extractForGUI();
-    std::pair<ResidueId,std::string> name();
+    std::pair<ResidueId, std::string> name();
     int size()
     {
         return storage.size();
     }
     int numAtom()
     {
-        std::vector<Atom*> atomUnique {};
-        int atomCount {};
+        std::vector<Atom *> atomUnique{};
+        int atomCount{};
         for (auto atom : atoms)
         {
             bool unique = true;
@@ -76,8 +76,8 @@ public:
     }
 
 private:
-    std::map<ResRot,LookUpInfo> storage;
+    std::map<ResRot, LookUpInfo> storage;
     std::vector<glm::vec3> positionArray;
-    std::vector<Atom*> atoms;
+    std::vector<Atom *> atoms;
 };
 #endif

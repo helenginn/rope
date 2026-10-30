@@ -6,7 +6,6 @@
 
 #include <fstream>
 
-
 #include "vagabond/core/BondCalculator.h"
 #include "vagabond/core/BondSequenceHandler.h"
 #include "vagabond/core/engine/Task.h"
@@ -22,7 +21,7 @@
 
 #include <vagabond/core/AtomPosMap.h>
 
-RotMatrix::RotMatrix(std::map<std::string,std::vector<Rotamer>> Rotamers): _allRotamers(Rotamers)
+RotMatrix::RotMatrix(std::map<std::string, std::vector<Rotamer>> Rotamers) : _allRotamers(Rotamers)
 {
     proximityMatrix();
 }
@@ -35,48 +34,49 @@ void RotMatrix::proximityMatrix()
 
 // 2.
 {
-    std::map<std::string, std::map<Atom*, std::vector<glm::vec3>>> mapPositionsSidechain {};
+    std::map<std::string, std::map<Atom *, std::vector<glm::vec3>>> mapPositionsSidechain{};
 
     for (auto const &residue : _allRotamers)
     {
-        File *file = File::loadUnknown("./AminoAcids/" + residue.first +".pdb");
+        File *file = File::loadUnknown("./AminoAcids/" + residue.first + ".pdb");
         _group = file->atoms();
         prepareResources();
         unifiedTorsionFetcher();
 
-            std::cout << "/aminoAcids/" << residue.first << " is open" << std::endl;
-            for (int x{0}; x < residue.second.size(); x++)
+        std::cout << "/aminoAcids/" << residue.first << " is open" << std::endl;
+        for (int x{0}; x < residue.second.size(); x++)
+        {
+            submitJob(x);
+            Result *r = _resources.calculator->acquireObject();
+            AtomPosList list = r->apl;
+            for (auto const &atomWithPos : list)
             {
-                submitJob(x);
-                Result *r = _resources.calculator->acquireObject();
-                AtomPosList list = r->apl;
-                for (auto const &atomWithPos: list)
-                {
-                    mapPositionsSidechain[residue.first][atomWithPos.atom].push_back(atomWithPos.wp.ave);
-                }
-                r->destroy();
+                mapPositionsSidechain[residue.first][atomWithPos.atom].push_back(atomWithPos.wp.ave);
             }
+            r->destroy();
+        }
     }
     for (auto const &residue : mapPositionsSidechain)
     {
         std::string fileName = residue.first + "Proximity.csv";
-        std::string csvContent {};
-        Eigen::MatrixXf actualMatrix(residue.second.begin()->second.size(),residue.second.begin()->second.size());
-        for (int firstPos {0}; firstPos < residue.second.begin()->second.size(); firstPos++)
+        std::string csvContent{};
+        Eigen::MatrixXf actualMatrix(residue.second.begin()->second.size(), residue.second.begin()->second.size());
+        for (int firstPos{0}; firstPos < residue.second.begin()->second.size(); firstPos++)
         {
-            for (int secondPos {0}; secondPos < residue.second.begin()->second.size(); secondPos++)
+            for (int secondPos{0}; secondPos < residue.second.begin()->second.size(); secondPos++)
             {
-                float totalLength {0};
+                float totalLength{0};
                 for (auto atomPos : mapPositionsSidechain[residue.first])
                 {
-                    totalLength += abs(length(atomPos.second[firstPos]-atomPos.second[secondPos]));
-                    std::cout << '\n' << totalLength << std::endl;
+                    totalLength += abs(length(atomPos.second[firstPos] - atomPos.second[secondPos]));
+                    std::cout << '\n'
+                              << totalLength << std::endl;
                 }
                 csvContent += std::to_string(totalLength) + ',';
                 std::cout << "End of " << residue.first << " rotamer number pair (" << firstPos << ", " << secondPos << std::endl;
                 actualMatrix(firstPos, secondPos) = totalLength;
             }
-            csvContent = csvContent.substr(0, csvContent.length()-1);
+            csvContent = csvContent.substr(0, csvContent.length() - 1);
             csvContent += '\n';
         }
         std::ofstream file;
@@ -90,38 +90,38 @@ void RotMatrix::proximityMatrix()
     }
     for (auto [name, matrix] : _proxMatrices)
     {
-        Eigen::MatrixXi top5 {matrix.rows(),matrix.cols()};
+        Eigen::MatrixXi top5{matrix.rows(), matrix.cols()};
         top5.fill(0);
-        std::string csvContent {};
+        std::string csvContent{};
         for (int line = 0; line < matrix.rows(); line++)
         {
-            Eigen::VectorXf valueOrdered {matrix.rows()};
+            Eigen::VectorXf valueOrdered{matrix.rows()};
             valueOrdered.fill(FLT_MAX);
-            std::vector<float> valueOrderedTest {};
+            std::vector<float> valueOrderedTest{};
             valueOrderedTest.push_back(FLT_MAX);
-            for (int pos =0; pos < matrix.cols(); pos++) // exponent of negative of square + scaling based onBoltzmann distribution
+            for (int pos = 0; pos < matrix.cols(); pos++) // exponent of negative of square + scaling based onBoltzmann distribution
             {
-                for (int min = 0; min < matrix.cols();min++)
+                for (int min = 0; min < matrix.cols(); min++)
                 {
-                    if (matrix(line,pos) < valueOrderedTest[min])
+                    if (matrix(line, pos) < valueOrderedTest[min])
                     {
                         top5.row(line).array() = (top5.row(line).array() > min).select(top5.row(line).array() + 1, top5.row(line).array());
-                        top5(line,pos) = min+1;
-                        valueOrderedTest.emplace( valueOrderedTest.begin()+min, matrix(line, pos));
+                        top5(line, pos) = min + 1;
+                        valueOrderedTest.emplace(valueOrderedTest.begin() + min, matrix(line, pos));
                         std::cout << " test" << std::endl;
                         break;
                     }
                 }
             }
         }
-        std::string fileName {name +"top5.csv"};
+        std::string fileName{name + "top5.csv"};
         for (int lines = 0; lines < top5.rows(); lines++)
         {
             for (int cols = 0; cols < top5.cols(); cols++)
             {
-                csvContent+= std::to_string(top5(lines,cols)) + ',';
+                csvContent += std::to_string(top5(lines, cols)) + ',';
             }
-            csvContent = csvContent.substr(0, csvContent.length()-1);
+            csvContent = csvContent.substr(0, csvContent.length() - 1);
             csvContent += '\n';
         }
         std::ofstream file;
@@ -130,16 +130,15 @@ void RotMatrix::proximityMatrix()
         file.close();
     }
     std::cout << "terminado?" << std::endl;
-
 }
-std::map<std::string,Eigen::MatrixXf> RotMatrix::getPossibleRotamers()
+std::map<std::string, Eigen::MatrixXf> RotMatrix::getPossibleRotamers()
 {
-    std::map<std::string,Eigen::MatrixXf> availRot {};
+    std::map<std::string, Eigen::MatrixXf> availRot{};
     if (_proxMatrices.empty())
         proximityMatrix();
     for (auto [name, matrix] : _proxMatrices)
     {
-        Eigen::MatrixXf mat {};
+        Eigen::MatrixXf mat{};
         //mat = matrix.cast<int>();
         mat.array() = (matrix.array() < 10).cast<float>();
         availRot[name] = mat;
@@ -147,7 +146,6 @@ std::map<std::string,Eigen::MatrixXf> RotMatrix::getPossibleRotamers()
     }
     return availRot;
 }
-
 
 void RotMatrix::prepareResources()
 {
@@ -165,35 +163,35 @@ void RotMatrix::prepareResources()
     _resources.sequences->setup();
     _resources.sequences->prepareSequences();
     _params =
-   _resources.sequences->torsionBasis()->parameters();
+        _resources.sequences->torsionBasis()->parameters();
 }
 void RotMatrix::submitJob(float weight)
 {
     BaseTask *first_hook = nullptr; // Initialize first hook
     CalcTask *final_hook = nullptr; // Initialize final hook
 
-    CalcTask *calc_hook = nullptr; // Initialize calc hook
+    CalcTask *calc_hook = nullptr;                           // Initialize calc hook
     Task<BondSequence *, void *> *let_sequence_go = nullptr; // Initialize let_sequence_go
 
     BondCalculator *const &calculator = _resources.calculator; // Gets the calculator
-    BondSequenceHandler *sequences = _resources.sequences; // Gets the sequences
+    BondSequenceHandler *sequences = _resources.sequences;     // Gets the sequences
 
     /* this final task returns the result to the pool to collect later */
-    Task<Result, void *> *submit_result = calculator->actOfSubmission(0); // Submits the result
+    Task<Result, void *> *submit_result = calculator->actOfSubmission(0);  // Submits the result
     Flag::Calc calc = Flag::Calc(Flag::DoTorsions /*|Flag::DoSuperpose*/); // Sets calculation flags
 
     sequences->calculate(calc, {weight}, &first_hook, &final_hook); // Calculates sequences
 
-    BondSequence* firstSequence = sequences->sequence(); // Gets the first sequence
+    BondSequence *firstSequence = sequences->sequence();  // Gets the first sequence
     Flag::Extract gets = Flag::Extract(Flag::AtomVector); // Sets extraction flags
 
     let_sequence_go = sequences->extract(gets, submit_result, final_hook); // Extracts data
-    _resources.tasks->addTask(first_hook); // Adds task to the task list
+    _resources.tasks->addTask(first_hook);                                 // Adds task to the task list
 }
 
 void RotMatrix::unifiedTorsionFetcher()
 {
-    CoordManager* coordManager = _resources.sequences->manager();
+    CoordManager *coordManager = _resources.sequences->manager();
     auto sideChainPlusX = [this](const Coord::Get &get, const int &idx)
     {
         if (_params[idx]->isTorsion())
@@ -203,7 +201,7 @@ void RotMatrix::unifiedTorsionFetcher()
             {
                 float initialTorsion = torsion->refinedAngle();
                 std::string resName = _params[idx]->owningAtom()->code();
-                if (torsion->shortDesc().substr(0,3) == "chi")
+                if (torsion->shortDesc().substr(0, 3) == "chi")
                 {
                     int rotamerNumber = 0;
                     {
@@ -213,9 +211,9 @@ void RotMatrix::unifiedTorsionFetcher()
                             return 0.f;
                         }
                         Rotamer const &rota = _allRotamers[resName][rotamerNumber];
-                        if (torsion->shortDesc()[3]-'0' > rota.chi.size())
+                        if (torsion->shortDesc()[3] - '0' > rota.chi.size())
                             return 0.f;
-                        float targetTorsion = rota.chi[torsion->shortDesc()[3]-'1'];
+                        float targetTorsion = rota.chi[torsion->shortDesc()[3] - '1'];
                         return targetTorsion - initialTorsion;
                     }
                 }

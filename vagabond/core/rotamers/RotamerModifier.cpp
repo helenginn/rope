@@ -27,7 +27,7 @@
 #include "RotamerProxMatrix.h"
 
 RotamerModifier::RotamerModifier(Instance *instMain, Instance *instSec, std::string &mainChain, std::string &secChain)
-    : _instMain(instMain), _instSec(instSec), _mainChain(mainChain), _secChain(secChain)
+: _instMain(instMain), _instSec(instSec), _mainChain(mainChain), _secChain(secChain)
 {
     setup();
 }
