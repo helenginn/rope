@@ -1,0 +1,5 @@
+BasedOnStyle: LLVM        # or Google, Chromium, Mozilla, WebKit, Microsoft, GNU
+BreakBeforeBraces: Allman # brace on its own line (your original style)
+SortIncludes: Never       # stop reordering #includes
+IndentWidth: 4
+ColumnLimit: 0
