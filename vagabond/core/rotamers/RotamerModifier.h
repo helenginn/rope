@@ -70,6 +70,8 @@ public:
     glm::mat4x4 _transform{};
 
 private:
+    std::map<Bouquet *, std::vector<int>> AllowedRotamerMatrices(std::map<Bouquet *, std::vector<int>> rotamersStepN);
+    std::map<Bouquet *, std::vector<int>> FirstRotamerMatrices(std::vector<Bouquet *> resChain);
     Instance *_instMain{};
     Instance *_instSec{};
     std::string _mainChain{};
