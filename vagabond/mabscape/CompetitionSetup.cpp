@@ -41,7 +41,19 @@ void CompetitionSetup::guessHeaders()
 		return;
 	}
 	
-	for (const std::string &header : comp().metadata->headers())
+	// headers left over from a previous CSV which this one lacks are
+	// cleared, so that they get guessed afresh below
+	const std::set<std::string> &available = comp().metadata->headers();
+	for (std::string *header : {&comp().left_header, &comp().right_header,
+	                            &comp().value_header})
+	{
+		if (header->length() && !available.count(*header))
+		{
+			header->clear();
+		}
+	}
+	
+	for (const std::string &header : available)
 	{
 		bool numbers = comp().metadata->areAllNumbers(header);
 		if (!numbers && comp().left_header.length() == 0)
