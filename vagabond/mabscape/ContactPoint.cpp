@@ -22,9 +22,10 @@
 #include <vagabond/core/GroupBounds.h>
 #include <vagabond/utils/FileReader.h>
 #include <algorithm>
+#include <cmath>
+#include <cfloat>
 
 // an orientation which superposes worse than this (Angstroms) is flagged
-static const float MAX_RMSD = 4.f;
 
 ContactPoint::ContactPoint(Fiducial &fiducial, Antigens &antigens,
                            bool find_instances)
@@ -249,6 +250,7 @@ void ContactPoint::findMapping()
 			if (added)
 			{
 				_entries.push_back({new_mat, ltrunc, arrangement});
+				_orientations.push_back({new_mat, rmsd});
 				std::cout << "RMSD of orientation " << _entries.size() 
 				<< ": " << rmsd << " A" << std::endl;
 
@@ -274,6 +276,209 @@ void ContactPoint::findMapping()
 	recalibrateToFirst();
 }
 
+// atoms which cannot stand for a position: coordinates which are not numbers
+// (or are huge), unplaced ones left at the origin, and the reporter atoms
+// which only help the ribbons
+static bool usableAtom(Atom *atom)
+{
+	const glm::vec3 &p = atom->derivedPosition();
+	if (!std::isfinite(p.x) || !std::isfinite(p.y) || !std::isfinite(p.z))
+	{
+		return false;
+	}
+
+	if (glm::length(p) < 1e-3f || glm::length(p) > 1e5f)
+	{
+		return false;
+	}
+
+	return !atom->isReporterAtom();
+}
+
+// The "median" atom of a group: the one with the smallest total distance to
+// all the others (a medoid), among the usable atoms. Unlike the atom nearest
+// the mean position, this is in the dense middle of the group, as the total
+// distance is not squared and so a distant atom cannot drag it away.
+static Atom *nearestToCentre(AtomGroup *group)
+{
+	std::vector<Atom *> atoms;
+	std::vector<glm::vec3> pos;
+	for (Atom *atom : group->atomVector())
+	{
+		if (usableAtom(atom))
+		{
+			atoms.push_back(atom);
+			pos.push_back(atom->derivedPosition());
+		}
+	}
+
+	Atom *best = nullptr;
+	float bestTotal = FLT_MAX;
+	for (size_t i = 0; i < atoms.size(); i++)
+	{
+		float total = 0;
+		for (size_t j = 0; j < atoms.size(); j++)
+		{
+			total += glm::length(pos[i] - pos[j]);
+		}
+
+		if (total < bestTotal)
+		{
+			bestTotal = total;
+			best = atoms[i];
+		}
+	}
+
+	return best;
+}
+
+// separate patches of atoms: linked through neighbours within {link}
+// Angstroms. Fills in the patch of each atom and returns how many there are.
+static int findPatches(const std::vector<Atom *> &atoms, 
+                       std::vector<int> &patch, float link = 6.f)
+{
+	patch.assign(atoms.size(), -1);
+	int count = 0;
+
+	for (size_t i = 0; i < atoms.size(); i++)
+	{
+		if (patch[i] >= 0) continue;
+
+		std::vector<size_t> stack = {i};
+		patch[i] = count;
+		while (stack.size())
+		{
+			size_t at = stack.back(); stack.pop_back();
+			glm::vec3 here = atoms[at]->derivedPosition();
+			for (size_t j = 0; j < atoms.size(); j++)
+			{
+				if (patch[j] < 0 && 
+				    glm::length(here - atoms[j]->derivedPosition()) < link)
+				{
+					patch[j] = count;
+					stack.push_back(j);
+				}
+			}
+		}
+		count++;
+	}
+
+	return count;
+}
+
+// A model can hold the interface more than once (an antibody on each of
+// several antigen copies, say), which would put the centre of the "interface"
+// somewhere between them. So just one is taken: the antibody atoms within
+// {reach} of the antigen and the antigen atoms within {reach} of the antibody
+// are each split into separate patches, every antibody patch is paired with
+// the antigen patch it touches most closely, and the pair with the most atoms
+// is the interface.
+void ContactPoint::interfaceAtoms(AtomGroup *antibody, AtomGroup *antigen,
+                                  AtomGroup *&antibodyFace, 
+                                  AtomGroup *&antigenFace, float reach)
+{
+	auto position = [](Atom *const &a) { return a->derivedPosition(); };
+	GroupBounds antibodyBounds(antibody, position);
+	GroupBounds antigenBounds(antigen, position);
+
+	AtomGroup *allAntibody = 
+	antigenBounds.atoms_from_other_group_within(antibody, reach);
+	AtomGroup *allAntigen = 
+	antibodyBounds.atoms_from_other_group_within(antigen, reach);
+
+	// only atoms which can stand for a position
+	std::vector<Atom *> left, right;
+	for (Atom *atom : allAntibody->atomVector())
+	{
+		if (usableAtom(atom)) left.push_back(atom);
+	}
+	for (Atom *atom : allAntigen->atomVector())
+	{
+		if (usableAtom(atom)) right.push_back(atom);
+	}
+	delete allAntibody;
+	delete allAntigen;
+
+	antibodyFace = new AtomGroup();
+	antigenFace = new AtomGroup();
+
+	std::vector<int> leftPatch, rightPatch;
+	int leftCount = findPatches(left, leftPatch);
+	int rightCount = findPatches(right, rightPatch);
+	if (leftCount == 0 || rightCount == 0)
+	{
+		return;
+	}
+
+	std::vector<int> leftSize(leftCount, 0), rightSize(rightCount, 0);
+	for (int id : leftPatch) leftSize[id]++;
+	for (int id : rightPatch) rightSize[id]++;
+
+	// the closest approach between each antibody patch and antigen patch
+	std::vector<float> closest(leftCount * rightCount, FLT_MAX);
+	for (size_t i = 0; i < left.size(); i++)
+	{
+		glm::vec3 p = left[i]->derivedPosition();
+		for (size_t j = 0; j < right.size(); j++)
+		{
+			float d = glm::length(p - right[j]->derivedPosition());
+			float &best = closest[leftPatch[i] * rightCount + rightPatch[j]];
+			best = std::min(best, d);
+		}
+	}
+
+	int bestLeft = -1, bestRight = -1, bestSize = -1;
+	for (int l = 0; l < leftCount; l++)
+	{
+		int partner = 0;
+		for (int r = 1; r < rightCount; r++)
+		{
+			if (closest[l * rightCount + r] < closest[l * rightCount + partner])
+			{
+				partner = r;
+			}
+		}
+
+		int size = leftSize[l] + rightSize[partner];
+		if (size > bestSize)
+		{
+			bestSize = size;
+			bestLeft = l;
+			bestRight = partner;
+		}
+	}
+
+	for (size_t i = 0; i < left.size(); i++)
+	{
+		if (leftPatch[i] == bestLeft) antibodyFace->add(left[i]);
+	}
+	for (size_t j = 0; j < right.size(); j++)
+	{
+		if (rightPatch[j] == bestRight) antigenFace->add(right[j]);
+	}
+}
+
+bool ContactPoint::interfaceMidpoint(AtomGroup *antibody, AtomGroup *antigen,
+                                     glm::vec3 &midpoint, float reach)
+{
+	AtomGroup *antibodyFace = nullptr;
+	AtomGroup *antigenFace = nullptr;
+	interfaceAtoms(antibody, antigen, antibodyFace, antigenFace, reach);
+	
+	Atom *left = nearestToCentre(antibodyFace);
+	Atom *right = nearestToCentre(antigenFace);
+
+	bool found = (left && right);
+	if (found)
+	{
+		midpoint = (left->derivedPosition() + right->derivedPosition()) / 2.f;
+	}
+
+	delete antibodyFace;
+	delete antigenFace;
+	return found;
+}
+
 void ContactPoint::establishMidpoint()
 {
 	_fiducial.model.load();
@@ -292,24 +497,16 @@ void ContactPoint::establishMidpoint()
 		anti->add(inst->currentAtoms());
 	}
 	
-	GroupBounds bounds(abs, [](Atom *a) { return a->derivedPosition(); });
-	AtomGroup *interface = bounds.atoms_from_other_group_within(anti, 5);
 	std::cout << "Number of antibody atoms: " << abs->size() << std::endl;
 	std::cout << "Number of antigen atoms: " << anti->size() << std::endl;
-	std::cout << "Number of shared atoms: " << interface->size() << std::endl;
-	
-	if (interface->size() == 0)
+
+	if (!interfaceMidpoint(abs, anti, _reference))
 	{
 		throw std::runtime_error("No interface atoms for antibody");
 	}
 	
-	Atom *central = interface->mostCentralAtom
-	([](Atom *a) { return a->derivedPosition();});
-	std::cout << "Central atom: " << central->desc() << std::endl;
-	_reference = central->derivedPosition();
 	std::cout << "Reference: " << _reference << std::endl;
 	
-	delete interface;
 	delete abs;
 	delete anti;
 
@@ -380,6 +577,8 @@ static glm::mat4x4 matrix_from_json(const json &j)
 json ContactPoint::inputs() const
 {
 	json j;
+	// bump whenever the way the midpoint is worked out changes
+	j["midpoint_method"] = 5;
 	j["antigen"] = _fiducial.antigen;
 	j["fiducial_file"] = _fiducial.model.filename();
 	j["fiducial_time"] = (long long)file_mod_time(_fiducial.model.filename());
@@ -427,13 +626,24 @@ json ContactPoint::alignmentJson() const
 	}
 	j["warnings"] = warnings;
 
+	json orientations = json::array();
+	for (const Orientation &orientation : _orientations)
+	{
+		json o;
+		o["transform"] = matrix_to_json(orientation.transform);
+		o["rmsd"] = orientation.rmsd;
+		orientations.push_back(o);
+	}
+	j["orientations"] = orientations;
+
 	return j;
 }
 
 bool ContactPoint::restore(const json &saved)
 {
+	// saves from before every orientation was kept are worked out again
 	if (!saved.is_object() || !saved.count("inputs") || 
-	    saved.at("inputs") != inputs())
+	    !saved.count("orientations") || saved.at("inputs") != inputs())
 	{
 		return false;
 	}
@@ -458,11 +668,19 @@ bool ContactPoint::restore(const json &saved)
 			                    w.at("rmsd")});
 		}
 
+		std::vector<Orientation> orientations;
+		for (const json &o : saved.at("orientations"))
+		{
+			orientations.push_back({matrix_from_json(o.at("transform")),
+			                        o.at("rmsd")});
+		}
+
 		const json &ref = saved.at("reference");
 		_reference = glm::vec3(ref.at(0).get<float>(), ref.at(1).get<float>(),
 		                       ref.at(2).get<float>());
 		_transforms = transforms;
 		_warnings = warnings;
+		_orientations = orientations;
 		_applied = glm::mat4{1.f};
 	}
 	catch (const json::exception &err)

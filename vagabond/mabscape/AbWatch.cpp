@@ -181,6 +181,10 @@ void AbWatch::interacted(int idx, bool hover, bool left)
 	{
 		_clickJob(this);
 	}
+	else if (!left && !hover && _rightClickJob)
+	{
+		_rightClickJob(this);
+	}
 }
 
 void AbWatch::render(GLView *gl)

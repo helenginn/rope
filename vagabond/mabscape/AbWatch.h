@@ -65,6 +65,11 @@ public:
 		_clickJob = job;
 	}
 
+	void setRightClickJob(const std::function<void(AbWatch *)> &job)
+	{
+		_rightClickJob = job;
+	}
+
 	const std::string &antibody() const
 	{
 		return _antibody;
@@ -114,6 +119,7 @@ private:
 	int _copy{};
 	std::function<bool(const std::string &, int)> _hoverJob;
 	std::function<void(AbWatch *)> _clickJob;
+	std::function<void(AbWatch *)> _rightClickJob;
 	glm::vec3 _last;
 
 	void doThings();

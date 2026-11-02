@@ -49,6 +49,8 @@ public:
 	// antibodies which have structural information (a fiducial with a
 	// contact point), and so can be fixed at that position
 	std::vector<std::string> structuralAntibodies() const;
+	// the fiducial behind a structural antibody, or null
+	Fiducial *fiducialFor(const std::string &name) const;
 	// where each symmetry copy of an antibody sits in its structure; empty
 	// without structural information
 	// (optionally snapped to the nearest mesh vertex, as a fixed antibody is)

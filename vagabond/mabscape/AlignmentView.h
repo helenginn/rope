@@ -21,10 +21,14 @@
 
 #include <vagabond/gui/Display.h>
 #include <string>
+#include <vector>
 
 struct Antigen;
 struct Fiducial;
 struct DisplayUnit;
+class Fiducials;
+class Text;
+class GlowBall;
 class Mesh;
 
 /** an antibody model laid onto the mesh of its antigen by the alignment that
@@ -33,18 +37,53 @@ class AlignmentView : public Display
 {
 public:
 	AlignmentView(Scene *prev, Antigen &antigen, Fiducial &fiducial,
-	              const glm::mat4x4 &transform, const std::string &warning);
+	              const glm::mat4x4 &transform, const std::string &warning,
+	              bool poor = true);
 	virtual ~AlignmentView();
 
 	virtual void setup();
+
+	// the other antibodies of this antigen, offered as tickboxes to show
+	// each at its first orientation, for comparing positions
+	void setComparison(Fiducials &fiducials)
+	{
+		_fiducials = &fiducials;
+	}
 private:
+	struct Shown
+	{
+		Fiducial *fid{};
+		glm::mat4x4 transform{1.f};
+		DisplayUnit *unit{};
+		// which of the fiducial's orientations is on show (-1: not one
+		// of them, as handed in)
+		int orientation{-1};
+		// the calculated midpoint of the interface, as a glowing ball
+		GlowBall *midpoint{};
+	};
+
+	void showFiducial(Shown &shown);
+	// destroying: called while the window is already deleting this view, so
+	// nothing can be queued for deletion with it (it would wait for itself)
+	void hideFiducial(Shown &shown, bool destroying = false);
+	void setupTickBoxes();
+	// steps the active antibody on to its next (or previous) orientation
+	void stepOrientation(int dir);
+	void updateOrientationLabel();
+
+	Fiducials *_fiducials{};
+	std::vector<Shown> _shown;
+	// the antibody which the orientation buttons act on: the one last ticked
+	size_t _active{};
+	Text *_orientLabel{};
+
 	Antigen &_antigen;
 	Fiducial &_fiducial;
 	glm::mat4x4 _transform;
 	std::string _warning;
+	bool _poor{};
 
 	Mesh *_mesh{};
-	DisplayUnit *_unit{};
 };
 
 #endif

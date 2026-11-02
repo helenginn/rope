@@ -29,11 +29,29 @@
 struct Fiducial;
 class Antigens;
 class Instance;
+class AtomGroup;
 struct Antigen;
 
 class ContactPoint : public Symmetry
 {
 public:
+	// orientations aligning worse than this (in Angstroms) are poor
+	static constexpr float MAX_RMSD = 4.f;
+
+	// The atoms making up an interface: the antibody atoms within {reach} of
+	// the antigen and the antigen atoms within {reach} of the antibody. Both
+	// groups are new, and for the caller to delete.
+	static void interfaceAtoms(AtomGroup *antibody, AtomGroup *antigen,
+	                           AtomGroup *&antibodyFace, AtomGroup *&antigenFace,
+	                           float reach = 8.f);
+
+	// The midpoint of an interface: the antibody atoms within {reach} of the
+	// antigen and the antigen atoms within {reach} of the antibody are each
+	// reduced to the one atom nearest the centre of its group, and the
+	// midpoint is halfway between these two. False if either group is empty.
+	static bool interfaceMidpoint(AtomGroup *antibody, AtomGroup *antigen,
+	                              glm::vec3 &midpoint, float reach = 8.f);
+
 	// find_instances is false to only make room for the mapping to be put
 	// back from a saved one (restore()), which needs none of the models
 	ContactPoint(Fiducial &fiducial, Antigens &antigens, 
@@ -61,6 +79,19 @@ public:
 		glm::mat4x4 transform;
 		float rmsd{};
 	};
+
+	// every orientation found, good or poor, as the matrix which took the
+	// antibody model onto the antigen model.
+	struct Orientation
+	{
+		glm::mat4x4 transform;
+		float rmsd{};
+	};
+
+	const std::vector<Orientation> &orientations() const
+	{
+		return _orientations;
+	}
 
 	const std::vector<Warning> &warnings() const
 	{
@@ -90,6 +121,7 @@ private:
 
 	std::vector<Entry> _entries;
 	std::vector<Warning> _warnings;
+	std::vector<Orientation> _orientations;
 	std::vector<glm::mat4x4> _raw;
 	
 };

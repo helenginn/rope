@@ -649,6 +649,16 @@ std::vector<std::string> Positions::structuralAntibodies() const
 	return names;
 }
 
+Fiducial *Positions::fiducialFor(const std::string &name) const
+{
+	if (!_lookup.count(name))
+	{
+		return nullptr;
+	}
+
+	return _lookup.at(name)->fid;
+}
+
 std::vector<glm::vec3> Positions::structuralCopies(const std::string &name,
                                                    bool snapped) const
 {

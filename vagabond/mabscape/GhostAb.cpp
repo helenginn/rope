@@ -98,6 +98,71 @@ void GhostAb::render(GLView *gl)
 	}
 }
 
+GlowBall::GlowBall()
+{
+	Icosahedron ico;
+	ico.triangulate();
+	_vertices = ico.vertices();
+	_indices = ico.indices();
+
+	glm::vec3 centre = centroid();
+	for (Vertex &v : _vertices)
+	{
+		_offsets.push_back((v.pos - centre) * 1.5f);
+		v.color = glm::vec4(1.f, 0.85f, 0.2f, 1.f);
+	}
+
+	// the ribbons' shader is the one which writes the glow, from the
+	// fourth component of each vertex's extra
+	setUsesProjection(true);
+	setVertexShaderFile("assets/shaders/with_matrix.vsh");
+	setFragmentShaderFile("assets/shaders/pencil_shading.fsh");
+	setImage("assets/images/pencil_shading.png", true);
+	setDisabled(true);
+}
+
+void GlowBall::show(const glm::vec3 &where)
+{
+	_centre = where;
+	setDisabled(false);
+}
+
+void GlowBall::hide()
+{
+	setDisabled(true);
+}
+
+void GlowBall::extraUniforms()
+{
+	GLuint u = glGetUniformLocation(_program, "dot_threshold");
+	glUniform1f(u, 0.3f);
+}
+
+void GlowBall::render(GLView *gl)
+{
+	if (isDisabled())
+	{
+		Renderable::render(gl);
+		return;
+	}
+
+	// size and glow both follow a sine wave in time
+	float t = SDL_GetTicks() / 1000.f;
+	float pulse = 0.5f + 0.5f * sin(t * 4.f);
+	float scale = 0.8f + 0.4f * pulse;
+
+	for (size_t i = 0; i < _vertices.size(); i++)
+	{
+		_vertices[i].pos = _centre + _offsets[i] * scale;
+		_vertices[i].extra[3] = 1.3f + 1.4f * pulse;
+	}
+
+	forceRender(true, false);
+	glEnable(GL_DEPTH_TEST);
+	Renderable::render(gl);
+	glDisable(GL_DEPTH_TEST);
+}
+
 GhostLine::GhostLine()
 {
 	_renderType = GL_LINES;

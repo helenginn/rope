@@ -45,6 +45,23 @@ private:
 	bool _overSolid{false};
 };
 
+/** a ball which pulses in size and glows (through the ping pong buffers, as
+ *  the ribbons do). Not pickable. */
+class GlowBall : public SimplePolygon
+{
+public:
+	GlowBall();
+
+	void show(const glm::vec3 &where);
+	void hide();
+
+	virtual void extraUniforms();
+	virtual void render(GLView *gl);
+private:
+	std::vector<glm::vec3> _offsets; // from the centre, at full size
+	glm::vec3 _centre{};
+};
+
 /** a line between two points */
 class GhostLine : public SimplePolygon
 {

@@ -168,10 +168,11 @@ void PrepWorkView::prepareAntigens(Antigens &antigens)
 						Antigen *ag = &antigen; Fiducial *fd = &fid;
 						glm::mat4x4 tr = warning.transform;
 						std::string text = warning.text;
-						message.show = [ag, fd, tr, text](Scene *scene)
+						message.show = [this, ag, fd, tr, text](Scene *scene)
 						{
 							AlignmentView *av = new AlignmentView(scene, *ag, *fd,
 							                                      tr, text);
+							av->setComparison(_mab.fiducials);
 							av->show();
 						};
 						_messages.push_back(message);

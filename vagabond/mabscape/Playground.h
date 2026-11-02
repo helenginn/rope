@@ -70,6 +70,9 @@ private:
 	enum ColourBy { Nothing, Data, Model };
 	void colourByMatrix(ColourBy which);
 	void applyColouring();
+	// right-click menu: view how an antibody with fixed fiducial data sits
+	// on the antigen for each orientation found, poor or otherwise
+	void checkAlignmentMenu(const std::string &antibody);
 	void showGhost(AbWatch *aw);
 	void clearGhost();
 	void showToggleFixed();

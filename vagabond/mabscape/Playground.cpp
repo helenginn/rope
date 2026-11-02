@@ -28,6 +28,8 @@
 #include "ResultsView.h"
 #include "ResultsClusterView.h"
 #include "ToggleFixedView.h"
+#include "AlignmentView.h"
+#include "ContactPoint.h"
 #include "CrossCheckView.h"
 #include "GhostAb.h"
 #include "Mab.h"
@@ -163,6 +165,10 @@ void Playground::showFiducials(const Competition &comp)
 			showGhost(aw);
 			showHeat(aw);
 			return true;
+		});
+		aw->setRightClickJob([this](AbWatch *clicked)
+		{
+			checkAlignmentMenu(clicked->antibody());
 		});
 		aw->setClickJob([this](AbWatch *clicked)
 		{
@@ -487,6 +493,57 @@ void Playground::showGhost(AbWatch *aw)
 		_ghost->show(target);
 		_ghostLine->show(here, target);
 	}
+}
+
+void Playground::checkAlignmentMenu(const std::string &name)
+{
+	Fiducial *fid = _positions->fiducialFor(name);
+	if (!fid || !fid->contact)
+	{
+		return;
+	}
+
+	Antigen *antigen = _mab.antigens(fid->antigen);
+	const std::vector<ContactPoint::Orientation> &orientations = 
+	fid->contact->orientations();
+	if (!antigen)
+	{
+		return;
+	}
+
+	Menu *menu = new Menu(this);
+
+	if (orientations.empty())
+	{
+		menu->addOption("no alignment details kept for this antibody", 
+		                []() {});
+	}
+
+	for (size_t i = 0; i < orientations.size(); i++)
+	{
+		const ContactPoint::Orientation &o = orientations[i];
+		bool unknown = (o.rmsd != o.rmsd);
+		std::string rmsd = unknown ? "unknown" : f_to_str(o.rmsd, 1) + " A";
+		std::string text = "Orientation " + std::to_string(i + 1) + 
+		" of antibody " + name + " aligns with RMSD " + rmsd;
+		bool poor = unknown || o.rmsd > ContactPoint::MAX_RMSD;
+
+		glm::mat4x4 transform = o.transform;
+		menu->addOption("check alignment " + std::to_string(i + 1) + 
+		                " (RMSD " + rmsd + (poor ? ", poor" : "") + ")",
+		                [this, antigen, fid, transform, text, poor]()
+		{
+			AlignmentView *av = new AlignmentView(this, *antigen, *fid, 
+			                                      transform, text, poor);
+			av->setComparison(_mab.fiducials);
+			av->show();
+		});
+	}
+
+	float x, y;
+	getFractionalPos(x, y);
+	menu->setup(x, y, 1);
+	setModal(menu);
 }
 
 void Playground::clearGhost()
