@@ -20,6 +20,11 @@
 #include "AssignChains.h"
 #include <vagabond/core/Chain.h>
 #include <vagabond/core/Model.h>
+#include <vagabond/core/ModelManager.h>
+#include <vagabond/core/Environment.h>
+#include <vagabond/gui/elements/AskYesNo.h>
+#include <vagabond/gui/elements/TextButton.h>
+#include <memory>
 #include <vagabond/gui/elements/Menu.h>
 #include <vagabond/gui/elements/Text.h>
 #include <vagabond/gui/elements/Image.h>
@@ -176,7 +181,60 @@ std::function<void()> AssignChains::operator()()
 		view->setModal(menu);
 	};
 	
-	auto show_legend = [colours]()
+	// the legend is built before the view hands itself back, so the legend
+	// buttons find their view through this shared holder
+	std::shared_ptr<ModelTopologyView *> holder = 
+	std::make_shared<ModelTopologyView *>(nullptr);
+
+	auto delete_entity = [model, colours, names, holder]
+	(const std::string &name)
+	{
+		ModelTopologyView *view = *holder;
+		if (!view)
+		{
+			return;
+		}
+
+		// models other than the one on display which use this entity
+		std::vector<std::string> users;
+		ModelManager *mm = Environment::modelManager();
+		for (size_t i = 0; mm && i < mm->objectCount(); i++)
+		{
+			Model &m = mm->object(i);
+			if (m.hasEntity(name))
+			{
+				users.push_back(m.name());
+			}
+		}
+
+		std::string text = "Delete entity " + name + "?";
+		if (users.size())
+		{
+			text += "\nIt is assigned in " + std::to_string(users.size()) +
+			" model" + (users.size() == 1 ? "" : "s") + " (";
+			for (size_t i = 0; i < users.size() && i < 3; i++)
+			{
+				text += (i ? ", " : "") + users[i];
+			}
+			text += users.size() > 3 ? ", ...)" : ")";
+			text += " and will be cleared from " + 
+			std::string(users.size() == 1 ? "it." : "them.");
+		}
+
+		AskYesNo *ayn = new AskYesNo(view, text);
+		ayn->addJob("yes", [view, model, colours, names, name]()
+		{
+			Environment::purgeEntity(name);
+			model->housekeeping();
+			colours->recalculate();
+			*names -= name;
+			view->updateColours();
+			view->updateLegend();
+		});
+		view->setModal(ayn);
+	};
+
+	auto show_legend = [colours, holder, delete_entity]()
 	{
 		EntityManager *m = Environment::entityManager();
 		std::vector<Entity *> entities = m->entities();
@@ -200,9 +258,13 @@ std::function<void()> AssignChains::operator()()
 			image->setColour(colour.x, colour.y, colour.z);
 			box->addObject(image);
 
-			Text *text = new Text(ent->name());
+			// clicking the name offers to delete the entity
+			std::string name = ent->name();
+			TextButton *text = new TextButton(name, *holder);
 			text->resize(scale);
 			text->setRight(-0.01, top);
+			text->setReturnJob([delete_entity, name]() 
+			                   { delete_entity(name); });
 			box->addObject(text);
 			
 			top += 0.07 * scale;
@@ -211,7 +273,7 @@ std::function<void()> AssignChains::operator()()
 	};
 	
 	auto show_topology = [model, parent, click_chain, show_legend,
-	                      provide_colours]()
+	                      provide_colours, holder]()
 	{
 		if (model->filename().length() == 0)
 		{
@@ -223,6 +285,7 @@ std::function<void()> AssignChains::operator()()
 		{
 			ModelTopologyView *mtv = 
 			new ModelTopologyView(parent, *model);
+			*holder = mtv;
 			mtv->setClickChainEvent(click_chain);
 			mtv->setColouringFunction(provide_colours);
 			mtv->setLegendFunction(show_legend);
