@@ -170,13 +170,24 @@ void MabscapeSetup::validationSmileys()
 	
 	if (all_ok)
 	{
-		auto prepwork = [this]()
+		TextButton *tb = new TextButton("Next", this);
+		tb->setLeft(0.8, 0.9);
+
+		// a right click prepares from scratch: the saved alignments are
+		// thrown away, so that every antibody is mapped again
+		auto prepwork = [this, tb]()
 		{
+			if (!tb->left())
+			{
+				for (Fiducial &fid : _mab.fiducials)
+				{
+					fid.alignment = json{};
+				}
+			}
+
 			PrepWorkView *pwv = new PrepWorkView(this, _mab);
 			pwv->show();
 		};
-		TextButton *tb = new TextButton("Next", this);
-		tb->setLeft(0.8, 0.9);
 		tb->setReturnJob(prepwork);
 		addTempObject(tb);
 
