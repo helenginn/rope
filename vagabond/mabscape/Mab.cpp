@@ -382,6 +382,10 @@ std::vector<std::string>
 Competition::clean_order(const std::vector<std::string> &order)
 {
 	OpSet<std::string> all = antibody_names();
+	for (const std::string &naughty : naughty_corner)
+	{
+		all -= naughty;
+	}
 	std::vector<std::string> finalised;
 
 	for (const std::string &ab : order)

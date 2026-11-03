@@ -25,6 +25,7 @@
 
 struct Mab;
 class MatrixBox;
+class MatrixPlot;
 class TextButton;
 struct Competition;
 
@@ -35,6 +36,8 @@ public:
 
 	virtual void setup();
 	virtual void refresh();
+	virtual void mouseReleaseEvent(double x, double y,
+	                               SDL_MouseButtonEvent button);
 
 	// when set, "Next" applies the new ordering, calls this and goes back to
 	// the previous scene, rather than opening a new Playground
@@ -58,7 +61,19 @@ private:
 	PCA::Matrix _forDisplay{};
 	Mab &_mab;
 	std::mutex _mutex;
+	// right-click on a matrix element offers to put its row's antibody in
+	// the naughty corner; each one there is listed to the right, with an
+	// arrow to bring it back
+	void rightClick(double x, double y);
+	void putInNaughtyCorner(const std::string &name);
+	void bringBack(const std::string &name);
+	void listNaughtyCorner();
+	// the order as it is now, so that nothing moves when the matrix is made
+	// again with one more or less
+	void keepCurrentOrder();
+	std::vector<std::string> currentOrder();
 	MatrixBox *_mb{};
+	MatrixPlot *_plot{};
 	std::vector<std::string> _baseOrder; // the order the plot was made in
 	std::function<void()> _returnJob{};
 

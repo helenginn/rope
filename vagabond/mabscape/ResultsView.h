@@ -88,6 +88,13 @@ public:
 		_crossCheck = job;
 	}
 
+	// the bucket's key, the group's name and its results, when "export PDB"
+	// is chosen
+	void setExportJob(const CrossCheckJob &job)
+	{
+		_export = job;
+	}
+
 	void setSelectJob(const SelectJob &job)
 	{
 		_selectJob = job;
@@ -132,6 +139,8 @@ private:
 	Bucket *bucket(const std::string &key);
 	// group == nullptr means the bucket's "All"
 	void groupMenu(Bucket *bucket, Group *group);
+	// right click on one result
+	void resultMenu(const std::string &key, const PosToComp::Result &result);
 	void removeGroup(Bucket *bucket, Group *group);
 	// the menu for a whole bucket, and deleting it: its results and groups
 	void bucketMenu(Bucket *bucket);
@@ -139,6 +148,9 @@ private:
 	void selectGroup(Item *item, const std::string &key,
 	                 const std::vector<PosToComp::Result> &r);
 	void rename(Bucket *bucket, Group *group);
+	// "All" of a bucket becomes a named group of its own, and "All" is empty
+	// for new refinements to go into
+	void archive(Bucket *bucket);
 	void refreshNames(Bucket *bucket);
 
 	Scene *_scene{};
@@ -148,6 +160,7 @@ private:
 	std::function<void()> _kill{};
 
 	CrossCheckJob _crossCheck;
+	CrossCheckJob _export;
 	SelectJob _selectJob;
 	Item *_selected{};
 	Item _root{};

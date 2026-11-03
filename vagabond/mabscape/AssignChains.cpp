@@ -18,6 +18,7 @@
 
 #include "Mab.h"
 #include "AssignChains.h"
+#include <algorithm>
 #include <vagabond/core/Chain.h>
 #include <vagabond/core/Model.h>
 #include <vagabond/core/ModelManager.h>
@@ -37,6 +38,9 @@
 
 // entities with less sequence identity than this to a chain are not offered
 static const float MIN_IDENTITY = 0.10;
+
+// no more than this many entities are offered for a chain: the best matches
+static const size_t MAX_OFFERED = 8;
 
 // more entries than this and the legend is squashed to fit
 static const size_t LEGEND_FULL_SIZE = 12;
@@ -145,6 +149,8 @@ std::function<void()> AssignChains::operator()()
 		Menu *menu = new Menu(view);
 		menu->addOption("assign as new protein",
 		                make_ask_for_monomer(view, ch));
+		// the entities this chain resembles, the best matches first
+		std::vector<std::pair<float, std::string>> offers;
 		for (Entity *const &ent : entities)
 		{
 			if (!ent->hasSequence())
@@ -165,13 +171,23 @@ std::function<void()> AssignChains::operator()()
 			{
 				continue;
 			}
-			
-			std::string msg = "assign as " + ent->name();
-			msg += " (" + f_to_str(match * 100, 1) + "% alignment)";
+
+			offers.push_back({match, ent->name()});
+		}
+
+		std::stable_sort(offers.begin(), offers.end(),
+		                 [](const auto &a, const auto &b)
+		                 { return a.first > b.first; });
+
+		for (size_t i = 0; i < offers.size() && i < MAX_OFFERED; i++)
+		{
+			std::string msg = "assign as " + offers[i].second;
+			msg += " (" + f_to_str(offers[i].first * 100, 1) + "% alignment)";
 
 			menu->addOption(msg,
-			                assign_monomer(view, ch, ent->name()));
+			                assign_monomer(view, ch, offers[i].second));
 		}
+
 		if (model->entityForChain(ch->id()).length())
 		{
 			menu->addOption("unassign", unassign_monomer(view, ch));

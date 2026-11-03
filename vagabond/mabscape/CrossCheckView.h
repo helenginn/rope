@@ -21,6 +21,7 @@
 
 #include <vagabond/gui/elements/Scene.h>
 #include "PosToComp.h"
+#include <functional>
 
 class Positions;
 struct Competition;
@@ -61,6 +62,23 @@ public:
 
 		std::vector<Freed> freed;
 
+		// Every antibody in the results, fixed or free, for writing them out:
+		// the RMSD of its positions as for a free fiducial (just above; none
+		// for a fixed one, which does not move), and where it sits, once for
+		// each symmetry operator: the median vertex of each cluster of its
+		// positions (as the Playground shows the average), or for a fixed one
+		// where it was put.
+		struct Antibody
+		{
+			std::string name;
+			bool fixed{};
+			float rmsd{};
+			float rmsdSd{};
+			std::vector<glm::vec3> copies;
+		};
+
+		std::vector<Antibody> everyone;
+
 		// the distance of each one's average position from its structural
 		// position (under its best symmetry operator): mean and standard
 		// deviation over the fiducials
@@ -80,7 +98,15 @@ public:
 	CrossCheckView(Scene *prev, const std::string &title, const Stats &stats);
 
 	virtual void setup();
+
+	// what to do when a free fiducial is clicked on (this view goes back
+	// first, to the scene it came from)
+	void setSelectJob(const std::function<void(const std::string &)> &job)
+	{
+		_selectJob = job;
+	}
 private:
+	std::function<void(const std::string &)> _selectJob;
 	std::string _title;
 	Stats _stats;
 };

@@ -36,7 +36,8 @@ float compareResults(const PosToComp::Result &left,
 
 	for (const Positions::Placement &pl : left.placements)
 	{
-		if (pl.fixed || pl.copies.empty() || !lookup.count(pl.name))
+		if (pl.fixed || pl.copies.empty() || !lookup.count(pl.name) ||
+		    Positions::ignored(pl.name))
 		{
 			continue;
 		}
@@ -108,7 +109,6 @@ VectorModel buildVectorModel(const std::vector<PosToComp::Result> &results)
 			}
 		}
 
-		model.weights.push_back(Positions::silhouette(clusters));
 		model.vectors.push_back(sums);
 	}
 
@@ -118,16 +118,9 @@ VectorModel buildVectorModel(const std::vector<PosToComp::Result> &results)
 float compareByVectors(const VectorModel &model, size_t left, size_t right)
 {
 	double total = 0;
-	double weights = 0;
 
-	for (size_t a = 0; a < model.weights.size(); a++)
+	for (size_t a = 0; a < model.vectors.size(); a++)
 	{
-		float weight = model.weights[a];
-		if (weight <= 0)
-		{
-			continue;
-		}
-
 		const std::vector<glm::vec3> &l = model.vectors[a][left];
 		const std::vector<glm::vec3> &r = model.vectors[a][right];
 
@@ -144,9 +137,8 @@ float compareByVectors(const VectorModel &model, size_t left, size_t right)
 			}
 		}
 
-		total += weight * dots / l.size();
-		weights += weight;
+		total += dots / l.size();
 	}
 
-	return (weights > 0 ? total / weights : 0.f);
+	return (model.vectors.size() ? total / model.vectors.size() : 0.f);
 }

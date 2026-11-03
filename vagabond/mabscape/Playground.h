@@ -19,6 +19,7 @@
 #ifndef __vagabond__Playground__
 #define __vagabond__Playground__
 
+#include <map>
 #include "RefinedResult.h"
 #include <vagabond/gui/Display.h>
 
@@ -36,15 +37,30 @@ class GhostLine;
 class Text;
 class ResultsView;
 
+struct Mab;
+struct Fiducial;
+class Box;
+struct DisplayUnit;
+class AtomGroup;
+
 class Playground : public Display
 {
 public:
 	Playground(Scene *prev, Mab &mab);
+	virtual ~Playground();
 
 	virtual void setup();
 	void refine();
 
 	virtual void interactedWithNothing(bool left, bool hover);
+
+	// shift+drag a box around mesh vertices to pick them out (alt+drag to
+	// take them out of the pick); right click to exclude them from where
+	// refinements start, or to clear the exclusions
+	virtual void sendSelection(float t, float l, float b, float r, 
+	                           bool inverse);
+	virtual void sendClickSelection(double x, double y, bool inverse);
+	void meshMenu();
 	virtual void keyPressEvent(SDL_Keycode pressed);
 private:
 	void showMesh(const Competition &competition);
@@ -58,6 +74,8 @@ private:
 	void startSearch();
 	void updateSearch(const std::string &term);
 	void finishSearch();
+	// centres on an antibody by name, as if it had been searched for
+	void showAntibody(const std::string &name);
 	// clears an antibody's highlight unless it is a search match
 	void unhighlight(AbWatch *aw);
 	// keeps one antibody's label, highlights and mesh faces until a click
@@ -72,10 +90,45 @@ private:
 	void applyColouring();
 	// right-click menu: view how an antibody with fixed fiducial data sits
 	// on the antigen for each orientation found, poor or otherwise
-	void checkAlignmentMenu(const std::string &antibody);
+	void alignmentMenu(AbWatch *clicked);
+	// writes every antibody of a group of results to a PDB file (see
+	// AntibodyPdb)
+	void exportPdb(const std::string &key, const std::string &name,
+	               const std::vector<RefinedResult> &results);
+	void setupWatch(AbWatch *aw);
+
+	// translucent bands over the row of the pinned antibody in the data and
+	// model matrices (none if there is nothing pinned)
+	void highlightRows();
+	std::vector<Box *> _rowQuads;
+	void syncAntibodies();
+
+	// An antibody with a fixed fiducial shown glowing, where its alignment puts
+	// it on the mesh. One orientation (the one for the copy clicked) of each
+	// fiducial at a time, but any number of antibodies together, until a click
+	// on empty space lets go of them all.
+	void showAlignment(AbWatch *clicked);
+	// the alignment window (see AlignmentView) for the antibody picked, at the
+	// orientation nearest to the copy picked
+	void checkAlignment();
+	// which of a fiducial's orientations puts it nearest to a copy
+	size_t nearestOrientation(AbWatch *aw, Fiducial *fid);
+	void clearAlignments();
+	// the footprints of the antibodies shown, dark grey on the mesh
+	void markFootprints();
+	struct ShownAlignment
+	{
+		Fiducial *fid{};
+		DisplayUnit *unit{};
+		AtomGroup *atoms{};
+	};
+	std::vector<ShownAlignment> _alignments;
 	void showGhost(AbWatch *aw);
 	void clearGhost();
 	void showToggleFixed();
+	void keepFixed();
+	void askForRadius();
+	void askForCurvatureScale();
 	void setOpaque(bool opaque);
 	glm::vec3 surfaceLift(const glm::vec3 &p);
 	void viewResults();
@@ -103,6 +156,23 @@ private:
 	ResultsView *_rv{};
 	std::vector<RefinedResult> _selectedResults;
 	std::string _heatAntibody;
+	std::string _selectedKey; // the bucket of _selectedResults
+
+	// What the dark grey faces are made of, so that they can be picked: the
+	// clusters of the pinned antibody over the selected results, which is the
+	// one the hovered copy belongs to, the dark vertices (with how many
+	// points are on each) and the vertex each point of the clusters is on.
+	Positions::Clusters _heatClusters;
+	size_t _heatNearest{0};
+	std::map<int, int> _heatMain;
+	std::vector<int> _heatVertex;
+
+	// Shift+drag over dark grey faces picks results: those which landed on the
+	// vertices picked. They are what is shown and what "make group" takes.
+	void narrowToSelection();
+	void dropNarrowing(bool restoreAverage);
+	bool _narrowed{false};
+	std::vector<RefinedResult> _narrowedResults;
 	TextEntry *_search{};
 	AbWatch *_pinned{};
 	ColourBy _colourBy{Nothing};

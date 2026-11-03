@@ -75,6 +75,11 @@ struct Antigen
 	Mesh *mesh();
 	Symmetry sym{};
 
+	// positions of the mesh vertices excluded from where refinements start
+	// (positions, not indices, so that they survive the mesh being made
+	// again); see Mesh::excludeSelection()
+	std::vector<glm::vec3> excluded_start;
+
 	void wipe() { /* fill me in */ }
 
 	friend void to_json(json &j, const Antigen &a);
@@ -87,6 +92,13 @@ inline void to_json(json &j, const Antigen &a)
 	j["title"] = a.title;
 	j["model"] = a.model;
 	j["entities"] = a.entities;
+
+	json excluded = json::array();
+	for (const glm::vec3 &p : a.excluded_start)
+	{
+		excluded.push_back({p.x, p.y, p.z});
+	}
+	j["excluded_start"] = excluded;
 }
 
 inline void from_json(const json &j, Antigen &a)
@@ -94,6 +106,16 @@ inline void from_json(const json &j, Antigen &a)
 	a.title = j.at("title");
 	a.model = j.at("model");
 	a.entities = j.at("entities");
+
+	if (j.count("excluded_start"))
+	{
+		for (const json &p : j.at("excluded_start"))
+		{
+			a.excluded_start.push_back(glm::vec3(p.at(0).get<float>(),
+			                                     p.at(1).get<float>(),
+			                                     p.at(2).get<float>()));
+		}
+	}
 }
 
 class Antigens : public std::list<Antigen>
@@ -141,6 +163,30 @@ struct Competition
 	OpSet<std::string> antibody_names() const;
 	
 	std::vector<std::string> favoured_ordering;
+
+	// antibodies put aside: left out of the matrix, the fit and the
+	// refinement (see clean_order()), but kept until they are put back
+	std::vector<std::string> naughty_corner;
+
+	// which antibodies with structural information were toggled to be fixed
+	// at their structural position, last time (see Positions::setFixed()).
+	// Only meaningful once saved: until then every one of them is fixed.
+	std::vector<std::string> fixed_antibodies;
+	bool fixed_saved{false};
+
+	// how big an antibody is, in Angstroms, for how close two have to be to
+	// compete (see PosToComp::closeness())
+	float radius{11.f};
+
+	// How much an antibody's radius changes with how curved the mesh is under
+	// it: Angstroms per standard deviation of curvature (see
+	// Mesh::curvatureZ()), more on convex ground and less on concave. 0 is off.
+	float curvature_scale{2.f};
+
+	// Whether a fixed antibody with a footprint on the mesh (see
+	// Positions::buildFootprints()) takes the place of its blanket radius:
+	// another antibody competes with it by how near the footprint it is.
+	bool use_footprints{true};
 
 	// cached refinements (see PosToComp), saved to and loaded from json
 	std::vector<RefinedResult> results;
@@ -192,6 +238,14 @@ inline void to_json(json &j, const Competition &c)
 	j["value_header"] = c.value_header;
 
 	j["favoured_ordering"] = c.favoured_ordering;
+	j["naughty_corner"] = c.naughty_corner;
+	if (c.fixed_saved)
+	{
+		j["fixed_antibodies"] = c.fixed_antibodies;
+	}
+	j["radius"] = c.radius;
+	j["curvature_scale"] = c.curvature_scale;
+	j["use_footprints"] = c.use_footprints;
 	j["as_competition"] = c.as_competition;
 	j["scale"] = c.scale;
 	j["antigen"] = c.antigen;
@@ -220,6 +274,32 @@ inline void from_json(const json &j, Competition &c)
 	if (j.count("favoured_ordering"))
 	{
 		c.favoured_ordering = j.at("favoured_ordering");
+	}
+
+	if (j.count("radius"))
+	{
+		c.radius = j.at("radius");
+	}
+
+	if (j.count("use_footprints"))
+	{
+		c.use_footprints = j.at("use_footprints");
+	}
+
+	if (j.count("curvature_scale"))
+	{
+		c.curvature_scale = j.at("curvature_scale");
+	}
+
+	if (j.count("naughty_corner"))
+	{
+		c.naughty_corner = j.at("naughty_corner").get<std::vector<std::string>>();
+	}
+
+	if (j.count("fixed_antibodies"))
+	{
+		c.fixed_antibodies = j.at("fixed_antibodies").get<std::vector<std::string>>();
+		c.fixed_saved = true;
 	}
 
 	c.as_competition = j.at("as_competition");

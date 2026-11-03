@@ -53,7 +53,10 @@ public:
 	// changed) and refreshes both matrices. Must not be called while refining.
 	void reloadData();
 
-	// live: from the positions being refined; shown: from the ones on show
+	// For the display. Live: from the positions being refined; shown: from the
+	// ones on show, which it is whenever a result or average is being viewed
+	// (the refinement can go on behind it unseen). The live model, which the
+	// refinement scores with, is only filled in for the live positions.
 	Eigen::MatrixXf &fromModel(bool shown = false);
 
 	// the score for two antibodies a given distance apart: 1 on top of one
@@ -63,6 +66,31 @@ public:
 		float exponent = exp((radius * 2 - dist) / slope);
 		return exponent / (1 + exponent);
 	}
+
+	// The same with a radius for each of the two antibodies, which add up to
+	// where it is halfway: the two are as far from each other as their radii
+	// add up to when they just touch.
+	static float closeness(float dist, float radiusA, float radiusB,
+	                       float slope)
+	{
+		float exponent = exp((radiusA + radiusB - dist) / slope);
+		return exponent / (1 + exponent);
+	}
+
+	// The radius of an antibody sitting at a position: the antibody radius
+	// where the mesh is as curved as it is on average, and more where it is
+	// convex (less where concave), by the competition's curvature_scale for
+	// each standard deviation (within three of them either way).
+	float radiusAt(const glm::vec3 &pos) const;
+
+	float curvatureScale() const;
+	void setCurvatureScale(float scale);
+
+	// Whether fixed antibodies with a footprint on the mesh compete by it, in
+	// place of the radius: another antibody is as close as its radius reaches
+	// from the footprint (rather than the two radii from the centre).
+	bool footprintsOn() const;
+	void setFootprints(bool on);
 
 	PCA::Matrix &modelDisplay(std::mutex **mut)
 	{
@@ -87,6 +115,14 @@ public:
 	{
 		return _refining;
 	}
+
+	// the radius of an antibody, which is kept with the competition. Not to
+	// be changed while refining; the model matrix is made again with it.
+	float radius() const
+	{
+		return _radius;
+	}
+	void setRadius(float radius);
 
 	std::vector<Result> results();
 	// discards the first count results (e.g. those a list is showing)
@@ -119,12 +155,54 @@ private:
 	void descend(const std::vector<std::string> &filtered, int cycles,
 	             bool anneal);
 	float slopeAt(int cycle) const;
+
+	/** Everything the score of a pair needs to know about the positions as
+	 *  they stand, worked out once for the whole of a matrix (or a gradient)
+	 *  rather than again for every pair: the nearest mesh vertex and radius of
+	 *  every copy, and the footprint (if any) each row stands for. */
+	struct PairContext
+	{
+		const std::vector<glm::vec3> *raw{};
+		std::vector<int> start, num;
+		std::vector<int> vertex;
+		std::vector<float> radii;
+		std::vector<const Positions::Footprint *> footprint;
+		std::vector<bool> fixed;
+		float slope{};
+	};
+
+	// useStored takes the layout kept for the refinement, not worked out again
+	PairContext makeContext(bool shown, float slope, bool useStored = false);
+	// the score of the pair of rows m < n in a model matrix
+	float pairScore(const PairContext &ctx, size_t m, size_t n) const;
+	// the sums rmsDifference() is made of, from the model as it is
+	void rmsParts(double &sum, double &weights) const;
+	float radiusAtVertex(int vertex) const;
+	// the footprint a fixed antibody stands for, if it is to be used
+	const Positions::Footprint *footprintOf(const std::string &name) const;
+	// Greedy swaps of two antibodies' positions, which gradient descent
+	// cannot do. Only antibodies whose rows of the model disagree strongly
+	// with the data are tried, in every pair of them; the swap which lowers
+	// the error most is kept, and the search goes on from there until none
+	// does. Returns how many were made. Positions must be on the mesh.
+	// With greedy off (it is on, as it was), the antibodies which disagree strongly are
+	// paired off at random (those with the same number of symmetry copies)
+	// and each pair tried: a swap which lowers the error is kept free of
+	// charge, and one which raises it only if what it adds to the rises of
+	// those kept before is no more than tolerance, and put back if not.
+	// The refinement which follows settles them, as a jump out of where it was.
+	int swapPositions(const std::vector<std::string> &filtered,
+	                  bool greedy = true, float tolerance = 0.005f);
 	// where each antibody's symmetry copies are in Positions::copies(), for
 	// each in the competition's ordering
 	void layout(std::vector<int> &start, std::vector<int> &num) const;
 	// the model matrix from the current positions, without refreshing the
 	// display (cheap enough to call every refinement step)
 	void fillModel(bool shown = false);
+	// the same into a matrix of its own (the live model is the one the
+	// refinement scores with, so what is only to be shown does not touch it),
+	// with the given slope of the sigmoid
+	void fillMatrix(Eigen::MatrixXf &out, bool shown, float slope);
 	float rmsDifference() const;
 	// how much the entry of the data counts for: 1, or less if it was inferred
 	float weightOf(int i, int j) const;
@@ -162,10 +240,29 @@ private:
 	// of 1 was too small to converge in 2000 cycles
 	float _startSlopeFactor{3.f};
 	int _annealCycles{1500};
+	// A round before each refinement which only goes by the fixed antibodies:
+	// the free ones take no notice of one another, so each is drawn to where
+	// the fixed ones put it, towards a minimum for the refinement proper to
+	// start from. How many cycles it takes (none to leave it out), and whether
+	// the gradient is at present left to the fixed ones.
+	int _fixedOnlyCycles{1000};
+	std::atomic<bool> _fixedOnly{false};
+
+	// Then the coupling between free antibodies is brought in in stages, the
+	// antibodies with the most of the matrix filled in with data first: at
+	// each, free antibodies count for one another only once both are in, while
+	// the fixed ones always count, so that every antibody stays near where
+	// they put it. Every stage has this many cycles, and the last, with
+	// everyone, is the refinement proper. One stage is no titration at all.
+	// _activeRows, by row of the matrix, is which are in at present; empty is
+	// all.
+	int _titrationStages{4};
+	int _titrationCycles{500};
+	std::vector<bool> _activeRows;
 	float _learningRate{3.f};
 	int _polishRounds{5};
 	int _snapEvery{200};
-	int _displayEvery{10};
+	int _displayEvery{25};
 	// index of each antibody in the competition's favoured ordering
 	std::map<std::string, int> _rowOf;
 	std::vector<int> _start;

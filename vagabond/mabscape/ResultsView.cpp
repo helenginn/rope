@@ -59,7 +59,7 @@ std::string ResultsView::bucketKey(const PosToComp::Result &result)
 	std::vector<std::string> names;
 	for (const Positions::Placement &pl : result.placements)
 	{
-		if (pl.fixed)
+		if (pl.fixed && !Positions::ignored(pl.name))
 		{
 			names.push_back(pl.name);
 		}
@@ -193,9 +193,18 @@ void ResultsView::update(const std::vector<PosToComp::Result> &results)
 			Item *item = new Item();
 			item->setSelectJob([this, b, i](bool left)
 			{
-				if (left && _apply && i < b->results.size())
+				if (i >= b->results.size())
+				{
+					return;
+				}
+
+				if (left && _apply)
 				{
 					_apply(b->results[i]);
+				}
+				else if (!left)
+				{
+					resultMenu(b->key, b->results[i]);
 				}
 			});
 			b->items.push_back(std::unique_ptr<Item>(item));
@@ -287,6 +296,54 @@ void ResultsView::rename(Bucket *b, Group *group)
 	_scene->setModal(aft);
 }
 
+// The results so far are kept as a group, which refinements do not add to, and
+// are taken out of the model: new refinements then start the bucket's "All"
+// afresh. A group is saved with the others.
+void ResultsView::archive(Bucket *b)
+{
+	if (b->results.empty())
+	{
+		return;
+	}
+
+	AskForText *aft = new AskForText(_scene, "Archive these results as:", "", 
+	                                 nullptr);
+	aft->allowCapitals(true);
+	aft->setDefaultText("archive");
+	aft->setReturnJob([this, b](std::string str)
+	{
+		if (str.length() == 0 || b->results.empty())
+		{
+			return;
+		}
+
+		std::vector<PosToComp::Result> results = b->results;
+		std::string key = b->key;
+		size_t count = results.size();
+
+		// "All" is about to be emptied: nothing of it stays selected
+		if (_selected == &b->allItem)
+		{
+			_selected = nullptr;
+			b->allItem.setTextColour({0., 0., 0.});
+
+			if (_selectJob)
+			{
+				_selectJob(key, {});
+			}
+		}
+
+		addGroup(key, str, results);
+
+		// out of the model, which brings the list up to date
+		if (_delete)
+		{
+			_delete(key, count);
+		}
+	});
+	_scene->setModal(aft);
+}
+
 void ResultsView::addGroup(const std::string &key, const std::string &name,
                            const std::vector<PosToComp::Result> &results)
 {
@@ -316,11 +373,15 @@ void ResultsView::addGroup(const std::string &key, const std::string &name,
 		char buf[64];
 		snprintf(buf, sizeof(buf), "score %.4f", group->results[i].score);
 		item->setDisplayName(buf);
-		item->setSelectJob([this, g, i](bool left)
+		item->setSelectJob([this, b, g, i](bool left)
 		{
 			if (left && _apply)
 			{
 				_apply(g->results[i]);
+			}
+			else if (!left)
+			{
+				resultMenu(b->key, g->results[i]);
 			}
 		});
 		group->items.push_back(std::unique_ptr<Item>(item));
@@ -449,6 +510,31 @@ void ResultsView::removeGroup(Bucket *b, Group *group)
 	_sb->addSliderIfNeeded();
 }
 
+// a single result: the same cross-check as for a group, of just this one
+void ResultsView::resultMenu(const std::string &key, 
+                             const PosToComp::Result &result)
+{
+	Menu *menu = new Menu(_scene);
+
+	char buf[64];
+	snprintf(buf, sizeof(buf), "score %.4f", result.score);
+	std::string name = buf;
+	std::vector<PosToComp::Result> results = {result};
+
+	menu->addOption("cross-check", [this, key, name, results]()
+	{
+		if (_crossCheck)
+		{
+			_crossCheck(key, name, results);
+		}
+	});
+
+	float x = 0.5; float y = 0.5;
+	_scene->getFractionalPos(x, y);
+	menu->setup(x, y, 0.6);
+	_scene->setModal(menu);
+}
+
 void ResultsView::groupMenu(Bucket *b, Group *group)
 {
 	bool isAll = (group == nullptr);
@@ -473,18 +559,27 @@ void ResultsView::groupMenu(Bucket *b, Group *group)
 		}
 	});
 
+	menu->addOption("export PDB", [this, key, name, results]()
+	{
+		if (_export)
+		{
+			_export(key, name, results);
+		}
+	});
+
 	menu->addOption("rename", [this, b, group]() { rename(b, group); });
+
+	if (isAll && b->results.size())
+	{
+		menu->addOption("archive", [this, b]() { archive(b); });
+	}
 
 	if (!isAll)
 	{
+		// only the group goes (its results are kept), so there is no asking
 		menu->addOption("delete", [this, b, group]()
 		{
-			std::string text = "Delete the group " + group->name + "? Its " +
-			std::to_string(group->results.size()) + " results are kept.";
-
-			AskYesNo *ayn = new AskYesNo(_scene, text);
-			ayn->addJob("yes", [this, b, group]() { removeGroup(b, group); });
-			_scene->setModal(ayn);
+			removeGroup(b, group);
 		});
 	}
 

@@ -51,12 +51,20 @@ float Symmetry::similarity_score(const glm::mat4x4 &left,
 	return result;
 }
 
+float Symmetry::world_score(const glm::mat4x4 &left, const glm::mat4x4 &right)
+{
+	glm::mat4x4 between = left * glm::inverse(right);
+	float trace = 3 - (between[0][0] + between[1][1] + between[2][2]);
+	float trans = glm::length(glm::vec3(between[3]));
+	return (1 + trace) * (1 + trans) - 1;
+}
+
 bool Symmetry::add_if_new(const glm::mat4x4 &new_mat)
 {
 	bool found = false;
 	for (const glm::mat4x4 &old : _transforms)
 	{
-		float score = similarity_score(old, new_mat);
+		float score = world_score(old, new_mat);
 		if (score < _threshold)
 		{
 			found = true; break;

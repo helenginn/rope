@@ -27,6 +27,10 @@
 
 // an orientation which superposes worse than this (Angstroms) is flagged
 
+// how many times worse than the best an arrangement of antibody instances
+// can score and still be one of the symmetry-related ones
+static const float ARRANGEMENT_FACTOR = 4.f;
+
 ContactPoint::ContactPoint(Fiducial &fiducial, Antigens &antigens,
                            bool find_instances)
 : _fiducial(fiducial), _antigens(antigens)
@@ -206,6 +210,7 @@ void ContactPoint::findMapping()
 		float best_score = FLT_MAX;
 		std::list<Instance *> arrangement;
 		OpSet<std::list<Instance *>> arrangements;
+		std::vector<std::pair<float, std::list<Instance *>>> scored;
 
 		std::cout << "with: " << leftInsts.size() << " left instances" << std::endl;
 		do
@@ -221,12 +226,22 @@ void ContactPoint::findMapping()
 				std::cout << " -> " << score << std::endl;
 				arrangement = trunc;
 			}
-			if (score < _threshold)
-			{
-				arrangements.insert(trunc);
-			}
+			scored.push_back({score, trunc});
 		}
 		while (std::next_permutation(arranged.begin(), arranged.end()));
+
+		// The arrangements worth superposing are those as consistent as the
+		// best, which is a matter of how much worse than it they are rather
+		// than a fixed score: how well a model fits sets the scores (about 0.3
+		// for a good fit, 30 for a poor one) but a mirror image comes out
+		// tens of times worse than the best, whatever it is.
+		for (const auto &entry : scored)
+		{
+			if (entry.first <= best_score * ARRANGEMENT_FACTOR + 1.f)
+			{
+				arrangements.insert(entry.second);
+			}
+		}
 		
 		std::cout << "Collected " << arrangements.size() << " arrangements" << std::endl;
 		std::cout << "... -> best: " << std::endl;
@@ -274,6 +289,17 @@ void ContactPoint::findMapping()
 	
 	establishMidpoint();
 	recalibrateToFirst();
+
+	// the footprint goes with the mapping, while the models are to hand
+	try
+	{
+		computeFootprint();
+	}
+	catch (const std::exception &err)
+	{
+		std::cout << "No footprint for antibody " << _fiducial.name << ": " 
+		<< err.what() << std::endl;
+	}
 }
 
 // atoms which cannot stand for a position: coordinates which are not numbers
@@ -479,6 +505,143 @@ bool ContactPoint::interfaceMidpoint(AtomGroup *antibody, AtomGroup *antigen,
 	return found;
 }
 
+// how close any atom of a chain comes to a point
+static float chain_distance(Instance *inst, const glm::vec3 &to)
+{
+	float best = FLT_MAX;
+	for (Atom *atom : inst->currentAtoms()->atomVector())
+	{
+		best = std::min(best, glm::length(atom->derivedPosition() - to));
+	}
+	return best;
+}
+
+// whether two chains have atoms within a cutoff of each other
+static bool chains_touch(Instance *a, Instance *b, float cutoff)
+{
+	const auto &left = a->currentAtoms()->atomVector();
+	const auto &right = b->currentAtoms()->atomVector();
+	float sq = cutoff * cutoff;
+
+	for (Atom *l : left)
+	{
+		glm::vec3 p = l->derivedPosition();
+		for (Atom *r : right)
+		{
+			glm::vec3 d = r->derivedPosition() - p;
+			if (glm::dot(d, d) < sq)
+			{
+				return true;
+			}
+		}
+	}
+
+	return false;
+}
+
+std::vector<Instance *> 
+ContactPoint::antibodyAtInterface(const std::vector<Instance *> &chains,
+                                  const glm::vec3 &reference)
+{
+	std::vector<Instance *> group;
+	if (chains.empty())
+	{
+		return group;
+	}
+
+	Instance *nearest = chains[0];
+	float best = FLT_MAX;
+	for (Instance *inst : chains)
+	{
+		float d = chain_distance(inst, reference);
+		if (d < best)
+		{
+			best = d;
+			nearest = inst;
+		}
+	}
+
+	// all those joined to it, directly or through another
+	group.push_back(nearest);
+	for (size_t i = 0; i < group.size(); i++)
+	{
+		for (Instance *inst : chains)
+		{
+			if (std::find(group.begin(), group.end(), inst) == group.end() &&
+			    chains_touch(group[i], inst, 4.f))
+			{
+				group.push_back(inst);
+			}
+		}
+	}
+
+	return group;
+}
+
+bool ContactPoint::computeFootprint(float reach)
+{
+	if (_orientations.empty() || !_chosen)
+	{
+		return false;
+	}
+
+	_fiducial.model.load();
+
+	OpSet<std::string> fidEnts = _fiducial.non_antigen_entities(_antigens);
+	std::vector<Instance *> chains, antigens;
+	for (Instance *const &inst : _fiducial.model.instances())
+	{
+		if (fidEnts.count(inst->entity_id()))
+		{
+			chains.push_back(inst);
+		}
+		else if (_chosen->entities.count(inst->entity_id()))
+		{
+			antigens.push_back(inst);
+		}
+	}
+
+	// the reference is where the first orientation puts the middle of the
+	// interface on the mesh: back through it is the model as loaded
+	glm::vec3 local = glm::vec3(glm::inverse(_orientations.front().transform) *
+	                            glm::vec4(_reference, 1.f));
+
+	AtomGroup abs, anti;
+	for (Instance *inst : antibodyAtInterface(chains, local))
+	{
+		abs.add(inst->currentAtoms());
+	}
+	for (Instance *inst : antigens)
+	{
+		anti.add(inst->currentAtoms());
+	}
+
+	std::vector<glm::vec3> found;
+	if (abs.size() && anti.size())
+	{
+		auto position = [](Atom *const &a) { return a->derivedPosition(); };
+		GroupBounds antigenBounds(&anti, position);
+		AtomGroup *face = antigenBounds.atoms_from_other_group_within(&abs, reach);
+
+		for (Atom *atom : face->atomVector())
+		{
+			if (usableAtom(atom) && atom->elementSymbol() != "H")
+			{
+				found.push_back(atom->derivedPosition());
+			}
+		}
+
+		delete face;
+	}
+
+	_fiducial.model.unload();
+	_footprint = found;
+
+	std::cout << "Footprint of antibody " << _fiducial.name << ": " 
+	<< _footprint.size() << " atoms" << std::endl;
+	return hasFootprint();
+}
+
 void ContactPoint::establishMidpoint()
 {
 	_fiducial.model.load();
@@ -577,8 +740,11 @@ static glm::mat4x4 matrix_from_json(const json &j)
 json ContactPoint::inputs() const
 {
 	json j;
-	// bump whenever the way the midpoint is worked out changes
-	j["midpoint_method"] = 5;
+	// bump whenever the way the midpoint is worked out changes (6: the
+	// interface reaches 6 Angstroms, not 8)
+	j["midpoint_method"] = 6;
+	// bump whenever the way the orientations are told apart changes
+	j["orientation_method"] = 3;
 	j["antigen"] = _fiducial.antigen;
 	j["fiducial_file"] = _fiducial.model.filename();
 	j["fiducial_time"] = (long long)file_mod_time(_fiducial.model.filename());
@@ -636,6 +802,17 @@ json ContactPoint::alignmentJson() const
 	}
 	j["orientations"] = orientations;
 
+	if (_footprint.size())
+	{
+		json footprint = json::array();
+		for (const glm::vec3 &p : _footprint)
+		{
+			footprint.push_back({p.x, p.y, p.z});
+		}
+		j["footprint"] = footprint;
+		j["footprint_reach"] = INTERFACE_REACH;
+	}
+
 	return j;
 }
 
@@ -678,9 +855,24 @@ bool ContactPoint::restore(const json &saved)
 		const json &ref = saved.at("reference");
 		_reference = glm::vec3(ref.at(0).get<float>(), ref.at(1).get<float>(),
 		                       ref.at(2).get<float>());
+		// saves from before the footprint was kept have none, and are given
+		// it when it is first wanted
+		std::vector<glm::vec3> footprint;
+		if (saved.count("footprint") && saved.count("footprint_reach") &&
+		    saved.at("footprint_reach").get<float>() == INTERFACE_REACH)
+		{
+			for (const json &p : saved.at("footprint"))
+			{
+				footprint.push_back(glm::vec3(p.at(0).get<float>(), 
+				                              p.at(1).get<float>(),
+				                              p.at(2).get<float>()));
+			}
+		}
+
 		_transforms = transforms;
 		_warnings = warnings;
 		_orientations = orientations;
+		_footprint = footprint;
 		_applied = glm::mat4{1.f};
 	}
 	catch (const json::exception &err)

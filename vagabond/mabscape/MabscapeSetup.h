@@ -41,6 +41,7 @@ private:
 	bool _validateAntigen{false};
 	bool _validateComp{false};
 	bool _validateFiducials{false};
+	bool _intervene{false};
 };
 
 #endif

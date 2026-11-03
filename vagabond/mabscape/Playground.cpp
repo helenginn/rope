@@ -19,6 +19,7 @@
 #include "ContactPoint.h"
 #include "Playground.h"
 #include <algorithm>
+#include <fstream>
 #include <set>
 #include "Positions.h"
 #include "PosToComp.h"
@@ -31,11 +32,15 @@
 #include "AlignmentView.h"
 #include "ContactPoint.h"
 #include "CrossCheckView.h"
+#include "AntibodyPdb.h"
 #include "GhostAb.h"
 #include "Mab.h"
 #include <vagabond/gui/elements/Icosahedron.h>
+#include <vagabond/gui/elements/Box.h>
 #include <vagabond/gui/elements/TextButton.h>
 #include <vagabond/gui/elements/Menu.h>
+#include <vagabond/gui/elements/AskForText.h>
+#include <vagabond/gui/elements/BadChoice.h>
 #include <vagabond/gui/elements/Text.h>
 #include <vagabond/gui/elements/TextEntry.h>
 #include <vagabond/gui/elements/Window.h>
@@ -87,6 +92,7 @@ Playground::Playground(Scene *prev, Mab &mab)
 	_farSlab = 80;
 	_slabbing = true;
 	setPingPong(true);
+	setMakesSelections();
 	shiftToCentre({}, 80);
 
 }
@@ -101,18 +107,13 @@ void Playground::showMesh(const Competition &comp)
 	shiftToCentre(mesh->centroid(), 0);
 	std::cout << "Mesh centre: " << mesh->centroid() << std::endl;
 	_mesh = mesh;
+	mesh->loadExclusions();
 
 }
 
-void Playground::showFiducials(const Competition &comp)
+// the hovering and clicking of an antibody
+void Playground::setupWatch(AbWatch *aw)
 {
-	_positions = new Positions(*_mab.antigens(comp.antigen), comp, _mab,
-	                           _mesh->vertexFinder(), _mesh->random());
-	_watches = {};
-	_positions->loadAntibodiesInto(this, _watches);
-	
-	for (AbWatch *aw : _watches)
-	{
 		addIndexResponder(aw);
 		aw->setHoverJob([this, aw](const std::string &ab, int copy)
 		{
@@ -168,7 +169,7 @@ void Playground::showFiducials(const Competition &comp)
 		});
 		aw->setRightClickJob([this](AbWatch *clicked)
 		{
-			checkAlignmentMenu(clicked->antibody());
+			alignmentMenu(clicked);
 		});
 		aw->setClickJob([this](AbWatch *clicked)
 		{
@@ -183,6 +184,65 @@ void Playground::showFiducials(const Competition &comp)
 				applyColouring();
 			}
 		});
+}
+
+// Antibodies brought back from the naughty corner have no positions yet, nor
+// anything to show them with: they start from random positions.
+void Playground::syncAntibodies()
+{
+	if (!_positions || _mab.competitions.empty())
+	{
+		return;
+	}
+
+	for (const std::string &name : _mab.competitions.begin()->antibody_names())
+	{
+		if (Positions::ignored(name) || _positions->has(name))
+		{
+			continue;
+		}
+
+		if (!_positions->addAntibody(name))
+		{
+			std::cout << "No room to bring back " << name << " in this "
+			"session: reopen the playground to include it." << std::endl;
+			continue;
+		}
+
+		size_t before = _watches.size();
+		_positions->loadAntibodyInto(this, _watches, name);
+		for (size_t i = before; i < _watches.size(); i++)
+		{
+			setupWatch(_watches[i]);
+		}
+	}
+}
+
+void Playground::showFiducials(const Competition &comp)
+{
+	_positions = new Positions(*_mab.antigens(comp.antigen), comp, _mab,
+	                           _mesh->vertexFinder(), _mesh->random());
+	_watches = {};
+	_positions->setMeshVertices(_mesh->vertexPositions());
+
+	// how curved the mesh is at each vertex, for the radius of an antibody
+	_positions->setCurvatureZ(_mesh->curvatureZ());
+
+	// where each fixed antibody sits on the mesh (the models are loaded to
+	// work it out the once, and it is then kept in the json)
+	_positions->buildFootprints();
+
+	// as toggled last time
+	if (comp.fixed_saved)
+	{
+		_positions->setFixedAntibodies(comp.fixed_antibodies);
+	}
+
+	_positions->loadAntibodiesInto(this, _watches);
+	
+	for (AbWatch *aw : _watches)
+	{
+		setupWatch(aw);
 	}
 }
 
@@ -229,6 +289,8 @@ void Playground::setup()
 			                [this]() { setMatricesVisible(true); });
 		}
 
+		menu->addOption("check alignment", [this]() { checkAlignment(); });
+
 		if (_mesh && _mesh->opaque())
 		{
 			menu->addOption("transparent antigen", 
@@ -252,6 +314,28 @@ void Playground::setup()
 		menu->addOption("save", [this]() { saveResults(); });
 		menu->addOption("competition data", [this]() { showCompetitionData(); });
 		menu->addOption("toggle fixed", [this]() { showToggleFixed(); });
+		menu->addOption("antibody radius", [this]() { askForRadius(); });
+		menu->addOption("curvature scale", [this]() { askForCurvatureScale(); });
+		if (_model)
+		{
+			menu->addOption(std::string("footprints: ") + 
+			                (_model->footprintsOn() ? "on" : "off"), [this]()
+			{
+				if (_model->isRefining())
+				{
+					BadChoice *bc = new BadChoice(this, "Stop refining before "
+					                              "changing the footprints.");
+					setModal(bc);
+					return;
+				}
+
+				_model->setFootprints(!_model->footprintsOn());
+				std::cout << "Footprints are now " 
+				<< (_model->footprintsOn() ? "on" : "off") 
+				<< "; re-score saved results to bring them in line" 
+				<< std::endl;
+			});
+		}
 		if (_model && _model->isRefining())
 		{
 			menu->addOption("stop refining", [this]() { _model->stopRefining(); });
@@ -260,9 +344,11 @@ void Playground::setup()
 		{
 			menu->addOption("refine", [this]() { refine(); });
 		}
+		// always there: results come in while refining, and the list fills as
+		// they do
+		menu->addOption("view results", [this]() { viewResults(); });
 		if (_model && _model->results().size())
 		{
-			menu->addOption("view results", [this]() { viewResults(); });
 			menu->addOption("re-score results", [this]()
 			{
 				size_t n = _model->rescoreResults();
@@ -441,9 +527,85 @@ void Playground::finishSearch()
 	}
 }
 
+// as if the antibody had been searched for: all its copies highlighted, the
+// first one pinned and centred
+void Playground::showAntibody(const std::string &name)
+{
+	clearSelection();
+
+	for (AbWatch *aw : _watches)
+	{
+		if (aw->antibody() == name)
+		{
+			_searchHits.push_back(aw);
+			aw->setHighlighted(true);
+		}
+	}
+
+	if (_searchHits.empty())
+	{
+		return;
+	}
+
+	pin(_searchHits[0]);
+	shiftToCentre(_searchHits[0]->centroid(), 0);
+}
+
+void Playground::highlightRows()
+{
+	for (Box *quad : _rowQuads)
+	{
+		removeObject(quad);
+		delete quad;
+	}
+	_rowQuads.clear();
+
+	if (!_pinned || !_matricesVisible || _mab.competitions.empty())
+	{
+		return;
+	}
+
+	const std::vector<std::string> &names = 
+	_mab.competitions.begin()->favoured_ordering;
+	auto at = std::find(names.begin(), names.end(), _pinned->antibody());
+	if (at == names.end())
+	{
+		return;
+	}
+
+	size_t row = at - names.begin();
+	for (MatrixPlot *plot : {_mpData, _mpModel})
+	{
+		if (!plot)
+		{
+			continue;
+		}
+
+		// the plot's rows evenly divide its extent, with row 0 at the bottom
+		glm::vec3 minC, maxC;
+		plot->bounds(minC, maxC);
+		float rowSpan = (maxC.y - minC.y) / (float)names.size();
+		float bottomY = minC.y + (float)row * rowSpan;
+
+		Box *quad = new Box();
+		quad->makeQuad();
+		quad->rescale(fabs(maxC.x - minC.x) / 2.f, rowSpan / 2.f);
+		quad->setPosition(glm::vec3((maxC.x + minC.x) / 2.f, 
+		                            bottomY + rowSpan / 2.f, minC.z + 0.05f));
+		// as in the cluster view: a Box with no image samples whatever was
+		// last drawn, and black gives the translucent band
+		quad->setImage("assets/images/black.png");
+		quad->setColour(0.1, 1.0, 0.2);
+		quad->setAlpha(-0.6);
+		addObject(quad);
+		_rowQuads.push_back(quad);
+	}
+}
+
 void Playground::pin(AbWatch *aw)
 {
 	_pinned = aw;
+	highlightRows();
 
 	for (AbWatch *other : _watches)
 	{
@@ -495,48 +657,27 @@ void Playground::showGhost(AbWatch *aw)
 	}
 }
 
-void Playground::checkAlignmentMenu(const std::string &name)
+void Playground::alignmentMenu(AbWatch *clicked)
 {
+	const std::string &name = clicked->antibody();
 	Fiducial *fid = _positions->fiducialFor(name);
 	if (!fid || !fid->contact)
 	{
 		return;
 	}
 
-	Antigen *antigen = _mab.antigens(fid->antigen);
-	const std::vector<ContactPoint::Orientation> &orientations = 
-	fid->contact->orientations();
-	if (!antigen)
-	{
-		return;
-	}
-
 	Menu *menu = new Menu(this);
 
-	if (orientations.empty())
+	if (fid->contact->orientations().empty())
 	{
 		menu->addOption("no alignment details kept for this antibody", 
 		                []() {});
 	}
-
-	for (size_t i = 0; i < orientations.size(); i++)
+	else
 	{
-		const ContactPoint::Orientation &o = orientations[i];
-		bool unknown = (o.rmsd != o.rmsd);
-		std::string rmsd = unknown ? "unknown" : f_to_str(o.rmsd, 1) + " A";
-		std::string text = "Orientation " + std::to_string(i + 1) + 
-		" of antibody " + name + " aligns with RMSD " + rmsd;
-		bool poor = unknown || o.rmsd > ContactPoint::MAX_RMSD;
-
-		glm::mat4x4 transform = o.transform;
-		menu->addOption("check alignment " + std::to_string(i + 1) + 
-		                " (RMSD " + rmsd + (poor ? ", poor" : "") + ")",
-		                [this, antigen, fid, transform, text, poor]()
+		menu->addOption("show alignment", [this, clicked]()
 		{
-			AlignmentView *av = new AlignmentView(this, *antigen, *fid, 
-			                                      transform, text, poor);
-			av->setComparison(_mab.fiducials);
-			av->show();
+			showAlignment(clicked);
 		});
 	}
 
@@ -544,6 +685,244 @@ void Playground::checkAlignmentMenu(const std::string &name)
 	getFractionalPos(x, y);
 	menu->setup(x, y, 1);
 	setModal(menu);
+}
+
+// the antibody as the alignment of the copy clicked puts it on the mesh (the
+// copies are in the order of the orientations), glowing like the others
+void Playground::exportPdb(const std::string &key, const std::string &name,
+                           const std::vector<RefinedResult> &results)
+{
+	Competition &comp = *_mab.competitions.begin();
+	Antigen *antigen = _mab.antigens(comp.antigen);
+
+	// the same numbers as the cross-check gives, for every antibody
+	CrossCheckView::Stats stats = CrossCheckView::compute(*_positions, comp, 
+	                                                      key, results);
+
+	// a file name from the antigen and the group, not over one already there
+	std::string base = comp.antigen + "_" + name;
+	for (char &c : base)
+	{
+		if (!std::isalnum((unsigned char)c) && c != '-' && c != '_')
+		{
+			c = '_';
+		}
+	}
+
+	std::string path = base + ".pdb";
+	for (int i = 2; std::ifstream(path).good(); i++)
+	{
+		path = base + "_" + std::to_string(i) + ".pdb";
+	}
+
+	std::string reference = (antigen ? antigen->model.filename() : comp.antigen);
+	std::string title = name + (key.length() ? " (fixed: " + key + ")" : 
+	                            " (none fixed)");
+
+	std::string message;
+	try
+	{
+		AntibodyPdb::write(path, stats.everyone, reference, title, 
+		                   results.size());
+		message = "Wrote " + std::to_string(stats.everyone.size()) + 
+		" antibodies to " + path;
+	}
+	catch (const std::exception &err)
+	{
+		message = std::string("Could not export: ") + err.what();
+	}
+
+	std::cout << message << std::endl;
+	BadChoice *bc = new BadChoice(this, message);
+	setModal(bc);
+}
+
+// The orientation which puts the antibody nearest to where the copy selected
+// sits: by position, not by the copy's number, which need not line up. The
+// structural positions are in the order of the orientations (any more are
+// symmetry copies which have no orientation of their own).
+size_t Playground::nearestOrientation(AbWatch *aw, Fiducial *fid)
+{
+	const std::vector<ContactPoint::Orientation> &orientations = 
+	fid->contact->orientations();
+	std::vector<glm::vec3> structural = 
+	_positions->structuralCopies(aw->antibody(), true);
+	glm::vec3 here = aw->centroid();
+	size_t which = 0;
+	float nearestSq = FLT_MAX;
+	for (size_t i = 0; i < structural.size() && i < orientations.size(); i++)
+	{
+		glm::vec3 diff = structural[i] - here;
+		float sq = glm::dot(diff, diff);
+		if (sq < nearestSq)
+		{
+			nearestSq = sq;
+			which = i;
+		}
+	}
+
+	return which;
+}
+
+void Playground::checkAlignment()
+{
+	Fiducial *fid = (_pinned ? _positions->fiducialFor(_pinned->antibody()) : 
+	                 nullptr);
+	if (!fid || !fid->contact || fid->contact->orientations().empty())
+	{
+		BadChoice *bc = new BadChoice(this, "Click on an antibody with fixed "
+		                              "fiducial data first.");
+		setModal(bc);
+		return;
+	}
+
+	Antigen *antigen = _mab.antigens(fid->antigen);
+	if (!antigen)
+	{
+		return;
+	}
+
+	const std::vector<ContactPoint::Orientation> &orientations = 
+	fid->contact->orientations();
+	size_t which = nearestOrientation(_pinned, fid);
+	const ContactPoint::Orientation &o = orientations[which];
+
+	bool unknown = (o.rmsd != o.rmsd);
+	std::string rmsd = unknown ? "unknown" : f_to_str(o.rmsd, 1) + " A";
+	std::string text = "Orientation " + std::to_string(which + 1) + 
+	" of antibody " + fid->name + " aligns with RMSD " + rmsd;
+	bool poor = unknown || o.rmsd > ContactPoint::MAX_RMSD;
+
+	AlignmentView *av = new AlignmentView(this, *antigen, *fid, o.transform,
+	                                      text, poor);
+	av->setComparison(_mab.fiducials);
+	av->show();
+}
+
+void Playground::showAlignment(AbWatch *clicked)
+{
+	Fiducial *fid = _positions->fiducialFor(clicked->antibody());
+	if (!fid || !fid->contact || !_mesh)
+	{
+		return;
+	}
+
+	Antigen *antigen = _mab.antigens(fid->antigen);
+	const std::vector<ContactPoint::Orientation> &orientations = 
+	fid->contact->orientations();
+	if (!antigen || orientations.empty())
+	{
+		return;
+	}
+
+	// only one orientation of an antibody can be shown at once: the model
+	// has only the one set of atoms, which are moved to where it is shown
+	for (size_t i = 0; i < _alignments.size(); i++)
+	{
+		if (_alignments[i].fid == fid)
+		{
+			ShownAlignment gone = _alignments[i];
+			_alignments.erase(_alignments.begin() + i);
+			removeDisplayUnit(gone.unit);
+			delete gone.atoms;
+			fid->model.unload();
+			break;
+		}
+	}
+
+	size_t which = nearestOrientation(clicked, fid);
+	glm::mat4x4 transform = orientations[which].transform;
+
+	fid->model.load();
+
+	// the antibody alone, glowing so that it stands out from the mesh
+	std::vector<Instance *> chains;
+	for (Instance *inst : fid->model.instances())
+	{
+		if (!antigen->entities.count(inst->entity_id()))
+		{
+			chains.push_back(inst);
+		}
+	}
+
+	// Just the one antibody, not every copy the model holds. The reference
+	// (the middle of the interface) is where the first orientation puts it on
+	// the mesh, so it is taken back through that to the model as it was loaded,
+	// where the nearest chain is the antibody making the interface.
+	glm::vec3 reference = glm::vec3(glm::inverse(orientations.front().transform) *
+	                                glm::vec4(fid->contact->reference(), 1.f));
+	AtomGroup *atoms = new AtomGroup();
+	for (Instance *inst : ContactPoint::antibodyAtInterface(chains, reference))
+	{
+		atoms->add(inst->currentAtoms());
+		for (Atom *atom : inst->currentAtoms()->atomVector())
+		{
+			atom->setAddedColour(1.f);
+		}
+	}
+
+	// It is shown first and moved afterwards, as the representations follow
+	// the atoms through the unit's watch, which is only there once the unit
+	// has been displayed.
+	DisplayUnit *unit = new DisplayUnit(this);
+	unit->loadAtoms(atoms);
+	unit->displayAtoms();
+	unit->startWatch();
+	addDisplayUnit(unit);
+	_alignments.push_back({fid, unit, atoms});
+	markFootprints();
+
+	// displaying the atoms re-centres the view on the antibody where it
+	// started, not where the alignment puts it, so the view is brought back
+	// to the antigen once it has been moved
+	glm::vec3 centre = _mesh->centroid();
+	addMainThreadJob([this, atoms, transform, centre]()
+	{
+		for (Atom *atom : atoms->atomVector())
+		{
+			glm::vec3 d = atom->derivedPosition();
+			atom->setDerivedPosition(glm::vec3(transform * glm::vec4(d, 1.f)));
+		}
+
+		shiftToCentre(centre, 0);
+	});
+}
+
+void Playground::clearAlignments()
+{
+	for (ShownAlignment &shown : _alignments)
+	{
+		removeDisplayUnit(shown.unit);
+		delete shown.atoms;
+		shown.fid->model.unload();
+	}
+
+	_alignments.clear();
+	markFootprints();
+}
+
+void Playground::markFootprints()
+{
+	if (!_mesh || !_positions)
+	{
+		return;
+	}
+
+	std::set<int> marked;
+	for (const ShownAlignment &shown : _alignments)
+	{
+		for (int vertex : _positions->footprintVertices(shown.fid->name))
+		{
+			marked.insert(vertex);
+		}
+	}
+
+	_mesh->setFootprintMarks(marked);
+}
+
+Playground::~Playground()
+{
+	clearAlignments();
 }
 
 void Playground::clearGhost()
@@ -590,8 +969,10 @@ void Playground::applyColouring()
 			continue;
 		}
 
+		// the data has gaps, but the model has a value for every pair
 		auto it = row.find(aw->antibody());
-		bool present = (it != row.end() && it->second.second);
+		bool present = (it != row.end() && (it->second.second || 
+		                                    _colourBy == Model));
 		aw->showColour(present ? plot->legend()->colour(it->second.first) : 
 		               grey);
 	}
@@ -600,6 +981,7 @@ void Playground::applyColouring()
 void Playground::clearSelection()
 {
 	_pinned = nullptr;
+	highlightRows();
 	clearGhost();
 
 	if (_colourBy != Nothing)
@@ -618,14 +1000,216 @@ void Playground::clearSelection()
 	}
 
 	clearHeat();
+	dropNarrowing(true);
+}
+
+void Playground::sendSelection(float t, float l, float b, float r, 
+                               bool inverse)
+{
+	if (!_mesh)
+	{
+		return;
+	}
+
+	convertToGLCoords(&l, &t);
+	convertToGLCoords(&r, &b);
+
+	// With an antibody pinned and its faces showing, it is the dark grey ones
+	// which can be picked (to pick out the results which landed on them)
+	bool heat = (_pinned && _heatAntibody.length() && _heatMain.size());
+
+	std::set<int> picked = _mesh->selection();
+	for (int idx : _mesh->verticesInBox(t, l, b, r))
+	{
+		if (heat && !_heatMain.count(idx))
+		{
+			continue;
+		}
+
+		if (inverse)
+		{
+			picked.erase(idx);
+		}
+		else
+		{
+			picked.insert(idx);
+		}
+	}
+
+	_mesh->setSelection(picked);
+
+	if (heat)
+	{
+		narrowToSelection();
+	}
+}
+
+// the results with a point in the dark grey cluster on a vertex which is
+// picked become the ones on show
+void Playground::narrowToSelection()
+{
+	const std::set<int> &picked = _mesh->selection();
+	std::set<size_t> keep;
+
+	for (size_t p = 0; p < _heatClusters.points.size(); p++)
+	{
+		if (_heatClusters.member[p] == _heatNearest && 
+		    picked.count(_heatVertex[p]))
+		{
+			keep.insert(_heatClusters.resultOf[p]);
+		}
+	}
+
+	if (keep.empty())
+	{
+		// nothing of the dark grey picked: all of the results again
+		bool was = _narrowed;
+		_narrowed = false;
+		_narrowedResults.clear();
+
+		if (was && !_selectedResults.empty())
+		{
+			showMatrices();
+			_model->showAverage(_selectedResults);
+			applyColouring();
+		}
+		return;
+	}
+
+	_narrowedResults.clear();
+	for (size_t r : keep)
+	{
+		if (r < _selectedResults.size())
+		{
+			_narrowedResults.push_back(_selectedResults[r]);
+		}
+	}
+
+	_narrowed = true;
+	std::cout << keep.size() << " of " << _selectedResults.size() 
+	<< " results landed on the picked faces" << std::endl;
+
+	showMatrices();
+	_model->showAverage(_narrowedResults);
+	applyColouring();
+
+	if (_pinned)
+	{
+		clearGhost();
+		showGhost(_pinned);
+	}
+}
+
+void Playground::dropNarrowing(bool restoreAverage)
+{
+	if (!_narrowed)
+	{
+		return;
+	}
+
+	_narrowed = false;
+	_narrowedResults.clear();
+
+	if (_mesh)
+	{
+		_mesh->setSelection({});
+	}
+
+	if (restoreAverage && _model && !_selectedResults.empty())
+	{
+		showMatrices();
+		_model->showAverage(_selectedResults);
+		applyColouring();
+	}
+}
+
+// shift+click rather than +drag: lets go of the vertices picked
+void Playground::sendClickSelection(double x, double y, bool inverse)
+{
+	if (_mesh)
+	{
+		_mesh->setSelection({});
+	}
+
+	dropNarrowing(true);
+}
+
+void Playground::meshMenu()
+{
+	if (!_mesh)
+	{
+		return;
+	}
+
+	bool picked = _mesh->selection().size() > 0;
+	bool excluded = _mesh->hasExclusions();
+	bool group = (_narrowed && _narrowedResults.size() && _rv);
+	if (!picked && !excluded && !group)
+	{
+		return;
+	}
+
+	Menu *menu = new Menu(this);
+
+	if (group)
+	{
+		// the results which landed on the faces picked, into the results list
+		menu->addOption("make group", [this]()
+		{
+			std::string name = (_pinned ? _pinned->antibody() + " site" : 
+			                    "selected");
+			_rv->addGroup(_selectedKey, name, _narrowedResults);
+		});
+	}
+
+	if (picked)
+	{
+		menu->addOption("exclude from start", [this]()
+		{
+			_mesh->excludeSelection();
+			_mab.save();
+		});
+	}
+
+	if (excluded)
+	{
+		menu->addOption("clear exclusions", [this]()
+		{
+			_mesh->clearExclusions();
+			_mab.save();
+		});
+	}
+
+	float x, y;
+	getFractionalPos(x, y);
+	menu->setup(x, y, 1);
+	setModal(menu);
 }
 
 void Playground::interactedWithNothing(bool left, bool hover)
 {
+	if (!hover && !left)
+	{
+		meshMenu();
+		return;
+	}
+
 	if (!hover)
 	{
-		// a click on empty space lets go of everything
+		// A click on empty space first lets go of the alignments shown, and
+		// leaves the antibody picked as it is: it is the next click which
+		// lets go of everything else.
+		if (_alignments.size())
+		{
+			clearAlignments();
+			return;
+		}
+
 		clearSelection();
+		if (_mesh)
+		{
+			_mesh->setSelection({});
+		}
 		return;
 	}
 
@@ -674,6 +1258,7 @@ void Playground::setMatricesVisible(bool visible)
 	_matricesVisible = visible;
 	_mpModel->setDisabled(!visible);
 	_mpData->setDisabled(!visible);
+	highlightRows();
 
 	for (Text *t : _matrixLabels)
 	{
@@ -737,6 +1322,117 @@ void Playground::refreshFixedStyles()
 	}
 }
 
+// how much an antibody's radius changes with the curvature of the mesh under
+// it, typed in: Angstroms for each standard deviation (0 for none)
+void Playground::askForCurvatureScale()
+{
+	if (!_model)
+	{
+		return;
+	}
+
+	if (_model->isRefining())
+	{
+		BadChoice *bc = new BadChoice(this, "Stop refining before changing the "
+		                              "curvature scale.");
+		setModal(bc);
+		return;
+	}
+
+	AskForText *aft = new AskForText(this, "Radius change per standard "
+	                                 "deviation of curvature (Angstroms, 0 for "
+	                                 "none):", "", nullptr, TextEntry::Numeric);
+	aft->setDefaultText(f_to_str(_model->curvatureScale(), 1));
+	aft->setReturnJob([this](std::string text)
+	{
+		float scale = 0;
+		try
+		{
+			scale = std::stof(text);
+		}
+		catch (const std::exception &err)
+		{
+			scale = 0;
+		}
+
+		if (!(scale >= 0) || scale > 20)
+		{
+			BadChoice *bc = new BadChoice(this, "The curvature scale must be "
+			                              "from 0 to 20 Angstroms.");
+			setModal(bc);
+			return;
+		}
+
+		_model->setCurvatureScale(scale);
+		std::cout << "Curvature scale is now " << scale << " A per standard "
+		<< "deviation; re-score saved results to bring them in line" 
+		<< std::endl;
+	});
+	setModal(aft);
+}
+
+// the antibody radius, typed in: how close two antibodies have to be to
+// compete. A refinement in progress uses it, so not then.
+void Playground::askForRadius()
+{
+	if (!_model)
+	{
+		return;
+	}
+
+	if (_model->isRefining())
+	{
+		BadChoice *bc = new BadChoice(this, "Stop refining before changing the "
+		                              "antibody radius.");
+		setModal(bc);
+		return;
+	}
+
+	AskForText *aft = new AskForText(this, "Antibody radius (Angstroms):", "",
+	                                 nullptr, TextEntry::Numeric);
+	aft->setDefaultText(f_to_str(_model->radius(), 1));
+	aft->setReturnJob([this](std::string text)
+	{
+		float radius = 0;
+		try
+		{
+			radius = std::stof(text);
+		}
+		catch (const std::exception &err)
+		{
+			radius = 0;
+		}
+
+		if (!(radius > 0) || radius > 1000)
+		{
+			BadChoice *bc = new BadChoice(this, "The antibody radius must be a "
+			                              "positive number of Angstroms.");
+			setModal(bc);
+			return;
+		}
+
+		_model->setRadius(radius);
+
+		// results made with another radius are scored as they were
+		std::cout << "Antibody radius is now " << radius << " A; re-score "
+		<< "saved results to bring them in line" << std::endl;
+	});
+	setModal(aft);
+}
+
+// which antibodies are fixed now, for the json
+void Playground::keepFixed()
+{
+	if (!_positions || _mab.competitions.empty())
+	{
+		return;
+	}
+
+	Competition &comp = *_mab.competitions.begin();
+	comp.fixed_antibodies = _positions->fixedAntibodies();
+	comp.fixed_saved = true;
+}
+
 void Playground::showToggleFixed()
 {
 	if (_model && _model->isRefining())
@@ -751,6 +1447,10 @@ void Playground::showToggleFixed()
 	{
 		clearSelection();
 		refreshFixedStyles();
+
+		// kept in the json, so that it is as it was left
+		keepFixed();
+		_mab.save();
 	});
 	tfv->show();
 }
@@ -765,7 +1465,9 @@ void Playground::selectResults(const std::string &key,
                                const std::vector<RefinedResult> &results)
 {
 	clearHeat();
+	dropNarrowing(false);
 	_selectedResults = results;
+	_selectedKey = key;
 
 	if (results.empty())
 	{
@@ -792,6 +1494,7 @@ void Playground::selectResults(const std::string &key,
 	// refinement can carry on behind this, only the matrix follows it
 	showMatrices();
 	_model->showAverage(results);
+	applyColouring();
 
 	// an antibody already clicked on goes with the new group: its faces came
 	// from the last one, and the average may have moved it
@@ -833,6 +1536,9 @@ void Playground::showHeat(AbWatch *aw)
 		return;
 	}
 
+	// a different antibody (or copy) is a different set of faces to pick from
+	dropNarrowing(true);
+
 	std::vector<const std::vector<Positions::Placement> *> all;
 	for (const RefinedResult &r : _selectedResults)
 	{
@@ -859,13 +1565,20 @@ void Playground::showHeat(AbWatch *aw)
 	}
 
 	std::map<int, int> counts, others;
+	std::vector<int> vertexOf(clusters.points.size(), -1);
 	for (size_t p = 0; p < clusters.points.size(); p++)
 	{
 		bool mine = (clusters.member[p] == nearest);
-		(mine ? counts : others)[_mesh->nearestVertex(clusters.points[p])]++;
+		int vertex = _mesh->nearestVertex(clusters.points[p]);
+		vertexOf[p] = vertex;
+		(mine ? counts : others)[vertex]++;
 	}
 
 	_heatAntibody = key;
+	_heatClusters = clusters;
+	_heatNearest = nearest;
+	_heatMain = counts;
+	_heatVertex = vertexOf;
 	_mesh->setHeat(counts, others);
 }
 
@@ -877,10 +1590,19 @@ void Playground::clearHeat()
 	}
 
 	_heatAntibody.clear();
+	_heatMain.clear();
+	_heatVertex.clear();
+	_heatClusters = Positions::Clusters{};
 }
 
 void Playground::viewResults()
 {
+	// the model holds the results, and is made with the matrices
+	if (!_model)
+	{
+		showMatrices();
+	}
+
 	if (!_rv)
 	{
 		// refinement can carry on behind this: the antibodies stop following
@@ -889,6 +1611,7 @@ void Playground::viewResults()
 		{
 			showMatrices();
 			_model->showResult(result);
+			applyColouring();
 		};
 
 		_rv = new ResultsView(this, apply);
@@ -920,7 +1643,20 @@ void Playground::viewResults()
 			std::string title = name + " - " + (key.length() ? 
 			"fixed abs " + key : "no fixed abs");
 			CrossCheckView *ccv = new CrossCheckView(this, title, stats);
+
+			// clicking a free fiducial comes back here, centred on it as if
+			// it had been searched for
+			ccv->setSelectJob([this](const std::string &name)
+			{
+				addMainThreadJob([this, name]() { showAntibody(name); });
+			});
 			ccv->show();
+		});
+
+		_rv->setExportJob([this](const std::string &key, const std::string &name,
+		                         const std::vector<PosToComp::Result> &results)
+		{
+			exportPdb(key, name, results);
 		});
 
 		_rv->setSelectJob([this](const std::string &key,
@@ -964,6 +1700,7 @@ void Playground::saveResults()
 	// its lock) here, on the main thread, so a refinement in progress can't
 	// race the json being written.
 	_mab.competitions.begin()->results = _model->results();
+	keepFixed();
 
 	// the groups only change once the list has been opened
 	if (_rv)
@@ -983,6 +1720,11 @@ void Playground::showCompetitionData()
 	}
 
 	AntibodyOrderingView *aov = new AntibodyOrderingView(this, _mab);
-	aov->setReturnJob([this]() { _model->reloadData(); });
+	aov->setReturnJob([this]()
+	{
+		syncAntibodies();
+		_model->reloadData();
+		highlightRows();
+	});
 	aov->show();
 }

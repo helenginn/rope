@@ -20,6 +20,7 @@
 #include "Positions.h"
 #include "Mab.h"
 #include <vagabond/gui/elements/Text.h>
+#include <vagabond/gui/elements/TextButton.h>
 #include <algorithm>
 #include <cmath>
 #include <set>
@@ -103,6 +104,12 @@ CrossCheckView::compute(const Positions &positions, Competition &comp,
 		Positions::Clusters clusters;
 		if (!Positions::cluster(all, pl.name, clusters))
 		{
+			// a fixed antibody is where it was put, however the results go
+			if (pl.fixed && pl.copies.size() && !Positions::ignored(pl.name))
+			{
+				stats.everyone.push_back({pl.name, true, 0.f, 0.f, pl.copies});
+			}
+
 			continue;
 		}
 
@@ -123,6 +130,25 @@ CrossCheckView::compute(const Positions &positions, Competition &comp,
 			abCounts[r]++;
 		}
 
+		// the RMSD of this antibody's positions: per result, the root mean
+		// square distance of its positions from their cluster centres, then the
+		// mean and spread over the results
+		std::vector<float> abRmsds;
+		for (size_t r = 0; r < results.size(); r++)
+		{
+			if (abCounts[r])
+			{
+				abRmsds.push_back(sqrt(abSumsq[r] / abCounts[r]));
+			}
+		}
+
+		float abMean, abSd;
+		meanAndSd(abRmsds, abMean, abSd);
+
+		// the median of each cluster, which is what is shown as its average
+		std::vector<glm::vec3> medians = positions.medoids(clusters);
+		stats.everyone.push_back({pl.name, false, abMean, abSd, medians});
+
 		if (!structural.count(pl.name) || fixedHere.count(pl.name))
 		{
 			continue;
@@ -135,29 +161,22 @@ CrossCheckView::compute(const Positions &positions, Competition &comp,
 		// refined sits on a vertex, so the raw point would add however far
 		// that is from its nearest vertex to a perfect answer.
 		std::vector<glm::vec3> known = positions.structuralCopies(pl.name, true);
-		glm::vec3 median = Positions::medoids(clusters)[0];
+		// Whichever of the medians (one for each symmetry operator) and of
+		// the structural positions are nearest to each other: not just the
+		// first of the medians, which need not be the one next to the
+		// structure
 		float best = FLT_MAX;
-		for (const glm::vec3 &k : known)
+		for (const glm::vec3 &median : medians)
 		{
-			best = std::min(best, glm::length(median - k));
+			for (const glm::vec3 &k : known)
+			{
+				best = std::min(best, glm::length(median - k));
+			}
 		}
 
 		if (best < FLT_MAX)
 		{
-			// and its RMSD as for the overall one: per result, the root mean
-			// square distance of its positions from their cluster centres,
-			// then the mean and spread over the results
-			std::vector<float> abRmsds;
-			for (size_t r = 0; r < results.size(); r++)
-			{
-				if (abCounts[r])
-				{
-					abRmsds.push_back(sqrt(abSumsq[r] / abCounts[r]));
-				}
-			}
-
-			float mean, sd;
-			meanAndSd(abRmsds, mean, sd);
+			float mean = abMean, sd = abSd;
 
 			size_t elements = 0;
 			auto at = std::find(order.begin(), order.end(), pl.name);
@@ -249,12 +268,29 @@ void CrossCheckView::setup()
 	};
 
 	// a line with values in boxes of their own, in columns to the right
+	// (a fiducial's name, if given, is a button which goes to it)
 	auto line3 = [this, &y, scale](const std::string &label, 
 	                               const std::string &first,
 	                               const std::string &second,
-	                               const std::string &third)
+	                               const std::string &third,
+	                               const std::string &fiducial = "")
 	{
-		Text *l = new Text(label);
+		Text *l = nullptr;
+		if (fiducial.length() && _selectJob)
+		{
+			TextButton *tb = new TextButton(label, this);
+			tb->setReturnJob([this, fiducial]()
+			{
+				auto job = _selectJob;
+				back();
+				job(fiducial);
+			});
+			l = tb;
+		}
+		else
+		{
+			l = new Text(label);
+		}
 		l->resize(0.6 * scale);
 		l->setLeft(0.15, y);
 		addObject(l);
@@ -288,8 +324,9 @@ void CrossCheckView::setup()
 	line("Results averaged", std::to_string(_stats.results));
 	line("Antibodies averaged", std::to_string(_stats.antibodies));
 	gap();
-	line("Average RMSD of antibody positions", 
-	     withError(_stats.rmsd, _stats.rmsdSd, _stats.results > 1));
+	// with a single result there is nothing for the positions to scatter about
+	line("Average RMSD of antibody positions", _stats.results > 1 ? 
+	     withError(_stats.rmsd, _stats.rmsdSd, true) : "n/a (one result)");
 	gap();
 
 	line("Fiducials left free", std::to_string(_stats.freed.size()));
@@ -308,8 +345,10 @@ void CrossCheckView::setup()
 		{
 			line3("   " + entry.name, 
 			      withError(entry.distance, 0, false),
-			      withError(entry.rmsd, entry.rmsdSd, _stats.results > 1),
-			      std::to_string(entry.elements) + " entries");
+			      _stats.results > 1 ? 
+			      withError(entry.rmsd, entry.rmsdSd, true) : "n/a",
+			      std::to_string(entry.elements) + " entries",
+			      entry.name);
 		}
 	}
 	else

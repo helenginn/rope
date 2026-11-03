@@ -17,6 +17,7 @@
 // Please email: vagabond @ hginn.co.uk for more details.
 
 #include "PosToComp.h"
+#include <random>
 #include <vagabond/gui/MatrixPlot.h>
 #include <vagabond/utils/DoJob.h>
 #include <vagabond/utils/OpVec.h>
@@ -63,6 +64,7 @@ void PosToComp::layout(std::vector<int> &start, std::vector<int> &num) const
 PosToComp::PosToComp(Competition &comp, Positions &pos) 
 : _comp(comp), _positions(pos)
 {
+	_radius = _comp.radius;
 	_data = _comp.make_plot(_comp.favoured_ordering);
 	_weights = _comp.make_weights(_comp.favoured_ordering);
 	_model = Eigen::MatrixXf(_data);
@@ -72,6 +74,64 @@ PosToComp::PosToComp(Competition &comp, Positions &pos)
 
 	_dataDisplay = PCA::Matrix(_data);
 	_modelDisplay = PCA::Matrix(_model);
+}
+
+void PosToComp::setRadius(float radius)
+{
+	_radius = radius;
+	_comp.radius = radius;
+	fromModel();
+}
+
+float PosToComp::radiusAtVertex(int vertex) const
+{
+	float scale = _comp.curvature_scale;
+	if (scale == 0.f || !_positions.hasCurvature())
+	{
+		return _radius;
+	}
+
+	float z = std::max(-3.f, std::min(3.f, _positions.curvatureZAtVertex(vertex)));
+	return std::max(1.f, _radius + scale * z);
+}
+
+float PosToComp::radiusAt(const glm::vec3 &pos) const
+{
+	return radiusAtVertex(_positions.hasCurvature() ? _positions.vertexAt(pos) :
+	                      -1);
+}
+
+bool PosToComp::footprintsOn() const
+{
+	return _comp.use_footprints;
+}
+
+void PosToComp::setFootprints(bool on)
+{
+	_comp.use_footprints = on;
+	fromModel();
+}
+
+const Positions::Footprint *PosToComp::footprintOf(const std::string &name) const
+{
+	if (!_comp.use_footprints || !_positions.has(name) || 
+	    !_positions.isFixed(name))
+	{
+		return nullptr;
+	}
+
+	return _positions.footprintOf(name);
+}
+
+float PosToComp::curvatureScale() const
+{
+	return _comp.curvature_scale;
+}
+
+void PosToComp::setCurvatureScale(float scale)
+{
+	_comp.curvature_scale = scale;
+	fromModel();
 }
 
 void PosToComp::reloadData()
@@ -104,45 +164,129 @@ void PosToComp::reloadData()
 
 void PosToComp::fillModel(bool shown)
 {
-	auto convert = [this](const float &f)
-	{
-		return closeness(f, _radius, _slope);
-	};
+	fillMatrix(_model, shown, _slope);
+}
 
+PosToComp::PairContext PosToComp::makeContext(bool shown, float slope, 
+                                              bool useStored)
+{
 	auto &names = _comp.favoured_ordering;
-	std::vector<int> start, num;
-	layout(start, num);
-	const std::vector<glm::vec3> &raw = _positions.copies(shown);
+	PairContext ctx;
+	if (useStored)
+	{
+		ctx.start = _start;
+		ctx.num = _num;
+	}
+	else
+	{
+		layout(ctx.start, ctx.num);
+	}
+
+	ctx.raw = &_positions.copies(shown);
+	ctx.slope = slope;
+
+	// every copy has its own radius, from how curved the mesh is under it
+	size_t copies = ctx.raw->size();
+	ctx.vertex.resize(copies);
+	ctx.radii.resize(copies);
+	bool curved = (_positions.hasCurvature() && _comp.curvature_scale != 0.f);
+	for (size_t i = 0; i < copies; i++)
+	{
+		ctx.vertex[i] = _positions.vertexAt((*ctx.raw)[i]);
+		ctx.radii[i] = radiusAtVertex(curved ? ctx.vertex[i] : -1);
+	}
+
+	ctx.footprint.resize(names.size());
+	ctx.fixed.resize(names.size());
+	for (size_t r = 0; r < names.size(); r++)
+	{
+		ctx.footprint[r] = footprintOf(names[r]);
+		ctx.fixed[r] = (_positions.has(names[r]) && _positions.isFixed(names[r]));
+	}
+
+	return ctx;
+}
+
+float PosToComp::pairScore(const PairContext &ctx, size_t m, size_t n) const
+{
+	const std::vector<glm::vec3> &raw = *ctx.raw;
+
+	// the first copy of one antibody, and the nearest copy of the other
+	const glm::vec3 &lpos = raw[ctx.start[m]];
+	const glm::vec3 &rpos = nearestCopy(raw, ctx.start[n], ctx.num[n], lpos);
+
+	float dist = glm::length(rpos - lpos);
+	float score = closeness(dist, ctx.radii[ctx.start[m]], 
+	                        ctx.radii[&rpos - raw.data()], ctx.slope);
+
+	// A fixed antibody with a footprint has no radius: the other competes
+	// with it as near as its own radius reaches from the footprint. If both
+	// are fixed, the two ways round are averaged.
+	float total = 0;
+	int count = 0;
+	float away = 0;
+	glm::vec3 direction;
+	if (ctx.footprint[n] && _positions.footprintDistance(*ctx.footprint[n], 
+	                                                    lpos, 
+	                                                    ctx.vertex[ctx.start[m]],
+	                                                    away, direction))
+	{
+		total += closeness(away, ctx.radii[ctx.start[m]], 0.f, ctx.slope);
+		count++;
+	}
+	if (ctx.footprint[m] && _positions.footprintDistance(*ctx.footprint[m], 
+	                                                    raw[ctx.start[n]],
+	                                                    ctx.vertex[ctx.start[n]],
+	                                                    away, direction))
+	{
+		total += closeness(away, ctx.radii[ctx.start[n]], 0.f, ctx.slope);
+		count++;
+	}
+
+	return (count ? total / count : score);
+}
+
+void PosToComp::fillMatrix(Eigen::MatrixXf &out, bool shown, float slope)
+{
+	auto &names = _comp.favoured_ordering;
+	PairContext ctx = makeContext(shown, slope);
 
 	for (size_t m = 0; m < names.size(); m++)
 	{
-		// the first copy of this antibody, and the nearest copy of each of
-		// the antibodies after it (from the column after its own)
-		const glm::vec3 &lpos = raw[start[m]];
-
 		for (size_t n = m + 1; n < names.size(); n++)
 		{
-			const glm::vec3 &rpos = nearestCopy(raw, start[n], num[n], lpos);
-
-			float dist = glm::length(rpos - lpos);
-			float score = convert(dist);
-
-			_model(m, n) = score;
-			_model(n, m) = score;
+			float score = pairScore(ctx, m, n);
+			out(m, n) = score;
+			out(n, m) = score;
 		}
 	}
 }
 
 Eigen::MatrixXf &PosToComp::fromModel(bool shown)
 {
-	fillModel(shown);
+	// The matrix goes with what is on show: while viewing a result, that is
+	// not where the refinement is, and it has its own matrix, so as not to
+	// disturb the one that is scored.
+	bool show = (shown || _positions.viewing());
+	Eigen::MatrixXf display = _model;
+
+	if (show)
+	{
+		fillMatrix(display, true, _targetSlope);
+	}
+	else
+	{
+		fillModel(false);
+		display = _model;
+	}
+
+	{
+		std::unique_lock<std::mutex> lock(_modelMutex);
+		_modelDisplay.dropFromEigen(display);
+	}
 
 	if (_plot)
 	{
-		{
-			std::unique_lock<std::mutex> lock(_modelMutex);
-			_modelDisplay.dropFromEigen(_model);
-		}
 		_plot->update();
 	}
 
@@ -151,10 +295,10 @@ Eigen::MatrixXf &PosToComp::fromModel(bool shown)
 
 // Each entry counts in proportion to its weight: 1 for the data itself, and
 // the value of the competition for one that was inferred.
-float PosToComp::rmsDifference() const
+void PosToComp::rmsParts(double &sum, double &weights) const
 {
-	double weights = 0;
-	double sum = 0;
+	weights = 0;
+	sum = 0;
 	for (int i = 0; i < _model.rows(); i++)
 	{
 		for (int j = 0; j < _model.cols(); j++)
@@ -170,6 +314,13 @@ float PosToComp::rmsDifference() const
 			weights += w;
 		}
 	}
+}
+
+float PosToComp::rmsDifference() const
+{
+	double weights = 0;
+	double sum = 0;
+	rmsParts(sum, weights);
 
 	if (weights <= 0)
 	{
@@ -198,7 +349,8 @@ float PosToComp::error()
 
 float PosToComp::score()
 {
-	fromModel();
+	// the live positions, which a refinement scores, whatever is on show
+	fillModel();
 	return rmsDifference();
 }
 
@@ -215,6 +367,39 @@ float PosToComp::scoreOf(const Result &result)
 
 	double sum = 0;
 	double count = 0;
+	std::map<const glm::vec3 *, int> vertexOf;
+	std::map<const glm::vec3 *, float> radiusOf;
+
+	// the footprint each antibody has, if they are in use
+	std::vector<const Positions::Footprint *> footprints(names.size(), nullptr);
+	if (_comp.use_footprints)
+	{
+		for (size_t r = 0; r < names.size(); r++)
+		{
+			footprints[r] = _positions.footprintOf(names[r]);
+		}
+	}
+
+	// each copy's nearest vertex, and its radius, worked out once however
+	// often it is met
+	auto vertex = [&](const glm::vec3 &at)
+	{
+		auto found = vertexOf.find(&at);
+		if (found == vertexOf.end())
+		{
+			found = vertexOf.insert({&at, _positions.vertexAt(at)}).first;
+		}
+		return found->second;
+	};
+	auto radius = [&](const glm::vec3 &at)
+	{
+		auto found = radiusOf.find(&at);
+		if (found == radiusOf.end())
+		{
+			found = radiusOf.insert({&at, radiusAtVertex(vertex(at))}).first;
+		}
+		return found->second;
+	};
 
 	for (int i = 0; i < (int)names.size() && i < _data.rows(); i++)
 	{
@@ -236,13 +421,47 @@ float PosToComp::scoreOf(const Result &result)
 
 			// as fillModel(): the first copy of one, the nearest of the other
 			float nearest = FLT_MAX;
+			const glm::vec3 *nearestCopy = &right.copies[0];
 			for (const glm::vec3 &copy : right.copies)
 			{
-				nearest = std::min(nearest, glm::length(copy - left.copies[0]));
+				float length = glm::length(copy - left.copies[0]);
+				if (length < nearest)
+				{
+					nearest = length;
+					nearestCopy = &copy;
+				}
+			}
+
+			// a fixed antibody with a footprint competes by it, as in the model
+			// (fixed as the result was made, whatever it is now)
+			float footTotal = 0;
+			int footCount = 0;
+			float away = 0;
+			glm::vec3 direction;
+			if (right.fixed && footprints[j] && 
+			    _positions.footprintDistance(*footprints[j], left.copies[0],
+			                                 vertex(left.copies[0]), away,
+			                                 direction))
+			{
+				footTotal += closeness(away, radius(left.copies[0]), 0.f, 
+				                       _targetSlope);
+				footCount++;
+			}
+			if (left.fixed && footprints[i] && 
+			    _positions.footprintDistance(*footprints[i], right.copies[0],
+			                                 vertex(right.copies[0]), away,
+			                                 direction))
+			{
+				footTotal += closeness(away, radius(right.copies[0]), 0.f, 
+				                       _targetSlope);
+				footCount++;
 			}
 
 			float w = weightOf(i, j);
-			float diff = closeness(nearest, _radius, _targetSlope) - data;
+			float modelled = (footCount ? footTotal / footCount :
+			                  closeness(nearest, radius(left.copies[0]), 
+			                            radius(*nearestCopy), _targetSlope));
+			float diff = modelled - data;
 			sum += w * diff * diff;
 			count += w;
 		}
@@ -276,11 +495,19 @@ bool PosToComp::rowValues(const std::string &name, bool fromModel,
 	int i = at - names.begin();
 	row.clear();
 
+	// the model as it is displayed, which is of the positions on show
+	std::unique_lock<std::mutex> lock(_modelMutex);
+	auto modelShown = [this](int a, int b)
+	{
+		bool inside = (a < _modelDisplay.rows && b < _modelDisplay.cols);
+		return (inside ? (float)_modelDisplay[a][b] : (float)NAN);
+	};
+
 	for (int j = 0; j < (int)names.size() && j < _data.cols(); j++)
 	{
 		float data = _data(i, j);
 		bool present = (data == data);
-		row[names[j]] = {fromModel ? _model(i, j) : data, present};
+		row[names[j]] = {fromModel ? modelShown(i, j) : data, present};
 	}
 
 	return true;
@@ -326,9 +553,10 @@ std::vector<float> PosToComp::allGradients(const std::vector<std::string> &filte
 {
 	auto &names = _comp.favoured_ordering;
 	std::vector<float> gs(filtered.size() * 3, 0);
-	float inflection = _radius * 2;
 	float slope = _slope;
-	const std::vector<glm::vec3> &raw = _positions.copies();
+	PairContext ctx = makeContext(false, slope, true);
+	const std::vector<glm::vec3> &raw = *ctx.raw;
+	const std::vector<float> &radii = ctx.radii;
 
 	for (size_t n = 0; n < filtered.size(); n++)
 	{
@@ -336,7 +564,10 @@ std::vector<float> PosToComp::allGradients(const std::vector<std::string> &filte
 		// the row of the data matrix follows the full ordering, which includes
 		// the fixed antibodies which are not being refined.
 		int row = _rowOf.at(left);
-		glm::vec3 chosen = raw[_start[row]];
+
+		glm::vec3 chosen = raw[ctx.start[row]];
+		float chosenRadius = radii[ctx.start[row]];
+		int chosenVertex = ctx.vertex[ctx.start[row]];
 
 		glm::vec3 sum = {};
 		float count = 0;
@@ -353,11 +584,42 @@ std::vector<float> PosToComp::allGradients(const std::vector<std::string> &filte
 				continue;
 			}
 
-			glm::vec3 other = nearestCopy(raw, _start[i], _num[i], chosen);
+			// the round against the fixed antibodies alone
+			if (_fixedOnly && !ctx.fixed[i])
+			{
+				continue;
+			}
+
+			// free antibodies only count for one another once both are in: the
+			// fixed ones always count, so that all are kept near where they put
+			// them
+			if (_activeRows.size() && !ctx.fixed[i] && 
+			    !(_activeRows[row] && _activeRows[i]))
+			{
+				continue;
+			}
+
+			const glm::vec3 &otherRef = nearestCopy(raw, ctx.start[i], ctx.num[i], 
+			                                        chosen);
+			glm::vec3 other = otherRef;
+			float inflection = chosenRadius + radii[&otherRef - raw.data()];
 			glm::vec3 diff = chosen - other;
 			float dist = glm::length(diff);
 			glm::vec3 direction = diff;
-			if (dist < 1e-6)
+
+			// a fixed antibody with a footprint: its distance is from the
+			// footprint, from which it is pushed straight away
+			float footDist = 0;
+			glm::vec3 away;
+			if (ctx.footprint[i] && 
+			    _positions.footprintDistance(*ctx.footprint[i], chosen, 
+			                                 chosenVertex, footDist, away))
+			{
+				inflection = chosenRadius;
+				dist = std::max(footDist, 1e-3f);
+				direction = away * dist;
+			}
+			else if (dist < 1e-6)
 			{
 				// on top of one another, there is no direction to push in:
 				// pick one which both agree on, opposite for each of the pair
@@ -475,6 +737,331 @@ void PosToComp::descend(const std::vector<std::string> &filtered, int cycles,
 	zeroSetter();
 }
 
+int PosToComp::swapPositions(const std::vector<std::string> &filtered,
+                             bool greedy, float tolerance)
+{
+	const int maxSwaps = 100;
+	const size_t maxCandidates = 30;
+	const float minGain = 1e-6f;
+	int swaps = 0;
+	float first = 0;
+	float last = 0;
+
+	while (swaps < maxSwaps && !_stop)
+	{
+		float base = error(); // also fills in the model matrix
+		if (swaps == 0)
+		{
+			first = base;
+		}
+		last = base;
+
+		// how badly each antibody's row of the model disagrees with the data
+		int total = _comp.favoured_ordering.size();
+		std::vector<std::pair<float, size_t>> rows;
+		for (size_t k = 0; k < filtered.size(); k++)
+		{
+			int i = _rowOf.at(filtered[k]);
+			double sum = 0, count = 0;
+			for (int j = 0; j < total && j < _data.cols(); j++)
+			{
+				if (j == i || i >= _data.rows())
+				{
+					continue;
+				}
+
+				float data = _data(i, j);
+				if (data != data)
+				{
+					continue;
+				}
+
+				float w = weightOf(i, j);
+				float diff = _model(i, j) - data;
+				sum += w * diff * diff;
+				count += w;
+			}
+
+			if (count > 0)
+			{
+				rows.push_back({(float)sqrt(sum / count), k});
+			}
+		}
+
+		if (rows.size() < 2)
+		{
+			break;
+		}
+
+		// the strongly disagreeing: well above the typical antibody
+		double mean = 0, sq = 0;
+		for (const auto &row : rows)
+		{
+			mean += row.first;
+			sq += row.first * row.first;
+		}
+		mean /= rows.size();
+		double sd = sqrt(std::max(0.0, sq / rows.size() - mean * mean));
+
+		std::sort(rows.rbegin(), rows.rend());
+		std::vector<size_t> candidates;
+		for (const auto &row : rows)
+		{
+			if (row.first >= mean + 0.5 * sd && candidates.size() < maxCandidates)
+			{
+				candidates.push_back(row.second);
+			}
+		}
+
+		if (candidates.size() < 2)
+		{
+			break;
+		}
+
+		auto copiesOf = [this](const std::string &name)
+		{
+			int start = 0, num = 0;
+			_positions.extent(name, start, num);
+			const std::vector<glm::vec3> &raw = _positions.copies();
+			return std::vector<glm::vec3>(raw.begin() + start, 
+			                              raw.begin() + start + num);
+		};
+
+		// Not the best swap of all: those which agree poorly are paired off
+		// at random, and a swap is kept if it lowers the error, or raises it
+		// by no more than what is left of the tolerance, so that it can climb
+		// out of where it is without getting much worse for it.
+		if (!greedy)
+		{
+			static thread_local std::mt19937 rng(std::random_device{}());
+			std::shuffle(candidates.begin(), candidates.end(), rng);
+			std::vector<bool> used(candidates.size(), false);
+			float current = base; // the error as it stands, swaps kept so far
+			float spent = 0;      // how much worse the kept swaps have made it
+
+			for (size_t x = 0; x < candidates.size() && !_stop; x++)
+			{
+				if (used[x])
+				{
+					continue;
+				}
+
+				const std::string &a = filtered[candidates[x]];
+				std::vector<glm::vec3> ca = copiesOf(a);
+
+				for (size_t y = x + 1; y < candidates.size(); y++)
+				{
+					const std::string &b = filtered[candidates[y]];
+					std::vector<glm::vec3> cb = copiesOf(b);
+
+					// the same number of symmetry copies to swap
+					if (used[y] || ca.size() != cb.size())
+					{
+						continue;
+					}
+
+					_positions.setCopies(a, cb);
+					_positions.setCopies(b, ca);
+					float swapped = error();
+					used[x] = used[y] = true;
+
+					// one which lowers the error goes for free; one which raises it
+					// is paid for out of the tolerance, which is the most that
+					// those kept may raise it by altogether
+					float change = swapped - current;
+					if (change > 0 && spent + change > tolerance)
+					{
+						// too much for it: back as they were
+						_positions.setCopies(a, ca);
+						_positions.setCopies(b, cb);
+					}
+					else
+					{
+						swaps++;
+						current = swapped;
+						spent += std::max(0.f, change);
+					}
+
+					break;
+				}
+			}
+
+			break;
+		}
+
+		// Every pair among them, each swap tried and put back. A swap only
+		// changes the rows of the two antibodies in the model, so only what
+		// they are part of is scored again: the rest of the error is as it was.
+		float bestGain = minGain;
+		size_t bestA = 0, bestB = 0;
+		bool found = false;
+
+		PairContext ctx = makeContext(false, _slope, true);
+		const std::vector<glm::vec3> &raw = *ctx.raw;
+		double allSum = 0, allWeights = 0;
+		rmsParts(allSum, allWeights);
+		size_t count = _comp.favoured_ordering.size();
+
+		// one entry, as rmsDifference() counts it
+		auto entry = [this](size_t p, size_t q, float model)
+		{
+			if ((int)p >= _data.rows() || (int)q >= _data.cols())
+			{
+				return 0.;
+			}
+
+			float f = model - _data(p, q);
+			return (f != f ? 0. : (double)weightOf(p, q) * f * f);
+		};
+
+		// what the pairs with either of two rows add to the error, from the
+		// model as it is or (fresh) from the positions in the context
+		auto touching = [&](size_t ra, size_t rb, bool fresh)
+		{
+			auto value = [&](size_t i, size_t j)
+			{
+				if (fresh)
+				{
+					return pairScore(ctx, std::min(i, j), std::max(i, j));
+				}
+
+				bool inside = ((int)i < _model.rows() && (int)j < _model.cols());
+				return (inside ? _model(i, j) : (float)NAN);
+			};
+
+			double sum = 0;
+			for (size_t j = 0; j < count; j++)
+			{
+				if (j != ra)
+				{
+					float v = value(ra, j);
+					sum += entry(ra, j, v) + entry(j, ra, v);
+				}
+			}
+			for (size_t j = 0; j < count; j++)
+			{
+				if (j != rb && j != ra)
+				{
+					float v = value(rb, j);
+					sum += entry(rb, j, v) + entry(j, rb, v);
+				}
+			}
+
+			return sum;
+		};
+
+		bool curved = (_positions.hasCurvature() && _comp.curvature_scale != 0.f);
+		bool checked = false;
+
+		for (size_t x = 0; x < candidates.size() && !_stop; x++)
+		{
+			for (size_t y = x + 1; y < candidates.size(); y++)
+			{
+				const std::string &a = filtered[candidates[x]];
+				const std::string &b = filtered[candidates[y]];
+				std::vector<glm::vec3> ca = copiesOf(a);
+				std::vector<glm::vec3> cb = copiesOf(b);
+
+				// the same number of symmetry copies to swap
+				if (ca.size() != cb.size())
+				{
+					continue;
+				}
+
+				size_t ra = _rowOf.at(a), rb = _rowOf.at(b);
+				double before = touching(ra, rb, false);
+
+				_positions.setCopies(a, cb);
+				_positions.setCopies(b, ca);
+
+				// the vertex and radius of the copies which moved
+				std::vector<int> savedVertex;
+				std::vector<float> savedRadii;
+				for (size_t row : {ra, rb})
+				{
+					for (int k = ctx.start[row]; k < ctx.start[row] + ctx.num[row];
+					     k++)
+					{
+						savedVertex.push_back(ctx.vertex[k]);
+						savedRadii.push_back(ctx.radii[k]);
+						ctx.vertex[k] = _positions.vertexAt(raw[k]);
+						ctx.radii[k] = radiusAtVertex(curved ? ctx.vertex[k] : -1);
+					}
+				}
+
+				double after = touching(ra, rb, true);
+				double sq = (allWeights > 0 ? (allSum - before + after) / 
+				             allWeights : 0.);
+				float swapped = (float)sqrt(std::max(0., sq));
+
+				// the first time, checked against the whole thing, to be sure
+				if (!checked)
+				{
+					checked = true;
+					float whole = error();
+					if (fabs(whole - swapped) > 1e-4)
+					{
+						std::cout << "Swap check: scoring only the pair gives "
+						<< swapped << " but all of it gives " << whole 
+						<< std::endl;
+					}
+
+					// the model is the base of the rest, not this
+					_positions.setCopies(a, ca);
+					_positions.setCopies(b, cb);
+					fillModel();
+				}
+				else
+				{
+					_positions.setCopies(a, ca);
+					_positions.setCopies(b, cb);
+				}
+
+				size_t at = 0;
+				for (size_t row : {ra, rb})
+				{
+					for (int k = ctx.start[row]; k < ctx.start[row] + ctx.num[row];
+					     k++, at++)
+					{
+						ctx.vertex[k] = savedVertex[at];
+						ctx.radii[k] = savedRadii[at];
+					}
+				}
+
+				if (base - swapped > bestGain)
+				{
+					bestGain = base - swapped;
+					bestA = candidates[x];
+					bestB = candidates[y];
+					found = true;
+				}
+			}
+		}
+
+		if (!found || _stop)
+		{
+			break;
+		}
+
+		const std::string &a = filtered[bestA];
+		const std::string &b = filtered[bestB];
+		std::vector<glm::vec3> ca = copiesOf(a);
+		std::vector<glm::vec3> cb = copiesOf(b);
+		_positions.setCopies(a, cb);
+		_positions.setCopies(b, ca);
+		swaps++;
+	}
+
+	if (swaps > 0)
+	{
+		last = error();
+		std::cout << "Swapped " << swaps << " pair" << (swaps == 1 ? "" : "s") 
+		<< " of antibodies: error " << first << " -> " << last << std::endl;
+	}
+
+	return swaps;
+}
+
 void PosToComp::refineEngine()
 {
 	auto &names = _comp.favoured_ordering;
@@ -495,14 +1082,117 @@ void PosToComp::refineEngine()
 
 	while (!_stop)
 	{
+		// where the time goes, for each phase of a refinement
+		typedef std::chrono::steady_clock Clock;
+		Clock::time_point mark = Clock::now();
+		std::vector<std::pair<std::string, double>> timings;
+		auto lap = [&mark, &timings](const std::string &phase)
+		{
+			Clock::time_point now = Clock::now();
+			timings.push_back({phase, std::chrono::duration<double>(now - mark).count()});
+			mark = now;
+		};
+
 		_positions.randomise();
+
+		// First a round which only goes by the fixed antibodies, with the free
+		// ones ignoring one another, to be drawn towards a minimum
+		bool anyFixed = false;
+		for (const std::string &name : names)
+		{
+			anyFixed |= _positions.isFixed(name);
+		}
+
+		if (anyFixed && _fixedOnlyCycles > 0)
+		{
+			_fixedOnly = true;
+			descend(filtered, _fixedOnlyCycles, true);
+			_fixedOnly = false;
+			_slope = _targetSlope;
+			lap("fixed only");
+
+			if (_stop)
+			{
+				break;
+			}
+		}
+
+		// Then the coupling between the free antibodies in stages, by how much
+		// data each has: those with most first, then more and more of them
+		// (all the while pulled by the fixed ones)
+		if (_titrationStages > 1 && filtered.size() > 1)
+		{
+			std::vector<std::pair<float, std::string>> richness;
+			for (const std::string &name : filtered)
+			{
+				int i = _rowOf.at(name);
+				float filled = 0;
+				for (int j = 0; j < (int)names.size() && j < _data.cols(); j++)
+				{
+					if (j != i && i < _data.rows() && _data(i, j) == _data(i, j))
+					{
+						filled += weightOf(i, j);
+					}
+				}
+
+				richness.push_back({filled, name});
+			}
+
+			std::stable_sort(richness.begin(), richness.end(),
+			                 [](const auto &a, const auto &b)
+			                 { return a.first > b.first; });
+
+			for (int stage = 1; stage < _titrationStages && !_stop; stage++)
+			{
+				size_t count = (richness.size() * stage + _titrationStages - 1) /
+				_titrationStages;
+				_activeRows.assign(names.size(), false);
+				for (size_t k = 0; k < count && k < richness.size(); k++)
+				{
+					_activeRows[_rowOf.at(richness[k].second)] = true;
+				}
+
+				std::cout << "Titration stage " << stage << ": " << count 
+				<< " of " << richness.size() << " free antibodies" << std::endl;
+				descend(filtered, _titrationCycles, true);
+				_slope = _targetSlope;
+			}
+
+			_activeRows.clear();
+			lap("titration");
+			if (_stop)
+			{
+				break;
+			}
+		}
+
 		descend(filtered, 2000, true);
+		lap("descent");
 		_slope = _targetSlope;
 
 		if (_stop)
 		{
 			break;
 		}
+
+		// positions which gradient descent cannot get out of: swap two
+		// antibodies over, then let everything settle again
+		for (int round = 0; round < 3 && !_stop; round++)
+		{
+			if (swapPositions(filtered) == 0)
+			{
+				break;
+			}
+
+			descend(filtered, _snapEvery, false);
+		}
+
+		if (_stop)
+		{
+			break;
+		}
+
+		lap("swaps");
 
 		// snapping can cost some of the score: keep refining from the grid
 		// and re-snapping for as long as that makes the snapped score better.
@@ -529,6 +1219,7 @@ void PosToComp::refineEngine()
 			break;
 		}
 
+		lap("polish");
 		_positions.apply(bestPlacements);
 
 		Result result;
@@ -541,6 +1232,13 @@ void PosToComp::refineEngine()
 			_results.push_back(result);
 			std::cout << "Cached result " << _results.size() << " with score "
 			<< result.score << std::endl;
+
+			std::cout << "Time (s):";
+			for (const auto &timing : timings)
+			{
+				std::cout << " " << timing.first << " " << timing.second;
+			}
+			std::cout << std::endl;
 			job = _resultJob;
 		}
 
@@ -585,11 +1283,7 @@ void PosToComp::showResult(const Result &result)
 {
 	_positions.view(result.placements);
 
-	// while refining, the model matrix carries on showing the live positions
-	if (!_refining)
-	{
-		fromModel(true);
-	}
+	fromModel(true);
 }
 
 void PosToComp::showAverage(const std::vector<Result> &results)
@@ -602,10 +1296,7 @@ void PosToComp::showAverage(const std::vector<Result> &results)
 
 	_positions.viewAverage(all);
 
-	if (!_refining)
-	{
-		fromModel(true);
-	}
+	fromModel(true);
 }
 
 void PosToComp::stopRefining()

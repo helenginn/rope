@@ -18,7 +18,9 @@
 
 #include <vagabond/gui/elements/TextButton.h>
 #include <vagabond/gui/elements/ImageButton.h>
+#include <vagabond/gui/elements/TickBoxes.h>
 #include "PrepWorkView.h"
+#include "MeshIntervene.h"
 #include "MabscapeSetup.h"
 #include "FiducialSetup.h"
 #include "AntigenSetup.h"
@@ -185,11 +187,33 @@ void MabscapeSetup::validationSmileys()
 				}
 			}
 
-			PrepWorkView *pwv = new PrepWorkView(this, _mab);
-			pwv->show();
+			auto proceed = [this]()
+			{
+				PrepWorkView *pwv = new PrepWorkView(this, _mab);
+				pwv->show();
+			};
+
+			if (_intervene)
+			{
+				MeshIntervene *mi = new MeshIntervene(this, _mab, proceed);
+				mi->show();
+				return;
+			}
+
+			proceed();
 		};
 		tb->setReturnJob(prepwork);
 		addTempObject(tb);
+
+		TickBoxes *ticks = new TickBoxes(this, this);
+		ticks->setOneOnly(false);
+		const std::string text = "intervene on mesh calculation";
+		ticks->addOption(text, [this, ticks, text]()
+		{
+			_intervene = ticks->isTicked(text);
+		}, _intervene);
+		ticks->arrange(0.2, 0.60, 0.76, 0.70);
+		addTempObject(ticks);
 
 	}
 }

@@ -41,6 +41,13 @@ public:
 
 	float similarity_score(const glm::mat4x4 &left, const glm::mat4x4 &right);
 
+	// The same score for how far two transforms are from being one another,
+	// but for the motion between them in the frame they move things *into*
+	// (left * inverse(right)) rather than the frame they move from. Two
+	// transforms which put a model in much the same place score low here
+	// however far the model's own origin is from the middle of it.
+	float world_score(const glm::mat4x4 &left, const glm::mat4x4 &right);
+
 	const glm::vec3 &reference() const
 	{
 		return _reference;
@@ -53,7 +60,12 @@ protected:
 	glm::mat4x4 _applied = glm::mat4{1.f};
 	glm::vec3 _reference{};
 
-	float _threshold{10.f};
+	// Two transforms are the same orientation if they score below this (see
+	// similarity_score()). A third of a turn about an axis through the origin
+	// scores 3, and the same orientation as found from different atoms well
+	// under 1.
+	float _threshold{1.5f};
+
 };
 
 #endif

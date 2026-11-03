@@ -28,7 +28,6 @@
 #include <vagabond/gui/elements/Image.h>
 #include <vagabond/gui/elements/ImageButton.h>
 #include <vagabond/gui/elements/Menu.h>
-#include <vagabond/gui/elements/Slider.h>
 #include <vagabond/gui/elements/TextButton.h>
 #include <vagabond/gui/elements/Window.h>
 #include <vagabond/utils/DoJob.h>
@@ -52,7 +51,6 @@ void ResultsClusterView::setup()
 	int n = _results.size();
 	_matrix = Eigen::MatrixXf::Zero(n, n);
 
-	addSlider();
 	addPickButton();
 	addMetricButton();
 
@@ -63,37 +61,6 @@ void ResultsClusterView::setup()
 	Window::window()->addObject(_bar);
 
 	requestCalculation();
-}
-
-void ResultsClusterView::addSlider()
-{
-	// the radius of the Ab-Ab agreement score: the larger it is, the
-	// further apart antibodies can be while still counting as agreeing.
-	const double min = 0; const double max = 20; const double step = 0.2;
-	const double start = _radius;
-
-	Slider *s = new Slider();
-	s->resize(0.5);
-	s->setDecimals(1);
-	// the slider sits 0.02 lower, but the label stays where it was
-	s->setLabelOffset(0.06);
-	s->setup("sensitivity", min, max, step);
-	s->setPrefixSuffix("sensitivity: ", "");
-	s->setDragFunction([this](double val, double)
-	{
-		if (!_sliderReady || val == _radius)
-		{
-			return;
-		}
-
-		_radius = val;
-		requestCalculation();
-	});
-	s->setStart((start - min) / (step * ((max - min) / step + 1)), 0.);
-	s->setCentre(0.3, 0.9);
-	addObject(s);
-
-	_sliderReady = true;
 }
 
 void ResultsClusterView::addPickButton()
@@ -109,15 +76,40 @@ void ResultsClusterView::addPickButton()
 
 void ResultsClusterView::addMetricButton()
 {
-	TextButton *b = new TextButton("compare: positions", nullptr);
-	b->setCentre(0.82, 0.1);
-	b->setReturnJob([this, b]()
+	_metricButton = new TextButton("compare: positions", nullptr);
+	_metricButton->setCentre(0.82, 0.1);
+	_metricButton->setReturnJob([this]()
 	{
-		_metric = 1 - _metric;
-		b->setText(_metric == 0 ? "compare: positions" : "compare: vectors");
-		requestCalculation();
+		showMetricMenu(_metricButton);
 	});
-	addObject(b);
+	addObject(_metricButton);
+}
+
+void ResultsClusterView::showMetricMenu(Renderable *button)
+{
+	Menu *menu = new Menu(this);
+
+	const std::vector<std::string> options = 
+	{"positions", "vectors"};
+
+	for (size_t i = 0; i < options.size(); i++)
+	{
+		std::string name = options[i];
+		menu->addOption(name, [this, i, name]()
+		{
+			if ((int)i == _metric)
+			{
+				return;
+			}
+
+			_metric = i;
+			_metricButton->setText("compare: " + name);
+			requestCalculation();
+		});
+	}
+
+	menu->setup(button, 0.6);
+	setModal(menu);
 }
 
 void ResultsClusterView::showPickMenu(Renderable *button)

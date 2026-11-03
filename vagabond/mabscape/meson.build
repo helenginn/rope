@@ -1,5 +1,7 @@
 mabscapefiles = [
 'AbWatch.h',
+'AntibodyPdb.h',
+'AntibodyPdb.cpp',
 'AbWatch.cpp',
 'AlignmentView.h',
 'AlignmentView.cpp',
@@ -21,6 +23,8 @@ mabscapefiles = [
 'Mab.cpp',
 'MabscapeWindow.h',
 'MabscapeWindow.cpp',
+'MeshIntervene.h',
+'MeshIntervene.cpp',
 'MabscapeSetup.h',
 'MabscapeSetup.cpp',
 'Mesh.h',

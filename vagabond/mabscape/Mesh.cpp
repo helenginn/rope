@@ -19,6 +19,7 @@
 #include "Mesh.h"
 #include "Mab.h"
 #include <vagabond/gui/GuiDensity.h>
+#include <vagabond/gui/ColourScheme.h>
 #include <vagabond/core/GroupBounds.h>
 #include <vagabond/core/AtomGroup.h>
 #include <vagabond/core/matrix_functions.h>
@@ -26,6 +27,11 @@
 #include <vagabond/utils/FileReader.h>
 #include <vagabond/utils/glm_json.h>
 #include <fstream>
+#include <unordered_map>
+#include <cmath>
+#include <array>
+#include <cfloat>
+#include <algorithm>
 
 Mesh::Mesh(Antigen &antigen) : _antigen(antigen)
 {
@@ -536,7 +542,7 @@ void Mesh::normalsFromLines()
 	calculateNormalsFrom(_triangleIdxs);
 }
 
-void Mesh::marchingCubes()
+void Mesh::buildDensity(GuiDensity &density)
 {
 	ArbitraryMap map = mappedAtoms();
 	for (int i = 0; i < 2; i++)
@@ -550,10 +556,15 @@ void Mesh::marchingCubes()
 	// loop until no more hollows
 	while (removeHollows(map) > 0) {};
 	
-	GuiDensity density;
 	density.setThreshold(0.5);
 	density.setStep(2.0);
 	density.populateFromMap(&map);
+}
+
+void Mesh::marchingCubes()
+{
+	GuiDensity density;
+	buildDensity(density);
 	copyFrom(&density);
 	calculateNormals();
 
@@ -562,11 +573,59 @@ void Mesh::marchingCubes()
 	_lineIdxs = indices();
 }
 
-void Mesh::refine()
+void Mesh::reset()
 {
-	if (_loadedFromCache)
+	// the slow part first, while the old mesh stays as it was (and drawn)
+	GuiDensity density;
+	buildDensity(density);
+
+	std::string path = cachePath();
+	if (path.length() && file_exists(path))
+	{
+		std::remove(path.c_str());
+	}
+
+	{
+		std::unique_lock<std::mutex> lock(_excludeMutex);
+		_excluded.clear();
+	}
+	_selected.clear();
+	_baseColours.clear();
+	_connections.clear();
+	_outward = 0.f;
+	delete _tree;
+	_tree = nullptr;
+	_loadedFromCache = false;
+	_refined = false;
+
+	// then the swap, which is quick: the new mesh arrives as triangles, as it
+	// did to begin with, and is put into lines
+	{
+		std::unique_lock<std::mutex> lock(_vertLock);
+		_renderType = GL_TRIANGLES;
+		copyFrom(&density);
+		calculateNormals(true);
+		_triangleIdxs = indices();
+		changeToLines();
+		_lineIdxs = indices();
+		forceRender(true, true);
+	}
+
+	invalidateExclusions();
+	invalidateCurvature();
+}
+
+void Mesh::refine(bool force)
+{
+	if (!force && refined())
 	{
 		return;
+	}
+
+	// a mesh from the cache has only its lines, which hold the triangles
+	if (_triangleIdxs.empty())
+	{
+		_triangleIdxs = triangles();
 	}
 
 	auto loop = [this](bool planar)
@@ -587,6 +646,819 @@ void Mesh::refine()
 	triangulate();
 
 	saveCache();
+	_refined = true;
+	invalidateCurvature();
+}
+
+namespace
+{
+	/** The protein as the union of its heavy atoms at their van der Waals
+	 *  radii. Atoms are held in a hash grid of cells two Angstroms wide, so
+	 *  that nothing further than that is looked at. */
+	class ProteinField
+	{
+	public:
+		ProteinField(Antigen &antigen)
+		{
+			antigen.model.load();
+			std::vector<Instance *> antigen_only = antigen.instances();
+			AtomGroup group;
+			for (Instance *const &inst : antigen_only)
+			{
+				group.add(inst->currentAtoms());
+			}
+
+			group.do_op([this](Atom *const &atom)
+			{
+				std::string element = atom->elementSymbol();
+				if (element == "H") { return; }
+				float radius = 1.7f;
+				if (element == "N") { radius = 1.55f; }
+				else if (element == "O") { radius = 1.52f; }
+				else if (element == "S") { radius = 1.8f; }
+				Cell c = cell_of(atom->initialPosition());
+				_grid[key_of(c[0], c[1], c[2])].push_back
+				({atom->initialPosition(), radius});
+			});
+			antigen.model.unload();
+		}
+
+		// how far this point is outside the nearest atom's surface (negative
+		// if inside it), reported as no more than cellSize
+		float clearance(const glm::vec3 &p) const
+		{
+			Cell c = cell_of(p);
+			float best = cellSize;
+			for (int i = -1; i <= 1; i++)
+			for (int j = -1; j <= 1; j++)
+			for (int k = -1; k <= 1; k++)
+			{
+				auto it = _grid.find(key_of(c[0] + i, c[1] + j, c[2] + k));
+				if (it == _grid.end()) { continue; }
+				for (const Sphere &sphere : it->second)
+				{
+					best = std::min(best, 
+					                glm::length(sphere.pos - p) - sphere.radius);
+				}
+			}
+			return best;
+		}
+
+		/** moves from here to there, as far as it can go (a full move, half,
+		 *  a quarter, or not at all) without going into the protein or
+		 *  deeper into it than here already was. */
+		glm::vec3 allowedMove(const glm::vec3 &from, const glm::vec3 &move,
+		                      float &fraction_out) const
+		{
+			float allowed = std::min(0.f, clearance(from)) - 1e-4f;
+			float fraction = 1.f;
+			for (int attempt = 0; attempt < 3; attempt++, fraction *= 0.5f)
+			{
+				glm::vec3 target = from + move * fraction;
+				if (clearance(target) >= allowed)
+				{
+					fraction_out = fraction;
+					return target;
+				}
+			}
+
+			fraction_out = 0.f;
+			return from;
+		}
+
+	private:
+		static constexpr float cellSize = 2.f;
+		struct Sphere { glm::vec3 pos; float radius; };
+		typedef std::array<int, 3> Cell;
+
+		static Cell cell_of(const glm::vec3 &p)
+		{
+			return Cell{(int)std::floor(p.x / cellSize),
+			            (int)std::floor(p.y / cellSize),
+			            (int)std::floor(p.z / cellSize)};
+		}
+
+		static int64_t key_of(int x, int y, int z)
+		{
+			return ((int64_t)(x & 0x1FFFFF) << 42) 
+			| ((int64_t)(y & 0x1FFFFF) << 21) | (int64_t)(z & 0x1FFFFF);
+		}
+
+		std::unordered_map<int64_t, std::vector<Sphere>> _grid;
+	};
+}
+
+void Mesh::shrinkWrap(float volumeWeight)
+{
+	const int maxIterations = 10000;
+	const float maxStep = 0.2f;
+	const float tolerance = 1e-3f;
+
+	if (_vertices.empty())
+	{
+		return;
+	}
+
+	ProteinField field(_antigen);
+	auto clearance = [&field](const glm::vec3 &p)
+	{
+		return field.clearance(p);
+	};
+
+	std::vector<GLuint> tris = triangles();
+	size_t n = _vertices.size();
+	std::vector<glm::vec3> pos(n);
+	for (size_t i = 0; i < n; i++)
+	{
+		pos[i] = _vertices[i].pos;
+	}
+
+	// a typical edge length sets how big a step the surface tension allows
+	double edge_sum = 0; size_t edge_count = 0;
+	for (size_t t = 0; t + 3 <= tris.size(); t += 3)
+	{
+		for (int j = 0; j < 3; j++)
+		{
+			edge_sum += glm::length(pos[tris[t + j]] - pos[tris[t + (j + 1) % 3]]);
+			edge_count++;
+		}
+	}
+	double h = (edge_count ? edge_sum / edge_count : 1.);
+	// the surface tension sets how big a step is stable
+	double w = volumeWeight;
+	double dt = 0.1 * h * h;
+
+	std::vector<glm::dvec3> gradArea(n), gradVol(n);
+	std::vector<double> vertArea(n);
+	int iterations = 0;
+
+	for (; iterations < maxIterations && !_stop; iterations++)
+	{
+		// positions relative to the middle keep the volume sums accurate
+		glm::dvec3 middle{};
+		for (const glm::vec3 &p : pos) { middle += glm::dvec3(p); }
+		middle /= (double)n;
+
+		std::fill(gradArea.begin(), gradArea.end(), glm::dvec3(0.));
+		std::fill(gradVol.begin(), gradVol.end(), glm::dvec3(0.));
+		std::fill(vertArea.begin(), vertArea.end(), 0.);
+		double volume = 0;
+
+		for (size_t t = 0; t + 3 <= tris.size(); t += 3)
+		{
+			GLuint ia = tris[t], ib = tris[t + 1], ic = tris[t + 2];
+			glm::dvec3 a = glm::dvec3(pos[ia]) - middle;
+			glm::dvec3 b = glm::dvec3(pos[ib]) - middle;
+			glm::dvec3 c = glm::dvec3(pos[ic]) - middle;
+
+			volume += glm::dot(a, glm::cross(b, c)) / 6.;
+			gradVol[ia] += glm::cross(b, c) / 6.;
+			gradVol[ib] += glm::cross(c, a) / 6.;
+			gradVol[ic] += glm::cross(a, b) / 6.;
+
+			glm::dvec3 normal = glm::cross(b - a, c - a);
+			double twice = glm::length(normal);
+			if (twice < 1e-12) { continue; }
+			normal /= twice;
+
+			gradArea[ia] += 0.5 * glm::cross(normal, c - b);
+			gradArea[ib] += 0.5 * glm::cross(normal, a - c);
+			gradArea[ic] += 0.5 * glm::cross(normal, b - a);
+			vertArea[ia] += twice / 6.;
+			vertArea[ib] += twice / 6.;
+			vertArea[ic] += twice / 6.;
+		}
+
+		// whichever way the triangles wind, shrinking is to reduce the volume
+		double sign = (volume >= 0 ? 1. : -1.);
+		double biggest = 0;
+		std::vector<glm::vec3> next = pos;
+
+		for (size_t i = 0; i < n; i++)
+		{
+			if (vertArea[i] < 1e-9) { continue; }
+			
+			glm::dvec3 grad = gradArea[i] + w * sign * gradVol[i];
+			glm::dvec3 move = -grad * (dt / vertArea[i]);
+			double length = glm::length(move);
+			if (length > maxStep) { move *= maxStep / length; }
+			if (!(length == length)) { continue; }
+
+			// the hard stop: never into the protein, nor deeper into it than
+			// it started
+			float allowed = std::min(0.f, clearance(pos[i])) - 1e-4f;
+			float fraction = 1.f;
+			for (int attempt = 0; attempt < 3; attempt++, fraction *= 0.5f)
+			{
+				glm::vec3 target = pos[i] + glm::vec3(move) * fraction;
+				if (clearance(target) >= allowed)
+				{
+					next[i] = target;
+					biggest = std::max(biggest, 
+					                   (double)glm::length(move) * fraction);
+					break;
+				}
+			}
+		}
+
+		pos = next;
+
+		if (iterations % 10 == 0 || biggest < tolerance)
+		{
+			std::unique_lock<std::mutex> lock(_vertLock);
+			for (size_t i = 0; i < n; i++)
+			{
+				_vertices[i].pos = pos[i];
+			}
+			forceRender(true, true);
+		}
+
+		if (biggest < tolerance)
+		{
+			break;
+		}
+	}
+
+	// (stopped early or not, what there is goes on show)
+	{
+		std::unique_lock<std::mutex> lock(_vertLock);
+		for (size_t i = 0; i < n; i++)
+		{
+			_vertices[i].pos = pos[i];
+		}
+		forceRender(true, true);
+	}
+
+	std::cout << "Shrink wrap (volume weight " << volumeWeight << ") stopped after "
+	<< iterations << " iterations" << std::endl;
+
+	_triangleIdxs = tris;
+	calculateNormalsFrom(_triangleIdxs);
+	_connections.clear();
+	delete _tree;
+	_tree = nullptr;
+	invalidateExclusions();
+	invalidateCurvature();
+
+	saveCache();
+	_refined = true;
+}
+
+void Mesh::evenOut()
+{
+	const int maxIterations = 500;
+	const float tolerance = 1e-3f;
+	const float factor = 0.5f;
+
+	if (_vertices.empty())
+	{
+		return;
+	}
+
+	ProteinField field(_antigen);
+	std::vector<GLuint> tris = triangles();
+	size_t n = _vertices.size();
+
+	std::vector<std::vector<GLuint>> neighbours(n);
+	for (size_t t = 0; t + 3 <= tris.size(); t += 3)
+	{
+		for (int j = 0; j < 3; j++)
+		{
+			GLuint a = tris[t + j], b = tris[t + (j + 1) % 3];
+			neighbours[a].push_back(b);
+			neighbours[b].push_back(a);
+		}
+	}
+	for (std::vector<GLuint> &list : neighbours)
+	{
+		std::sort(list.begin(), list.end());
+		list.erase(std::unique(list.begin(), list.end()), list.end());
+	}
+
+	std::vector<glm::vec3> pos(n);
+	for (size_t i = 0; i < n; i++)
+	{
+		pos[i] = _vertices[i].pos;
+	}
+
+	int iterations = 0;
+	for (; iterations < maxIterations && !_stop; iterations++)
+	{
+		// the way the surface faces at each vertex (whichever way up)
+		std::vector<glm::vec3> normals(n, glm::vec3(0.f));
+		for (size_t t = 0; t + 3 <= tris.size(); t += 3)
+		{
+			glm::vec3 cross = glm::cross(pos[tris[t + 1]] - pos[tris[t]],
+			                             pos[tris[t + 2]] - pos[tris[t]]);
+			for (int j = 0; j < 3; j++)
+			{
+				normals[tris[t + j]] += cross;
+			}
+		}
+
+		float biggest = 0;
+		std::vector<glm::vec3> next = pos;
+		for (size_t i = 0; i < n; i++)
+		{
+			if (neighbours[i].empty()) { continue; }
+
+			glm::vec3 average{};
+			for (GLuint other : neighbours[i]) { average += pos[other]; }
+			average /= (float)neighbours[i].size();
+
+			// only along the surface: what lies across it is left alone
+			glm::vec3 move = (average - pos[i]) * factor;
+			float length = glm::length(normals[i]);
+			if (length > 1e-12f)
+			{
+				glm::vec3 normal = normals[i] / length;
+				move -= normal * glm::dot(move, normal);
+			}
+			if (!is_glm_vec_sane(move)) { continue; }
+
+			float fraction = 0;
+			next[i] = field.allowedMove(pos[i], move, fraction);
+			biggest = std::max(biggest, glm::length(move) * fraction);
+		}
+
+		pos = next;
+
+		if (iterations % 10 == 0)
+		{
+			std::unique_lock<std::mutex> lock(_vertLock);
+			for (size_t i = 0; i < n; i++)
+			{
+				_vertices[i].pos = pos[i];
+			}
+			forceRender(true, true);
+		}
+
+		if (biggest < tolerance)
+		{
+			break;
+		}
+	}
+
+	{
+		std::unique_lock<std::mutex> lock(_vertLock);
+		for (size_t i = 0; i < n; i++)
+		{
+			_vertices[i].pos = pos[i];
+		}
+		forceRender(true, true);
+	}
+
+	std::cout << "Even out stopped after " << iterations << " iterations" 
+	<< std::endl;
+
+	_triangleIdxs = tris;
+	calculateNormalsFrom(_triangleIdxs);
+	_connections.clear();
+	delete _tree;
+	_tree = nullptr;
+	invalidateExclusions();
+	invalidateCurvature();
+
+	saveCache();
+	_refined = true;
+}
+
+namespace
+{
+	// squared distance (in voxels) to the nearest voxel where f is 0 (the
+	// others holding a big number), along each axis in turn
+	// (Felzenszwalb & Huttenlocher)
+	void edt_line(const float *f, int n, float *d, int *v, float *z)
+	{
+		const float inf = 1e12f;
+		int k = 0;
+		v[0] = 0;
+		z[0] = -inf;
+		z[1] = inf;
+		for (int q = 1; q < n; q++)
+		{
+			auto cross = [&](int from)
+			{
+				return ((f[q] + (float)q * q) - (f[from] + (float)from * from)) /
+				(2.f * q - 2.f * from);
+			};
+
+			float s = cross(v[k]);
+			while (s <= z[k])
+			{
+				k--;
+				s = cross(v[k]);
+			}
+			k++;
+			v[k] = q;
+			z[k] = s;
+			z[k + 1] = inf;
+		}
+
+		k = 0;
+		for (int q = 0; q < n; q++)
+		{
+			while (z[k + 1] < q) { k++; }
+			d[q] = ((float)q - v[k]) * ((float)q - v[k]) + f[v[k]];
+		}
+	}
+
+	void edt3d(std::vector<float> &g, int nx, int ny, int nz)
+	{
+		int m = std::max(nx, std::max(ny, nz));
+		std::vector<float> line(m), out(m), z(m + 1);
+		std::vector<int> v(m);
+
+		for (int axis = 0; axis < 3; axis++)
+		{
+			int n = (axis == 0 ? nx : (axis == 1 ? ny : nz));
+			int na = (axis == 0 ? ny : nx);
+			int nb = (axis == 2 ? ny : nz);
+			for (int a = 0; a < na; a++)
+			for (int b = 0; b < nb; b++)
+			{
+				auto index = [&](int i)
+				{
+					int x = (axis == 0 ? i : a);
+					int y = (axis == 1 ? i : (axis == 0 ? a : b));
+					int zz = (axis == 2 ? i : b);
+					return ((size_t)zz * ny + y) * nx + x;
+				};
+
+				for (int i = 0; i < n; i++) { line[i] = g[index(i)]; }
+				edt_line(line.data(), n, out.data(), v.data(), z.data());
+				for (int i = 0; i < n; i++) { g[index(i)] = out[i]; }
+			}
+		}
+	}
+}
+
+void Mesh::closeCycle(float radius)
+{
+	if (_vertices.empty() || radius < 0.05f)
+	{
+		return;
+	}
+
+	std::vector<GLuint> tris = triangles();
+	size_t n = _vertices.size();
+	std::vector<glm::vec3> pos(n);
+	glm::vec3 lo(FLT_MAX), hi(-FLT_MAX);
+	for (size_t i = 0; i < n; i++)
+	{
+		pos[i] = _vertices[i].pos;
+		lo = glm::min(lo, pos[i]);
+		hi = glm::max(hi, pos[i]);
+	}
+
+	// a grid of voxels over the mesh, with room for the ball all round
+	float h = 0.5f;
+	glm::vec3 pad(radius + 4.f);
+	glm::vec3 origin = lo - pad;
+	glm::vec3 size = (hi + pad) - origin;
+	while ((size.x / h) * (size.y / h) * (size.z / h) > 5e6f) { h *= 1.1f; }
+	int nx = (int)std::ceil(size.x / h), ny = (int)std::ceil(size.y / h);
+	int nz = (int)std::ceil(size.z / h);
+	size_t total = (size_t)nx * ny * nz;
+
+	// what the mesh encloses: along each line in x, the voxels between an odd
+	// and an even crossing of a triangle (a hair off the grid lines, so that
+	// no ray goes exactly through an edge)
+	std::vector<std::vector<float>> crossings((size_t)ny * nz);
+	const float jitter = 1.3e-3f * h;
+	for (size_t t = 0; t + 3 <= tris.size(); t += 3)
+	{
+		glm::vec3 a = pos[tris[t]], b = pos[tris[t + 1]], c = pos[tris[t + 2]];
+		float minY = std::min(a.y, std::min(b.y, c.y)), 
+		maxY = std::max(a.y, std::max(b.y, c.y));
+		float minZ = std::min(a.z, std::min(b.z, c.z)), 
+		maxZ = std::max(a.z, std::max(b.z, c.z));
+		int y0 = std::max(0, (int)std::ceil((minY - jitter - origin.y) / h - 0.5f));
+		int y1 = std::min(ny - 1, (int)std::floor((maxY - jitter - origin.y) / h - 0.5f));
+		int z0 = std::max(0, (int)std::ceil((minZ - jitter * 1.7f - origin.z) / h - 0.5f));
+		int z1 = std::min(nz - 1, (int)std::floor((maxZ - jitter * 1.7f - origin.z) / h - 0.5f));
+
+		double det = (double)(b.y - a.y) * (c.z - a.z) - (double)(c.y - a.y) * (b.z - a.z);
+		if (std::fabs(det) < 1e-12) { continue; }
+
+		for (int iz = z0; iz <= z1; iz++)
+		for (int iy = y0; iy <= y1; iy++)
+		{
+			double py = origin.y + (iy + 0.5) * h + jitter;
+			double pz = origin.z + (iz + 0.5) * h + jitter * 1.7f;
+			double u = ((py - a.y) * (c.z - a.z) - (c.y - a.y) * (pz - a.z)) / det;
+			double w = ((b.y - a.y) * (pz - a.z) - (py - a.y) * (b.z - a.z)) / det;
+			if (u < 0 || w < 0 || u + w > 1) { continue; }
+			crossings[(size_t)iz * ny + iy].push_back
+			((float)(a.x + u * (b.x - a.x) + w * (c.x - a.x)));
+		}
+	}
+
+	const float far = 1e12f;
+	std::vector<float> solid(total, far);
+	for (int iz = 0; iz < nz; iz++)
+	for (int iy = 0; iy < ny; iy++)
+	{
+		std::vector<float> &list = crossings[(size_t)iz * ny + iy];
+		std::sort(list.begin(), list.end());
+		for (size_t k = 0; k + 1 < list.size(); k += 2)
+		{
+			int x0 = std::max(0, (int)std::ceil((list[k] - origin.x) / h - 0.5f));
+			int x1 = std::min(nx - 1, (int)std::floor((list[k + 1] - origin.x) / h - 0.5f));
+			for (int ix = x0; ix <= x1; ix++)
+			{
+				solid[((size_t)iz * ny + iy) * nx + ix] = 0.f;
+			}
+		}
+	}
+	crossings.clear();
+
+	// grow: all that is within the radius of the solid. Then shrink: the
+	// distance of those from the rest. What is still further than the radius
+	// from the rest is the solid, closed.
+	edt3d(solid, nx, ny, nz);
+	float radiusSq = (radius / h) * (radius / h);
+	for (size_t i = 0; i < total; i++)
+	{
+		solid[i] = (solid[i] <= radiusSq ? far : 0.f);
+	}
+	edt3d(solid, nx, ny, nz);
+	std::vector<float> &depth = solid;
+	for (size_t i = 0; i < total; i++)
+	{
+		depth[i] = std::sqrt(depth[i]) * h;
+	}
+
+	auto sample = [&](const glm::vec3 &p)
+	{
+		float fx = (p.x - origin.x) / h - 0.5f;
+		float fy = (p.y - origin.y) / h - 0.5f;
+		float fz = (p.z - origin.z) / h - 0.5f;
+		int ix = std::max(0, std::min(nx - 2, (int)std::floor(fx)));
+		int iy = std::max(0, std::min(ny - 2, (int)std::floor(fy)));
+		int iz = std::max(0, std::min(nz - 2, (int)std::floor(fz)));
+		float tx = std::max(0.f, std::min(1.f, fx - ix));
+		float ty = std::max(0.f, std::min(1.f, fy - iy));
+		float tz = std::max(0.f, std::min(1.f, fz - iz));
+
+		float sum = 0;
+		for (int k = 0; k < 2; k++)
+		for (int j = 0; j < 2; j++)
+		for (int i = 0; i < 2; i++)
+		{
+			float weight = (i ? tx : 1 - tx) * (j ? ty : 1 - ty) * 
+			(k ? tz : 1 - tz);
+			sum += weight * depth[((size_t)(iz + k) * ny + iy + j) * nx + ix + i];
+		}
+		return sum;
+	};
+
+	// The mesh lies on the edge of the solid, so a vertex is no more than the
+	// radius from the rest: further than that, it is in a hollow which the
+	// closed surface spans. It goes out, away from the solid, to that surface.
+	// A voxel's worth of error is let go, so that vertices on the surface do
+	// not creep outwards with every cycle.
+	float tolerance = 1.5f * h;
+	int moved = 0;
+	std::vector<glm::vec3> next = pos;
+	for (size_t i = 0; i < n; i++)
+	{
+		glm::vec3 p = pos[i];
+		if (sample(p) - radius <= tolerance) { continue; }
+
+		for (int attempt = 0; attempt < 6; attempt++)
+		{
+			float excess = sample(p) - radius;
+			if (excess <= 0.2f * h) { break; }
+
+			glm::vec3 grad(sample(p + glm::vec3(h, 0, 0)) - sample(p - glm::vec3(h, 0, 0)),
+			               sample(p + glm::vec3(0, h, 0)) - sample(p - glm::vec3(0, h, 0)),
+			               sample(p + glm::vec3(0, 0, h)) - sample(p - glm::vec3(0, 0, h)));
+			float length = glm::length(grad);
+			if (length < 1e-6f) { break; }
+
+			// the depth grows going into the hollow, so out is against it
+			p -= (grad / length) * excess;
+		}
+
+		next[i] = p;
+		moved++;
+	}
+
+	if (moved)
+	{
+		{
+			std::unique_lock<std::mutex> lock(_vertLock);
+			for (size_t i = 0; i < n; i++)
+			{
+				_vertices[i].pos = next[i];
+			}
+			forceRender(true, true);
+		}
+
+		_triangleIdxs = tris;
+		calculateNormalsFrom(_triangleIdxs);
+		_connections.clear();
+		delete _tree;
+		_tree = nullptr;
+		invalidateExclusions();
+		invalidateCurvature();
+		saveCache();
+	}
+
+	_refined = true;
+	std::cout << "Grow-shrink cycle (ball of " << radius << " A): moved " 
+	<< moved << " of " << n << " vertices" << std::endl;
+}
+
+void Mesh::computeCurvature()
+{
+	// (_curvMutex is held)
+	std::vector<GLuint> tris = triangles();
+	size_t n = _vertices.size();
+	_curvZ.assign(n, 0.f);
+	if (n == 0 || tris.empty())
+	{
+		return;
+	}
+
+	std::vector<glm::dvec3> pos(n);
+	glm::dvec3 middle{};
+	for (size_t i = 0; i < n; i++)
+	{
+		pos[i] = glm::dvec3(_vertices[i].pos);
+		middle += pos[i];
+	}
+	middle /= (double)n;
+
+	// The gradient of the surface area at a vertex is the mean curvature
+	// (times twice the area there) along the way the surface faces. Which
+	// way is out is told by the volume: positive if the triangles wind
+	// outwards.
+	std::vector<glm::dvec3> gradArea(n, glm::dvec3(0.)), facing(n, glm::dvec3(0.));
+	std::vector<double> area(n, 0.);
+	double volume = 0;
+
+	for (size_t t = 0; t + 3 <= tris.size(); t += 3)
+	{
+		GLuint ia = tris[t], ib = tris[t + 1], ic = tris[t + 2];
+		glm::dvec3 a = pos[ia] - middle, b = pos[ib] - middle, 
+		c = pos[ic] - middle;
+		volume += glm::dot(a, glm::cross(b, c)) / 6.;
+
+		glm::dvec3 normal = glm::cross(b - a, c - a);
+		double twice = glm::length(normal);
+		if (twice < 1e-12) { continue; }
+
+		glm::dvec3 unit = normal / twice;
+		gradArea[ia] += 0.5 * glm::cross(unit, c - b);
+		gradArea[ib] += 0.5 * glm::cross(unit, a - c);
+		gradArea[ic] += 0.5 * glm::cross(unit, b - a);
+		for (GLuint i : {ia, ib, ic})
+		{
+			facing[i] += normal;
+			area[i] += twice / 6.;
+		}
+
+	}
+
+	double outwards = (volume >= 0 ? 1. : -1.);
+	std::vector<double> curvature(n, 0.);
+	for (size_t i = 0; i < n; i++)
+	{
+		double length = glm::length(facing[i]);
+		if (area[i] < 1e-9 || length < 1e-12) { continue; }
+
+		glm::dvec3 out = facing[i] * (outwards / length);
+		curvature[i] = glm::dot(gradArea[i], out) / (2. * area[i]);
+	}
+
+	// Vertices an Angstrom or so apart see only the bumps of single atoms, so
+	// the curvature at each is the average over everything within 30 Angstroms
+	// (as the crow flies), each vertex counting for the area it covers.
+	const float radius = 30.f;
+	typedef std::array<int, 3> Cell;
+	auto cell_of = [radius](const glm::dvec3 &p)
+	{
+		return Cell{(int)std::floor(p.x / radius), (int)std::floor(p.y / radius),
+		            (int)std::floor(p.z / radius)};
+	};
+	auto key_of = [](int x, int y, int z)
+	{
+		return ((int64_t)(x & 0x1FFFFF) << 42) | ((int64_t)(y & 0x1FFFFF) << 21)
+		| (int64_t)(z & 0x1FFFFF);
+	};
+
+	std::unordered_map<int64_t, std::vector<GLuint>> grid;
+	for (size_t i = 0; i < n; i++)
+	{
+		Cell c = cell_of(pos[i]);
+		grid[key_of(c[0], c[1], c[2])].push_back(i);
+	}
+
+	std::vector<double> averaged(n, 0.);
+	for (size_t i = 0; i < n; i++)
+	{
+		Cell c = cell_of(pos[i]);
+		double sum = 0, weight = 0;
+
+		for (int x = -1; x <= 1; x++)
+		for (int y = -1; y <= 1; y++)
+		for (int z = -1; z <= 1; z++)
+		{
+			auto it = grid.find(key_of(c[0] + x, c[1] + y, c[2] + z));
+			if (it == grid.end()) { continue; }
+
+			for (GLuint j : it->second)
+			{
+				glm::dvec3 diff = pos[j] - pos[i];
+				if (glm::dot(diff, diff) > (double)radius * radius) { continue; }
+
+				sum += area[j] * curvature[j];
+				weight += area[j];
+			}
+		}
+
+		averaged[i] = (weight > 0 ? sum / weight : curvature[i]);
+	}
+	curvature = averaged;
+
+	double mean = 0, spread = 0;
+	for (double c : curvature) { mean += c; }
+	mean /= (double)n;
+	for (double c : curvature) { spread += (c - mean) * (c - mean); }
+	spread = std::sqrt(spread / (double)n);
+
+	for (size_t i = 0; i < n; i++)
+	{
+		_curvZ[i] = (spread > 1e-12 ? (float)((curvature[i] - mean) / spread) : 0.f);
+	}
+}
+
+std::vector<float> Mesh::curvatureZ()
+{
+	std::unique_lock<std::mutex> lock(_curvMutex);
+	if (_curvZ.size() != _vertices.size())
+	{
+		computeCurvature();
+	}
+
+	return _curvZ;
+}
+
+void Mesh::invalidateCurvature()
+{
+	{
+		std::unique_lock<std::mutex> lock(_curvMutex);
+		_curvZ.clear();
+	}
+
+	if (_colourCurv)
+	{
+		applyMarks();
+	}
+}
+
+void Mesh::setFootprintMarks(const std::set<int> &marked)
+{
+	_footprintMarks = marked;
+
+	if (marked.empty())
+	{
+		if (_footprintFaces)
+		{
+			_footprintFaces->setDisabled(true);
+		}
+		return;
+	}
+
+	// every face which touches one of the vertices, shaded as the faces of an
+	// antibody's positions are
+	std::vector<GLuint> tris = triangles();
+	std::vector<GLuint> shaded;
+	for (size_t i = 0; i + 3 <= tris.size(); i += 3)
+	{
+		if (marked.count(tris[i]) || marked.count(tris[i + 1]) || 
+		    marked.count(tris[i + 2]))
+		{
+			shaded.insert(shaded.end(), tris.begin() + i, tris.begin() + i + 3);
+		}
+	}
+
+	if (!_footprintFaces)
+	{
+		_footprintFaces = new MeshFaces();
+		_footprintFaces->setOverSolid(_opaque);
+		addObject(_footprintFaces);
+	}
+
+	_footprintFaces->show(_vertices, shaded, 0.45f, {}, 0.f);
+}
+
+void Mesh::setCurvatureColours(bool on)
+{
+	_colourCurv = on;
+	applyMarks();
 }
 
 void Mesh::kdTree()
@@ -634,13 +1506,247 @@ Mesh::vertexFinder()
 	};
 }
 
+std::vector<glm::vec3> Mesh::vertexPositions() const
+{
+	std::vector<glm::vec3> positions;
+	positions.reserve(_vertices.size());
+	for (const Vertex &v : _vertices)
+	{
+		positions.push_back(v.pos);
+	}
+
+	return positions;
+}
+
 std::function<glm::vec3()> Mesh::random()
 {
 	return [this]()
 	{
-		int i = (rand() % vertexCount());
+		std::unique_lock<std::mutex> lock(_excludeMutex);
+		int n = vertexCount();
+		int i = (rand() % n);
+
+		// not an excluded one: another is drawn (all of them excluded can
+		// only be an accident, and then any will do)
+		if (_excluded.size() < (size_t)n)
+		{
+			for (int tries = 0; tries < 1000 && _excluded.count(i); tries++)
+			{
+				i = (rand() % n);
+			}
+		}
+
 		return _vertices[i].pos;
 	};
+}
+
+void Mesh::findOutward()
+{
+	if (_outward != 0.f || _vertices.empty())
+	{
+		return;
+	}
+
+	glm::vec3 middle = centroid();
+	double sum = 0;
+	for (const Vertex &v : _vertices)
+	{
+		sum += glm::dot(v.normal, v.pos - middle);
+	}
+
+	_outward = (sum >= 0 ? 1.f : -1.f);
+}
+
+std::vector<int> Mesh::verticesInBox(float top, float left, float bottom, 
+                                     float right)
+{
+	std::vector<int> found;
+	if (!_gl)
+	{
+		return found;
+	}
+
+	findOutward();
+	glm::mat4x4 model = _gl->getModel();
+	glm::mat4x4 proj = _gl->getProjection();
+	glm::mat3x3 rotation = glm::mat3x3(model);
+
+	float minX = std::min(left, right), maxX = std::max(left, right);
+	float minY = std::min(top, bottom), maxY = std::max(top, bottom);
+
+	for (size_t i = 0; i < _vertices.size(); i++)
+	{
+		// only the side facing the viewer, not what is behind it
+		glm::vec3 normal = rotation * (_vertices[i].normal * _outward);
+		if (normal.z <= 0)
+		{
+			continue;
+		}
+
+		glm::vec4 pos = proj * model * glm::vec4(_vertices[i].pos, 1.f);
+		pos /= pos.w;
+
+		if (pos.x >= minX && pos.x <= maxX && pos.y >= minY && pos.y <= maxY)
+		{
+			found.push_back(i);
+		}
+	}
+
+	return found;
+}
+
+void Mesh::setSelection(const std::set<int> &selection)
+{
+	_selected = selection;
+	applyMarks();
+}
+
+void Mesh::excludeSelection()
+{
+	{
+		std::unique_lock<std::mutex> lock(_excludeMutex);
+		_excluded.insert(_selected.begin(), _selected.end());
+	}
+
+	_selected.clear();
+	keepExclusions();
+	applyMarks();
+}
+
+// the exclusions go with the antigen, to be saved: as positions
+void Mesh::keepExclusions()
+{
+	std::unique_lock<std::mutex> lock(_excludeMutex);
+	_antigen.excluded_start.clear();
+	for (int i : _excluded)
+	{
+		_antigen.excluded_start.push_back(_vertices[i].pos);
+	}
+}
+
+void Mesh::invalidateExclusions()
+{
+	if (hasExclusions() || _antigen.excluded_start.size())
+	{
+		clearExclusions();
+	}
+}
+
+void Mesh::loadExclusions()
+{
+	if (_vertices.empty())
+	{
+		return;
+	}
+
+	{
+		std::unique_lock<std::mutex> lock(_excludeMutex);
+		_excluded.clear();
+
+		for (const glm::vec3 &p : _antigen.excluded_start)
+		{
+			int idx = nearestVertex(p);
+
+			// the mesh may be a different one to the one it was kept for
+			if (idx >= 0 && idx < (int)_vertices.size() &&
+			    glm::length(_vertices[idx].pos - p) < 1.f)
+			{
+				_excluded.insert(idx);
+			}
+		}
+	}
+
+	applyMarks();
+}
+
+void Mesh::clearExclusions()
+{
+	{
+		std::unique_lock<std::mutex> lock(_excludeMutex);
+		_excluded.clear();
+	}
+
+	keepExclusions();
+	applyMarks();
+}
+
+bool Mesh::hasExclusions()
+{
+	std::unique_lock<std::mutex> lock(_excludeMutex);
+	return !_excluded.empty();
+}
+
+// selected vertices are highlighted, excluded ones dark blue; everything
+// else is as it was
+void Mesh::applyMarks()
+{
+	if (_baseColours.size() != _vertices.size())
+	{
+		_baseColours.resize(_vertices.size());
+		for (size_t i = 0; i < _vertices.size(); i++)
+		{
+			_baseColours[i] = _vertices[i].color;
+		}
+	}
+
+	// the usual colour, or the curvature's: from blue (concave) through to red
+	// (convex), over three standard deviations either way
+	std::vector<glm::vec4> curved;
+	if (_colourCurv)
+	{
+		static std::vector<glm::vec4> table;
+		static std::once_flag once;
+		std::call_once(once, []()
+		{
+			ColourScheme scheme(Cluster4x);
+			for (int i = 0; i <= 255; i++)
+			{
+				table.push_back(scheme.colour((float)i / 255.f));
+			}
+		});
+
+		std::vector<float> z = curvatureZ();
+		curved.resize(_vertices.size());
+		for (size_t i = 0; i < curved.size(); i++)
+		{
+			float p = std::max(0.f, std::min(1.f, 0.5f + z[i] / 6.f));
+			curved[i] = table[(int)(p * 255.f + 0.5f)];
+			curved[i].a = 1.f;
+		}
+	}
+
+	std::set<int> excluded;
+	{
+		std::unique_lock<std::mutex> lock(_excludeMutex);
+		excluded = _excluded;
+	}
+
+	const glm::vec4 highlight(1.f, 0.85f, 0.1f, 1.f);
+	const glm::vec4 dark(0.02f, 0.02f, 0.4f, 1.f);
+	std::vector<glm::vec4> marks(_vertices.size(), glm::vec4(0.f));
+
+	for (int i : _selected)
+	{
+		if (i >= 0 && i < (int)marks.size()) marks[i] = highlight;
+	}
+
+	for (int i : excluded)
+	{
+		if (i >= 0 && i < (int)marks.size()) marks[i] = dark;
+	}
+
+	for (size_t i = 0; i < _vertices.size(); i++)
+	{
+		_vertices[i].color = (marks[i].a > 0 ? marks[i] : 
+		                      (_colourCurv ? curved[i] : _baseColours[i]));
+	}
+
+	forceRender(true, false);
+
+	if (_solid && _opaque)
+	{
+		_solid->show(_vertices, triangles(), &marks);
+	}
 }
 
 void MeshFaces::show(const std::vector<Vertex> &base, 
@@ -785,12 +1891,15 @@ void Mesh::setHeat(const std::map<int, int> &main,
 }
 
 void MeshSolid::show(const std::vector<Vertex> &base, 
-                     const std::vector<GLuint> &tris)
+                     const std::vector<GLuint> &tris,
+                     const std::vector<glm::vec4> *marks)
 {
 	_vertices = base;
-	for (Vertex &v : _vertices)
+	for (size_t i = 0; i < _vertices.size(); i++)
 	{
-		v.color = glm::vec4(0.5, 0.5, 0.8, 1.0);
+		Vertex &v = _vertices[i];
+		bool marked = (marks && i < marks->size() && (*marks)[i].a > 0);
+		v.color = (marked ? (*marks)[i] : glm::vec4(0.5, 0.5, 0.8, 1.0));
 		v.extra = glm::vec4(0.f);
 	}
 
@@ -827,13 +1936,19 @@ void Mesh::setOpaque(bool opaque)
 
 	if (opaque)
 	{
-		_solid->show(_vertices, triangles());
+		applyMarks();
 
 		// the solid goes first, the translucent faces over it
 		if (_faces)
 		{
 			removeObject(_faces);
 			addObject(_faces);
+		}
+
+		if (_footprintFaces)
+		{
+			removeObject(_footprintFaces);
+			addObject(_footprintFaces);
 		}
 	}
 	else if (_solid)
@@ -844,6 +1959,11 @@ void Mesh::setOpaque(bool opaque)
 	if (_faces)
 	{
 		_faces->setOverSolid(opaque);
+	}
+
+	if (_footprintFaces)
+	{
+		_footprintFaces->setOverSolid(opaque);
 	}
 }
 

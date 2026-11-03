@@ -25,6 +25,7 @@
 #include <functional>
 #include <mutex>
 #include <map>
+#include <deque>
 
 struct Competition;
 struct Fiducial;
@@ -46,6 +47,14 @@ public:
 	
 	bool isFixed(const std::string &name) const;
 
+	// Antibodies in the naughty corner are left alone entirely: not refined,
+	// not randomised, kept out of every snapshot and out of every comparison,
+	// clustering and average of results (older results may still hold them).
+	// Shared by everything which looks at results, so set from the one place
+	// the corner changes; Positions sets it from the competition when made.
+	static void setIgnored(const std::vector<std::string> &names);
+	static bool ignored(const std::string &name);
+
 	// antibodies which have structural information (a fiducial with a
 	// contact point), and so can be fixed at that position
 	std::vector<std::string> structuralAntibodies() const;
@@ -65,6 +74,42 @@ public:
 	// for this session only: fixes an antibody at its structural position, or
 	// lets it be refined like any other. No effect without structural info.
 	void setFixed(const std::string &name, bool fixed);
+
+	// whether an antibody has positions here
+	bool has(const std::string &name) const
+	{
+		return _lookup.count(name) > 0;
+	}
+
+	/** Gives an antibody which was left out (in the naughty corner when this
+	 *  was made) positions, to start from a random one. Room was kept for
+	 *  these at the start, so that nothing in use is moved; false if there
+	 *  is none left. */
+	bool addAntibody(const std::string &name);
+	// the watches for one antibody, as loadAntibodiesInto() makes for all
+	void loadAntibodyInto(HasRenderables *bucket, 
+	                      std::vector<AbWatch *> &watches,
+	                      const std::string &name);
+
+	// the curvature z-score of each mesh vertex (see Mesh::curvatureZ()), for
+	// asking about it where an antibody sits
+	void setCurvatureZ(const std::vector<float> &z)
+	{
+		_curvZ = z;
+	}
+
+	bool hasCurvature() const
+	{
+		return _curvZ.size() > 0 && _fromMesh;
+	}
+
+	// the z-score of the mesh vertex nearest to a position
+	float curvatureZ(const glm::vec3 &pos) const;
+	// the antibodies with structural information which are fixed now, and
+	// the setting of that from such a list (those with structure not on it
+	// are freed)
+	std::vector<std::string> fixedAntibodies() const;
+	void setFixedAntibodies(const std::vector<std::string> &fixed);
 	void setPosition(const std::string &name, glm::vec3 pos, 
 	                 float snappiness = 0);
 	const glm::vec3 &operator()(const std::string &name, 
@@ -139,10 +184,61 @@ public:
 	// apart, which counts as 1.
 	static float silhouette(const Clusters &clusters);
 
-	// the median of each cluster: of the vertices occupied by its members
-	// (across all the results), the one with the least total distance to
-	// the rest. Falls back to the cluster's centre if it has no members.
-	static std::vector<glm::vec3> medoids(const Clusters &clusters);
+	// the median of each cluster: the mesh vertex with the least total
+	// distance to the vertices its members occupied (across all the results),
+	// which need not be one of them. Falls back to the cluster's centre if it
+	// has no members, and to the best of the occupied vertices if the mesh
+	// vertices are not known (see setMeshVertices()).
+	std::vector<glm::vec3> medoids(const Clusters &clusters) const;
+
+	/** The footprint of each fixable fiducial on the mesh: the vertices within
+	 *  5 Angstroms of an atom of the antibody making the interface, in every
+	 *  orientation (see ContactPoint::computeFootprint()). For every vertex
+	 *  of the mesh it keeps the nearest vertex of the footprint, which is
+	 *  itself where it is on it. Needs the mesh vertices first. The models
+	 *  of any fiducial without its footprint kept are loaded to make it
+	 *  (and the json saved), the once. */
+	void buildFootprints();
+
+	struct Footprint
+	{
+		std::vector<float> dist; // from each mesh vertex to the footprint
+		std::vector<int> nearest; // its nearest footprint vertex
+		glm::vec3 centroid{};
+		size_t count{};
+	};
+
+	const Footprint *footprintOf(const std::string &name) const
+	{
+		auto it = _footprints.find(name);
+		return (it == _footprints.end() ? nullptr : &it->second);
+	}
+
+	// the vertices on the footprint of an antibody (none without one)
+	std::vector<int> footprintVertices(const std::string &name) const;
+
+	/** How far a position is from the footprint of an antibody (straight
+	 *  line, to the nearest vertex of it; 0 on it), and the unit direction
+	 *  away from it (from the middle of it if on it). False without one. */
+	bool footprintDistance(const std::string &name, const glm::vec3 &pos,
+	                       float &dist, glm::vec3 &away) const;
+
+	// The same for lookups made over and over for one position: its nearest
+	// mesh vertex worked out once (-1 if there is none), and a footprint
+	// already found.
+	int vertexAt(const glm::vec3 &pos) const;
+	float curvatureZAtVertex(int vertex) const
+	{
+		return (vertex >= 0 && vertex < (int)_curvZ.size() ? _curvZ[vertex] : 0.f);
+	}
+	bool footprintDistance(const Footprint &footprint, const glm::vec3 &pos,
+	                       int vertex, float &dist, glm::vec3 &away) const;
+
+	// every vertex of the mesh, for medoids() to choose from
+	void setMeshVertices(const std::vector<glm::vec3> &vertices)
+	{
+		_meshVertices = vertices;
+	}
 
 	// For each non-fixed antibody, all its positions in these snapshots (every
 	// symmetry copy of every result) are divided into as many clusters as
@@ -184,15 +280,21 @@ private:
 		unsigned int shownVersion = 0;
 	};
 
-	std::vector<AntibodyPos> _positions;
+	// a deque, so that what points to one stays valid as antibodies are added
+	std::deque<AntibodyPos> _positions;
 	std::vector<glm::vec3> _raw;
 	// what is on show while viewing; same size as _raw
 	std::vector<glm::vec3> _shown;
 	bool _viewing = false;
 
 	void copyLiveToShown();
+	void loadOne(const AntibodyPos &ap, HasRenderables *bucket,
+	             std::vector<AbWatch *> &watches);
 	std::map<std::string, AntibodyPos *> _lookup;
+	std::vector<glm::vec3> _meshVertices;
 	FromMesh _fromMesh;
+	std::vector<float> _curvZ;
+	std::map<std::string, Footprint> _footprints;
 	RandomFromMesh _random;
 };
 

@@ -74,10 +74,10 @@ private:
 	// brought up to date once, in doThings(), as a box can take in many
 	void selectRow(size_t row, bool inverse);
 	void showWhittleMenu(Renderable *button);
-	void addSlider();
 	void addPickButton();
-	// switches between comparing positions and comparing their pulls
+	// a button offering the ways of comparing results (see _metric)
 	void addMetricButton();
+	void showMetricMenu(Renderable *button);
 	// offers the share of results to choose, then stars the chosen set
 	void showPickMenu(Renderable *button);
 	void pickBest(float fraction);
@@ -107,15 +107,17 @@ private:
 	Image *_arrow{};
 	TextButton *_groupButton{};
 	TextButton *_whittleButton{};
+	TextButton *_metricButton{};
 	ProgressBar *_bar{};
 
+	// how far apart antibodies are for them to count as close (see
+	// compareResults()), for the first way of comparing them
 	std::atomic<float> _radius{11.f};
-	// 0: how close the antibodies sit (the slider sets what counts as close);
+	// 0: how close the antibodies sit (within that radius);
 	// 1: how alike the Results pull them from the average (VectorModel)
 	std::atomic<int> _metric{0};
 	std::atomic<bool> _busy{false};
 	std::atomic<bool> _pending{false};
-	bool _sliderReady{false};
 	bool _first{true};
 };
 
