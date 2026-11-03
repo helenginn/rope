@@ -64,4 +64,3 @@ vagutils = static_library('vagutils', utilfiles,
 	cpp_args: [compile_args],
 	link_args: [links],
 	dependencies : [cli_deps], install: false)
-

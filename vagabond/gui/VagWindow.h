@@ -57,9 +57,9 @@ public:
 		return (_bar.ptr != nullptr);
 	}
 
-	virtual void extraWindowFlags(unsigned int &flags)
+	void extraWindowFlags(SDL_WindowFlags &flags) override
 	{
-		flags += SDL_WINDOW_RESIZABLE;
+		flags |= SDL_WINDOW_RESIZABLE;
 	}
 
 	// caller, cancelJob and skipJob are all optional, purely additive -

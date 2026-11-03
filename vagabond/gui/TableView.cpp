@@ -16,7 +16,7 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#include <SDL2/SDL_clipboard.h>
+#include <SDL3/SDL_clipboard.h>
 
 #include <vagabond/core/TabulatedData.h>
 #include <vagabond/gui/elements/ChooseRange.h>

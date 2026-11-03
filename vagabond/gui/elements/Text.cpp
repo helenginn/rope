@@ -4,7 +4,7 @@
 #include "TextManager.h"
 #include "Library.h"
 #include "Window.h"
-#include <SDL2/SDL.h>
+#include <SDL3/SDL.h>
 #include <iostream>
 
 Text::Text(std::string text, Font::Type type, bool delay) : Box()

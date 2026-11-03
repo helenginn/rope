@@ -3,9 +3,10 @@
 #include "Renderable.h"
 #include "Library.h"
 
+#include <cstdlib>
 #include <fstream>
 #include <iostream>
-#include <SDL2/SDL_image.h>
+#include <SDL3_image/SDL_image.h>
 #include "config/config.h"
 #include <vagabond/utils/os.h>
 
@@ -14,7 +15,6 @@
 #include <canvas.h>
 #endif
 
-SDL_Renderer *Window::_renderer = NULL;
 SDL_Rect Window::_rect;
 SDL_Window *Window::_window = NULL;
 SDL_GLContext Window::_context = NULL;
@@ -36,6 +36,24 @@ std::set<Renderable *> Window::_deleteRenderables;
 
 KeyResponder *Window::_keyResponder = NULL;
 
+namespace
+{
+bool running = true;
+
+glm::vec2 windowMousePosition(float x, float y)
+{
+	// SDL3 reports pointer input in the same window-coordinate space as
+	// SDL_GetWindowSize(), independently of the drawable's pixel density.
+	return {x, y};
+}
+
+[[noreturn]] void failSDL(const char *operation)
+{
+	SDL_Log("%s failed: %s", operation, SDL_GetError());
+	std::exit(EXIT_FAILURE);
+}
+}
+
 #ifdef __EMSCRIPTEN__
 EM_JS(int, get_canvas_height, (), { return window.innerHeight; });
 EM_JS(int, get_canvas_width, (), { return window.innerWidth; });
@@ -47,46 +65,83 @@ void Window::instateWindow()
     // High DPI awareness for Windows
     SDL_SetHint(SDL_HINT_WINDOWS_DPI_SCALING, "1");
 #endif
-	unsigned int windowFlags = SDL_WINDOW_OPENGL;
-	SDL_SetHintWithPriority(SDL_HINT_VIDEO_MAC_FULLSCREEN_SPACES, "1",
-	                        SDL_HINT_OVERRIDE);
+	SDL_WindowFlags windowFlags = SDL_WINDOW_OPENGL;
+	if (!SDL_SetHintWithPriority(SDL_HINT_VIDEO_MAC_FULLSCREEN_SPACES, "1",
+	                             SDL_HINT_OVERRIDE))
+	{
+		SDL_Log("Unable to set macOS fullscreen hint: %s", SDL_GetError());
+	}
+
+	if (!SDL_Init(SDL_INIT_VIDEO))
+	{
+		failSDL("SDL_Init");
+	}
 	
 #ifdef __EMSCRIPTEN__
 	_ratio = emscripten_get_device_pixel_ratio();
+	if (_ratio <= 0.0)
+	{
+		_ratio = 1.0;
+	}
 	_rect.w = get_canvas_width();
 	_rect.h = get_canvas_height();
 #else
-	if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER) != 0) 
+	SDL_DisplayID display = SDL_GetPrimaryDisplay();
+	if (display == 0 || !SDL_GetDisplayBounds(display, &_rect))
 	{
-        SDL_Log("Unable to initialize SDL: %s", SDL_GetError());
-		exit(0);
-    }
+		failSDL("SDL_GetDisplayBounds");
+	}
 
-	SDL_GetDisplayBounds(0, &_rect);
     // Temporary fix for multiple displays
     if (_rect.w > 1.6 * _rect.h)
     {
         _rect.w = 1.6 * _rect.h;
     }
 
-	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 4);
-	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 0);
-	SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, 
-	                    SDL_GL_CONTEXT_PROFILE_CORE);
+	if (!SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 4))
+	{
+		failSDL("SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION)");
+	}
+	if (!SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 0))
+	{
+		failSDL("SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION)");
+	}
+	if (!SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK,
+	                         SDL_GL_CONTEXT_PROFILE_CORE))
+	{
+		failSDL("SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK)");
+	}
+
+#ifdef SDL_PLATFORM_MACOS
+	if (!SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS,
+	                         SDL_GL_CONTEXT_FORWARD_COMPATIBLE_FLAG))
+	{
+		failSDL("SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS)");
+	}
+#endif
 	
 	extraWindowFlags(windowFlags);
 #endif
-	windowFlags += SDL_WINDOW_ALLOW_HIGHDPI;
+	windowFlags |= SDL_WINDOW_HIGH_PIXEL_DENSITY;
 
-	_window = SDL_CreateWindow("RoPE", 0, 0, _rect.w * _ratio,
-	                           _rect.h * _ratio, windowFlags);
+	_window = SDL_CreateWindow("RoPE", _rect.w, _rect.h, windowFlags);
+	if (_window == nullptr)
+	{
+		failSDL("SDL_CreateWindow");
+	}
+
 	_context = SDL_GL_CreateContext(_window);
+	if (_context == nullptr)
+	{
+		failSDL("SDL_GL_CreateContext");
+	}
 	
 }
 
 void Window::instateGlew()
 {
 #ifndef __EMSCRIPTEN__
+	glewExperimental = GL_TRUE;
     const GLenum err = glewInit();
 
     if (GLEW_OK != err)
@@ -97,25 +152,13 @@ void Window::instateGlew()
 	
 	std::cout << "OpenGL version: " << glGetString(GL_VERSION) << std::endl;
 
-#ifdef __EMSCRIPTEN__
-	_renderer = SDL_CreateRenderer(_window, -1, 0);
-#else
-	glewInit();
-
-	_renderer = NULL;
-	
-	if (IMG_Init(IMG_INIT_PNG) == 0) 
-	{
-		std::cout << "Error SDL2_image Initialization" << std::endl;
-		exit(1);
-	}
-
+#ifndef __EMSCRIPTEN__
 	const std::string icon_path = dataDirectory() + "assets/images/cartoon.png";
 	SDL_Surface *icon = IMG_Load(icon_path.c_str());
 	if (icon != nullptr)
 	{
 		SDL_SetWindowIcon(_window, icon);
-		SDL_FreeSurface(icon);
+		SDL_DestroySurface(icon);
 	}
 #ifdef DEBUG
 	else
@@ -128,22 +171,38 @@ void Window::instateGlew()
 
 void Window::giveUpOpenGL()
 {
-//	std::cout << "Killing context" << std::endl;
-//	Library::dropEverything();
-//	SDL_GL_DeleteContext(_context);
+	if (_context != nullptr)
+	{
+		if (!SDL_GL_DestroyContext(_context))
+		{
+			SDL_Log("SDL_GL_DestroyContext failed: %s", SDL_GetError());
+		}
+		_context = nullptr;
+	}
+
+	if (_window != nullptr)
+	{
+		SDL_DestroyWindow(_window);
+		_window = nullptr;
+	}
+
+	SDL_Quit();
 }
 
 void Window::reinstateOpenGL()
 {
-	SDL_GL_MakeCurrent(_window, _context);
-
-	SDL_GLContext context = SDL_GL_GetCurrentContext();
+	if (!SDL_GL_MakeCurrent(_window, _context))
+	{
+		SDL_Log("SDL_GL_MakeCurrent failed: %s", SDL_GetError());
+		return;
+	}
 
 	checkErrors("reinstated");
 }
 
 void Window::windowSetup()
 {
+	running = true;
 	instateWindow();
 	instateGlew();
 
@@ -161,35 +220,63 @@ Window::Window()
 
 Window::~Window()
 {
+	// HasRenderables is destroyed after this destructor body, so release its
+	// OpenGL resources while the context is still current.
+	deleteQueued();
+	deleteObjects();
+	giveUpOpenGL();
 
+	_current = nullptr;
+	_next = nullptr;
+	_first = nullptr;
+	_myWindow = nullptr;
+	_keyResponder = nullptr;
 }
 
-void Window::updateDimensions(int width, int height)
+void Window::updateDimensions()
 {
-#ifndef __EMSCRIPTEN__
-	int w, h;
-	SDL_GL_GetDrawableSize(_window, &w, &h);
-	glViewport(0, 0, w, h);
-	_width = w;
-	_height = h;
-	int logical_w, logical_h;
-	SDL_GetWindowSize(_window, &logical_w, &logical_h);
+	int windowWidth = 0;
+	int windowHeight = 0;
+	if (!SDL_GetWindowSize(_window, &windowWidth, &windowHeight))
+	{
+		SDL_Log("SDL_GetWindowSize failed: %s", SDL_GetError());
+		return;
+	}
 
-  _rect.w = logical_w;
-  _rect.h = logical_h;
+	int pixelWidth = 0;
+	int pixelHeight = 0;
+	if (!SDL_GetWindowSizeInPixels(_window, &pixelWidth, &pixelHeight))
+	{
+		SDL_Log("SDL_GetWindowSizeInPixels failed: %s", SDL_GetError());
+		return;
+	}
 
-  _ratio = static_cast<double>(_width) / logical_w;
+	glViewport(0, 0, pixelWidth, pixelHeight);
+	_width = pixelWidth;
+	_height = pixelHeight;
+	_rect.w = windowWidth;
+	_rect.h = windowHeight;
 
+	const float displayScale = SDL_GetWindowDisplayScale(_window);
+	if (displayScale > 0.0f)
+	{
+		_ratio = displayScale;
+	}
+	else
+	{
+		SDL_Log("SDL_GetWindowDisplayScale failed: %s", SDL_GetError());
+#ifdef __EMSCRIPTEN__
+		const double devicePixelRatio = emscripten_get_device_pixel_ratio();
+		_ratio = devicePixelRatio > 0.0 ? devicePixelRatio : 1.0;
 #else
-	glViewport(0, 0, width * _ratio, height * _ratio);
-	_rect.w = width;
-	_rect.h = height;
+		_ratio = 1.0;
 #endif
+	}
 }
 
 void Window::glSetup()
 {
-	updateDimensions(_rect.w, _rect.h);
+	updateDimensions();
 	glEnable(GL_BLEND);
 	glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -203,9 +290,9 @@ char pressedKey(SDL_Keycode sym)
 	char alpha[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 	char c = '\0';
 
-	if(sym >= SDLK_a && sym <= SDLK_z)
+	if(sym >= SDLK_A && sym <= SDLK_Z)
 	{
-		c = alpha[sym - SDLK_a];
+		c = alpha[sym - SDLK_A];
 	}
 
 	return c;
@@ -213,29 +300,28 @@ char pressedKey(SDL_Keycode sym)
 
 void Window::window_tick()
 {
-	tick();
+	if (!tick())
+	{
+#ifdef __EMSCRIPTEN__
+		emscripten_cancel_main_loop();
+#endif
+	}
 }
 
-void Window::handleWindowEvent(SDL_Event &event)
+void Window::handleWindowEvent(const SDL_Event &event)
 {
 	/* SIZE_CHANGED covers user resizes as well as maximise/restore and
 	 * programmatic changes, which RESIZED does not */
-	if (event.window.event == SDL_WINDOWEVENT_SIZE_CHANGED)
+	if (event.type == SDL_EVENT_WINDOW_RESIZED
+	    || event.type == SDL_EVENT_WINDOW_PIXEL_SIZE_CHANGED
+	    || event.type == SDL_EVENT_WINDOW_DISPLAY_SCALE_CHANGED
+	   )
 	{
-		_rect.w = event.window.data1;
-		_rect.h = event.window.data2;
-		glSetup();
-
+		updateDimensions();
 		if (_current != nullptr)
 		{
 			_current->setDims(_rect.w, _rect.h);
-			_current->viewChanged();
-		}
-	}
-	else if (event.window.event == SDL_WINDOWEVENT_EXPOSED)
-	{
-		if (_current != nullptr)
-		{
+			_current->resizeGL(_width, _height);
 			_current->viewChanged();
 		}
 	}
@@ -249,30 +335,27 @@ void Window::recordEvent(const SDL_Event &event)
 	int add_wait = 0;
 	switch (event.type)
 	{
-		case SDL_WINDOWEVENT:
-		break;
-
-		case SDL_KEYDOWN:
+		case SDL_EVENT_KEY_DOWN:
 		key = true;
 		str += "key down ";
 		break;
 
-		case SDL_KEYUP:
+		case SDL_EVENT_KEY_UP:
 		str += "key up ";
 		key = true;
 		break;
 
-		case SDL_MOUSEMOTION:
+		case SDL_EVENT_MOUSE_MOTION:
 		str += "click move ";
 		mouse = true;
 		break;
 
-		case SDL_MOUSEBUTTONDOWN:
+		case SDL_EVENT_MOUSE_BUTTON_DOWN:
 		str += "click down ";
 		mouse = true;
 		break;
 
-		case SDL_MOUSEBUTTONUP:
+		case SDL_EVENT_MOUSE_BUTTON_UP:
 		str += "click up ";
 		add_wait = 30;
 		mouse = true;
@@ -281,29 +364,40 @@ void Window::recordEvent(const SDL_Event &event)
 
 	if (mouse)
 	{
-		switch (event.button.button)
+		Uint32 buttons = 0;
+		if (event.type == SDL_EVENT_MOUSE_MOTION)
 		{
-			case SDL_BUTTON_LEFT:
-			str += "left ";
-			break;
+			buttons = event.motion.state;
+		}
+		else
+		{
+			buttons = SDL_BUTTON_MASK(event.button.button);
+		}
 
-			case SDL_BUTTON_RIGHT:
+		if ((buttons & SDL_BUTTON_LMASK) != 0)
+		{
+			str += "left ";
+		}
+		else if ((buttons & SDL_BUTTON_RMASK) != 0)
+		{
 			str += "right ";
-			break;
-			
-			default:
+		}
+		else
+		{
 			str += "? ";
-			break;
 		}
 		
 		if (!currentScene()->mouseDown() && 
-		    event.type == SDL_MOUSEMOTION)
+		    event.type == SDL_EVENT_MOUSE_MOTION)
 		{
 			return;
 		}
 		
-		float fx = event.motion.x;
-		float fy = event.motion.y;
+		glm::vec2 position = event.type == SDL_EVENT_MOUSE_MOTION
+		                   ? windowMousePosition(event.motion.x, event.motion.y)
+		                   : windowMousePosition(event.button.x, event.button.y);
+		float fx = position.x;
+		float fy = position.y;
 		std::cout << fx << " " << fy << " before conv." << std::endl;
 		currentScene()->convertToGLCoords(&fx, &fy);
 		
@@ -311,9 +405,9 @@ void Window::recordEvent(const SDL_Event &event)
 	}
 	else if (key)
 	{
-		int sym = (int)event.key.keysym.sym;
+		int sym = static_cast<int>(event.key.key);
 		str += std::to_string(sym);
-		if (event.type == SDL_KEYUP && _lastKey)
+		if (event.type == SDL_EVENT_KEY_UP && _lastKey)
 		{
 			add_wait = 10;
 		}
@@ -340,19 +434,12 @@ void Window::recordEvent(const SDL_Event &event)
 
 bool Window::tick()
 {
-	SDL_GLContext context = SDL_GL_GetCurrentContext();
-
 	_myWindow->mainThreadActivities();
 
 	SDL_Event event;
 	
 	while (SDL_PollEvent(&event))
 	{
-		glm::vec2 motion = {event.motion.x, event.motion.y};
-#ifdef __EMSCRIPTEN__
-		motion /= _ratio;
-#endif
-
 		if (_myWindow->_recordFile.length())
 		{
 			_myWindow->recordEvent(event);
@@ -360,43 +447,55 @@ bool Window::tick()
 
 		switch (event.type)
 		{
-			case SDL_WINDOWEVENT:
+			case SDL_EVENT_WINDOW_RESIZED:
+			case SDL_EVENT_WINDOW_PIXEL_SIZE_CHANGED:
+			case SDL_EVENT_WINDOW_DISPLAY_SCALE_CHANGED:
 			_myWindow->handleWindowEvent(event);
 			break;
 
-			case SDL_KEYDOWN:
-			_current->keyPressEvent(event.key.keysym.sym);
+			case SDL_EVENT_KEY_DOWN:
+			_current->keyPressEvent(event.key.key);
 			break;
 
-			case SDL_KEYUP:
-			if (event.key.keysym.sym == SDLK_ESCAPE)
+			case SDL_EVENT_KEY_UP:
+			if (event.key.key == SDLK_ESCAPE)
 			{
 #ifndef __EMSCRIPTEN__
 				_current->askToQuit();
 #endif
 			}
-			_current->keyReleaseEvent(event.key.keysym.sym);
+			_current->keyReleaseEvent(event.key.key);
 			break;
 
-			case SDL_MOUSEMOTION:
-			_current->mouseMoveEvent(motion.x, motion.y);
+			case SDL_EVENT_MOUSE_MOTION:
+			{
+				glm::vec2 position = windowMousePosition(event.motion.x,
+				                                        event.motion.y);
+				_current->mouseMoveEvent(position.x, position.y);
+			}
 			break;
 
-			case SDL_MOUSEBUTTONDOWN:
-			_current->mousePressEvent(motion.x, motion.y, 
-			                          event.button);
+			case SDL_EVENT_MOUSE_BUTTON_DOWN:
+			{
+				glm::vec2 position = windowMousePosition(event.button.x,
+				                                        event.button.y);
+				_current->mousePressEvent(position.x, position.y, event.button);
+			}
 			break;
 
-			case SDL_MOUSEBUTTONUP:
-			_current->mouseReleaseEvent(motion.x, motion.y, 
-			                            event.button);
+			case SDL_EVENT_MOUSE_BUTTON_UP:
+			{
+				glm::vec2 position = windowMousePosition(event.button.x,
+				                                        event.button.y);
+				_current->mouseReleaseEvent(position.x, position.y, event.button);
+			}
 			break;
 
-			case SDL_QUIT:
+			case SDL_EVENT_QUIT:
 			#ifndef __EMSCRIPTEN__
 			return false;
 			#endif
-			_running = false;
+			running = false;
 			break;
 
 			default:
@@ -404,7 +503,7 @@ bool Window::tick()
 		}
 	}
 
-	if (!_running)
+	if (!running)
 	{
 		return false;
 	}
@@ -426,7 +525,9 @@ bool Window::tick()
 
 	_myWindow->deleteQueued();
 	
+#ifndef __EMSCRIPTEN__
 	SDL_Delay(_milliseconds);
+#endif
 	
 	return true;
 }
@@ -469,7 +570,11 @@ void Window::render()
 	
 	int w, h;
 	checkErrors("before drawable_size");
-	SDL_GL_GetDrawableSize(_window, &w, &h);
+	if (!SDL_GetWindowSizeInPixels(_window, &w, &h))
+	{
+		SDL_Log("SDL_GetWindowSizeInPixels failed: %s", SDL_GetError());
+		return;
+	}
 	checkErrors("after drawable_size");
 	glViewport(0, 0, w, h);
 	checkErrors("after viewpport");
@@ -481,7 +586,10 @@ void Window::render()
 		_myWindow->object(i)->render(_current);
 	}
 
-	SDL_GL_SwapWindow(_window);
+	if (!SDL_GL_SwapWindow(_window))
+	{
+		SDL_Log("SDL_GL_SwapWindow failed: %s", SDL_GetError());
+	}
 }
 
 void Window::setCurrentScene(Scene *scene, bool show)
@@ -495,6 +603,10 @@ void Window::setCurrentScene(Scene *scene, bool show)
 		_current = scene;
 		_current->setDims(_rect.w, _rect.h);
 	}
+	_current = scene;
+	_current->setDims(_rect.w, _rect.h);
+	_current->resizeGL(_width, _height);
+	_switchMutex.unlock();
 
 	if (show)
 	{
@@ -507,6 +619,7 @@ void Window::reloadScene(Scene *scene)
 	std::unique_lock<std::mutex> lock(_switchMutex);
 	_current = scene;
 	_current->setDims(_rect.w, _rect.h);
+	_current->resizeGL(_width, _height);
 	_current->updateProjection();
 	_current->refresh();
 }

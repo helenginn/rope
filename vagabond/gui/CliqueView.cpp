@@ -31,7 +31,7 @@
 #include <vagabond/gui/HBondAnalysisControl.h>
 #include <vagabond/utils/DoJob.h>
 #include "CliqueView.h"
-#include <SDL2/SDL_clipboard.h>
+#include <SDL3/SDL_clipboard.h>
 
 void CliqueView::insertClique(Clique *clique)
 {

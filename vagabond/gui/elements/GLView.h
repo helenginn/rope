@@ -25,7 +25,7 @@ public:
 
 		if (changed)
 		{
-			resizeGL();
+			resizeGL(_w, _h);
 		}
 		else
 		{
@@ -134,6 +134,8 @@ public:
 		return _depthMap;
 	}
 	
+	virtual void resizeGL(int w, int h);
+
 	GLuint getOverrideProgram();
 	
 	size_t sceneTextureCount()
@@ -221,12 +223,8 @@ protected:
 	void prepareDepthColourIndex(bool bright = false);
 	void deletePingPongBuffers();
 	void deleteSceneBuffers();
-	void recreateFramebuffers();
-	bool framebuffersAreStale();
 	void renderShadows();
 	void renderScene();
-
-	virtual void resizeGL();
 	void convertCoords(double *x, double *y);
 	void convertGLToHD(float &x, float &y) const;
 

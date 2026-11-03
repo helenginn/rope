@@ -1,7 +1,7 @@
 // Copyright (C) 2021 Helen Ginn
 
 #include <algorithm>
-#include <SDL2/SDL.h>
+#include <SDL3/SDL.h>
 #include <cfloat>
 #include <iostream>
 #include "HasRenderables.h"

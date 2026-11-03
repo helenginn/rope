@@ -4,8 +4,8 @@
 
 #define _USE_MATH_DEFINES
 #include <math.h>
-#include <SDL2/SDL.h>
 #include "GLView.h"
+#include <SDL3/SDL.h>
 #include "Renderable.h"
 #include "Quad.h"
 #include "Window.h"
@@ -252,7 +252,8 @@ void GLView::prepareDepthColourIndex(bool bright)
 	glDrawBuffers(_sceneMapCount, attachments.data());
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	
-	_indices = new GLuint[_dw * _dh];
+	delete[] _indices;
+	_indices = new GLuint[static_cast<size_t>(_dw) * _dh]{};
 	memset(_indices, '\0', _dw * _dh * sizeof(GLuint));
 
 	if (_quad == nullptr)
@@ -333,13 +334,11 @@ void GLView::grabIndexBuffer()
 SDL_Surface *GLView::createSDLSurface()
 {
 	SDL_Surface *surface;
-			int h, w, bpp, bpr;
+	int h, w, bpp, bpr;
 	void *data = createImage(&h, &w, &bpp, &bpr);
-	surface = SDL_CreateRGBSurfaceFrom(data, w, h, bpp * 8,
-	                                   bpr, 0x000000FF, 0x0000FF00,
-	                                   0x00FF0000, 0xFF000000);
+	surface = SDL_CreateSurfaceFrom(w, h, SDL_PIXELFORMAT_RGBA32, data, bpr);
 
-	delete [] data;
+	delete [] (char *)data;
 	return surface;
 }
 
@@ -453,13 +452,6 @@ void GLView::render()
 	if (!lock.owns_lock())
 	{
 		return;
-	}
-
-	/* drawable size may have changed behind our back (window resize);
-	 * a mismatched framebuffer garbles the display and the index buffer */
-	if (framebuffersAreStale())
-	{
-		recreateFramebuffers();
 	}
 
 	if (_depthMap > 0)
@@ -577,41 +569,69 @@ void GLView::updateProjection(float side)
 	_unproj = glm::inverse(_proj);
 }
 
-bool GLView::framebuffersAreStale()
+void GLView::resizeGL(int w, int h)
 {
-	if (_sceneFbo == 0)
+	updateProjection();
+
+	if (w <= 0 || h <= 0 || _sceneFbo == 0
+	    || (w == _dw && h == _dh))
 	{
-		return false;
+		return;
 	}
 
-	return (_dw != Window::width() || _dh != Window::height());
-}
-
-void GLView::recreateFramebuffers()
-{
-	if (_pingPongFbo[0] != 0)
-	{
-		preparePingPongBuffers();
-	}
-	else if (_sceneFbo != 0)
-	{
-		prepareDepthColourIndex(_sceneBright);
-	}
-}
-
-void GLView::resizeGL()
-{
 	std::unique_lock<std::mutex> lock(_renderMutex);
 
-	if (framebuffersAreStale())
+	GLint boundTexture = 0;
+	glGetIntegerv(GL_TEXTURE_BINDING_2D, &boundTexture);
+
+	if (_sceneDepth != 0)
 	{
-		recreateFramebuffers();
+		glBindTexture(GL_TEXTURE_2D, _sceneDepth);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT,
+		             w, h, 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
 	}
 
-	updateProjection();
-	windowSizeChanged();
-	_viewChanged = true;
+	for (size_t i = 0; i < _sceneMapCount; i++)
+	{
+		if (_sceneMap[i] == 0)
+		{
+			continue;
+		}
+
+		glBindTexture(GL_TEXTURE_2D, _sceneMap[i]);
+		if (i == 1)
+		{
+			glTexImage2D(GL_TEXTURE_2D, 0, GL_R32UI, w, h, 0,
+			             GL_RED_INTEGER, GL_UNSIGNED_INT, nullptr);
+		}
+		else
+		{
+			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, w, h, 0,
+			             GL_RGBA, GL_FLOAT, nullptr);
+		}
+	}
+
+	for (GLuint texture : _pingPongMap)
+	{
+		if (texture == 0)
+		{
+			continue;
+		}
+
+		glBindTexture(GL_TEXTURE_2D, texture);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, w, h, 0,
+		             GL_RGBA, GL_FLOAT, nullptr);
+	}
+
+	glBindTexture(GL_TEXTURE_2D, static_cast<GLuint>(boundTexture));
+
+	_dw = w;
+	_dh = h;
+	delete[] _indices;
+	_indices = new GLuint[static_cast<size_t>(_dw) * _dh]{};
 }
+
+
 
 void GLView::convertCoords(double *x, double *y)
 {

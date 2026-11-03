@@ -204,7 +204,7 @@ void RouteExplorer::demolishSlider()
 
 void RouteExplorer::keyPressEvent(SDL_Keycode pressed)
 {
-	if (pressed == SDLK_s)
+	if (pressed == SDLK_S)
 	{
 
 		TextEntry *te = new TextEntry("enter residue range", this);

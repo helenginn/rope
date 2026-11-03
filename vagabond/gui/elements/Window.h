@@ -3,8 +3,8 @@
 
 #include <vagabond/utils/gl_import.h>
 #include <vagabond/gui/elements/HasRenderables.h>
-#include <SDL2/SDL.h>
-#include <SDL2/SDL_opengl.h>
+#include <SDL3/SDL.h>
+#include <SDL3/SDL_opengl.h>
 #include <mutex>
 #include "KeyResponder.h"
 #include <set>
@@ -15,12 +15,9 @@
 #define BROWSER_HEIGHT 900.
 #define ASPECT_RATIO (BROWSER_WIDTH / BROWSER_HEIGHT)
 
-static bool _running = true;
-
 class Scene;
 class Renderable;
 
-struct SDL_Renderer;
 struct SDL_Window;
 
 class Window : public HasRenderables
@@ -30,11 +27,6 @@ public:
 	virtual ~Window();
 
 	void windowSetup();
-	
-	static SDL_Renderer *renderer()
-	{
-		return _renderer;
-	}
 	
 	static void setKeyResponder(KeyResponder *responder)
 	{
@@ -46,7 +38,7 @@ public:
 		_keyResponder = NULL;
 	}
 	
-	virtual void extraWindowFlags(unsigned int &flags) = 0;
+	virtual void extraWindowFlags(SDL_WindowFlags &flags) = 0;
 	
 	static void setCurrentScene(Scene *scene, bool show = true);
 	static void setNextScene(Scene *scene)
@@ -80,7 +72,7 @@ public:
 	static bool tick();
 	static void window_tick();
 
-	void updateDimensions(int width, int height);
+	void updateDimensions();
 	
 	static int height()
 	{
@@ -130,8 +122,7 @@ public:
 	
 	static double ratio()
 	{
-		return _ratio; // will be 1 on non-emscripten systems
-		// except I may have fixed that...
+		return _ratio;
 	}
 	
 	static SDL_Window *sdl_window()
@@ -156,11 +147,10 @@ protected:
 	static Window *_myWindow;
 private:
 	void recordEvent(const SDL_Event &event);
-	void handleWindowEvent(SDL_Event &event);
+	void handleWindowEvent(const SDL_Event &event);
 	void deleteQueued();
 	bool _test = false;
 
-	static SDL_Renderer *_renderer;
 	static SDL_Window *_window;
 	static SDL_GLContext _context;
 	static SDL_Rect _rect;

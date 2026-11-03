@@ -127,7 +127,7 @@ void UntangleView::keyPressEvent(SDL_Keycode pressed)
 {
 	Display::keyPressEvent(pressed);
 
-	if (pressed == SDLK_c)
+	if (pressed == SDLK_C)
 	{
 		_visual->setShowDirt(true);
 	}
@@ -156,18 +156,18 @@ void UntangleView::keyReleaseEvent(SDL_Keycode pressed)
 		focusOnResidue(_chain, _resi);
 	}
 
-	if (pressed == SDLK_c)
+	if (pressed == SDLK_C)
 	{
 		_visual->setShowDirt(false);
 	}
 	
-	if (_controlPressed && !_shiftPressed && pressed == SDLK_z)
+	if (_controlPressed && !_shiftPressed && pressed == SDLK_Z)
 	{
 		_visual->undo();
 	}
 	
-	if ((_controlPressed && _shiftPressed && pressed == SDLK_z) ||
-	    (_controlPressed && pressed == SDLK_y))
+	if ((_controlPressed && _shiftPressed && pressed == SDLK_Z) ||
+	    (_controlPressed && pressed == SDLK_Y))
 	{
 		_visual->redo();
 	}
