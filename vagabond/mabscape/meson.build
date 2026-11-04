@@ -65,5 +65,5 @@ executable('mabscape', mabscapefiles,
     link_args: [links],
 	include_directories: ['../..'],
     dependencies : gui_deps,
-    install: false)
+    install: true)
 
