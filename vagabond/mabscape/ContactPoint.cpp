@@ -290,16 +290,9 @@ void ContactPoint::findMapping()
 	establishMidpoint();
 	recalibrateToFirst();
 
-	// the footprint goes with the mapping, while the models are to hand
-	try
-	{
-		computeFootprint();
-	}
-	catch (const std::exception &err)
-	{
-		std::cout << "No footprint for antibody " << _fiducial.name << ": " 
-		<< err.what() << std::endl;
-	}
+	// (the footprint is not worked out here: the model has been moved about
+	// and may be shared with other fiducials, so its atoms are not where the
+	// file has them. See computeFootprint().)
 }
 
 // atoms which cannot stand for a position: coordinates which are not numbers
@@ -606,6 +599,25 @@ bool ContactPoint::computeFootprint(float reach)
 	glm::vec3 local = glm::vec3(glm::inverse(_orientations.front().transform) *
 	                            glm::vec4(_reference, 1.f));
 
+	// The atoms must be as the file has them, for the orientations to be
+	// put on them. A model which has been moved (it is shared with the
+	// mapping, or another fiducial, if it is loaded already) puts the nearest
+	// chain well away from where the reference was in the file.
+	float nearestChain = FLT_MAX;
+	for (Instance *inst : chains)
+	{
+		nearestChain = std::min(nearestChain, chain_distance(inst, local));
+	}
+
+	if (nearestChain > MAX_FRAME_ERROR)
+	{
+		_fiducial.model.unload();
+		std::cout << "No footprint for antibody " << _fiducial.name << ": "
+		"its model is not as it was in the file (the nearest chain is "
+		<< nearestChain << " A from the interface)" << std::endl;
+		return false;
+	}
+
 	AtomGroup abs, anti;
 	for (Instance *inst : antibodyAtInterface(chains, local))
 	{
@@ -811,6 +823,7 @@ json ContactPoint::alignmentJson() const
 		}
 		j["footprint"] = footprint;
 		j["footprint_reach"] = INTERFACE_REACH;
+		j["footprint_frame"] = FOOTPRINT_FRAME;
 	}
 
 	return j;
@@ -859,7 +872,9 @@ bool ContactPoint::restore(const json &saved)
 		// it when it is first wanted
 		std::vector<glm::vec3> footprint;
 		if (saved.count("footprint") && saved.count("footprint_reach") &&
-		    saved.at("footprint_reach").get<float>() == INTERFACE_REACH)
+		    saved.at("footprint_reach").get<float>() == INTERFACE_REACH &&
+		    saved.count("footprint_frame") && 
+		    saved.at("footprint_frame").get<int>() == FOOTPRINT_FRAME)
 		{
 			for (const json &p : saved.at("footprint"))
 			{

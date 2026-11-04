@@ -43,6 +43,15 @@ public:
 	// the footprint of the antibody on the antigen
 	static constexpr float INTERFACE_REACH = 6.f;
 
+	// The footprint atoms are kept as the model file has them. Bump when that
+	// changes: footprints saved earlier (1: made at the end of mapping, in a
+	// model already moved onto the mesh) are then made again.
+	static constexpr int FOOTPRINT_FRAME = 2;
+
+	// the farthest, in Angstroms, the nearest chain of a model can be from the
+	// interface before the model is taken to have been moved
+	static constexpr float MAX_FRAME_ERROR = 10.f;
+
 	// The atoms making up an interface: the antibody atoms within {reach} of
 	// the antigen and the antigen atoms within {reach} of the antibody. Both
 	// groups are new, and for the caller to delete.

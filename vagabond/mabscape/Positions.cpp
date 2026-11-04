@@ -966,6 +966,23 @@ void Positions::buildFootprints()
 
 		if (inside.empty())
 		{
+			// the atoms are not on the mesh: say how far they are
+			float nearest = FLT_MAX;
+			for (const auto &entry : grid)
+			{
+				for (const glm::vec3 &p : entry.second)
+				{
+					for (size_t v = 0; v < n; v++)
+					{
+						nearest = std::min(nearest, 
+						                   glm::length(_meshVertices[v] - p));
+					}
+				}
+			}
+
+			std::cout << "Footprint of " << ap.name << " touches no mesh vertex "
+			"(its atoms are at least " << nearest << " A from the mesh)" 
+			<< std::endl;
 			continue;
 		}
 
