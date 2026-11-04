@@ -17,6 +17,7 @@
 // Please email: vagabond @ hginn.co.uk for more details.
 
 #include "AntibodyPdb.h"
+#include <algorithm>
 #include <gemmi/model.hpp>
 #include <gemmi/to_pdb.hpp>
 #include <cctype>

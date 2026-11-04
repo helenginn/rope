@@ -17,6 +17,7 @@
 // Please email: vagabond @ hginn.co.uk for more details.
 
 #include <set>
+#include <algorithm>
 #include <iostream>
 
 #include "KdTree.h"

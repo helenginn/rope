@@ -17,6 +17,7 @@
 // Please email: vagabond @ hginn.co.uk for more details.
 
 #include "PosToComp.h"
+#include <cfloat>
 #include <random>
 #include <vagabond/gui/MatrixPlot.h>
 #include <vagabond/utils/DoJob.h>

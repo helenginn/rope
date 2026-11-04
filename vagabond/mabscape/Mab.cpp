@@ -17,6 +17,7 @@
 // Please email: vagabond @ hginn.co.uk for more details.
 
 #include "Mab.h"
+#include <algorithm>
 #include "Mesh.h"
 #include <vagabond/core/EntityManager.h>
 #include <vagabond/core/Metadata.h>

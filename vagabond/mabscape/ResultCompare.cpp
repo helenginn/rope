@@ -17,6 +17,8 @@
 // Please email: vagabond @ hginn.co.uk for more details.
 
 #include "ResultCompare.h"
+#include <algorithm>
+#include <cfloat>
 #include <map>
 
 float compareResults(const PosToComp::Result &left,

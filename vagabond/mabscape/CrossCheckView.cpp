@@ -17,6 +17,7 @@
 // Please email: vagabond @ hginn.co.uk for more details.
 
 #include "CrossCheckView.h"
+#include <cfloat>
 #include "Positions.h"
 #include "Mab.h"
 #include <vagabond/gui/elements/Text.h>

@@ -17,6 +17,8 @@
 // Please email: vagabond @ hginn.co.uk for more details.
 
 #include "ContactPoint.h"
+#include <cctype>
+#include <cfloat>
 #include "Playground.h"
 #include <algorithm>
 #include <fstream>

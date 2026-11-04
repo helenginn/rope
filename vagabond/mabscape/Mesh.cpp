@@ -17,6 +17,8 @@
 // Please email: vagabond @ hginn.co.uk for more details.
 
 #include "Mesh.h"
+#include <cstdio>
+#include <cstdint>
 #include "Mab.h"
 #include <vagabond/gui/GuiDensity.h>
 #include <vagabond/gui/ColourScheme.h>

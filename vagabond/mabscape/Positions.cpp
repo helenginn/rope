@@ -17,6 +17,8 @@
 // Please email: vagabond @ hginn.co.uk for more details.
 
 #include <vagabond/gui/elements/Icosahedron.h>
+#include <cstdint>
+#include <cfloat>
 
 #include "Positions.h"
 #include <algorithm>
