@@ -16,8 +16,7 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __vagabond__ForceAnalysis__
-#define __vagabond__ForceAnalysis__
+#pragma once
 
 #include <map>
 #include <variant>
@@ -100,5 +99,3 @@ private:
 	
 	OpSet<AbstractForce *> _allForces;
 };
-
-#endif
