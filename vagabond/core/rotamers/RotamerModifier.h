@@ -70,6 +70,7 @@ public:
     glm::mat4x4 _transform{};
 
 private:
+    std::map<Bouquet *, std::vector<int>> newMatrix(std::map<Bouquet *, std::vector<int>> const &prevAllowed, Eigen::MatrixXi const &totalCollisions);
     std::map<Bouquet *, std::vector<int>> AllowedRotamerMatrices(std::map<Bouquet *, std::vector<int>> rotamersStepN);
     std::map<Bouquet *, std::vector<int>> FirstRotamerMatrices(std::vector<Bouquet *> resChain);
     Instance *_instMain{};

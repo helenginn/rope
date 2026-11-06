@@ -43,6 +43,7 @@ void RotamerModifier::setup()
     _bouquet = new Bouquet;
     generateRotamerMapPosition();
     makePlan();
+    proximityMatrix();
 }
 RotamerModifier::~RotamerModifier()
 {
@@ -127,6 +128,7 @@ glm::vec3 RotamerModifier::analysisTest(int timePoints, std::vector<glm::vec3> s
         sizeB += bouquet->storeSize();
     }
     std::vector<Eigen::MatrixXi> allAnalysis{};
+    std::vector<Eigen::MatrixXi> allAllowedMatrices{};
     std::map<int, std::vector<std::vector<float>>> CollidingRotamersA{};
     std::map<int, std::vector<std::vector<float>>> CollidingRotamersB{};
     if (path)
@@ -259,6 +261,8 @@ glm::vec3 RotamerModifier::analysisTest(int timePoints, std::vector<glm::vec3> s
         }
         _bouquet->moveNoMap(glm::translate(glm::mat4x4(1.0f), -translation), _secChain);
         allAnalysis.push_back(totalCollisions);
+        nextRotamersChainA = newMatrix(nextRotamersChainA, totalCollisions);
+        nextRotamersChainB = newMatrix(nextRotamersChainB, totalCollisions);
         iteration++;
     }
     for (int iter = 0; iter < startPos.size(); iter++)
@@ -472,12 +476,91 @@ std::map<Bouquet *, std::vector<int>> RotamerModifier::FirstRotamerMatrices(std:
             }
         }
         firstRotamersChainA[bouquet] = vectorRot;
+        std::cout << "FIRSTiter\t" << bouquet->name().first.as_string() << '\t';
+        for (auto element : vectorRot)
+            std::cout << " ," << element;
+        std::cout << std::endl;
     }
     return firstRotamersChainA;
 }
+std::map<Bouquet *, std::vector<int>> RotamerModifier::newMatrix(std::map<Bouquet *, std::vector<int>> const &prevAllowed, Eigen::MatrixXi const &currentCollisions)
+{
+    std::map<Bouquet *, std::vector<int>> nextRotamers{};
+    // int counter{0};
+    int errorCount{0};
+    for (auto [bouquet, rotPresent] : prevAllowed) //Creating a Matrix of allowed rotamers for next steps
+    {
+        std::vector<int> possibleNext{};
+        std::vector<int> allowedNext{};
+        possibleNext.resize(rotPresent.size(), 0);
+        allowedNext.resize(rotPresent.size(), 0);
+        if (_proximityMatrices[bouquet->atomPos(0).begin()->first->code()].outerSize() != rotPresent.size() - 1) //DEBUG
+        {
+            std::cout << bouquet->name().first.as_string() << "\texpecting " << _proximityMatrices[bouquet->atomPos(0).begin()->first->code()].outerSize() << "\trotamers, having\t" << rotPresent.size() - 1;
+            std::cout << std::endl;
+        }
+        if (rotPresent[0] != 2) //DEBUG
+        {
+            std::cout << "NOOOOOOOOOOOOOOOOOO\t" << bouquet->name().first.as_string() << '\t' << errorCount;
+            errorCount++;
+            std::cout << std::endl;
+        }
+        for (int x = 0; x < rotPresent.size(); x++)
+        {
+            if (rotPresent[x] == 2)
+            {
+                allowedNext[x] = 2;
+            }
+            else if (rotPresent[x] == 1)
+            {
+                Eigen::VectorXf rotMap = _proximityMatrices[bouquet->atomPos(0).begin()->first->code()].row(x - 1);
+                for (int pos{0}; pos < rotMap.size(); pos++)
+                {
+                    if (rotMap(pos) == 1)
+                    {
+                        if (bouquet->atomPos(x).begin()->first->chain() == _mainChain)
+                        {
+                            if (currentCollisions.row(pos).maxCoeff() == 0 && allowedNext[pos] != 2)
+                            {
+                                allowedNext[pos] = 1;
+                                std::cout << '\t' << "MAINResidue " << bouquet->name().first.as_string() << " rotamer number " << x << " will be allowed next." << std::endl;
+                            }
+                        }
+                        else
+                        {
+                            if (currentCollisions.col(pos).maxCoeff() == 0 && allowedNext[pos] != 2)
+                            {
+                                allowedNext[pos] = 1;
+                                std::cout << '\t' << "SECResidue " << bouquet->name().first.as_string() << " rotamer number " << x << " will be allowed next." << std::endl;
+                            }
+                        }
+                    }
+                }
+
+                // if (currentCollisions.row(counter).maxCoeff() == 0)
+                // {
+                // std::cout << '\t' << "Residue " << bouquet->name().first.as_string() << " rotamer number " << x << " will be allowed next." << std::endl;
+                // allowedNext[x] = 1;
+                // }
+                // for (auto element : currentCollisions.row(x))
+                // {
+                // if (currentCollisions.element == 0)
+                // {
+                //     allowedNext[x] = 1;
+                //     std::cout << '\t' << "Residue " << bouquet->name().first.as_string() << " rotamer number " << x << " will be allowed next." << std::endl;
+                // }
+                // }
+            }
+            // counter++;
+        }
+        // std::cout << bouquet->name().first.as_string() << " done!" << std::endl;
+        nextRotamers[bouquet] = allowedNext;
+    }
+    return nextRotamers;
+}
 std::map<Bouquet *, std::vector<int>> RotamerModifier::AllowedRotamerMatrices(std::map<Bouquet *, std::vector<int>> rotamersStepN)
 {
-    std::map<Bouquet *, std::vector<int>> nextRotamersChainA{};
+    std::map<Bouquet *, std::vector<int>> nextRotamers{};
     for (auto [bouquet, rotPresent] : rotamersStepN) //Creating a Matrix of allowed rotamers for next steps
     {
         std::vector<int> allowedNext{};
@@ -495,15 +578,14 @@ std::map<Bouquet *, std::vector<int>> RotamerModifier::AllowedRotamerMatrices(st
                 {
                     if (rotMap(pos) == 1)
                     {
-                        allowedNext[pos] = 1;
+                        allowedNext[pos + 1] = 1;
                     }
                 }
             }
         }
-        std::cout << bouquet->name().first.as_string() << " done!" << std::endl;
-        nextRotamersChainA[bouquet] = allowedNext;
+        nextRotamers[bouquet] = allowedNext;
     }
-    return nextRotamersChainA;
+    return nextRotamers;
 }
 
 void RotamerModifier::analysisPipeline(int timePoints, std::vector<glm::vec3> startPos, int iterations)
