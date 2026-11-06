@@ -119,11 +119,11 @@ glm::vec3 RotamerModifier::analysisTest(int timePoints, std::vector<glm::vec3> s
     }
     int sizeA{0};
     int sizeB{0};
-    for (auto bouquet : resChainA)
+    for (const auto &bouquet : resChainA)
     {
         sizeA += bouquet->storeSize();
     }
-    for (auto bouquet : resChainB)
+    for (const auto &bouquet : resChainB)
     {
         sizeB += bouquet->storeSize();
     }
@@ -131,25 +131,24 @@ glm::vec3 RotamerModifier::analysisTest(int timePoints, std::vector<glm::vec3> s
     std::vector<Eigen::MatrixXi> allAllowedMatrices{};
     std::map<int, std::vector<std::vector<float>>> CollidingRotamersA{};
     std::map<int, std::vector<std::vector<float>>> CollidingRotamersB{};
-    if (path)
-    {
-        std::map<int, std::vector<std::vector<float>>> CollidingRotamersApaths{};
-        std::map<int, std::vector<std::vector<float>>> CollidingRotamersBpaths{};
-    }
+    std::map<int, std::map<Bouquet *, std::vector<int>>> CollidingRotamersApaths{};
+    std::map<int, std::map<Bouquet *, std::vector<int>>> CollidingRotamersBpaths{};
     int iteration{0};
 
     // setting up the first rotamers (finding the closest rotamer to the fully folded structure)
     std::map<Bouquet *, std::vector<int>> firstRotamersChainA{};
     std::map<Bouquet *, std::vector<int>> nextRotamersChainA{};
     firstRotamersChainA = FirstRotamerMatrices(resChainA);
+    CollidingRotamersApaths[iteration] = firstRotamersChainA;
     nextRotamersChainA = AllowedRotamerMatrices(firstRotamersChainA);
 
     std::map<Bouquet *, std::vector<int>> firstRotamersChainB{};
     std::map<Bouquet *, std::vector<int>> nextRotamersChainB{};
     firstRotamersChainB = FirstRotamerMatrices(resChainB);
+    CollidingRotamersBpaths[iteration] = firstRotamersChainB;
     nextRotamersChainB = AllowedRotamerMatrices(firstRotamersChainB);
     // STEP 2: iteration for every vectors given in input
-    for (auto translation : startPos)
+    for (const auto translation : startPos)
     {
         Eigen::MatrixXi totalCollisions(sizeA, sizeB);
         totalCollisions.fill(0);
@@ -262,7 +261,9 @@ glm::vec3 RotamerModifier::analysisTest(int timePoints, std::vector<glm::vec3> s
         _bouquet->moveNoMap(glm::translate(glm::mat4x4(1.0f), -translation), _secChain);
         allAnalysis.push_back(totalCollisions);
         nextRotamersChainA = newMatrix(nextRotamersChainA, totalCollisions);
+        CollidingRotamersApaths[iteration + 1] = nextRotamersChainA; //Achtung, small desync here (to check if there is a difference in the first rot and iteration 1) don't forget to remove
         nextRotamersChainB = newMatrix(nextRotamersChainB, totalCollisions);
+        CollidingRotamersBpaths[iteration + 1] = nextRotamersChainB;
         iteration++;
     }
     for (int iter = 0; iter < startPos.size(); iter++)
@@ -357,7 +358,75 @@ glm::vec3 RotamerModifier::analysisTest(int timePoints, std::vector<glm::vec3> s
         csvContent += '\n';
         for (auto const &vector : pairs.second)
         {
-            for (auto value : vector)
+            for (auto const &value : vector)
+            {
+                csvContent += std::to_string(value) + ',';
+            }
+            csvContent = csvContent.substr(0, csvContent.length() - 1);
+            csvContent += '\n';
+        }
+        std::ofstream file;
+        file.open(fileName);
+        if (file.is_open())
+        {
+            file << csvContent;
+            file.close();
+        }
+    }
+    for (auto const &pairs : CollidingRotamersApaths)
+    {
+        std::string fileName{};
+        if (willIterate == 0)
+            fileName = "FINAL_" + _instMain->entity_id() + "_paths_number_" + std::to_string(pairs.first) + '-' + std::to_string(timePoints) + "availRotApaths" + ".csv";
+        else
+            fileName = "iter" + std::to_string(willIterate) + "_" + _instMain->entity_id() + "_paths_number_" + std::to_string(pairs.first) + '-' + std::to_string(timePoints) + "availRotApaths" + ".csv";
+
+        std::string csvContent{};
+        csvContent += std::to_string(startPos[pairs.first].x) + ',' + std::to_string(startPos[pairs.first].y) + ',' + std::to_string(startPos[pairs.first].z) + '\n';
+        for (auto const &bouquet : resChainA)
+        {
+            csvContent += bouquet->name().first.as_string() + ',';
+        }
+        csvContent = csvContent.substr(0, csvContent.length() - 1);
+        csvContent += '\n';
+        for (auto const &bouquet : resChainA)
+        {
+            std::map<Bouquet *, std::vector<int>> map = pairs.second;
+            for (auto const &value : map[bouquet])
+            {
+                csvContent += std::to_string(value) + ',';
+            }
+            csvContent = csvContent.substr(0, csvContent.length() - 1);
+            csvContent += '\n';
+        }
+        std::ofstream file;
+        file.open(fileName);
+        if (file.is_open())
+        {
+            file << csvContent;
+            file.close();
+        }
+    }
+    for (auto const &pairs : CollidingRotamersBpaths)
+    {
+        std::string fileName{};
+        if (willIterate == 0)
+            fileName = "FINAL_" + _instMain->entity_id() + "_paths_number_" + std::to_string(pairs.first) + '-' + std::to_string(timePoints) + "availRotBpaths" + ".csv";
+        else
+            fileName = "iter" + std::to_string(willIterate) + "_" + _instMain->entity_id() + "_paths_number_" + std::to_string(pairs.first) + '-' + std::to_string(timePoints) + "availRotBpaths" + ".csv";
+
+        std::string csvContent{};
+        csvContent += std::to_string(startPos[pairs.first].x) + ',' + std::to_string(startPos[pairs.first].y) + ',' + std::to_string(startPos[pairs.first].z) + '\n';
+        for (auto const &bouquet : resChainB)
+        {
+            csvContent += bouquet->name().first.as_string() + ',';
+        }
+        csvContent = csvContent.substr(0, csvContent.length() - 1);
+        csvContent += '\n';
+        for (auto const &bouquet : resChainB)
+        {
+            std::map<Bouquet *, std::vector<int>> map = pairs.second;
+            for (auto const &value : map[bouquet])
             {
                 csvContent += std::to_string(value) + ',';
             }
@@ -412,7 +481,7 @@ glm::vec3 RotamerModifier::analysisTest(int timePoints, std::vector<glm::vec3> s
         }
         float sumValues{0};
         float numberValues{0};
-        for (auto values : means)
+        for (auto const &values : means)
         {
             sumValues += values;
             numberValues += 1;
@@ -439,7 +508,7 @@ glm::vec3 RotamerModifier::analysisTest(int timePoints, std::vector<glm::vec3> s
 std::map<Bouquet *, std::vector<int>> RotamerModifier::FirstRotamerMatrices(std::vector<Bouquet *> resChain)
 {
     std::map<Bouquet *, std::vector<int>> firstRotamersChainA{};
-    for (auto bouquet : resChain)
+    for (auto const &bouquet : resChain)
     {
         std::cout << bouquet->name().first.as_string() << std::endl;
         std::map<Atom *, glm::vec3> initialAtomPos{bouquet->atomPos(0)};
@@ -452,7 +521,7 @@ std::map<Bouquet *, std::vector<int>> RotamerModifier::FirstRotamerMatrices(std:
             std::cout << bouquet->name().first.as_string() << std::endl;
             std::map<Atom *, glm::vec3> RotAtomPos{bouquet->atomPos(x)};
             float length{0};
-            for (auto pairs : initialAtomPos)
+            for (auto const &pairs : initialAtomPos)
             {
                 if (!pairs.first->isMainChain())
                     length += abs(glm::length(pairs.second - RotAtomPos[pairs.first]));
@@ -477,7 +546,7 @@ std::map<Bouquet *, std::vector<int>> RotamerModifier::FirstRotamerMatrices(std:
         }
         firstRotamersChainA[bouquet] = vectorRot;
         std::cout << "FIRSTiter\t" << bouquet->name().first.as_string() << '\t';
-        for (auto element : vectorRot)
+        for (auto const &element : vectorRot)
             std::cout << " ," << element;
         std::cout << std::endl;
     }
@@ -488,7 +557,7 @@ std::map<Bouquet *, std::vector<int>> RotamerModifier::newMatrix(std::map<Bouque
     std::map<Bouquet *, std::vector<int>> nextRotamers{};
     // int counter{0};
     int errorCount{0};
-    for (auto [bouquet, rotPresent] : prevAllowed) //Creating a Matrix of allowed rotamers for next steps
+    for (const auto &[bouquet, rotPresent] : prevAllowed) //Creating a Matrix of allowed rotamers for next steps
     {
         std::vector<int> possibleNext{};
         std::vector<int> allowedNext{};
@@ -561,7 +630,7 @@ std::map<Bouquet *, std::vector<int>> RotamerModifier::newMatrix(std::map<Bouque
 std::map<Bouquet *, std::vector<int>> RotamerModifier::AllowedRotamerMatrices(std::map<Bouquet *, std::vector<int>> rotamersStepN)
 {
     std::map<Bouquet *, std::vector<int>> nextRotamers{};
-    for (auto [bouquet, rotPresent] : rotamersStepN) //Creating a Matrix of allowed rotamers for next steps
+    for (const auto &[bouquet, rotPresent] : rotamersStepN) //Creating a Matrix of allowed rotamers for next steps
     {
         std::vector<int> allowedNext{};
         allowedNext.resize(rotPresent.size());
@@ -603,7 +672,7 @@ glm::vec3 RotamerModifier::minimumClashes(std::vector<glm::vec4> vectorsWeighted
 {
     float sumOfWeight{0.f};
     glm::vec3 sumVectors{0.f};
-    for (auto vectors : vectorsWeighted)
+    for (const auto &vectors : vectorsWeighted)
     {
         glm::vec3 current{glm::vec3(vectors)};
         float weight{1 / vectors.w};
