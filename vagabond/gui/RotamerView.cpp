@@ -16,11 +16,11 @@
 #include "MatrixPlot.h"
 
 RotamerView::RotamerView(Scene *prev, Instance *instMain, Instance *instSec, std::string mainChain, std::string secChain)
-:  Scene(prev), Display(prev), _instMain(instMain), _instSec(instSec)
+: Scene(prev), Display(prev), _instMain(instMain), _instSec(instSec)
 {
     _instMain->load();
     _instSec->load();
-    _modifier = new RotamerModifier(_instMain, _instSec,mainChain, secChain);
+    _modifier = new RotamerModifier(_instMain, _instSec, mainChain, secChain);
 }
 
 RotamerView::~RotamerView()
@@ -32,15 +32,15 @@ RotamerView::~RotamerView()
 }
 void RotamerView::setup()
 {
-    addTitle ("Rotamer View");
+    addTitle("Rotamer View");
     {
-        TextButton *t = new TextButton("hide/show collisionBoxes" , this);
+        TextButton *t = new TextButton("hide/show collisionBoxes", this);
         t->setRight(0.9, 0.9);
         t->setReturnTag("collision");
         addObject(t);
     }
     {
-        TextButton *t = new TextButton("analysis test" , this);
+        TextButton *t = new TextButton("analysis test", this);
         t->setRight(0.9, 0.7);
         t->setReturnTag("analysis");
         addObject(t);
@@ -57,10 +57,9 @@ void RotamerView::setup()
     }
     auto libTest = [this]()
     {
-        std::map<std::string,Eigen::MatrixXf> matArray = _modifier->proximityMatrix();
-    	_plot = new MatrixPlot(matArray["ARG"]);
-    	addObject(_plot);
-
+        std::map<std::string, Eigen::MatrixXf> matArray = _modifier->proximityMatrix();
+        _plot = new MatrixPlot(matArray["ARG"]);
+        addObject(_plot);
     };
     {
         TextButton *t = new TextButton("libTest", this);
@@ -96,17 +95,17 @@ void RotamerView::drawAxis()
     _line4->clearVertices();
     _line5->clearVertices();
     _line6->clearVertices();
-    std::vector<glm::vec3> axis {_modifier->drawAxis()};
-    _line4->addPoint(glm::vec3(5,0,0));
-    _line4->addPoint(axis[0]+glm::vec3(5.f,0.f,0.f));
+    std::vector<glm::vec3> axis{_modifier->drawAxis()};
+    _line4->addPoint(glm::vec3(5, 0, 0));
+    _line4->addPoint(axis[0] + glm::vec3(5.f, 0.f, 0.f));
     _line4->forceRender();
-    _line5->addPoint(glm::vec3(5,0,0));
-    _line5->addPoint(axis[1]+glm::vec3(5.f,0.f,0.f));
-    _line5->setColour(0.8,0.1,0.1);
+    _line5->addPoint(glm::vec3(5, 0, 0));
+    _line5->addPoint(axis[1] + glm::vec3(5.f, 0.f, 0.f));
+    _line5->setColour(0.8, 0.1, 0.1);
     _line5->forceRender();
-    _line6->addPoint(glm::vec3(5,0,0));
-    _line6->addPoint(axis[2]+glm::vec3(5.f,0.f,0.f));
-    _line6->setColour(0.1,0.1,0.8);
+    _line6->addPoint(glm::vec3(5, 0, 0));
+    _line6->addPoint(axis[2] + glm::vec3(5.f, 0.f, 0.f));
+    _line6->setColour(0.1, 0.1, 0.8);
     _line6->forceRender();
 }
 void RotamerView::drawChainAxis()
@@ -124,9 +123,9 @@ void RotamerView::buttonPressed(std::string tag, Button *button)
 {
     if (tag == "analysis") // coordinates : X = along static structure axis, Y: left-right Z: - = moving away the other structure
     {
-        std::vector<glm::vec3> tests  {_modifier->RandStartPos(100)};
+        std::vector<glm::vec3> tests{_modifier->RandStartPos(50)};
         std::string fileName = "vectors_list.csv";
-        std::string csvContent {};
+        std::string csvContent{};
         for (auto pos : tests)
         {
             csvContent += std::to_string(pos.x) + "," + std::to_string(pos.y) + "," + std::to_string(pos.z) + '\n';
@@ -165,7 +164,7 @@ void RotamerView::buttonPressed(std::string tag, Button *button)
         _line3->clearVertices();
         for (auto pos : tests)
         {
-            _line3->addPoint(glm::vec3(0.f,0.f,0.f), false);
+            _line3->addPoint(glm::vec3(0.f, 0.f, 0.f), false);
             _line3->addPoint(pos);
         }
         _line3->forceRender();
@@ -182,7 +181,7 @@ void RotamerView::buttonPressed(std::string tag, Button *button)
             _collision = true;
             drawChainAxis();
             // setupCollision();
-        	/*
+            /*
             std::ifstream file;
 			std::vector<std::string> filenames{};
 			glm::vec3 memoryPos{0.f};
@@ -355,7 +354,7 @@ void RotamerView::viewModel()
 {
     {
         DisplayUnit *unit = new DisplayUnit(this);
-        AtomGroup *atoms {_instMain->currentAtoms()};
+        AtomGroup *atoms{_instMain->currentAtoms()};
         atoms->add(_instSec->currentAtoms());
         unit->loadAtoms(atoms);
         setupCollision();
@@ -375,23 +374,23 @@ void RotamerView::finishedDragging(std::string tag, double x, double y)
 {
     if (tag == "X")
     {
-        _modifier->move(x,RotamerModifier::MoveX);
+        _modifier->move(x, RotamerModifier::MoveX);
     }
     if (tag == "Y")
     {
-        _modifier->move(x,RotamerModifier::MoveY);
+        _modifier->move(x, RotamerModifier::MoveY);
     }
     if (_collision)
     {
-        std::vector<std::pair<glm::vec3,glm::vec3>> drawing {};
+        std::vector<std::pair<glm::vec3, glm::vec3>> drawing{};
         drawing = _modifier->getVertices();
         _para->clearVertices();
         for (auto pair : drawing)
         {
-            _para->addParallelepiped(pair.first,pair.second);
+            _para->addParallelepiped(pair.first, pair.second);
         }
         _para->setAlpha(1.0f);
-        _para-> forceRender();
+        _para->forceRender();
     }
     drawChainAxis();
 }
@@ -430,14 +429,14 @@ void RotamerView::setupCollision()
 {
     if (_collision)
     {
-        std::vector<std::pair<glm::vec3,glm::vec3>> drawing {};
+        std::vector<std::pair<glm::vec3, glm::vec3>> drawing{};
         drawing = _modifier->getVertices();
         _para->clearVertices();
         for (auto pair : drawing)
         {
-            _para->addParallelepiped(pair.first,pair.second);
+            _para->addParallelepiped(pair.first, pair.second);
         }
         _para->setAlpha(1.0f);
-        _para-> forceRender();
+        _para->forceRender();
     }
 }
