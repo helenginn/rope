@@ -520,18 +520,18 @@ std::map<Bouquet *, std::vector<int>> RotamerModifier::newMatrix(std::map<Bouque
                     {
                         if (bouquet->atomPos(x).begin()->first->chain() == _mainChain)
                         {
-                            if (currentCollisions.row(pos).maxCoeff() == 0 && allowedNext[pos] != 2)
+                            if (currentCollisions.row(pos).maxCoeff() == 0)
                             {
-                                allowedNext[pos] = 1;
-                                std::cout << '\t' << "MAINResidue " << bouquet->name().first.as_string() << " rotamer number " << x << " will be allowed next." << std::endl;
+                                allowedNext[pos + 1] = 1;
+                                // std::cout << '\t' << "MAINResidue " << bouquet->name().first.as_string() << " rotamer number " << x << " will be allowed next." << std::endl;
                             }
                         }
                         else
                         {
-                            if (currentCollisions.col(pos).maxCoeff() == 0 && allowedNext[pos] != 2)
+                            if (currentCollisions.col(pos).maxCoeff() == 0)
                             {
-                                allowedNext[pos] = 1;
-                                std::cout << '\t' << "SECResidue " << bouquet->name().first.as_string() << " rotamer number " << x << " will be allowed next." << std::endl;
+                                allowedNext[pos + 1] = 1;
+                                // std::cout << '\t' << "SECResidue " << bouquet->name().first.as_string() << " rotamer number " << x << " will be allowed next." << std::endl;
                             }
                         }
                     }
