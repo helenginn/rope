@@ -140,7 +140,7 @@ std::map<std::string, Eigen::MatrixXf> RotMatrix::getPossibleRotamers()
     {
         Eigen::MatrixXf mat{};
         //mat = matrix.cast<int>();
-        mat.array() = (matrix.array() < 20).cast<float>();
+        mat.array() = (matrix.array() < 10).cast<float>();
         availRot[name] = mat;
         std::cout << name << " matrix done" << std::endl;
     }

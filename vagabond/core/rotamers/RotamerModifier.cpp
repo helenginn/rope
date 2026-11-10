@@ -1,10 +1,12 @@
 //
 // Created by romain on 11/05/2026.
 //
+#include <string>
 #include <vagabond/utils/Eigen/Core>
 
 #include <gemmi/cifdoc.hpp>
 #include <vagabond/core/rotamers/RotamerModifier.h>
+#include "glm/gtx/string_cast.hpp"
 #include "vagabond/utils/AcquireCoord.h"
 
 #include <vagabond/core/engine/Task.h>
@@ -131,22 +133,15 @@ glm::vec3 RotamerModifier::analysisTest(int timePoints, std::vector<glm::vec3> s
     std::vector<Eigen::MatrixXi> allAllowedMatrices{};
     std::map<int, std::vector<std::vector<float>>> CollidingRotamersA{};
     std::map<int, std::vector<std::vector<float>>> CollidingRotamersB{};
-    std::map<int, std::map<Bouquet *, std::vector<int>>> CollidingRotamersApaths{};
-    std::map<int, std::map<Bouquet *, std::vector<int>>> CollidingRotamersBpaths{};
     int iteration{0};
 
     // setting up the first rotamers (finding the closest rotamer to the fully folded structure)
     std::map<Bouquet *, std::vector<int>> firstRotamersChainA{};
-    std::map<Bouquet *, std::vector<int>> nextRotamersChainA{};
     firstRotamersChainA = FirstRotamerMatrices(resChainA);
-    CollidingRotamersApaths[iteration] = firstRotamersChainA;
-    nextRotamersChainA = AllowedRotamerMatrices(firstRotamersChainA);
-
     std::map<Bouquet *, std::vector<int>> firstRotamersChainB{};
-    std::map<Bouquet *, std::vector<int>> nextRotamersChainB{};
     firstRotamersChainB = FirstRotamerMatrices(resChainB);
-    CollidingRotamersBpaths[iteration] = firstRotamersChainB;
-    nextRotamersChainB = AllowedRotamerMatrices(firstRotamersChainB);
+    std::map<int, std::map<int, std::map<Bouquet *, std::vector<int>>>> TotalCollidingRotamersApaths{};
+    std::map<int, std::map<int, std::map<Bouquet *, std::vector<int>>>> TotalCollidingRotamersBpaths{};
     // STEP 2: iteration for every vectors given in input
     for (const auto translation : startPos)
     {
@@ -155,8 +150,17 @@ glm::vec3 RotamerModifier::analysisTest(int timePoints, std::vector<glm::vec3> s
         std::cout << "startPos number: " << iteration + 1 << '/' << startPos.size() << std::endl;
         glm::mat4x4 transformation = glm::mat4x4(1.0f);
         transformation = glm::translate(transformation, translation / glm::vec3(timePoints + 1));
+        std::map<int, std::map<Bouquet *, std::vector<int>>> CollidingRotamersApaths{};
+        std::map<int, std::map<Bouquet *, std::vector<int>>> CollidingRotamersBpaths{};
+        std::map<Bouquet *, std::vector<int>> nextRotamersChainA{};
+        CollidingRotamersApaths[0] = firstRotamersChainA;
+        nextRotamersChainA = AllowedRotamerMatrices(firstRotamersChainA);
+        std::map<Bouquet *, std::vector<int>> nextRotamersChainB{};
+        CollidingRotamersBpaths[0] = firstRotamersChainB;
+        nextRotamersChainB = AllowedRotamerMatrices(firstRotamersChainB);
         for (int x = 0; x <= timePoints; x++)
         {
+
             // currentCollisions is a matrix of every collision between every rotamers of chain A and chain B
             Eigen::MatrixXi currentCollisions{_bouquet->fullCollisionChecks(resChainA, resChainB, sizeA, sizeB)};
             totalCollisions += currentCollisions;
@@ -255,24 +259,26 @@ glm::vec3 RotamerModifier::analysisTest(int timePoints, std::vector<glm::vec3> s
                 }
                 RotamersB.push_back(collisions / static_cast<float>(bouquet->storeSize()));
             }
+            nextRotamersChainA = newMatrix(nextRotamersChainA, totalCollisions);
+            CollidingRotamersApaths[x + 1] = nextRotamersChainA; //Achtung, small desync here (to check if there is a difference in the first rot and iteration 1) don't forget to remove
+            nextRotamersChainB = newMatrix(nextRotamersChainB, totalCollisions);
+            CollidingRotamersBpaths[x + 1] = nextRotamersChainB;
             CollidingRotamersB[iteration].push_back(RotamersB);
             _bouquet->moveNoMap(transformation, _secChain);
         }
         _bouquet->moveNoMap(glm::translate(glm::mat4x4(1.0f), -translation), _secChain);
         allAnalysis.push_back(totalCollisions);
-        nextRotamersChainA = newMatrix(nextRotamersChainA, totalCollisions);
-        CollidingRotamersApaths[iteration + 1] = nextRotamersChainA; //Achtung, small desync here (to check if there is a difference in the first rot and iteration 1) don't forget to remove
-        nextRotamersChainB = newMatrix(nextRotamersChainB, totalCollisions);
-        CollidingRotamersBpaths[iteration + 1] = nextRotamersChainB;
+        TotalCollidingRotamersApaths[iteration] = CollidingRotamersApaths;
+        TotalCollidingRotamersBpaths[iteration] = CollidingRotamersBpaths;
         iteration++;
     }
     for (int iter = 0; iter < startPos.size(); iter++)
     {
         std::string fileName{};
         if (willIterate == 0)
-            fileName = "FINAL_" + _instMain->entity_id() + "_paths_number_" + std::to_string(iter) + '-' + std::to_string(timePoints) + ".csv";
+            fileName = "run/FINAL_" + _instMain->entity_id() + "_paths_number_" + std::to_string(iter) + '-' + std::to_string(timePoints) + ".csv";
         else
-            fileName = "iter" + std::to_string(willIterate) + "_" + _instMain->entity_id() + "_paths_number_" + std::to_string(iter) + '-' + std::to_string(timePoints) + ".csv";
+            fileName = "run/iter" + std::to_string(willIterate) + "_" + _instMain->entity_id() + "_paths_number_" + std::to_string(iter) + '-' + std::to_string(timePoints) + ".csv";
 
         std::string csvContent{};
         csvContent += startPos[iter].x + ',' + startPos[iter].y + ',' + startPos[iter].z + '\n';
@@ -311,9 +317,9 @@ glm::vec3 RotamerModifier::analysisTest(int timePoints, std::vector<glm::vec3> s
     {
         std::string fileName{};
         if (willIterate == 0)
-            fileName = "FINAL_" + _instMain->entity_id() + "_paths_number_" + std::to_string(pairs.first) + '-' + std::to_string(timePoints) + "availRotA" + ".csv";
+            fileName = "run/FINAL_" + _instMain->entity_id() + "_paths_number_" + std::to_string(pairs.first) + '-' + std::to_string(timePoints) + "availRotA" + ".csv";
         else
-            fileName = "iter" + std::to_string(willIterate) + "_" + _instMain->entity_id() + "_paths_number_" + std::to_string(pairs.first) + '-' + std::to_string(timePoints) + "availRotA" + ".csv";
+            fileName = "run/iter" + std::to_string(willIterate) + "_" + _instMain->entity_id() + "_paths_number_" + std::to_string(pairs.first) + '-' + std::to_string(timePoints) + "availRotA" + ".csv";
 
         std::string csvContent{};
         csvContent += std::to_string(startPos[pairs.first].x) + ',' + std::to_string(startPos[pairs.first].y) + ',' + std::to_string(startPos[pairs.first].z) + '\n';
@@ -344,9 +350,9 @@ glm::vec3 RotamerModifier::analysisTest(int timePoints, std::vector<glm::vec3> s
     {
         std::string fileName{};
         if (willIterate == 0)
-            fileName = "FINAL_" + _instMain->entity_id() + "_paths_number_" + std::to_string(pairs.first) + '-' + std::to_string(timePoints) + "availRotB" + ".csv";
+            fileName = "run/FINAL_" + _instMain->entity_id() + "_paths_number_" + std::to_string(pairs.first) + '-' + std::to_string(timePoints) + "availRotB" + ".csv";
         else
-            fileName = "iter" + std::to_string(willIterate) + "_" + _instMain->entity_id() + "_paths_number_" + std::to_string(pairs.first) + '-' + std::to_string(timePoints) + "availRotB" + ".csv";
+            fileName = "run/iter" + std::to_string(willIterate) + "_" + _instMain->entity_id() + "_paths_number_" + std::to_string(pairs.first) + '-' + std::to_string(timePoints) + "availRotB" + ".csv";
 
         std::string csvContent{};
         csvContent += std::to_string(startPos[pairs.first].x) + ',' + std::to_string(startPos[pairs.first].y) + ',' + std::to_string(startPos[pairs.first].z) + '\n';
@@ -373,31 +379,39 @@ glm::vec3 RotamerModifier::analysisTest(int timePoints, std::vector<glm::vec3> s
             file.close();
         }
     }
-    for (auto const &pairs : CollidingRotamersApaths)
+    for (int counter{0}; counter < startPos.size(); counter++)
     {
         std::string fileName{};
         if (willIterate == 0)
-            fileName = "FINAL_" + _instMain->entity_id() + "_paths_number_" + std::to_string(pairs.first) + '-' + std::to_string(timePoints) + "availRotApaths" + ".csv";
+            fileName = "run/FINAL_" + _instMain->entity_id() + "_paths_number_" + std::to_string(counter) + '-' + std::to_string(timePoints) + "availRotApaths" + ".csv";
         else
-            fileName = "iter" + std::to_string(willIterate) + "_" + _instMain->entity_id() + "_paths_number_" + std::to_string(pairs.first) + '-' + std::to_string(timePoints) + "availRotApaths" + ".csv";
+            fileName = "run/iter" + std::to_string(willIterate) + "_" + _instMain->entity_id() + "_paths_number_" + std::to_string(counter) + '-' + std::to_string(timePoints) + "availRotApaths" + ".csv";
 
         std::string csvContent{};
-        csvContent += std::to_string(startPos[pairs.first].x) + ',' + std::to_string(startPos[pairs.first].y) + ',' + std::to_string(startPos[pairs.first].z) + '\n';
+        csvContent += std::to_string(startPos[counter].x) + ',' + std::to_string(startPos[counter].y) + ',' + std::to_string(startPos[counter].z) + '\n';
+        csvContent += "step,";
         for (auto const &bouquet : resChainA)
         {
             csvContent += bouquet->name().first.as_string() + ',';
         }
-        csvContent = csvContent.substr(0, csvContent.length() - 1);
-        csvContent += '\n';
-        for (auto const &bouquet : resChainA)
+
+        for (int x{0}; x <= timePoints; x++)
         {
-            std::map<Bouquet *, std::vector<int>> map = pairs.second;
-            for (auto const &value : map[bouquet])
-            {
-                csvContent += std::to_string(value) + ',';
-            }
             csvContent = csvContent.substr(0, csvContent.length() - 1);
             csvContent += '\n';
+            csvContent += std::to_string(x);
+            for (auto const &bouquet : resChainA)
+            {
+                std::map<Bouquet *, std::vector<int>> &map = TotalCollidingRotamersApaths[counter][x];
+                if (counter == 0)
+                {
+                    std::cout << "Paths A " << counter << " = \t" << TotalCollidingRotamersApaths[counter][x].size() << std::endl;
+                }
+                for (auto const &value : map[bouquet])
+                {
+                    csvContent += ',' + std::to_string(value);
+                }
+            }
         }
         std::ofstream file;
         file.open(fileName);
@@ -406,47 +420,123 @@ glm::vec3 RotamerModifier::analysisTest(int timePoints, std::vector<glm::vec3> s
             file << csvContent;
             file.close();
         }
-    }
-    for (auto const &pairs : CollidingRotamersBpaths)
-    {
-        std::string fileName{};
-        if (willIterate == 0)
-            fileName = "FINAL_" + _instMain->entity_id() + "_paths_number_" + std::to_string(pairs.first) + '-' + std::to_string(timePoints) + "availRotBpaths" + ".csv";
-        else
-            fileName = "iter" + std::to_string(willIterate) + "_" + _instMain->entity_id() + "_paths_number_" + std::to_string(pairs.first) + '-' + std::to_string(timePoints) + "availRotBpaths" + ".csv";
+        for (int counter{0}; counter < startPos.size(); counter++)
+        {
+            std::string fileName{};
+            if (willIterate == 0)
+                fileName = "run/FINAL_" + _instMain->entity_id() + "_paths_number_" + std::to_string(counter) + '-' + std::to_string(timePoints) + "availRotBpaths" + ".csv";
+            else
+                fileName = "run/iter" + std::to_string(willIterate) + "_" + _instMain->entity_id() + "_paths_number_" + std::to_string(counter) + '-' + std::to_string(timePoints) + "availRotBpaths" + ".csv";
 
-        std::string csvContent{};
-        csvContent += std::to_string(startPos[pairs.first].x) + ',' + std::to_string(startPos[pairs.first].y) + ',' + std::to_string(startPos[pairs.first].z) + '\n';
-        for (auto const &bouquet : resChainB)
-        {
-            csvContent += bouquet->name().first.as_string() + ',';
-        }
-        csvContent = csvContent.substr(0, csvContent.length() - 1);
-        csvContent += '\n';
-        for (auto const &bouquet : resChainB)
-        {
-            std::map<Bouquet *, std::vector<int>> map = pairs.second;
-            for (auto const &value : map[bouquet])
+            std::string csvContent{};
+            csvContent += std::to_string(startPos[counter].x) + ',' + std::to_string(startPos[counter].y) + ',' + std::to_string(startPos[counter].z) + '\n';
+            csvContent += "step,";
+            for (auto const &bouquet : resChainB)
             {
-                csvContent += std::to_string(value) + ',';
+                csvContent += bouquet->name().first.as_string() + ',';
             }
-            csvContent = csvContent.substr(0, csvContent.length() - 1);
-            csvContent += '\n';
+
+            for (int x{0}; x <= timePoints; x++)
+            {
+                csvContent = csvContent.substr(0, csvContent.length() - 1);
+                csvContent += '\n';
+                csvContent += std::to_string(x);
+                for (auto const &bouquet : resChainB)
+                {
+                    std::map<Bouquet *, std::vector<int>> &map = TotalCollidingRotamersBpaths[counter][x];
+                    for (auto const &value : map[bouquet])
+                    {
+                        csvContent += ',' + std::to_string(value);
+                    }
+                }
+            }
+            std::ofstream file;
+            file.open(fileName);
+            if (file.is_open())
+            {
+                file << csvContent;
+                file.close();
+            }
         }
-        std::ofstream file;
-        file.open(fileName);
-        if (file.is_open())
-        {
-            file << csvContent;
-            file.close();
-        }
+        // for (int x{0}; x <= timePoints; x++)
+        // {
+        //       std::string fileName{};
+        //       if (willIterate == 0)
+        //           fileName = "run/FINAL_" + _instMain->entity_id() + "_paths_number_" + std::to_string(counter) + '-' + "step" + std::to_string(x) + '-' + std::to_string(timePoints) + "availRotApaths" + ".csv";
+        //       else
+        //           fileName = "run/iter" + std::to_string(willIterate) + "_" + _instMain->entity_id() + "_paths_number_" + std::to_string(counter) + '-' + "step" + std::to_string(x) + '-' + std::to_string(timePoints) + "availRotApaths" + ".csv";
+
+        //       std::string csvContent{};
+        //       csvContent += std::to_string(startPos[counter].x) + ',' + std::to_string(startPos[counter].y) + ',' + std::to_string(startPos[counter].z) + '\n';
+        //       for (auto const &bouquet : resChainA)
+        //       {
+        //           csvContent += bouquet->name().first.as_string() + ',';
+        //       }
+        //       csvContent = csvContent.substr(0, csvContent.length() - 1);
+        //       csvContent += '\n';
+        //       for (auto const &bouquet : resChainA)
+        //       {
+        //           std::map<Bouquet *, std::vector<int>> map = pairs.second;
+        //           for (auto const &value : map[bouquet])
+        //           {
+        //               csvContent += std::to_string(value) + ',';
+        //           }
+        //           csvContent = csvContent.substr(0, csvContent.length() - 1);
+        //           csvContent += '\n';
+        //       }
+        //       std::ofstream file;
+        //       file.open(fileName);
+        //       if (file.is_open())
+        //       {
+        //           file << csvContent;
+        //         file.close();
+        //     }
+        // }
+        // }
+        // for (auto const &pairs : TotalCollidingRotamersBpaths[counter])
+        // {
+        //     for (int x{0}; x <= timePoints; x++)
+        //     {
+        //         std::string fileName{};
+        //         if (willIterate == 0)
+        //             fileName = "run/FINAL_" + _instMain->entity_id() + "_paths_number_" + std::to_string(counter) + '-' + "step" + std::to_string(x) + '-' + std::to_string(timePoints) + "availRotBpaths" + ".csv";
+        //         else
+        //             fileName = "run/iter" + std::to_string(willIterate) + "_" + _instMain->entity_id() + "_paths_number_" + std::to_string(counter) + '-' + "step" + std::to_string(x) + '-' + std::to_string(timePoints) + "availRotBpaths" + ".csv";
+
+        //         std::string csvContent{};
+        //         csvContent += std::to_string(startPos[counter].x) + ',' + std::to_string(startPos[counter].y) + ',' + std::to_string(startPos[counter].z) + '\n';
+        //         for (auto const &bouquet : resChainB)
+        //         {
+        //             csvContent += bouquet->name().first.as_string() + ',';
+        //         }
+        //         csvContent = csvContent.substr(0, csvContent.length() - 1);
+        //         csvContent += '\n';
+        //         for (auto const &bouquet : resChainB)
+        //         {
+        //             std::map<Bouquet *, std::vector<int>> map = pairs.second;
+        //             for (auto const &value : map[bouquet])
+        //             {
+        //                 csvContent += std::to_string(value) + ',';
+        //             }
+        //             csvContent = csvContent.substr(0, csvContent.length() - 1);
+        //             csvContent += '\n';
+        //         }
+        //         std::ofstream file;
+        //         file.open(fileName);
+        //         if (file.is_open())
+        //         {
+        //             file << csvContent;
+        //             file.close();
+        //         }
+        //     }
+        // }
     }
     // Saving the vectors (hedgehog) and assigning their average collisionValues (to be able to display them with nice colors) these vectors are corrected to be in the right orientation of the initial model
     std::string fileNameSHH{};
     if (willIterate == 0)
-        fileNameSHH = "FINAL_" + _instMain->entity_id() + "_hedgehog.csv";
+        fileNameSHH = "run/FINAL_" + _instMain->entity_id() + "_hedgehog.csv";
     else
-        fileNameSHH = "iter" + std::to_string(willIterate) + "_" + _instMain->entity_id() + "_hedgehog.csv";
+        fileNameSHH = "run/iter" + std::to_string(willIterate) + "_" + _instMain->entity_id() + "_hedgehog.csv";
 
     std::string csvContent{};
     std::vector<glm::vec3> axisMain = axisForChain(_mainChain);
@@ -589,7 +679,7 @@ std::map<Bouquet *, std::vector<int>> RotamerModifier::newMatrix(std::map<Bouque
                     {
                         if (bouquet->atomPos(x).begin()->first->chain() == _mainChain)
                         {
-                            if (currentCollisions.row(pos).maxCoeff() == 0)
+                            if (currentCollisions.row(pos).sum() < rotMap.size())
                             {
                                 allowedNext[pos + 1] = 1;
                                 // std::cout << '\t' << "MAINResidue " << bouquet->name().first.as_string() << " rotamer number " << x << " will be allowed next." << std::endl;
@@ -597,7 +687,7 @@ std::map<Bouquet *, std::vector<int>> RotamerModifier::newMatrix(std::map<Bouque
                         }
                         else
                         {
-                            if (currentCollisions.col(pos).maxCoeff() == 0)
+                            if (currentCollisions.col(pos).maxCoeff() < rotMap.size())
                             {
                                 allowedNext[pos + 1] = 1;
                                 // std::cout << '\t' << "SECResidue " << bouquet->name().first.as_string() << " rotamer number " << x << " will be allowed next." << std::endl;
