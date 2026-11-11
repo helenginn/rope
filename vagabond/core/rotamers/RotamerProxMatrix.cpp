@@ -43,7 +43,6 @@ void RotMatrix::proximityMatrix()
         prepareResources();
         unifiedTorsionFetcher();
 
-        std::cout << "/aminoAcids/" << residue.first << " is open" << std::endl;
         for (int x{0}; x < residue.second.size(); x++)
         {
             submitJob(x);
@@ -69,11 +68,8 @@ void RotMatrix::proximityMatrix()
                 for (auto atomPos : mapPositionsSidechain[residue.first])
                 {
                     totalLength += abs(length(atomPos.second[firstPos] - atomPos.second[secondPos]));
-                    std::cout << '\n'
-                              << totalLength << std::endl;
                 }
                 csvContent += std::to_string(totalLength) + ',';
-                std::cout << "End of " << residue.first << " rotamer number pair (" << firstPos << ", " << secondPos << std::endl;
                 actualMatrix(firstPos, secondPos) = totalLength;
             }
             csvContent = csvContent.substr(0, csvContent.length() - 1);
@@ -108,7 +104,6 @@ void RotMatrix::proximityMatrix()
                         top5.row(line).array() = (top5.row(line).array() > min).select(top5.row(line).array() + 1, top5.row(line).array());
                         top5(line, pos) = min + 1;
                         valueOrderedTest.emplace(valueOrderedTest.begin() + min, matrix(line, pos));
-                        std::cout << " test" << std::endl;
                         break;
                     }
                 }
@@ -129,7 +124,6 @@ void RotMatrix::proximityMatrix()
         file << csvContent;
         file.close();
     }
-    std::cout << "terminado?" << std::endl;
 }
 std::map<std::string, Eigen::MatrixXf> RotMatrix::getPossibleRotamers()
 {
@@ -142,7 +136,6 @@ std::map<std::string, Eigen::MatrixXf> RotMatrix::getPossibleRotamers()
         //mat = matrix.cast<int>();
         mat.array() = (matrix.array() < 10).cast<float>();
         availRot[name] = mat;
-        std::cout << name << " matrix done" << std::endl;
     }
     return availRot;
 }
