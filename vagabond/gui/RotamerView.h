@@ -7,16 +7,16 @@
 #include "Display.h"
 #include <vagabond/gui/elements/DragResponder.h>
 
+#include "GuiBalls.h"
 #include "elements/Line.h"
 #include <vagabond/gui/elements/Parallelepiped.h>
 #include "MatrixPlot.h"
-
 
 class Model;
 class Instance;
 class Slider;
 class RotamerModifier;
-class RotamerView : public Display,  public DragResponder
+class RotamerView : public Display, public DragResponder, public Responder<GuiBalls>
 {
 public:
     RotamerView(Scene *prev, Instance *instMain, Instance *instSec, std::string mainChain, std::string secChain);
@@ -30,9 +30,10 @@ public:
     virtual void buttonPressed(std::string tag, Button *button);
     virtual void finishedDragging(std::string tag, double x, double y);
     void setupCollision();
+
 private:
-    Instance *_instMain {};
-    Instance *_instSec {};
+    Instance *_instMain{};
+    Instance *_instSec{};
     Slider *_rangeSlider = nullptr;
     Slider *_rangeSlider2 = nullptr;
 
@@ -43,9 +44,9 @@ private:
     double _step = 0.5;
     Model *_model = nullptr;
     Instance *_inst = nullptr;
-    RotamerModifier *_modifier {};
-    int _number {1};
-    Parallelepiped * _para {};
+    RotamerModifier *_modifier{};
+    int _number{1};
+    Parallelepiped *_para{};
     Line *_line = nullptr;
     Line *_line2 = nullptr;
     Line *_line3 = nullptr;
@@ -53,8 +54,7 @@ private:
     Line *_line5 = nullptr;
     Line *_line6 = nullptr;
     Line *_line7 = nullptr;
-    bool _collision {false};
-    MatrixPlot *_plot {};
-
+    bool _collision{false};
+    MatrixPlot *_plot{};
 };
 #endif

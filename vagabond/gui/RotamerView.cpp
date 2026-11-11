@@ -45,16 +45,6 @@ void RotamerView::setup()
         t->setReturnTag("analysis");
         addObject(t);
     }
-    auto viewMod = [this]()
-    {
-        viewModel();
-    };
-    {
-        TextButton *t = new TextButton("ViewModel", this);
-        t->setRight(0.2, 0.7);
-        t->setReturnJob(viewMod);
-        addObject(t);
-    }
     auto libTest = [this]()
     {
         std::map<std::string, Eigen::MatrixXf> matArray = _modifier->proximityMatrix();
@@ -160,7 +150,7 @@ void RotamerView::buttonPressed(std::string tag, Button *button)
             file << csvContent;
             file.close();
         }
-        _modifier->analysisPipeline(50, tests, 3);
+        _modifier->analysisPipeline(50, tests, 1);
         _line3->clearVertices();
         for (auto pos : tests)
         {
@@ -356,10 +346,15 @@ void RotamerView::viewModel()
         DisplayUnit *unit = new DisplayUnit(this);
         AtomGroup *atoms{_instMain->currentAtoms()};
         atoms->add(_instSec->currentAtoms());
+        for (auto *a : atoms->atomVector())
+        {
+            a->setInitialPosition(a->derivedPosition());
+        }
         unit->loadAtoms(atoms);
         setupCollision();
         unit->displayAtoms(false, false);
         unit->setMultiBondMode(true);
+        unit->addAtomIndexResponder(this);
         unit->startWatch();
         addDisplayUnit(unit);
     }
