@@ -3,12 +3,14 @@
 //
 
 #include "RotamerView.h"
+#include "RotamerMenu.h"
 #include "vagabond/gui/elements/Slider.h"
 #include <vagabond/core/Model.h>
 #include <../core/rotamers/Rotamers.h>
 #include <vagabond/core/rotamers/RotamerModifier.h>
 #include <vagabond/core/ModelManager.h>
 #include <vagabond/gui/elements/TextButton.h>
+#include <vagabond/gui/elements/Menu.h>
 #include <vagabond/core/files/CsvFile.h>
 #include <fstream>
 #include <regex>
@@ -20,7 +22,9 @@ RotamerView::RotamerView(Scene *prev, Instance *instMain, Instance *instSec, std
 {
     _instMain->load();
     _instSec->load();
+    viewModel();
     _modifier = new RotamerModifier(_instMain, _instSec, mainChain, secChain);
+    std::cout << "Is this first step?\n";
 }
 
 RotamerView::~RotamerView()
@@ -57,6 +61,17 @@ void RotamerView::setup()
         t->setReturnJob(libTest);
         addObject(t);
     }
+    auto rotMen = [this]()
+    {
+        RotamerMenu *rotamenu = new RotamerMenu(this);
+        rotamenu->show();
+    };
+    {
+        TextButton *t = new TextButton("ResultMenu", this);
+        t->setRight(0.2, 0.9);
+        t->setReturnJob(rotMen);
+        addObject(t);
+    }
     {
         _line = new Line();
         _line2 = new Line();
@@ -77,7 +92,8 @@ void RotamerView::setup()
         addObject(_para);
         drawAxis();
     }
-    viewModel();
+    // viewModel();
+    std::cout << "Is this second step?\n";
     setupSlider();
 }
 void RotamerView::drawAxis()
