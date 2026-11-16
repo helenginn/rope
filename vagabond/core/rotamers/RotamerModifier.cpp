@@ -149,7 +149,7 @@ glm::vec3 RotamerModifier::analysisTest(int timePoints, std::vector<glm::vec3> s
         totalCollisions.fill(0);
         std::cout << "startPos number: " << iteration + 1 << '/' << startPos.size() << std::endl;
         glm::mat4x4 transformation = glm::mat4x4(1.0f);
-        transformation = glm::translate(transformation, translation / glm::vec3(timePoints + 1));
+        transformation = glm::translate(transformation, -translation / glm::vec3(timePoints + 1));
         std::map<int, std::map<Bouquet *, std::vector<int>>> CollidingRotamersApaths{};
         std::map<int, std::map<Bouquet *, std::vector<int>>> CollidingRotamersBpaths{};
         std::map<Bouquet *, std::vector<int>> nextRotamersChainA{};
@@ -158,8 +158,10 @@ glm::vec3 RotamerModifier::analysisTest(int timePoints, std::vector<glm::vec3> s
         std::map<Bouquet *, std::vector<int>> nextRotamersChainB{};
         CollidingRotamersBpaths[0] = firstRotamersChainB;
         nextRotamersChainB = AllowedRotamerMatrices(firstRotamersChainB);
+        _bouquet->moveNoMap(glm::translate(glm::mat4x4(1.0f), translation), _secChain);
         for (int x = 0; x <= timePoints; x++)
         {
+            _bouquet->moveNoMap(transformation, _secChain);
 
             // currentCollisions is a matrix of every collision between every rotamers of chain A and chain B
             Eigen::MatrixXi currentCollisions{_bouquet->fullCollisionChecks(resChainA, resChainB, sizeA, sizeB)};
@@ -264,9 +266,7 @@ glm::vec3 RotamerModifier::analysisTest(int timePoints, std::vector<glm::vec3> s
             nextRotamersChainB = newMatrix(nextRotamersChainB, totalCollisions);
             CollidingRotamersBpaths[x + 1] = nextRotamersChainB;
             CollidingRotamersB[iteration].push_back(RotamersB);
-            _bouquet->moveNoMap(transformation, _secChain);
         }
-        _bouquet->moveNoMap(glm::translate(glm::mat4x4(1.0f), -translation), _secChain);
         allAnalysis.push_back(totalCollisions);
         TotalCollidingRotamersApaths[iteration] = CollidingRotamersApaths;
         TotalCollidingRotamersBpaths[iteration] = CollidingRotamersBpaths;
@@ -600,46 +600,54 @@ std::map<Bouquet *, std::vector<int>> RotamerModifier::FirstRotamerMatrices(std:
     std::map<Bouquet *, std::vector<int>> firstRotamersChainA{};
     for (auto const &bouquet : resChain)
     {
-        std::cout << bouquet->name().first.as_string() << std::endl;
-        std::map<Atom *, glm::vec3> initialAtomPos{bouquet->atomPos(0)};
         std::vector<int> vectorRot{};
-        vectorRot.resize(bouquet->storeSize());
-        float minDist{FLT_MAX};
-        int rotamer{};
-        for (int x = 1; x <= bouquet->storeSize() - 1; x++) //Determining the closest rotamer of the starting positions
-        {                                                   //These will be used to determine the allowed ones for the second step
-            std::cout << bouquet->name().first.as_string() << std::endl;
-            std::map<Atom *, glm::vec3> RotAtomPos{bouquet->atomPos(x)};
-            float length{0};
-            for (auto const &pairs : initialAtomPos)
-            {
-                if (!pairs.first->isMainChain())
-                    length += abs(glm::length(pairs.second - RotAtomPos[pairs.first]));
-            }
-            if (length < minDist)
-            {
-                minDist = length;
-                rotamer = x;
-            }
-        }
+        vectorRot.resize(bouquet->storeSize(), 1);
         vectorRot[0] = 2;
-        for (int x = 1; x <= bouquet->storeSize() - 1; x++)
-        {
-            if (rotamer == x)
-            {
-                vectorRot[x] = 1;
-            }
-            else
-            {
-                vectorRot[x] = 0;
-            }
-        }
         firstRotamersChainA[bouquet] = vectorRot;
-        std::cout << "FIRSTiter\t" << bouquet->name().first.as_string() << '\t';
-        for (auto const &element : vectorRot)
-            std::cout << " ," << element;
-        std::cout << std::endl;
     }
+    // std::map<Bouquet *, std::vector<int>> firstRotamersChainA{};
+    // for (auto const &bouquet : resChain)
+    // {
+    //     std::cout << bouquet->name().first.as_string() << std::endl;
+    //     std::map<Atom *, glm::vec3> initialAtomPos{bouquet->atomPos(0)};
+    //     std::vector<int> vectorRot{};
+    //     vectorRot.resize(bouquet->storeSize());
+    //     float minDist{FLT_MAX};
+    //     int rotamer{};
+    //     for (int x = 1; x <= bouquet->storeSize() - 1; x++) //Determining the closest rotamer of the starting positions
+    //     {                                                   //These will be used to determine the allowed ones for the second step
+    //         std::cout << bouquet->name().first.as_string() << std::endl;
+    //         std::map<Atom *, glm::vec3> RotAtomPos{bouquet->atomPos(x)};
+    //         float length{0};
+    //         for (auto const &pairs : initialAtomPos)
+    //         {
+    //             if (!pairs.first->isMainChain())
+    //                 length += abs(glm::length(pairs.second - RotAtomPos[pairs.first]));
+    //         }
+    //         if (length < minDist)
+    //         {
+    //             minDist = length;
+    //             rotamer = x;
+    //         }
+    //     }
+    //     vectorRot[0] = 2;
+    //     for (int x = 1; x <= bouquet->storeSize() - 1; x++)
+    //     {
+    //         if (rotamer == x)
+    //         {
+    //             vectorRot[x] = 1;
+    //         }
+    //         else
+    //         {
+    //             vectorRot[x] = 0;
+    //         }
+    //     }
+    //     firstRotamersChainA[bouquet] = vectorRot;
+    //     std::cout << "FIRSTiter\t" << bouquet->name().first.as_string() << '\t';
+    //     for (auto const &element : vectorRot)
+    //         std::cout << " ," << element;
+    //     std::cout << std::endl;
+    // }
     return firstRotamersChainA;
 }
 std::map<Bouquet *, std::vector<int>> RotamerModifier::newMatrix(std::map<Bouquet *, std::vector<int>> const &prevAllowed, Eigen::MatrixXi const &currentCollisions)
