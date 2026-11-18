@@ -70,9 +70,12 @@ public:
     glm::mat4x4 _transform{};
 
 private:
-    std::map<Bouquet *, std::vector<int>> newMatrix(std::map<Bouquet *, std::vector<int>> const &prevAllowed, Eigen::MatrixXi const &totalCollisions);
-    std::map<Bouquet *, std::vector<int>> AllowedRotamerMatrices(std::map<Bouquet *, std::vector<int>> rotamersStepN);
-    std::map<Bouquet *, std::vector<int>> FirstRotamerMatrices(std::vector<Bouquet *> resChain);
+    std::map<Bouquet *, std::vector<int>> newMatrix(std::map<Bouquet *, std::vector<int>> const &prevAllowed, Eigen::MatrixXi const &totalCollisions, bool top = false);
+    std::map<Bouquet *, std::vector<std::vector<int>>> newMatrixTest(std::map<Bouquet *, std::vector<std::vector<int>>> const &prevAllowed, Eigen::MatrixXi const &totalCollisions, bool top = false);
+    std::map<Bouquet *, std::vector<int>> AllowedRotamerMatrices(std::map<Bouquet *, std::vector<int>> rotamersStepN, bool top = false);
+    std::map<Bouquet *, std::vector<std::vector<int>>> AllowedRotamerMatricesTest(std::map<Bouquet *, std::vector<std::vector<int>>> rotamersStepN);
+    std::map<Bouquet *, std::vector<int>> FirstRotamerMatrices(std::vector<Bouquet *> resChain, bool top = false);
+    std::map<Bouquet *, std::vector<std::vector<int>>> FirstRotamerMatricesTest(std::vector<Bouquet *> resChain, bool top = false);
     Instance *_instMain{};
     Instance *_instSec{};
     std::string _mainChain{};
@@ -84,6 +87,7 @@ private:
     RotamerMap *Rot;
     std::map<int, RotamerMap> _RotMem;
     std::map<std::string, Eigen::MatrixXf> _proximityMatrices{};
+    std::map<std::string, std::vector<Eigen::MatrixXf>> _proximityMatricesTop{};
     Bouquet *_bouquet;
     parameter _mode;
     glm::vec3 _axisMain{};
