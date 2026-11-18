@@ -86,7 +86,7 @@ void RotMatrix::proximityMatrix()
     }
     for (auto [name, matrix] : _proxMatrices)
     {
-        Eigen::MatrixXi top5{matrix.rows(), matrix.cols()};
+        Eigen::MatrixXf top5{matrix.rows(), matrix.cols()};
         top5.fill(0);
         std::string csvContent{};
         for (int line = 0; line < matrix.rows(); line++)
@@ -108,6 +108,7 @@ void RotMatrix::proximityMatrix()
                     }
                 }
             }
+            _proxMatricesTop.push_back(std::pair(name, top5));
         }
         std::string fileName{name + "top5.csv"};
         for (int lines = 0; lines < top5.rows(); lines++)
@@ -125,11 +126,19 @@ void RotMatrix::proximityMatrix()
         file.close();
     }
 }
-std::map<std::string, Eigen::MatrixXf> RotMatrix::getPossibleRotamers()
+std::map<std::string, Eigen::MatrixXf> RotMatrix::getPossibleRotamers(bool top)
 {
     std::map<std::string, Eigen::MatrixXf> availRot{};
     if (_proxMatrices.empty())
         proximityMatrix();
+    if (top)
+    {
+        for (auto [name, matrix] : _proxMatricesTop)
+        {
+            availRot[name] = matrix;
+        }
+        return availRot;
+    }
     for (auto [name, matrix] : _proxMatrices)
     {
         Eigen::MatrixXf mat{};

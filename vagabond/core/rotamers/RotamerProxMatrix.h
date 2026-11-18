@@ -23,12 +23,13 @@ public:
     void unifiedTorsionFetcher();
 
     void submitJob(float weight);
-    std::map<std::string, Eigen::MatrixXf> getPossibleRotamers();
+    std::map<std::string, Eigen::MatrixXf> getPossibleRotamers(bool top = false);
 
 private:
     std::map<std::string, std::vector<Rotamer>> _allRotamers;
     AtomGroup *_group{};
     std::vector<Parameter *> _params;
     std::vector<std::pair<std::string, Eigen::MatrixXf>> _proxMatrices{};
+    std::vector<std::pair<std::string, Eigen::MatrixXf>> _proxMatricesTop{};
 };
 #endif
