@@ -17,7 +17,7 @@
 #include <filesystem>
 #include <algorithm>
 
-RotamerMenu::RotamerMenu(Scene *prev) : ListView(prev)
+RotamerMenu::RotamerMenu(Scene *prev, bool test) : ListView(prev), _test(test)
 {
     setup();
     std::cout << "yeepi" << std::endl;
@@ -80,11 +80,14 @@ Renderable *RotamerMenu::getLine(int i)
 void RotamerMenu::loadMatrices()
 {
     _matrixList.clear();
+    std::string path{"run/rotaPaths"};
+    if (_test)
+        path = "run/rotaPathsTests";
     namespace fs = std::filesystem;
-    if (!fs::exists("run"))
+    if (!fs::exists(path))
         return;
 
-    for (auto const &entry : fs::directory_iterator("run"))
+    for (auto const &entry : fs::directory_iterator(path))
     {
         std::string fname = entry.path().filename().string();
         bool isApaths = fname.size() > 18 && fname.substr(fname.size() - 18) == "availRotApaths.csv";
@@ -95,13 +98,36 @@ void RotamerMenu::loadMatrices()
         MatrixRotamer m{};
         m.chain = (fname.find("availRotApaths") != std::string::npos) ? "A" : "B";
         m.name = fname.substr(fname.length() - 23, 5);
-
+        if (fname[4] == '3')
+        {
+            m.name += "_iter1_";
+            if (_test)
+            {
+                m.name += fname.substr(11, 2);
+            }
+        }
+        else if (fname[4] == '2')
+        {
+            m.name += "_iter2_";
+            if (_test)
+            {
+                m.name += fname.substr(11, 2);
+            }
+        }
+        else
+        {
+            m.name += "_iterFINAL_";
+            if (_test)
+            {
+                m.name += fname.substr(11, 2);
+            }
+        }
         std::ifstream file(entry.path());
         if (!file.is_open())
             continue;
 
         std::string line;
-        // std::getline(file, line);
+        std::getline(file, line);
 
         std::getline(file, line);
         {
@@ -126,9 +152,9 @@ void RotamerMenu::loadMatrices()
             if ((int)row.size() > maxCols)
                 maxCols = row.size();
             data.push_back(std::move(row));
-            for (auto &value : data[rows])
-                std::cout << std::to_string(value) << ", ";
-            std::cout << std::endl;
+            // for (auto &value : data[rows])
+            //     std::cout << std::to_string(value) << ", ";
+            // std::cout << std::endl;
             rows++;
         }
         file.close();

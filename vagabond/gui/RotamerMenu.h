@@ -23,7 +23,7 @@ public:
 class RotamerMenu : public ListView
 {
 public:
-    RotamerMenu(Scene *prev);
+    RotamerMenu(Scene *prev, bool test = false);
     virtual ~RotamerMenu();
     void setup();
 
@@ -36,6 +36,7 @@ private:
     std::vector<MatrixRotamer> _matrixList{};
     FileManager *_manager{};
     MatrixPlot *_plot{};
+    bool _test{false};
 };
 
 #endif

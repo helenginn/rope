@@ -68,11 +68,22 @@ void RotamerView::setup()
     };
     {
         TextButton *t = new TextButton("ResultMenu", this);
-        t->setRight(0.2, 0.9);
+        t->setRight(0.6, 0.9);
         t->setReturnJob(rotMen);
         addObject(t);
     }
     {
+        auto rotMen2 = [this]()
+        {
+            RotamerMenu *rotamenu = new RotamerMenu(this, true);
+            rotamenu->show();
+        };
+        {
+            TextButton *t = new TextButton("ResultMenuTest", this);
+            t->setRight(0.4, 0.9);
+            t->setReturnJob(rotMen2);
+            addObject(t);
+        }
         _line = new Line();
         _line2 = new Line();
         _line3 = new Line();
@@ -129,7 +140,7 @@ void RotamerView::buttonPressed(std::string tag, Button *button)
 {
     if (tag == "analysis") // coordinates : X = along static structure axis, Y: left-right Z: - = moving away the other structure
     {
-        std::vector<glm::vec3> tests{_modifier->RandStartPos(50)};
+        std::vector<glm::vec3> tests{_modifier->RandStartPos(20)};
         std::string fileName = "vectors_list.csv";
         std::string csvContent{};
         for (auto pos : tests)
@@ -166,7 +177,7 @@ void RotamerView::buttonPressed(std::string tag, Button *button)
             file << csvContent;
             file.close();
         }
-        _modifier->analysisPipeline(50, tests, 1);
+        _modifier->analysisPipeline(50, tests, 3);
         _line3->clearVertices();
         for (auto pos : tests)
         {
