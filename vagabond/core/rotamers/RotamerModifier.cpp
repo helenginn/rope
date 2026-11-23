@@ -6,7 +6,6 @@
 
 #include <gemmi/cifdoc.hpp>
 #include <vagabond/core/rotamers/RotamerModifier.h>
-#include "glm/gtx/string_cast.hpp"
 #include "vagabond/utils/AcquireCoord.h"
 
 #include <vagabond/core/engine/Task.h>
@@ -171,10 +170,10 @@ glm::vec3 RotamerModifier::analysisTest(int timePoints, std::vector<glm::vec3> s
 
         std::map<Bouquet *, std::vector<std::vector<int>>> nextRotamersChainATest{};
         CollidingRotamersApathsTest[0] = firstRotamersChainATest;
-        nextRotamersChainA = AllowedRotamerMatrices(firstRotamersChainA);
+        nextRotamersChainATest = AllowedRotamerMatricesTest(firstRotamersChainATest);
         std::map<Bouquet *, std::vector<std::vector<int>>> nextRotamersChainBTest{};
         CollidingRotamersBpathsTest[0] = firstRotamersChainBTest;
-        nextRotamersChainB = AllowedRotamerMatrices(firstRotamersChainB);
+        nextRotamersChainBTest = AllowedRotamerMatricesTest(firstRotamersChainBTest);
         _bouquet->moveNoMap(glm::translate(glm::mat4x4(1.0f), translation), _secChain);
         for (int x = 0; x <= timePoints; x++)
         {
@@ -304,7 +303,7 @@ glm::vec3 RotamerModifier::analysisTest(int timePoints, std::vector<glm::vec3> s
             fileName = "run/iter" + std::to_string(willIterate) + "_" + _instMain->entity_id() + "_paths_number_" + std::to_string(iter) + '-' + std::to_string(timePoints) + ".csv";
 
         std::string csvContent{};
-        csvContent += startPos[iter].x + ',' + startPos[iter].y + ',' + startPos[iter].z + '\n';
+        csvContent += std::to_string(startPos[iter].x) + ',' + std::to_string(startPos[iter].y) + ',' + std::to_string(startPos[iter].z) + '\n';
         for (auto const &bouquet : resChainB)
         {
             for (int rotamers = 0; rotamers < bouquet->storeSize(); rotamers++)
@@ -459,9 +458,9 @@ glm::vec3 RotamerModifier::analysisTest(int timePoints, std::vector<glm::vec3> s
                 csvContent += bouquet->name().first.as_string() + ',';
             }
 
+            csvContent = csvContent.substr(0, csvContent.length() - 1);
             for (int x{0}; x <= timePoints; x++)
             {
-                csvContent = csvContent.substr(0, csvContent.length() - 1);
                 csvContent += '\n';
                 csvContent += std::to_string(x);
                 for (auto const &bouquet : resChainB)
@@ -470,6 +469,7 @@ glm::vec3 RotamerModifier::analysisTest(int timePoints, std::vector<glm::vec3> s
                     for (auto const &value : map[bouquet])
                     {
                         csvContent += ',' + std::to_string(value);
+                        std::cout << "[DEBUG] step " << x << ", size of map[bouquet] = " << map[bouquet].size() << std::endl;
                     }
                 }
             }
@@ -483,7 +483,6 @@ glm::vec3 RotamerModifier::analysisTest(int timePoints, std::vector<glm::vec3> s
         }
         for (int counter{0}; counter < startPos.size(); counter++)
         {
-
             for (int x{0}; x < 33; x++)
             {
                 std::string csvContent{};
@@ -495,19 +494,21 @@ glm::vec3 RotamerModifier::analysisTest(int timePoints, std::vector<glm::vec3> s
                 }
                 std::string fileName{};
                 if (willIterate == 0)
-                    fileName = "run/rotaPathsTests/FINAL_test_" + std::to_string(x) + _instMain->entity_id() + "_paths_number_" + std::to_string(counter) + '-' + std::to_string(timePoints) + "availRotBpaths" + ".csv";
+                    fileName = "run/rotaPathsTests/FINAL_test_" + std::to_string(x) + '_' + _instMain->entity_id() + "_paths_number_" + std::to_string(counter) + '-' + std::to_string(timePoints) + "availRotBpaths" + ".csv";
                 else
-                    fileName = "run/rotaPathsTests/iter_test_" + std::to_string(x) + std::to_string(willIterate) + "_" + _instMain->entity_id() + "_paths_number_" + std::to_string(counter) + '-' + std::to_string(timePoints) + "availRotBpaths" + ".csv";
+                    fileName = "run/rotaPathsTests/iter" + std::to_string(willIterate) + "_test_" + std::to_string(x) + "_" + _instMain->entity_id() + "_paths_number_" + std::to_string(counter) + '-' + std::to_string(timePoints) + "availRotBpaths" + ".csv";
                 for (int t{0}; t <= timePoints; t++)
                 {
                     std::map<Bouquet *, std::vector<std::vector<int>>> &map = TotalCollidingRotamersBpathsTest[counter][t];
 
-                    csvContent = csvContent.substr(0, csvContent.length() - 1);
+                    // csvContent = csvContent.substr(0, csvContent.length() - 1);
                     csvContent += '\n';
                     csvContent += std::to_string(t);
                     for (auto const &bouquet : resChainB)
                     {
                         const auto &row = (x < map[bouquet].size() - 1 ? map[bouquet][x] : map[bouquet].back());
+                        //                  std::cout << "[DEBUG] taille vec de vec : " << map[bouquet].size() << std::endl
+                        //                             << "[DEBUG] ";
                         for (auto const &value : row)
                         {
                             csvContent += ',' + std::to_string(value);
@@ -645,25 +646,86 @@ std::map<Bouquet *, std::vector<int>> RotamerModifier::FirstRotamerMatrices(std:
 }
 std::map<Bouquet *, std::vector<std::vector<int>>> RotamerModifier::FirstRotamerMatricesTest(std::vector<Bouquet *> resChain, bool top)
 {
+    // std::map<Bouquet *, std::vector<std::vector<int>>> firstRotamersChainATest{};
+    // for (auto const &bouquet : resChain)
+    // {
+    //     std::vector<std::vector<int>> vectorRotTops{};
+    //     for (int x{0}; x < _proximityMatricesTop[bouquet->atomPos(0).begin()->first->code()].size(); x++)
+    //     {
+    //         std::vector<int> vectorRot{};
+    //         vectorRot.resize(bouquet->storeSize(), 1);
+    //         vectorRot[0] = 2;
+    //         vectorRotTops.emplace_back(vectorRot);
+    //     }
+    //     { // DEBUG
+    //         std::cout << "[DEBUG] PRINTING vectorRotTops (of size " << vectorRotTops.size() << " ) content for residue: " << bouquet->name().first.as_string() + bouquet->name().first.insert << std::endl;
+    //         int vectorCount{1};
+    //         for (auto vector : vectorRotTops)
+    //         {
+    //             std::cout << "Vector " << vectorCount << " contains " << vector.size() << " values: ";
+    //             for (auto value : vector)
+    //             {
+    //                 std::cout << std::to_string(value) << ' ';
+    //             }
+    //             vectorCount++;
+    //             std::cout << std::endl;
+    //         }
+    //     }
+    //     firstRotamersChainATest[bouquet] = vectorRotTops;
+    // }
+
     std::map<Bouquet *, std::vector<std::vector<int>>> firstRotamersChainATest{};
     for (auto const &bouquet : resChain)
     {
         std::cout << bouquet->name().first.as_string() << std::endl;
-        std::vector<std::vector<int>> vectorRotTops{};
-        for (int x{0}; x < _proximityMatricesTop[bouquet->atomPos(0).begin()->first->code()].size(); x++)
-        {
-            std::vector<int> vectorRot{};
-            vectorRot.resize(bouquet->storeSize(), 1);
-            vectorRot[0] = 2;
-            vectorRotTops.emplace_back(vectorRot);
+        std::map<Atom *, glm::vec3> initialAtomPos{bouquet->atomPos(0)};
+        std::vector<int> vectorRot{};
+        vectorRot.resize(bouquet->storeSize());
+        float minDist{FLT_MAX};
+        int rotamer{};
+        for (int x = 1; x <= bouquet->storeSize() - 1; x++) //Determining the closest rotamer of the starting positions
+        {                                                   //These will be used to determine the allowed ones for the second step
+            std::cout << bouquet->name().first.as_string() << std::endl;
+            std::map<Atom *, glm::vec3> RotAtomPos{bouquet->atomPos(x)};
+            float length{0};
+            for (auto const &pairs : initialAtomPos)
+            {
+                if (!pairs.first->isMainChain())
+                    length += abs(glm::length(pairs.second - RotAtomPos[pairs.first]));
+            }
+            if (length < minDist)
+            {
+                minDist = length;
+                rotamer = x;
+            }
         }
-        firstRotamersChainATest[bouquet] = vectorRotTops;
+        vectorRot[0] = 2;
+        for (int x = 1; x <= bouquet->storeSize() - 1; x++)
+        {
+            if (rotamer == x)
+            {
+                vectorRot[x] = 1;
+            }
+            else
+            {
+                vectorRot[x] = 0;
+            }
+        }
+        std::vector<std::vector<int>> vecVec{};
+        for (int x{0}; x < _proximityMatricesTop[bouquet->atomPos(0).begin()->first->code()].size(); x++)
+            vecVec.emplace_back(vectorRot);
+        firstRotamersChainATest[bouquet] = vecVec;
+        std::cout << "FIRSTiter\t" << bouquet->name().first.as_string() << '\t';
+        for (auto const &element : vectorRot)
+            std::cout << " ," << element;
+        std::cout << std::endl;
     }
     return firstRotamersChainATest;
 }
 std::map<Bouquet *, std::vector<std::vector<int>>> RotamerModifier::AllowedRotamerMatricesTest(std::map<Bouquet *, std::vector<std::vector<int>>> rotamersStepN)
 {
     std::map<Bouquet *, std::vector<std::vector<int>>> nextRotamers{};
+    int resCounter{0};
     for (const auto &[bouquet, rotPresent] : rotamersStepN) //Creating a Matrix of allowed rotamers for next steps
     {
         int counter{0};
@@ -671,7 +733,7 @@ std::map<Bouquet *, std::vector<std::vector<int>>> RotamerModifier::AllowedRotam
         for (auto rot : rotPresent)
         {
             std::vector<int> allowedRot{};
-            allowedNext.resize(rot.size());
+            allowedRot.resize(rot.size(), 0);
             for (int x = 0; x < rot.size(); x++)
             {
                 if (rot[x] == 2)
@@ -693,6 +755,7 @@ std::map<Bouquet *, std::vector<std::vector<int>>> RotamerModifier::AllowedRotam
             allowedNext.emplace_back(allowedRot);
             counter++;
         }
+        resCounter++;
         nextRotamers[bouquet] = allowedNext;
     }
     return nextRotamers;
@@ -708,20 +771,20 @@ std::map<Bouquet *, std::vector<std::vector<int>>> RotamerModifier::newMatrixTes
         std::vector<std::vector<int>> allowedNext{};
         for (auto rot : rotPresent)
         {
-            std::vector<int> possibleRot{};
             std::vector<int> allowedRot{};
-            possibleRot.resize(rot.size(), 0);
             allowedRot.resize(rot.size(), 0);
-            if (_proximityMatricesTop[bouquet->atomPos(0).begin()->first->code()][0].outerSize() != rot.size() - 1) //DEBUG
-            {
-                std::cout << bouquet->name().first.as_string() << "\texpecting " << _proximityMatrices[bouquet->atomPos(0).begin()->first->code()].outerSize() << "\trotamers, having\t" << rotPresent.size() - 1;
-                std::cout << std::endl;
-            }
-            if (rot[0] != 2) //DEBUG
-            {
-                std::cout << "NOOOOOOOOOOOOOOOOOO\t" << bouquet->name().first.as_string() << '\t' << errorCount;
-                errorCount++;
-                std::cout << std::endl;
+            {                                                                                                           // Sanity checks
+                if (_proximityMatricesTop[bouquet->atomPos(0).begin()->first->code()][0].outerSize() != rot.size() - 1) //DEBUG
+                {
+                    std::cout << bouquet->name().first.as_string() << "\texpecting " << _proximityMatricesTop[bouquet->atomPos(0).begin()->first->code()][0].outerSize() << "\trotamers, having\t" << rotPresent.size() - 1;
+                    std::cout << std::endl;
+                }
+                if (rot[0] != 2) //DEBUG
+                {
+                    std::cout << "NOOOOOOOOOOOOOOOOOO\t" << bouquet->name().first.as_string() << '\t' << errorCount;
+                    errorCount++;
+                    std::cout << std::endl;
+                }
             }
             for (int x = 0; x < rot.size(); x++)
             {
@@ -736,32 +799,48 @@ std::map<Bouquet *, std::vector<std::vector<int>>> RotamerModifier::newMatrixTes
                     {
                         if (rotMap(pos) == 1)
                         {
-                            if (bouquet->atomPos(x).begin()->first->chain() == _mainChain)
-                            {
-                                if (currentCollisions.row(pos).sum() < rotMap.size())
-                                {
-                                    allowedRot[pos + 1] = 1;
-                                    // std::cout << '\t' << "MAINResidue " << bouquet->name().first.as_string() << " rotamer number " << x << " will be allowed next." << std::endl;
-                                }
-                            }
-                            else
-                            {
-                                if (currentCollisions.col(pos).maxCoeff() < rotMap.size())
-                                {
-                                    allowedRot[pos + 1] = 1;
-                                    // std::cout << '\t' << "SECResidue " << bouquet->name().first.as_string() << " rotamer number " << x << " will be allowed next." << std::endl;
-                                }
-                            }
+                            allowedRot[pos + 1] = 1;
                         }
                     }
                 }
             }
+            // { //DEBUG
+            //     std::cout << "[DEBUG] " << bouquet->name().first.as_string() << " Matrix number " << counter << std::endl;
+            //     for (auto val : allowedRot)
+            //         std::cout << val << ' ';
+            //     std::cout << std::endl;
+            // }
             // std::cout << bouquet->name().first.as_string() << " done!" << std::endl;
             allowedNext.emplace_back(allowedRot);
             counter++;
         }
         nextRotamers[bouquet] = allowedNext;
+        // { //DEBUG
+        //     int counter{0};
+        //     for (auto vec : allowedNext)
+        //     {
+        //         std::cout << "[DEBUG] " << bouquet->name().first.as_string() << " Matrix number " << counter << std::endl;
+        //         for (auto val : vec)
+        //             std::cout << val << ' ';
+        //         std::cout << std::endl;
+        //         counter++;
+        //     }
+        // }
     }
+    // { //DEBUG
+    //     for (auto [name, vecVec] : nextRotamers)
+    //     {
+    //         int counter{0};
+    //         for (auto vec : vecVec)
+    //         {
+    //             std::cout << "[DEBUG] " << name->name().first.as_string() << " Matrix number " << counter << std::endl;
+    //             for (auto val : vec)
+    //                 std::cout << val << ' ';
+    //             std::cout << std::endl;
+    //             counter++;
+    //         }
+    //     }
+    // }
     return nextRotamers;
 }
 std::map<Bouquet *, std::vector<int>> RotamerModifier::newMatrix(std::map<Bouquet *, std::vector<int>> const &prevAllowed, Eigen::MatrixXi const &currentCollisions, bool top)
@@ -771,9 +850,7 @@ std::map<Bouquet *, std::vector<int>> RotamerModifier::newMatrix(std::map<Bouque
     int errorCount{0};
     for (const auto &[bouquet, rotPresent] : prevAllowed) //Creating a Matrix of allowed rotamers for next steps
     {
-        std::vector<int> possibleNext{};
         std::vector<int> allowedNext{};
-        possibleNext.resize(rotPresent.size(), 0);
         allowedNext.resize(rotPresent.size(), 0);
         if (_proximityMatrices[bouquet->atomPos(0).begin()->first->code()].outerSize() != rotPresent.size() - 1) //DEBUG
         {
