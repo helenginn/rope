@@ -73,7 +73,7 @@ template <typename Handler, typename... Arguments>
     if constexpr (std::is_void_v<return_type>)
     {
         std::invoke(handler, std::forward<Arguments>(arguments)...);
-        return command_result<void>{rust_type::Ok<void>{}};
+        return command_result<void>{rope::utils::Ok<void>{}};
     }
     else if constexpr (is_result_v<unqualified_return_type>)
     {
@@ -91,7 +91,7 @@ template <typename Handler, typename... Arguments>
         auto value = std::invoke(
             handler, std::forward<Arguments>(arguments)...);
         return command_result<unqualified_return_type>{
-            rust_type::Ok(std::move(value))};
+            rope::utils::Ok(std::move(value))};
     }
 }
 

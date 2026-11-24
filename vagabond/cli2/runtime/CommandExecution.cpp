@@ -92,19 +92,19 @@ int result_failure_calls = 0;
 rope::cli::command_result<int> produce_result_value()
 {
     ++result_value_calls;
-    return rust_type::Ok(42);
+    return rope::utils::Ok(42);
 }
 
 rope::cli::command_result<void> succeed_quietly()
 {
     ++result_quiet_calls;
-    return rust_type::Ok();
+    return rope::utils::Ok();
 }
 
 rope::cli::command_result<void> fail_command(Store&)
 {
     ++result_failure_calls;
-    return rust_type::Err(
+    return rope::utils::Err(
         rope::cli::command_error{"Deliberate command failure"});
 }
 
@@ -112,10 +112,10 @@ rope::cli::command_result<int> report_optional(std::optional<int> limit)
 {
     if (!limit.has_value())
     {
-        return rust_type::Err(
+        return rope::utils::Err(
             rope::cli::command_error{"No limit supplied"});
     }
-    return rust_type::Ok(*limit);
+    return rope::utils::Ok(*limit);
 }
 
 using ResultValue = rope::cli::command<

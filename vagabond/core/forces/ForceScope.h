@@ -41,7 +41,7 @@ namespace rope::force_calc::scope
 	class RadiusPair
 	{
 	public:
-		static constexpr rust_type::Result<RadiusPair, RadiusError>
+		static constexpr rope::utils::Result<RadiusPair, RadiusError>
 		create(double inner, double outer);
 
 		static consteval RadiusPair from_constants(double inner, double outer);
@@ -55,7 +55,7 @@ namespace rope::force_calc::scope
 		}
 
 	private:
-		static constexpr rust_type::Result<void, RadiusError>
+		static constexpr rope::utils::Result<void, RadiusError>
 		validate_radii(double inner, double outer);
 
 		constexpr RadiusPair(double inner, double outer)
@@ -67,7 +67,7 @@ namespace rope::force_calc::scope
 		double _outer_radius;
 	};
 
-	constexpr rust_type::Result<void, RadiusError>
+	constexpr rope::utils::Result<void, RadiusError>
 
 	RadiusPair::validate_radii(double inner, double outer)
 	{
@@ -76,35 +76,35 @@ namespace rope::force_calc::scope
 
 		if (!(inner >= -max && inner <= max && outer >= -max && outer <= max))
 		{
-			return rust_type::Err{RadiusError{RadiusError::Code::NonFinite}};
+			return rope::utils::Err{RadiusError{RadiusError::Code::NonFinite}};
 		}
 
 		if (inner < 0 || outer < 0)
 		{
-			return rust_type::Err{
+			return rope::utils::Err{
 			    RadiusError{RadiusError::Code::NegativeRadius}};
 		}
 
 		if (inner > outer)
 		{
-			return rust_type::Err{
+			return rope::utils::Err{
 			    RadiusError{RadiusError::Code::InnerExceedsOuter}};
 		}
 
-		return rust_type::Ok();
+		return rope::utils::Ok();
 	}
 
-	constexpr rust_type::Result<RadiusPair, RadiusError>
+	constexpr rope::utils::Result<RadiusPair, RadiusError>
 	RadiusPair::create(double inner, double outer)
 	{
 		auto checked_radii = validate_radii(inner, outer);
 
 		if (checked_radii.is_err())
 		{
-			return rust_type::Err{checked_radii.unwrap_err()};
+			return rope::utils::Err{checked_radii.unwrap_err()};
 		}
 
-		return rust_type::Ok{RadiusPair{inner, outer}};
+		return rope::utils::Ok{RadiusPair{inner, outer}};
 	}
 
 	consteval RadiusPair RadiusPair::from_constants(double inner, double outer)

@@ -27,7 +27,7 @@
 #include <utility>
 #include <variant>
 
-namespace rust_type
+namespace rope::utils
 {
 
 	namespace details
@@ -465,4 +465,4 @@ namespace rust_type
 		}
 	};
 
-} // namespace rust_type
+} // namespace rope::utils

@@ -13,7 +13,7 @@ struct command_error
 };
 
 template <typename T = void>
-using command_result = rust_type::Result<T, command_error>;
+using command_result = rope::utils::Result<T, command_error>;
 
 namespace detail
 {
@@ -24,7 +24,7 @@ struct result_traits
 };
 
 template <typename Value, typename Error>
-struct result_traits<rust_type::Result<Value, Error>>
+struct result_traits<rope::utils::Result<Value, Error>>
 {
     static constexpr bool is_result = true;
 

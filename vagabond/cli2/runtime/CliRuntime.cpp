@@ -41,7 +41,7 @@ void set_value(Store& store, int value)
 rope::cli::command_result<void> fail_command(Store&)
 {
     ++result_failure_calls;
-    return rust_type::Err(
+    return rope::utils::Err(
         rope::cli::command_error{"Deliberate command failure"});
 }
 

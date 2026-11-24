@@ -27,7 +27,7 @@
 #ifdef ROPE_INLINE_TESTS
 #include <doctest/doctest.h>
 
-using namespace rust_type;
+using namespace rope::utils;
 
 // Error type with toString
 struct CustomTestError

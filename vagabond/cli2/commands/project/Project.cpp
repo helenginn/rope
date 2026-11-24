@@ -39,7 +39,7 @@ command_result<void> load_project_state(ProjectState& project,
     std::ifstream input{filename};
     if (!input.good())
     {
-        return rust_type::Err(command_error{
+        return rope::utils::Err(command_error{
             "Could not load project '" + filename + "': file not found"});
     }
 
@@ -51,12 +51,12 @@ command_result<void> load_project_state(ProjectState& project,
     }
     catch (const std::exception& error)
     {
-        return rust_type::Err(command_error{
+        return rope::utils::Err(command_error{
             "Could not load project '" + filename + "': " + error.what()});
     }
 
     project.mark_loaded(filename);
-    return rust_type::Ok();
+    return rope::utils::Ok();
 }
 } // namespace
 
@@ -66,9 +66,9 @@ command_result<std::string> load_project(ProjectState& project,
     command_result<void> result = load_project_state(project, filename);
     if (result.is_err())
     {
-        return rust_type::Err(std::move(result).unwrap_err());
+        return rope::utils::Err(std::move(result).unwrap_err());
     }
-    return rust_type::Ok("Loaded project: " + filename);
+    return rope::utils::Ok("Loaded project: " + filename);
 }
 
 std::string project_status(const ProjectState& project)
@@ -84,7 +84,7 @@ command_result<std::string> report_project(const ProjectState& project)
 {
     if (!project.loaded())
     {
-        return rust_type::Err(command_error{
+        return rope::utils::Err(command_error{
             "No project loaded. Run 'load_env <filename>' first"});
     }
 
@@ -94,11 +94,11 @@ command_result<std::string> report_project(const ProjectState& project)
         scoped_stream_redirect redirect{std::cout, output.rdbuf()};
         Reporter reporter;
         reporter.report();
-        return rust_type::Ok(output.str());
+        return rope::utils::Ok(output.str());
     }
     catch (const std::exception& error)
     {
-        return rust_type::Err(command_error{
+        return rope::utils::Err(command_error{
             "Could not report project: " + std::string{error.what()}});
     }
 }
