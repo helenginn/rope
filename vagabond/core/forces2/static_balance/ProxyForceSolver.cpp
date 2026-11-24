@@ -10,12 +10,14 @@ namespace rope::force_calc
 	namespace
 	{
 		using SparseMatrix = Eigen::SparseMatrix<float>;
-		using SolveResult = rope::utils::Result<ProxyForceSolution, std::string_view>;
+		using SolveResult =
+		    rope::utils::Result<ProxyForceSolution, std::string_view>;
 
 		SolveResult solveSparseSystem(const SparseMatrix &matrix,
 		                              const Eigen::VectorXf &target)
 		{
-			Eigen::SparseQR<SparseMatrix, Eigen::COLAMDOrdering<int>> qr(matrix);
+			Eigen::SparseQR<SparseMatrix, Eigen::COLAMDOrdering<int>> qr(
+			    matrix);
 			if (qr.info() != Eigen::Success)
 			{
 				return rope::utils::Err{"proxy force factorization failed"};
@@ -89,7 +91,8 @@ namespace rope::force_calc
 		for (Eigen::Index column = 0; column < matrix.cols(); ++column)
 		{
 			compact_matrix.startVec(column);
-			for (SparseMatrix::InnerIterator entry(matrix, column); entry; ++entry)
+			for (SparseMatrix::InnerIterator entry(matrix, column); entry;
+			     ++entry)
 			{
 				compact_matrix.insertBack(compact_row[entry.row()], column) =
 				    entry.value();
@@ -104,7 +107,8 @@ namespace rope::force_calc
 #ifdef ROPE_INLINE_TESTS
 #include <doctest/doctest.h>
 
-TEST_CASE("solveProxyForces fits a rank-deficient balance system with an empty row")
+TEST_CASE(
+    "solveProxyForces fits a rank-deficient balance system with an empty row")
 {
 	using namespace rope::force_calc;
 
