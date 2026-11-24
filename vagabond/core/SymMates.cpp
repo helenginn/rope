@@ -28,7 +28,8 @@ SymMates::Mates SymMates::getSymmetryMates(AtomGroup *const &other,
                                            const std::string &spg_name,
                                            const std::array<double, 6> &uc,
                                            float live_distance,
-                                           float dead_distance)
+                                           float dead_distance,
+                                           bool quiet)
 {
 	Mates mates;
 	mates.live = new AtomGroup();
@@ -145,12 +146,12 @@ SymMates::Mates SymMates::getSymmetryMates(AtomGroup *const &other,
 
 	auto add_symop_atom_if_nearby =
 	[close_to, close_to_live, other, uc_mat, &mates, outside_bounds,
-	 do_on_nearby_unit_cells, make_do_sym_op]
+	 do_on_nearby_unit_cells, make_do_sym_op, quiet]
 	(::Atom *const &atom, glm::vec3 pos)
 	{
 		auto check_if_atom_is_near =
 		[pos, uc_mat, outside_bounds, other, close_to, close_to_live, atom,
-		 &mates, make_do_sym_op]
+		 &mates, make_do_sym_op, quiet]
 		(int i, int j, int k, int l)
 		{
 			auto do_frac_sym = make_do_sym_op(l);
@@ -187,8 +188,11 @@ SymMates::Mates SymMates::getSymmetryMates(AtomGroup *const &other,
 					float occ = atom->conformerPositions()[c].occ;
 					glm::vec3 fracsym = do_frac_sym(other) + glm::vec3(i, j, k);
 					glm::vec3 sympos = uc_mat * fracsym;
-					std::cout << "sympos: " << sympos << " near " <<
-					pos << std::endl;
+					if (!quiet)
+					{
+						std::cout << "sympos: " << sympos << " near " << pos
+						          << std::endl;
+					}
 					copy->conformerPositions()[c].pos.ave = sympos;
 					copy->conformerPositions()[c].occ = occ;
 					copy->conformerPositions()[c].b = b;

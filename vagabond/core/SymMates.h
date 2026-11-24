@@ -18,6 +18,7 @@
 
 #ifndef __vagabond__SymMates__
 #define __vagabond__SymMates__
+#include <string>
 
 class AtomGroup;
 
@@ -36,10 +37,9 @@ namespace SymMates
 	};
 
 	// dead_distance must be >= live_distance.
-	Mates getSymmetryMates(AtomGroup *const &other,
-	                       const std::string &spg_name,
-	                       const std::array<double, 6> &uc,
-	                       float live_distance, float dead_distance);
+	Mates getSymmetryMates(AtomGroup *const &other, const std::string &spg_name,
+	                       const std::array<double, 6> &uc, float live_distance,
+	                       float dead_distance, bool quiet = false);
 
 	// convenience wrapper for callers with no dead-bucket concept of
 	// their own - equivalent to getSymmetryMates(..., distance, distance).live.

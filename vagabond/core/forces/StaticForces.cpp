@@ -29,10 +29,7 @@
 #include <fstream>
 #include <time.h>
 
-StaticForces::StaticForces()
-{
-
-}
+StaticForces::StaticForces() {}
 
 namespace 
 {
@@ -47,9 +44,9 @@ CalcReport StaticForces::solve(const std::map<ForceCoordinate, int>
 	int rows = _rods.size() * 2 * 3; // relationships per rod
 	int cols = index_map.size();
 
-	std::cout << std::endl;
-	std::cout << "No. relationships: " << rows << std::endl;
-	std::cout << "Degrees of freedom: " << cols << std::endl;
+	// std::cout << std::endl;
+	// std::cout << "No. relationships: " << rows << std::endl;
+	// std::cout << "Degrees of freedom: " << cols << std::endl;
 	
 	time_t start = time(NULL);
 
@@ -88,12 +85,12 @@ CalcReport StaticForces::solve(const std::map<ForceCoordinate, int>
 		}
 	}
 	
-	std::cout << "==== targets ==== " << std::endl;
-	std::cout << targets << std::endl;
+	// std::cout << "==== targets ==== " << std::endl;
+	// std::cout << targets << std::endl;
 
-	std::cout << "==== weights ==== " << std::endl;
-	std::cout << weights << std::endl;
-	std::cout << std::endl;
+	// std::cout << "==== weights ==== " << std::endl;
+	// std::cout << weights << std::endl;
+	// std::cout << std::endl;
 
 	weights.makeCompressed();
   Eigen::SparseQR<SpMat, Eigen::COLAMDOrdering<int>> qr(weights);
@@ -121,14 +118,14 @@ CalcReport StaticForces::solve(const std::map<ForceCoordinate, int>
 	display(Eigen::all, 0) = targets;
 	display(Eigen::all, 1) = estimates;
 
-	std::cout << "==== targets vs estimates ==== " << std::endl;
+	// std::cout << "==== targets vs estimates ==== " << std::endl;
 	
 	std::ofstream ffile;
 	ffile.open("forces.csv");
 	ffile << "target, estimate" << std::endl;
-	std::cout << display << std::endl;
+	// std::cout << display << std::endl;
 	ffile << display << std::endl;
-	std::cout << std::endl;
+	// std::cout << std::endl;
 	ffile.close();
 
 	Eigen::MatrixXf diff = estimates - targets;
@@ -144,11 +141,11 @@ CalcReport StaticForces::solve(const std::map<ForceCoordinate, int>
 	g /= (float)diff.rows();
 	g = sqrt(g);
 
-	std::cout << "==== remaining errors ==== " << std::endl;
-	std::cout << " --> diffs: " << f << std::endl;
-	std::cout << " --> targets: " << g << std::endl;
-	std::cout << " --> percentage error: " << f / g * 100.f << "%" << std::endl;
-	std::cout << std::endl;
+	// std::cout << "==== remaining errors ==== " << std::endl;
+	// std::cout << " --> diffs: " << f << std::endl;
+	// std::cout << " --> targets: " << g << std::endl;
+	// std::cout << " --> percentage error: " << f / g * 100.f << "%" << std::endl;
+	// std::cout << std::endl;
 
 	std::map<AbstractForce *, glm::vec3> combined;
 
@@ -201,9 +198,9 @@ CalcReport StaticForces::solve(const std::map<ForceCoordinate, int>
 	float eval = evaluate_CD(data);
   report.stress_strain_correlation = eval;
 
-	std::cout << std::endl;
-	std::cout << "Correlation of bond lengths: " << eval << std::endl;
-	std::cout << "Rod stress-strains written to file." << std::endl;
+	// std::cout << std::endl;
+	// std::cout << "Correlation of bond lengths: " << eval << std::endl;
+	// std::cout << "Rod stress-strains written to file." << std::endl;
 	file.close();
 	
 	std::ofstream dfile;
@@ -227,8 +224,9 @@ CalcReport StaticForces::solve(const std::map<ForceCoordinate, int>
 	int seconds = end - start;
 	dfile.close();
 
-	std::cout << std::endl;
-	std::cout << "Time taken: " << seconds << " s " <<  std::endl;
+	// std::cout << std::endl;
+	// std::cout << "Time taken: " << seconds << " s " <<  std::endl;
 
+  report.weights.swap(weights);
   return report;
 }

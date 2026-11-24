@@ -370,7 +370,7 @@ void ForceAnalysis::createElectrostaticContacts()
 		total += charge(atom); count++;
 	}
 	ave_charge = total / count;
-	std::cout << "Average charge: " << ave_charge << std::endl;
+	// std::cout << "Average charge: " << ave_charge << std::endl;
 
 	float thresh = 5.f;
 	for (int i = 0; i < _group->size(); i++)
@@ -585,14 +585,14 @@ void ForceAnalysis::augmentSymmetry()
 {
 	std::string spg_name = _group->spaceGroup();
 	std::array<double, 6> uc = _group->unitCell();
-	std::cout << "Sym info: " << std::endl;
-	std::cout << spg_name << std::endl;
-	if (uc.size())
-	{
-		std::cout << uc[0] << std::endl;
-	}
-	AtomGroup *mates = SymMates::getSymmetryMates(_group, spg_name, uc, 8.0);
-	std::cout << "Found: " << mates->size() << std::endl;
+	// std::cout << "Sym info: " << std::endl;
+	// std::cout << spg_name << std::endl;
+	// if (uc.size())
+	// {
+	// 	std::cout << uc[0] << std::endl;
+	// }
+	AtomGroup *mates = SymMates::getSymmetryMates(_group, spg_name, uc, 8.0, 8.0, true).live;
+	// std::cout << "Found: " << mates->size() << std::endl;
 	
 	_group->add(mates);
 }
@@ -668,12 +668,12 @@ rope::force_calc::ForceCalcResultReport ForceAnalysis::calculate(bool calcWithUn
 
 	std::map<ForceCoordinate, int> index_map = coordinates.indexing();
 
-	for (auto it = index_map.begin(); it != index_map.end(); it++)
-	{
-		std::cout << it->first.first << ", " << it->first.second << ": " 
-		<< it->second << std::endl;
-		
-	}
+	// for (auto it = index_map.begin(); it != index_map.end(); it++)
+	// {
+	// 	std::cout << it->first.first << ", " << it->first.second << ": "
+	// 	<< it->second << std::endl;
+	//
+	// }
 
 	return _forces.solve(index_map, calcWithUnits);
 }

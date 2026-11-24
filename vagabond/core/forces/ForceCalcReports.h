@@ -3,6 +3,14 @@
 #include <string>
 #include <vector>
 #include <optional>
+#include <vagabond/utils/Eigen/Sparse>
+
+// TODO: still missing / to cover print statements:
+//
+// weights for the matrix
+// residuals, relative errors?
+// degrees of freedom, i.e. quations + unknowns
+// diagnosis data: charge, symmetry, runtime, etc?
 
 namespace rope::force_calc
 {
@@ -33,6 +41,7 @@ namespace rope::force_calc
 		std::vector<StressStrainRow> stress_strain;
 		std::vector<TargetEstimateRow> target_estimate;
 		std::vector<TorsionElectromagneticRow> torsion_electromagnetic;
+		Eigen::SparseMatrix<float, Eigen::ColMajor> weights;
 
 		static ForceCalcResultReport create()
 		{
@@ -41,6 +50,7 @@ namespace rope::force_calc
 			    {},
 			    {},
 			    {},
+          {},
 			};
 		}
 	};
