@@ -1,19 +1,15 @@
 #pragma once
 
-#include <vagabond/utils/glm_import.h>
-
-class BondAngle;
+#include "geometry/BondAngleGeometry.h"
 
 namespace rope::force_calc
 {
-  enum class ForceModel
-{
-  ZScore,
-  Units,
-};
+	struct LegacyBondAngleTorque
+	{
+		glm::vec3 axis;
+		float signed_magnitude;
+	};
 
-glm::vec3 bondAngleAxis(const BondAngle &angle);
-
-// Returns the signed torque magnitude
-//
+	[[nodiscard]] LegacyBondAngleTorque
+	legacyBondAngleTorque(const BondAngleGeometry &geometry);
 }

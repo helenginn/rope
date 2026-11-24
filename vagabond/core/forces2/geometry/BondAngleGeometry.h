@@ -22,7 +22,8 @@ namespace rope::force_calc
 
 	struct BondAngleGeometryError
 	{
-		enum class Code : std::uint8_t // uint8 for explicitly smaller enum class
+		enum class Code : std::
+		    uint8_t // uint8 for explicitly smaller enum class
 		{
 			NonFiniteGeometry,
 			InvalidStandardDeviation,

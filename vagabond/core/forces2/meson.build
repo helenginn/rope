@@ -1,3 +1,5 @@
 forces2_sources = files(
-  'ForceGeometry.cpp',
+  'geometry/BondAngleGeometry.cpp',
+  'geometry/ForceTopology.cpp',
+  'ForceTerms.cpp',
   )
