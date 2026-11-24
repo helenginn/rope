@@ -1,6 +1,6 @@
 #pragma once
 
-#include "geometry/BondAngleGeometry.h"
+#include "../geometry/BondAngleGeometry.h"
 
 namespace rope::force_calc
 {
