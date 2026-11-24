@@ -435,6 +435,9 @@ install_headers([
 ],
 subdir : 'vagabond/core')
 
+subdir('forces2')
+vagafiles += forces2_sources
+
 core = static_library('vag', vagafiles,
 	cpp_args: [compile_args],
 	link_args: [links],
