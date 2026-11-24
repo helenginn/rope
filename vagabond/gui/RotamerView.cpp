@@ -13,7 +13,6 @@
 #include <vagabond/gui/elements/Menu.h>
 #include <vagabond/core/files/CsvFile.h>
 #include <fstream>
-#include <regex>
 
 #include "MatrixPlot.h"
 
