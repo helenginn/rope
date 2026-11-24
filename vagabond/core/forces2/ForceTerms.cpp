@@ -6,11 +6,11 @@ namespace rope::force_calc
 	legacyBondAngleTorque(const BondAngleGeometry &geometry)
 	{
 		// BondAngle::as_signed_z_score takes the measurement as a float.
-		const float measured =
-		    static_cast<float>(geometry.measured.in(au::degrees));
-		const double expected = geometry.expected.in(au::degrees);
+		const float observed =
+		    static_cast<float>(geometry.observed.in(au::degrees));
+		const double ideal = geometry.ideal.in(au::degrees);
 		const double stdev = geometry.standard_deviation.in(au::degrees);
-		const float z_score = static_cast<float>((measured - expected) / stdev);
+		const float z_score = static_cast<float>((observed - ideal) / stdev);
 
 		return {geometry.initial_axis, -z_score};
 	}
@@ -34,7 +34,7 @@ TEST_CASE("legacyBondAngleTorque preserves the axis and signed magnitude")
 	CHECK(torque.axis == geometry.initial_axis);
 	CHECK(torque.signed_magnitude == 27.5f);
 
-	geometry.measured = au::degrees(105.0);
+	geometry.observed = au::degrees(105.0);
 	CHECK(legacyBondAngleTorque(geometry).signed_magnitude == -2.5f);
 }
 

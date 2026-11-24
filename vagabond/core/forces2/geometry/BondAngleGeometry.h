@@ -14,8 +14,8 @@ namespace rope::force_calc
 
 	struct BondAngleGeometry
 	{
-		AngleDegrees measured; // from atompositions
-		AngleDegrees expected;
+		AngleDegrees observed; // From derived atom positions.
+		AngleDegrees ideal;
 		AngleDegrees standard_deviation;
 		glm::vec3 initial_axis; // Normalised vec from inital position
 	};

@@ -33,9 +33,9 @@ namespace rope::force_calc
 		{
 			return rope::utils::Err{Error{Code::InvalidStandardDeviation}};
 		}
-		const double measured = angle.measurement();
-		const double expected = angle.expectation();
-		if (!std::isfinite(measured) || !std::isfinite(expected))
+		const double observed = angle.measurement();
+		const double ideal = angle.expectation();
+		if (!std::isfinite(observed) || !std::isfinite(ideal))
 		{
 			return rope::utils::Err{Error{Code::NonFiniteGeometry}};
 		}
@@ -56,8 +56,8 @@ namespace rope::force_calc
 		}
 
 		return rope::utils::Ok{BondAngleGeometry{
-		    au::degrees(measured),
-		    au::degrees(expected),
+		    au::degrees(observed),
+		    au::degrees(ideal),
 		    au::degrees(stdev),
 		    glm::normalize(normal),
 		}};
@@ -86,8 +86,8 @@ TEST_CASE("readBondAngleGeometry reads and validates bond-angle geometry")
 		auto result = readBondAngleGeometry(angle);
 		REQUIRE(result.is_ok());
 		const auto &geometry = result.unwrap();
-		CHECK(geometry.measured.in(au::degrees) == doctest::Approx(45.0));
-		CHECK(geometry.expected.in(au::degrees) == doctest::Approx(100.0));
+		CHECK(geometry.observed.in(au::degrees) == doctest::Approx(45.0));
+		CHECK(geometry.ideal.in(au::degrees) == doctest::Approx(100.0));
 		CHECK(geometry.standard_deviation.in(au::degrees) ==
 		      doctest::Approx(2.0));
 		CHECK(geometry.initial_axis.x == doctest::Approx(0.f));
