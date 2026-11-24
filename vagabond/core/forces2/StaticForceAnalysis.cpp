@@ -1,7 +1,7 @@
 #include "StaticForceAnalysis.h"
 
 #include "geometry/ForceTopology.h"
-#include "terms/BondAngleTorque.h"
+#include "terms/BondAngleTorqueTerm.h"
 
 #include <cstddef>
 #include <utility>
