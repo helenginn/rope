@@ -54,7 +54,8 @@ namespace rope::force_calc
 				if (left == atom_ids.end() || right == atom_ids.end() ||
 				    left == right)
 				{
-					return rope::utils::Err{Error{Code::InvalidBondEndpoints, i}};
+					return rope::utils::Err{
+					    Error{Code::InvalidBondEndpoints, i}};
 				}
 
 				const auto key = bondKey(left->second, right->second);
