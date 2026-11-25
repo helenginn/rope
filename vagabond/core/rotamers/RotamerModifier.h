@@ -57,6 +57,7 @@ public:
     static int RandGen(int min, int max);
 
     void move(float weight, parameter xy);
+    void moveDirection(const glm::vec3 &direction, float distance);
     glm::vec3 analysisTest(int timePoints, std::vector<glm::vec3> startPos, int willIterate = 0, bool path = false);
     glm::vec3 minimumClashes(std::vector<glm::vec4> vectorsWeighted);
     void analysisPipeline(int timePoints, std::vector<glm::vec3> startPos, int iterations = 1);

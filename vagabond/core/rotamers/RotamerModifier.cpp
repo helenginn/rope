@@ -100,6 +100,20 @@ void RotamerModifier::move(float weight, parameter xy)
         r->destroy();
     }
 }
+
+void RotamerModifier::moveDirection(const glm::vec3 &direction, float distance)
+{
+    float len = glm::length(direction);
+    if (len < 1e-6f)
+        return;
+    glm::vec3 translation = (direction / len) * distance;
+    glm::mat4x4 transformation = glm::translate(glm::mat4x4(1.0f), translation);
+    Result *r = new Result;
+    r->aps = _bouquet->move(transformation, _secChain);
+    r->transplantPositions(false);
+    r->destroy();
+}
+
 // Work needed : SPLIT THIS BIG FUNCTION IN SOME SMALLER STEPS
 glm::vec3 RotamerModifier::analysisTest(int timePoints, std::vector<glm::vec3> startPos, int willIterate, bool path)
 {
