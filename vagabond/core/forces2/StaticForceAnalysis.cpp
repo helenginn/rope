@@ -5,6 +5,7 @@
 
 #include <cstddef>
 #include <utility>
+#include <variant>
 #include <vector>
 #include <vagabond/core/Atom.h>
 #include <vagabond/core/AtomGroup.h>
@@ -16,9 +17,32 @@ namespace rope::force_calc
 		return equations.matrix * solution.components;
 	}
 
-	rope::utils::Result<StaticForceResult, std::string>
-	analyzeStaticForces(const AtomGroup &group)
+	std::vector<ProxyForce> StaticForceResult::coreProxyForces() const
 	{
+		std::vector<ProxyForce> forces;
+		forces.reserve(equations.proxy_atoms.size());
+		// Under All, every solved proxy atom is in the core.
+		for (std::size_t i = 0; i < equations.proxy_atoms.size(); ++i)
+		{
+			const auto first_component = static_cast<Eigen::Index>(i) * 3;
+			forces.push_back({equations.proxy_atoms[i],
+			                  {solution.components(first_component),
+			                   solution.components(first_component + 1),
+			                   solution.components(first_component + 2)}});
+		}
+		return forces;
+	}
+
+	rope::utils::Result<StaticForceResult, std::string>
+	analyzeStaticForces(const AtomGroup &group,
+	                    const static_scope::ForceScope &force_scope)
+	{
+		if (!std::holds_alternative<static_scope::All>(force_scope))
+		{
+			return rope::utils::Err{
+			    "static force analysis currently supports only All"};
+		}
+
 		if (!std::in_range<int>(group.bondAngleCount()) ||
 		    !std::in_range<int>(group.bondLengthCount()))
 		{
@@ -83,6 +107,7 @@ namespace rope::force_calc
 TEST_CASE("analyzeStaticForces solves the bond-angle balance")
 {
 	using rope::force_calc::analyzeStaticForces;
+	namespace static_scope = rope::force_calc::static_scope;
 
 	Atom left("GLY", "N"), centre("GLY", "CA"), right("GLY", "C");
 	left.setInitialPosition({2.f, 0.f, 0.f});
@@ -107,6 +132,32 @@ TEST_CASE("analyzeStaticForces solves the bond-angle balance")
 		CHECK(analysis.equations.target(5) == doctest::Approx(-5.f));
 		CHECK(analysis.equations.target(11) == doctest::Approx(5.f));
 		CHECK(analysis.estimates().isApprox(analysis.equations.target));
+	}
+
+	SUBCASE("explicit All exposes the core proxy forces by atom ID")
+	{
+		const auto result = analyzeStaticForces(group, static_scope::All{});
+		REQUIRE_MESSAGE(result.is_ok(), result.unwrap_err());
+		const auto forces = result.unwrap().coreProxyForces();
+		REQUIRE(forces.size() == 3);
+		CHECK(forces[0].atom_id == 0);
+		CHECK(forces[1].atom_id == 1);
+		CHECK(forces[2].atom_id == 2);
+		CHECK(forces[1].force.x == doctest::Approx(2.5f));
+		CHECK(forces[1].force.y == doctest::Approx(2.5f));
+		CHECK(forces[1].force.z == doctest::Approx(0.f));
+	}
+
+	SUBCASE("reports unsupported spherical scopes")
+	{
+		const auto sphere = static_scope::Sphere::create(glm::vec3(0.f), 2.0);
+		REQUIRE(sphere.is_ok());
+		CHECK(analyzeStaticForces(group, sphere.unwrap()).is_err());
+
+		const auto sphere_with_shell =
+		    static_scope::SphereWithShell::create(glm::vec3(0.f), 1.0, 2.0);
+		REQUIRE(sphere_with_shell.is_ok());
+		CHECK(analyzeStaticForces(group, sphere_with_shell.unwrap()).is_err());
 	}
 
 	SUBCASE("skips angles with hydrogen at an end")
