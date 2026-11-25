@@ -16,7 +16,7 @@ namespace rope::force_calc::static_scope
 			    std::vector<Region>(positions_angstroms.size(), Region::Core)};
 		}
 
-		const auto &sphere = std::get<Sphere>(force_scope);
+		const auto &sphere = std::get<SphereWithShell>(force_scope);
 		const glm::dvec3 center(sphere.centerAngstroms());
 		const double inner = sphere.innerRadiusAngstroms();
 		const double outer = sphere.outerRadiusAngstroms();
@@ -71,9 +71,9 @@ TEST_CASE("classifyAtomPositions preserves order and includes both boundaries")
 		CHECK(result.unwrap() == std::vector(positions.size(), Region::Core));
 	}
 
-	SUBCASE("Sphere includes atoms exactly at the inner and outer radii")
+	SUBCASE("SphereWithShell includes atoms at both radii")
 	{
-		const auto sphere = Sphere::create(center, 2.0, 3.0);
+		const auto sphere = SphereWithShell::create(center, 2.0, 3.0);
 		REQUIRE(sphere.is_ok());
 		const auto result = classifyAtomPositions(sphere.unwrap(), positions);
 		REQUIRE(result.is_ok());
@@ -81,9 +81,9 @@ TEST_CASE("classifyAtomPositions preserves order and includes both boundaries")
 		                                    Region::Core, Region::Shell});
 	}
 
-	SUBCASE("Sphere rejects a non-finite atom position")
+	SUBCASE("SphereWithShell rejects a non-finite atom position")
 	{
-		const auto sphere = Sphere::create(center, 2.0, 3.0);
+		const auto sphere = SphereWithShell::create(center, 2.0, 3.0);
 		REQUIRE(sphere.is_ok());
 		const float nan = std::numeric_limits<float>::quiet_NaN();
 		const std::array invalid{glm::vec3(nan, 2.f, 3.f)};

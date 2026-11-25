@@ -105,7 +105,7 @@ TEST_CASE("selectSystemForScope keeps original IDs across the outer cutoff")
 
 	SUBCASE("Only the outer radius affects the selected equations and unknowns")
 	{
-		const auto sphere = Sphere::create(glm::vec3(0.f), 2.0, 3.0);
+		const auto sphere = SphereWithShell::create(glm::vec3(0.f), 2.0, 3.0);
 		REQUIRE(sphere.is_ok());
 		const auto result = selectSystemForScope(sphere.unwrap(), positions,
 		                                         topology, candidates);
@@ -117,7 +117,8 @@ TEST_CASE("selectSystemForScope keeps original IDs across the outer cutoff")
 		CHECK(selection.angle_ids == std::vector<std::size_t>{1});
 		CHECK(selection.proxy_atoms == std::vector<std::size_t>{0, 1, 2});
 
-		const auto smaller_core = Sphere::create(glm::vec3(0.f), 1.0, 3.0);
+		const auto smaller_core =
+		    SphereWithShell::create(glm::vec3(0.f), 1.0, 3.0);
 		REQUIRE(smaller_core.is_ok());
 		const auto smaller = selectSystemForScope(
 		    smaller_core.unwrap(), positions, topology, candidates);

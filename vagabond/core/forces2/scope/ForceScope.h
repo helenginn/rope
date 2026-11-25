@@ -1,7 +1,7 @@
 #pragma once
 
 //include other force scopes here
-#include "Sphere.h" // IWYU pragma: export
+#include "SphereWithShell.h" // IWYU pragma: export
 
 #include <variant>
 
@@ -11,5 +11,5 @@ namespace rope::force_calc::static_scope
 	{
 	};
 
-	using ForceScope = std::variant<All, Sphere>;
+	using ForceScope = std::variant<All, SphereWithShell>;
 }

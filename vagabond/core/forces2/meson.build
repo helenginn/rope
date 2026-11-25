@@ -6,7 +6,7 @@ forces2_sources = files(
   'static_balance/BalanceEquations.cpp',
   'static_balance/ProxyForceSolver.cpp',
   'terms/BondAngleTorqueTerm.cpp',
-  'scope/Sphere.cpp',
+  'scope/SphereWithShell.cpp',
   'scope/ScopeRegions.cpp',
   'scope/ScopeSelection.cpp',
   )

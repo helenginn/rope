@@ -21,10 +21,10 @@ namespace rope::force_calc::static_scope
 		std::string_view toString() const;
 	};
 
-	class Sphere
+	class SphereWithShell
 	{
 	public:
-		static rope::utils::Result<Sphere, ScopeError>
+		static rope::utils::Result<SphereWithShell, ScopeError>
 		create(glm::vec3 center_angstroms, double inner_radius_angstroms,
 		       double outer_radius_angstroms);
 
@@ -42,8 +42,8 @@ namespace rope::force_calc::static_scope
 		}
 
 	private:
-		Sphere(glm::vec3 center_angstroms, double inner_radius_angstroms,
-		       double outer_radius_angstroms)
+		SphereWithShell(glm::vec3 center_angstroms, double inner_radius_angstroms,
+		                double outer_radius_angstroms)
 		: _center_angstroms(center_angstroms),
 		  _inner_radius_angstroms(inner_radius_angstroms),
 		  _outer_radius_angstroms(outer_radius_angstroms)
