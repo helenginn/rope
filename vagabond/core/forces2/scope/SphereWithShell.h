@@ -28,7 +28,8 @@ namespace rope::force_calc::static_scope
 		}
 
 	private:
-		SphereWithShell(glm::vec3 center_angstroms, double inner_radius_angstroms,
+		SphereWithShell(glm::vec3 center_angstroms,
+		                double inner_radius_angstroms,
 		                double outer_radius_angstroms)
 		: _center_angstroms(center_angstroms),
 		  _inner_radius_angstroms(inner_radius_angstroms),

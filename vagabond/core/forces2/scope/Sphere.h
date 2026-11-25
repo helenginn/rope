@@ -27,7 +27,8 @@ namespace rope::force_calc::static_scope
 
 	private:
 		Sphere(glm::vec3 center_angstroms, double radius_angstroms)
-		: _center_angstroms(center_angstroms), _radius_angstroms(radius_angstroms)
+		: _center_angstroms(center_angstroms),
+		  _radius_angstroms(radius_angstroms)
 		{
 		}
 

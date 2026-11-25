@@ -7,9 +7,7 @@
 
 namespace rope::force_calc::static_scope
 {
-	struct All
-	{
-	};
+	struct All {};
 
 	using ForceScope = std::variant<All, SphereWithShell>;
 }
