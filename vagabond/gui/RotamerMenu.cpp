@@ -6,18 +6,25 @@
 #include "MatrixPlot.h"
 #include "elements/ListView.h"
 #include "vagabond/utils/Eigen/src/Core/Matrix.h"
-#include "vagabond/utils/svd/PCA.h"
 
 #include <string>
 #include <vagabond/gui/elements/TextButton.h>
+#include <vagabond/gui/elements/Slider.h>
+#include <vagabond/gui/elements/Line.h>
+#include <vagabond/gui/DisplayUnit.h>
 #include <vagabond/core/EntityManager.h>
+#include <vagabond/core/rotamers/RotamerModifier.h>
+#include <vagabond/core/Model.h>
+#include <vagabond/core/ModelManager.h>
 
 #include <fstream>
 #include <sstream>
 #include <filesystem>
 #include <algorithm>
+#include <cmath>
 
-RotamerMenu::RotamerMenu(Scene *prev, bool test) : ListView(prev), _test(test)
+RotamerMenu::RotamerMenu(Scene *prev, bool test, Instance *instMain, Instance *instSec)
+: ListView(prev), _test(test), _instMain(instMain), _instSec(instSec)
 {
     setup();
     std::cout << "yeepi" << std::endl;
@@ -25,6 +32,8 @@ RotamerMenu::RotamerMenu(Scene *prev, bool test) : ListView(prev), _test(test)
 
 RotamerMenu::~RotamerMenu()
 {
+    _instMain->unload();
+    _instSec->unload();
 }
 
 void RotamerMenu::setup()
@@ -52,12 +61,7 @@ Renderable *RotamerMenu::getLine(int i)
 
     auto showmatrix = [this, m]()
     {
-        Display *viewMat = new Display(this);
-        Eigen::MatrixXf mat = m.matrix.cast<float>();
-        _plot = new MatrixPlot(mat);
-        _plot->rescale(3.f, 15.f);
-        viewMat->addObject(_plot);
-        viewMat->show();
+        openCombinedView(m);
     };
     {
         TextButton *t = new TextButton(m.name + " (" + m.chain + ")", this);
@@ -77,6 +81,9 @@ Renderable *RotamerMenu::getLine(int i)
     return box;
 }
 
+void RotamerMenu::finishedDragging(std::string tag, double x, double y)
+{
+}
 void RotamerMenu::loadMatrices()
 {
     _matrixList.clear();
@@ -128,6 +135,17 @@ void RotamerMenu::loadMatrices()
 
         std::string line;
         std::getline(file, line);
+        {
+            std::istringstream iss(line);
+            std::string token;
+            std::vector<float> xyz;
+            while (std::getline(iss, token, ','))
+                xyz.push_back(std::stof(token));
+            if (xyz.size() >= 3)
+            {
+                m.startPos = glm::vec3(xyz[0], xyz[1], xyz[2]);
+            }
+        }
 
         std::getline(file, line);
         {
@@ -170,4 +188,128 @@ void RotamerMenu::loadMatrices()
     std::sort(_matrixList.begin(), _matrixList.end(),
               [](const MatrixRotamer &a, const MatrixRotamer &b)
               { return a.name < b.name; });
+}
+
+void RotamerMenu::openCombinedView(const MatrixRotamer &m)
+{
+    if (_combinedView)
+        _combinedView = nullptr;
+    _combinedView = new CombinedView(this, _instMain, _instSec, m);
+    _combinedView->show();
+}
+
+CombinedView::CombinedView(Scene *prev, Instance *instMain, Instance *instSec, MatrixRotamer matRot) : Scene(prev), Display(prev), _instMain(instMain), _instSec(instSec), _matrix(matRot)
+{
+    _matrixRows = _matrix.matrix.rows();
+    std::string mainChain = _instMain->currentAtoms()->atomVector()[0]->chain();
+    std::string secChain = _instSec->currentAtoms()->atomVector()[0]->chain();
+    _modifier = new RotamerModifier(_instMain, _instSec, mainChain, secChain);
+    // _instMain->load();
+    // _instSec->load();
+    view();
+}
+
+CombinedView::~CombinedView()
+{
+    std::cout << "[DEBUG] COMBINEDVIEW DESTROYED MUHAHAHA" << std::endl;
+    _instMain->unload();
+    _instSec->unload();
+    delete _modifier;
+}
+
+void CombinedView::buttonPressed(std::string tag, Button *button)
+{
+    Scene::buttonPressed(tag, button);
+}
+void CombinedView::view()
+{
+    DisplayUnit *unit = new DisplayUnit(this);
+    AtomGroup *atoms{_instMain->currentAtoms()};
+    atoms->add(_instSec->currentAtoms());
+    for (auto *a : atoms->atomVector())
+    {
+        a->setInitialPosition(a->derivedPosition());
+    }
+    unit->loadAtoms(atoms);
+    unit->displayAtoms(false, false);
+    unit->setMultiBondMode(true);
+    unit->startWatch();
+    addDisplayUnit(unit);
+}
+
+void CombinedView::setup()
+{
+    addTitle(_matrix.name + " (" + _matrix.chain + ")");
+    {
+        float mag = glm::length(_matrix.startPos);
+        if (mag < 1e-6f)
+            mag = 1.0f;
+        _slider = new Slider();
+        _slider->setDragResponder(this);
+        _slider->resize(0.3);
+        _slider->setup("Path to folded structure", 0.0, (double)mag, mag / _matrix.matrix.col(1).size(), false);
+        std::cout << "[DEBUG] Number of steps = " << _matrix.matrix.col(1).size() << std::endl;
+        _slider->setStart(1, 0);
+        _slider->setCentre(0.5, 0.90);
+        _slider->setReturnTag("sliderMoved");
+        addObject(_slider);
+    }
+    {
+        Eigen::MatrixXf mat = _matrix.matrix.cast<float>();
+        _plot = new MatrixPlot(mat);
+        _plot->rescale(1.5f, 10.f);
+        _plot->setCentre(0.75, 0.5);
+        addObject(_plot);
+    }
+    {
+        _indicator = new Line(false);
+        _indicator->setAlpha(0.8);
+        _indicator->setColour(1.0, 0.0, 0.0);
+        addObject(_indicator);
+    }
+    updateIndicator(0.0);
+}
+
+void CombinedView::finishedDragging(std::string tag, double x, double y)
+{
+    if (tag != "sliderMoved")
+        return;
+
+    float mag = glm::length(_matrix.startPos);
+    if (mag < 1e-6f)
+        return;
+
+    float distance = (float)x;
+    float delta = distance - _prevDistance;
+    _prevDistance = distance;
+
+    if (_modifier && std::abs(delta) > 1e-6f)
+        _modifier->moveDirection(_matrix.startPos, delta);
+
+    updateIndicator(distance);
+}
+
+void CombinedView::updateIndicator(float distance)
+{
+    if (!_indicator)
+        return;
+
+    float mag = glm::length(_matrix.startPos);
+    if (mag < 1e-6f || _matrixRows < 2)
+        return;
+
+    int row = (int)std::round((float)((distance / mag) * (_matrixRows - 1)));
+    row = std::max(0, std::min(row, _matrixRows - 1));
+
+    glm::vec3 minCorner, maxCorner;
+    _plot->bounds(minCorner, maxCorner);
+
+    float y = maxCorner.y - ((float)row / (_matrixRows - 1)) * (maxCorner.y - minCorner.y);
+    float xMin = minCorner.x;
+    float xMax = maxCorner.x;
+
+    _indicator->clearVertices();
+    _indicator->addPoint(glm::vec3(xMin - 0.02, y, 0.f));
+    _indicator->addPoint(glm::vec3(xMax + 0.02, y, 0.f));
+    _indicator->forceRender();
 }

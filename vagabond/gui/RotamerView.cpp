@@ -62,7 +62,7 @@ void RotamerView::setup()
     }
     auto rotMen = [this]()
     {
-        RotamerMenu *rotamenu = new RotamerMenu(this);
+        RotamerMenu *rotamenu = new RotamerMenu(this, false, _instMain, _instSec);
         rotamenu->show();
     };
     {
@@ -74,7 +74,7 @@ void RotamerView::setup()
     {
         auto rotMen2 = [this]()
         {
-            RotamerMenu *rotamenu = new RotamerMenu(this, true);
+            RotamerMenu *rotamenu = new RotamerMenu(this, true, _instMain, _instSec);
             rotamenu->show();
         };
         {
