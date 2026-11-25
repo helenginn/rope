@@ -1,30 +1,16 @@
 #pragma once
 
-#include <cstdint>
-#include <string_view>
+#include "SphereError.h"
+
 #include <vagabond/utils/ResultType.h>
 #include <vagabond/utils/glm_import.h>
 
 namespace rope::force_calc::static_scope
 {
-	struct ScopeError
-	{
-		enum class Code : std::uint8_t
-		{
-			NonFiniteCenter,
-			NonFiniteRadius,
-			NegativeRadius,
-			InnerRadiusExceedsOuterRadius,
-		};
-
-		Code code;
-		std::string_view toString() const;
-	};
-
 	class SphereWithShell
 	{
 	public:
-		static rope::utils::Result<SphereWithShell, ScopeError>
+		static rope::utils::Result<SphereWithShell, SphereError>
 		create(glm::vec3 center_angstroms, double inner_radius_angstroms,
 		       double outer_radius_angstroms);
 

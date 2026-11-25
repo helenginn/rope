@@ -4,48 +4,32 @@
 
 namespace rope::force_calc::static_scope
 {
-	std::string_view ScopeError::toString() const
-	{
-		switch (code)
-		{
-			case Code::NonFiniteCenter:
-				return "sphere center must be finite";
-			case Code::NonFiniteRadius:
-				return "sphere radii must be finite";
-			case Code::NegativeRadius:
-				return "sphere radii must be non-negative";
-			case Code::InnerRadiusExceedsOuterRadius:
-				return "sphere inner radius exceeds outer radius";
-		}
-		return "unknown scope error";
-	}
-
-	rope::utils::Result<SphereWithShell, ScopeError>
+	rope::utils::Result<SphereWithShell, SphereError>
 	SphereWithShell::create(glm::vec3 center_angstroms,
 	                        double inner_radius_angstroms,
 	                        double outer_radius_angstroms)
 	{
-		using Code = ScopeError::Code;
+		using Code = SphereError::Code;
 
 		if (!std::isfinite(center_angstroms.x) ||
 		    !std::isfinite(center_angstroms.y) ||
 		    !std::isfinite(center_angstroms.z))
 		{
-			return rope::utils::Err{ScopeError{Code::NonFiniteCenter}};
+			return rope::utils::Err{SphereError{Code::NonFiniteCenter}};
 		}
 		if (!std::isfinite(inner_radius_angstroms) ||
 		    !std::isfinite(outer_radius_angstroms))
 		{
-			return rope::utils::Err{ScopeError{Code::NonFiniteRadius}};
+			return rope::utils::Err{SphereError{Code::NonFiniteRadius}};
 		}
 		if (inner_radius_angstroms < 0.0 || outer_radius_angstroms < 0.0)
 		{
-			return rope::utils::Err{ScopeError{Code::NegativeRadius}};
+			return rope::utils::Err{SphereError{Code::NegativeRadius}};
 		}
 		if (inner_radius_angstroms > outer_radius_angstroms)
 		{
 			return rope::utils::Err{
-			    ScopeError{Code::InnerRadiusExceedsOuterRadius}};
+			    SphereError{Code::InnerRadiusExceedsOuterRadius}};
 		}
 
 		return rope::utils::Ok{SphereWithShell{
@@ -59,9 +43,9 @@ namespace rope::force_calc::static_scope
 
 TEST_CASE("SphereWithShell::create validates its center and radii")
 {
-	using rope::force_calc::static_scope::ScopeError;
+	using rope::force_calc::static_scope::SphereError;
 	using rope::force_calc::static_scope::SphereWithShell;
-	using Code = ScopeError::Code;
+	using Code = SphereError::Code;
 
 	const glm::vec3 center(1.f, 2.f, 3.f);
 	const double infinity = std::numeric_limits<double>::infinity();
