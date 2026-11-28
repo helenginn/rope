@@ -48,8 +48,6 @@ void RotamerModifier::setup()
 }
 RotamerModifier::~RotamerModifier()
 {
-    _instMain->unload();
-    _instSec->unload();
 }
 
 float RotamerModifier::submitJobAndRetrieve(float weight, parameter a)
@@ -104,8 +102,6 @@ void RotamerModifier::move(float weight, parameter xy)
 void RotamerModifier::moveDirection(const glm::vec3 &direction, float distance)
 {
     float len = glm::length(direction);
-    if (len < 1e-6f)
-        return;
     glm::vec3 translation = (direction / len) * distance;
     glm::mat4x4 transformation = glm::translate(glm::mat4x4(1.0f), translation);
     Result *r = new Result;
@@ -483,7 +479,6 @@ glm::vec3 RotamerModifier::analysisTest(int timePoints, std::vector<glm::vec3> s
                     for (auto const &value : map[bouquet])
                     {
                         csvContent += ',' + std::to_string(value);
-                        std::cout << "[DEBUG] step " << x << ", size of map[bouquet] = " << map[bouquet].size() << std::endl;
                     }
                 }
             }

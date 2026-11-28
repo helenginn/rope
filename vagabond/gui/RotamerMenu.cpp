@@ -99,9 +99,8 @@ void RotamerMenu::loadMatrices()
         std::string fname = entry.path().filename().string();
         bool isApaths = fname.size() > 18 && fname.substr(fname.size() - 18) == "availRotApaths.csv";
         bool isBpaths = fname.size() > 18 && fname.substr(fname.size() - 18) == "availRotBpaths.csv";
-        if (!isApaths && !isBpaths)
+        if (!isApaths && !isBpaths && fname.substr(0, 5) != "FINAL")
             continue;
-
         MatrixRotamer m{};
         m.chain = (fname.find("availRotApaths") != std::string::npos) ? "A" : "B";
         m.name = fname.substr(fname.length() - 23, 5);
@@ -201,24 +200,26 @@ void RotamerMenu::openCombinedView(const MatrixRotamer &m)
 CombinedView::CombinedView(Scene *prev, Instance *instMain, Instance *instSec, MatrixRotamer matRot) : Scene(prev), Display(prev), _instMain(instMain), _instSec(instSec), _matrix(matRot)
 {
     _matrixRows = _matrix.matrix.rows();
+    _instMain->load();
+    _instSec->load();
     std::string mainChain = _instMain->currentAtoms()->atomVector()[0]->chain();
     std::string secChain = _instSec->currentAtoms()->atomVector()[0]->chain();
-    _modifier = new RotamerModifier(_instMain, _instSec, mainChain, secChain);
-    // _instMain->load();
-    // _instSec->load();
     view();
+    _modifier = new RotamerModifier(_instMain, _instSec, mainChain, secChain);
 }
 
 CombinedView::~CombinedView()
 {
-    std::cout << "[DEBUG] COMBINEDVIEW DESTROYED MUHAHAHA" << std::endl;
-    _instMain->unload();
-    _instSec->unload();
     delete _modifier;
 }
 
 void CombinedView::buttonPressed(std::string tag, Button *button)
 {
+    if (tag == "back")
+    {
+        for (auto &unit : units())
+            unit->stopGui();
+    }
     Scene::buttonPressed(tag, button);
 }
 void CombinedView::view()
@@ -244,15 +245,18 @@ void CombinedView::setup()
         float mag = glm::length(_matrix.startPos);
         if (mag < 1e-6f)
             mag = 1.0f;
-        _slider = new Slider();
-        _slider->setDragResponder(this);
-        _slider->resize(0.3);
-        _slider->setup("Path to folded structure", 0.0, (double)mag, mag / _matrix.matrix.col(1).size(), false);
-        std::cout << "[DEBUG] Number of steps = " << _matrix.matrix.col(1).size() << std::endl;
-        _slider->setStart(1, 0);
-        _slider->setCentre(0.5, 0.90);
-        _slider->setReturnTag("sliderMoved");
-        addObject(_slider);
+        removeObject(_slider);
+        delete _slider;
+        Slider *s = new Slider();
+
+        s->setDragResponder(this);
+        s->resize(0.3);
+        s->setup("Path to folded structure", 0.0, (double)mag, mag / _matrix.matrix.col(1).size(), false);
+        s->setStart(1, 0);
+        s->setCentre(0.5, 0.9);
+        s->setReturnTag("sliderMoved");
+        _slider = s;
+        addObject(s);
     }
     {
         Eigen::MatrixXf mat = _matrix.matrix.cast<float>();
@@ -264,7 +268,6 @@ void CombinedView::setup()
     {
         _indicator = new Line(false);
         _indicator->setAlpha(0.8);
-        _indicator->setColour(1.0, 0.0, 0.0);
         addObject(_indicator);
     }
     updateIndicator(0.0);
@@ -311,5 +314,6 @@ void CombinedView::updateIndicator(float distance)
     _indicator->clearVertices();
     _indicator->addPoint(glm::vec3(xMin - 0.02, y, 0.f));
     _indicator->addPoint(glm::vec3(xMax + 0.02, y, 0.f));
+    _indicator->setColour(1.0, 0.5, 0.0);
     _indicator->forceRender();
 }
